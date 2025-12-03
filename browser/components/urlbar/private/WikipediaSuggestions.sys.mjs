@@ -21,7 +21,7 @@ export class WikipediaSuggestions extends SuggestProvider {
     return [
       "wikipediaFeatureGate",
       "suggest.wikipedia",
-      "suggest.quicksuggest.nonsponsored",
+      "suggest.quicksuggest.all",
     ];
   }
 

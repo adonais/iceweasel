@@ -33,14 +33,14 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "gUpdateTimerManager",
   "@mozilla.org/updates/timer-manager;1",
-  "nsIUpdateTimerManager"
+  Ci.nsIUpdateTimerManager
 );
 
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "PageThumbsStorageService",
   "@mozilla.org/thumbnails/pagethumbs-service;1",
-  "nsIPageThumbsStorageService"
+  Ci.nsIPageThumbsStorageService
 );
 
 /**

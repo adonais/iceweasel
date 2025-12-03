@@ -436,8 +436,7 @@ nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
 
   Maybe<URIParams> optionalResultPrincipalURI;
   nsCOMPtr<nsIURI> resultPrincipalURI;
-  Unused << aLoadInfo->GetResultPrincipalURI(
-      getter_AddRefs(resultPrincipalURI));
+  (void)aLoadInfo->GetResultPrincipalURI(getter_AddRefs(resultPrincipalURI));
   if (resultPrincipalURI) {
     SerializeURI(resultPrincipalURI, optionalResultPrincipalURI);
   }
@@ -490,10 +489,10 @@ nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
   }
 
   nsAutoString cspNonce;
-  Unused << NS_WARN_IF(NS_FAILED(aLoadInfo->GetCspNonce(cspNonce)));
+  (void)NS_WARN_IF(NS_FAILED(aLoadInfo->GetCspNonce(cspNonce)));
 
   nsAutoString integrityMetadata;
-  Unused << NS_WARN_IF(
+  (void)NS_WARN_IF(
       NS_FAILED(aLoadInfo->GetIntegrityMetadata(integrityMetadata)));
 
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
@@ -505,7 +504,7 @@ nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
       ->Serialize(cookieJarSettingsArgs);
 
   nsCOMPtr<nsIURI> unstrippedURI;
-  Unused << aLoadInfo->GetUnstrippedURI(getter_AddRefs(unstrippedURI));
+  (void)aLoadInfo->GetUnstrippedURI(getter_AddRefs(unstrippedURI));
 
   Maybe<bool> isThirdPartyContextToTopWindow;
   if (static_cast<LoadInfo*>(aLoadInfo)
@@ -898,7 +897,7 @@ void LoadInfoToParentLoadInfoForwarder(
   }
 
   uint32_t tainting = nsILoadInfo::TAINTING_BASIC;
-  Unused << aLoadInfo->GetTainting(&tainting);
+  (void)aLoadInfo->GetTainting(&tainting);
 
   Maybe<CookieJarSettingsArgs> cookieJarSettingsArgs;
 
@@ -914,7 +913,7 @@ void LoadInfoToParentLoadInfoForwarder(
   }
 
   nsCOMPtr<nsIURI> unstrippedURI;
-  Unused << aLoadInfo->GetUnstrippedURI(getter_AddRefs(unstrippedURI));
+  (void)aLoadInfo->GetUnstrippedURI(getter_AddRefs(unstrippedURI));
 
   Maybe<bool> isThirdPartyContextToTopWindow;
   if (static_cast<LoadInfo*>(aLoadInfo)

@@ -53,7 +53,6 @@
 #include "mozilla/StaticPrefs_toolkit.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ToString.h"
-#include "mozilla/Unused.h"
 #include "mozilla/ViewportUtils.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/DocumentInlines.h"
@@ -3271,7 +3270,7 @@ void ScrollContainerFrame::ScrollToImpl(
       return;
     }
   }
-  PresShell()->UpdateAnchorPosLayoutForScroll(this);
+  PresShell()->UpdateAnchorPosForScroll(this);
 
   presContext->RecordInteractionTime(
       nsPresContext::InteractionType::ScrollInteraction, TimeStamp::Now());
@@ -3834,9 +3833,9 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 
   bool dirtyRectHasBeenOverriden = false;
-  Unused << DecideScrollableLayer(aBuilder, &visibleRect, &dirtyRect,
-                                  /* aSetBase = */ !mIsRoot,
-                                  &dirtyRectHasBeenOverriden);
+  (void)DecideScrollableLayer(aBuilder, &visibleRect, &dirtyRect,
+                              /* aSetBase = */ !mIsRoot,
+                              &dirtyRectHasBeenOverriden);
 
   if (aBuilder->IsForFrameVisibility()) {
     // We expand the dirty rect to catch frames just outside of the scroll port.
@@ -4013,14 +4012,17 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       // of the scroll frame, the scrolled content is always hit, even
       // if we are checkerboarding.
       CompositorHitTestInfo info =
-          mScrolledFrame->GetCompositorHitTestInfo(aBuilder);
+          mScrolledFrame->GetCompositorHitTestInfoWithoutPointerEvents(
+              aBuilder);
 
-      if (info != CompositorHitTestInvisibleToHit) {
+      if (mScrolledFrame->Style()->PointerEvents() !=
+              StylePointerEvents::None &&
+          info != CompositorHitTestInvisibleToHit) {
         auto* hitInfo =
             MakeDisplayItemWithIndex<nsDisplayCompositorHitTestInfo>(
                 aBuilder, mScrolledFrame, 1);
         if (hitInfo) {
-          aBuilder->SetCompositorHitTestInfo(info);
+          aBuilder->SetInheritedCompositorHitTestInfo(info);
           set.BorderBackground()->AppendToTop(hitInfo);
         }
       }
@@ -4131,9 +4133,9 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         // too late to change the dirty rect so pass a copy.
         nsRect copyOfDirtyRect = dirtyRect;
         nsRect copyOfVisibleRect = visibleRect;
-        Unused << DecideScrollableLayer(aBuilder, &copyOfVisibleRect,
-                                        &copyOfDirtyRect,
-                                        /* aSetBase = */ false, nullptr);
+        (void)DecideScrollableLayer(aBuilder, &copyOfVisibleRect,
+                                    &copyOfDirtyRect,
+                                    /* aSetBase = */ false, nullptr);
         if (mWillBuildScrollableLayer) {
 #ifndef MOZ_WIDGET_ANDROID
           gfxCriticalNoteOnce << "inserted scroll frame";
@@ -4212,7 +4214,7 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
               aBuilder, mScrolledFrame, 1, area, info);
       if (hitInfo) {
         AppendInternalItemToTop(set, hitInfo, Some(zIndex));
-        aBuilder->SetCompositorHitTestInfo(info);
+        aBuilder->SetInheritedCompositorHitTestInfo(info);
       }
     }
 
@@ -5759,8 +5761,8 @@ ScrollContainerFrame::ScrollEndEvent::Run() {
 void ScrollContainerFrame::FireScrollEvent() {
   RefPtr<nsIContent> content = GetContent();
   RefPtr<nsPresContext> presContext = PresContext();
-  AUTO_PROFILER_TRACING_MARKER_DOCSHELL("Paint", "FireScrollEvent", GRAPHICS,
-                                        presContext->GetDocShell());
+  AUTO_PROFILER_MARKER_DOCSHELL("FireScrollEvent", GRAPHICS,
+                                presContext->GetDocShell());
 
   MOZ_ASSERT(mScrollEvent);
   mScrollEvent->Revoke();

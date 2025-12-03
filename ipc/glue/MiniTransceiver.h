@@ -7,7 +7,6 @@
 #define __MINITRANSCEIVER_H_
 
 #include "chrome/common/ipc_message.h"
-#include "mozilla/Assertions.h"
 
 struct msghdr;
 

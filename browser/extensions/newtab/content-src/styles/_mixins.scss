@@ -74,3 +74,13 @@
     }
   }
 }
+
+// Adds transparency and a hover effect to card background.
+@mixin newtab-card-style {
+  background: var(--newtab-background-card);
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    background: var(--newtab-background-color-secondary);
+  }
+}

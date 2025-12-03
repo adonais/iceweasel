@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this file,
+  You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
   <string name="mozac_feature_addons_permissions_one_site_description">Să îți acceseze datele pentru %1$s</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
@@ -25,7 +32,13 @@
   -->
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Să îți acceseze datele pe alte domenii</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
-  <string name="mozac_feature_addons_permissions_all_domain_count_description" tools:ignore="PluralsCandidate">Să îți acceseze datele pentru site-uri din %1$d domenii</string>
+  <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">Să îți acceseze datele pentru site-uri din %1$d domenii</string>
+  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2" tools:ignore="MissingQuantity">
+    <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
+    <item quantity="one">Să îți acceseze datele pentru site-uri dintr-un domeniu</item>
+    <item quantity="few">Să îți acceseze datele pentru site-uri din %1$d domenii</item>
+    <item quantity="other">Să îți acceseze datele pentru site-uri din %1$d de domenii</item>
+  </plurals>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d din %3$d</string>
   <!-- Description for the "privacy" WebExtensions API permission. -->
@@ -85,7 +98,7 @@
   <!-- Description for the "privacy" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_privacy_description_for_update">Să citească și să modifice setările de confidențialitate.</string>
   <!-- Description for the "<all_urls>" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_all_urls_description_for_update">Să îți acceseze datele pentru toate site-urile.</string>
+  <string name="mozac_feature_addons_permissions_all_urls_description_for_update">Să îți acceseze datele pentru toate site-urile web.</string>
   <!-- Description for the "tabs" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_tabs_description_for_update">Să îți acceseze filele browserului.</string>
   <!-- Description for the "webNavigation" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
@@ -367,7 +380,9 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">%1$s nu poate fi instalată deoarece poate fi instalată numai de o organizație folosind politici corporatiste, care nu sunt suportate pe această platformă.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1">%1$s încalcă politicile Mozilla și nu poate fi instalat pe %2$s.</string>
+  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s încalcă politicile Mozilla și nu poate fi instalat pe %2$s.</string>
+  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
+  <string name="mozac_feature_addons_soft_blocked_2">%1$s este restricționat și nu poate fi instalat pe %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">%1$s nu a fost activat</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -413,9 +428,13 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">Această extensie este blocată pentru încălcarea politicilor Mozilla și a fost dezactivată.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1">Această extensie este restricționată pentru încălcarea politicilor Mozilla și a fost dezactivată. O poți activa, dar acest lucru poate fi riscant.</string>
+  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Această extensie este restricționată pentru încălcarea politicilor Mozilla și a fost dezactivată. O poți activa, dar acest lucru poate fi riscant.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
+  <string name="mozac_feature_addons_status_softblocked_2">Această extensie este restricționată și a fost dezactivată. O poți activa, dar poate fi riscant.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled">Această extensie încalcă politicile Mozilla. Utilizarea ei poate fi riscantă.</string>
+  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Această extensie încalcă politicile Mozilla. Utilizarea ei poate fi riscantă.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
+  <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Această extensie este restricționată. Utilizarea ei poate fi riscantă.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">%1$s nu a putut fi verificat și a fost dezactivat.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

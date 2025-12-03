@@ -33,7 +33,7 @@ add_setup(() => {
     "/v1/buckets/main/collections/some-cid/changeset?_expected=333": {
       timestamp: 333,
       metadata: {
-        signature: { signature: "abc", x5u: "data:text/plain;base64,pem" },
+        signatures: [{ signature: "abc", x5u: "data:text/plain;base64,pem" }],
       },
       changes: [
         { id: "rid2", last_modified: 22 },
@@ -45,7 +45,7 @@ add_setup(() => {
       {
         timestamp: 222,
         metadata: {
-          signature: { signature: "ghi", x5u: "data:text/plain;base64,pem" },
+          signatures: [{ signature: "ghi", x5u: "data:text/plain;base64,pem" }],
         },
         changes: [{ id: "rid1", last_modified: 11 }],
       },
@@ -53,7 +53,7 @@ add_setup(() => {
     "/v1/buckets/main/collections/some-cid/changeset?_expected=222": {
       timestamp: 222,
       metadata: {
-        signature: { signature: "ghi", x5u: "data:text/plain;base64,pem" },
+        signatures: [{ signature: "ghi", x5u: "data:text/plain;base64,pem" }],
       },
       changes: [{ id: "rid1", last_modified: 11 }],
     },

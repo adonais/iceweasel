@@ -40,6 +40,8 @@
 #  include "jit/riscv64/constant/util-riscv64.h"
 #  include "jit/riscv64/disasm/Disasm-riscv64.h"
 #  include "js/ProfilingFrameIterator.h"
+#  include "js/Utility.h"
+#  include "js/Vector.h"
 #  include "threading/Thread.h"
 #  include "vm/MutexIDs.h"
 #  include "wasm/WasmSignalHandlers.h"
@@ -383,6 +385,28 @@ class SimInstruction : public InstructionGetters<SimInstructionBase> {
     type_ = InstructionBase::InstructionType();
     MOZ_ASSERT(reinterpret_cast<void*>(&operand_) == this);
     return *this;
+  }
+};
+
+// std::vector shim for breakpoints
+template <typename T>
+class BreakpointVector final {
+  js::Vector<T, 0, js::SystemAllocPolicy> vector_;
+
+ public:
+  BreakpointVector() = default;
+
+  size_t size() const { return vector_.length(); }
+
+  T& at(size_t i) { return vector_[i]; }
+  const T& at(size_t i) const { return vector_[i]; }
+
+  template <typename U>
+  void push_back(U&& u) {
+    js::AutoEnterOOMUnsafeRegion oomUnsafe;
+    if (!vector_.emplaceBack(std::move(u))) {
+      oomUnsafe.crash("breakpoint vector push_back");
+    }
   }
 };
 
@@ -993,7 +1017,7 @@ class Simulator {
     bool enabled;
     bool is_tbreak;
   };
-  std::vector<Breakpoint> breakpoints_;
+  BreakpointVector<Breakpoint> breakpoints_;
   void SetBreakpoint(SimInstruction* breakpoint, bool is_tbreak);
   void ListBreakpoints();
   void CheckBreakpoints();

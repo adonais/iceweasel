@@ -10,7 +10,6 @@
 #include "js/ColumnNumber.h"  // JS::ColumnNumberOneOrigin
 #include "js/ErrorReport.h"
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/NonRefcountedDOMObject.h"
 #include "mozilla/dom/StructuredCloneHolder.h"

@@ -18,7 +18,8 @@ namespace ETW {
 template <typename T, typename = void>
 struct MarkerHasPayload : std::false_type {};
 template <typename T>
-struct MarkerHasPayload<T, std::void_t<decltype(T::PayloadFields)>>
+struct MarkerHasPayload<T, std::void_t<decltype(T::PayloadFields),
+                                       decltype(std::size(T::PayloadFields))>>
     : std::true_type {};
 
 // Allows checking for the presence of T::Name.

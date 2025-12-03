@@ -473,26 +473,6 @@ class TelemetryMiddlewareTest {
     }
 
     @Test
-    fun `WHEN TranslateOfferAction is dispatched THEN update telemetry`() = runTest {
-        assertNull(Translations.offerEvent.testGetValue())
-
-        store.dispatch(TranslationsAction.TranslateOfferAction(tabId = "1", true)).joinBlocking()
-
-        val telemetry = Translations.offerEvent.testGetValue()?.firstOrNull()
-        assertEquals("offer", telemetry?.extra?.get("item"))
-    }
-
-    @Test
-    fun `WHEN TranslateExpectedAction is dispatched THEN update telemetry`() = runTest {
-        assertNull(Translations.offerEvent.testGetValue())
-
-        store.dispatch(TranslationsAction.TranslateExpectedAction(tabId = "1")).joinBlocking()
-
-        val telemetry = Translations.offerEvent.testGetValue()?.firstOrNull()
-        assertEquals("expected", telemetry?.extra?.get("item"))
-    }
-
-    @Test
     fun `WHEN TranslateAction is dispatched THEN update telemetry`() = runTest {
         assertNull(Translations.translateRequested.testGetValue())
 
@@ -567,24 +547,9 @@ class TelemetryMiddlewareTest {
         }
 
     @Test
-    fun `WHEN SetEngineSupportedAction is dispatched AND supported THEN update telemetry`() =
-        runTest {
-            assertNull(Translations.engineSupported.testGetValue())
-
-            store.dispatch(
-                TranslationsAction.SetEngineSupportedAction(
-                    isEngineSupported = true,
-                ),
-            ).joinBlocking()
-
-            val telemetry = Translations.engineSupported.testGetValue()?.firstOrNull()
-            assertEquals("supported", telemetry?.extra?.get("support"))
-        }
-
-    @Test
     fun `WHEN SetEngineSupportedAction is dispatched AND unsupported THEN update telemetry`() =
         runTest {
-            assertNull(Translations.engineSupported.testGetValue())
+            assertNull(Translations.engineUnsupported.testGetValue())
 
             store.dispatch(
                 TranslationsAction.SetEngineSupportedAction(
@@ -592,8 +557,7 @@ class TelemetryMiddlewareTest {
                 ),
             ).joinBlocking()
 
-            val telemetry = Translations.engineSupported.testGetValue()?.firstOrNull()
-            assertEquals("unsupported", telemetry?.extra?.get("support"))
+            assertNotNull(Translations.engineUnsupported.testGetValue())
         }
 }
 

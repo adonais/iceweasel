@@ -8,6 +8,7 @@
 #import <UIKit/UIWindow.h>
 
 #include "mozilla/Components.h"
+#include "nsIObserverService.h"
 #include "gfxPlatform.h"
 #include "nsAppShell.h"
 #include "nsCOMPtr.h"

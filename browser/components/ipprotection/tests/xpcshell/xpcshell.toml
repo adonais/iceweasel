@@ -4,11 +4,14 @@ head = "head.js"
 firefox-appdir = "browser"
 prefs = [
   "browser.ipProtection.enabled=true",
+  "browser.ipProtection.cacheDisabled=true",
 ]
 
 ["test_GuardianClient.js"]
 
-["test_IPPExceptionsManager_exclusions.js"]
+["test_IPPExceptionsManager.js"]
+
+["test_IPPStartupCache.js"]
 
 ["test_IPProtection.js"]
 

@@ -428,7 +428,7 @@ uint32_t SpeechRecognition::ProcessAudioSegment(AudioSegment* aSegment,
       }));
 
   MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-  Unused << rv;
+  (void)rv;
   return samples;
 }
 

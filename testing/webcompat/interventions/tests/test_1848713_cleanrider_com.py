@@ -1,6 +1,6 @@
 import pytest
 from webdriver import NoSuchElementException
-from webdriver.error import ElementClickInterceptedException
+from webdriver.error import ElementClickInterceptedException, WebDriverException
 
 URL = "https://www.cleanrider.com/catalogue/velo-electrique/velos-pliants-electriques/"
 
@@ -58,7 +58,10 @@ async def can_interact_with_slider(client):
         for _ in range(5):
             min_thumb.click()
             await client.stall(0.5)
-    except ElementClickInterceptedException:
+    except (
+        ElementClickInterceptedException,
+        WebDriverException,
+    ) as _:  # element not interactable
         return True
     assert await client.find_alert("bad")
 

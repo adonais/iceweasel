@@ -7,7 +7,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 let lazy = {};
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
-  Favicons: ["@mozilla.org/browser/favicon-service;1", "nsIFaviconService"],
+  Favicons: ["@mozilla.org/browser/favicon-service;1", Ci.nsIFaviconService],
 });
 
 // Set up Taskbar Tabs Window Chrome.

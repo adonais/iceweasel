@@ -9,8 +9,6 @@
 
 #include "vm/JSAtomUtils.h"
 
-#include "mozilla/RangedPtr.h"
-
 #include "jsnum.h"
 
 #include "gc/MaybeRooted.h"
@@ -74,6 +72,19 @@ inline bool PrimitiveValueToId(
 bool IndexToIdSlow(JSContext* cx, uint32_t index, MutableHandleId idp);
 
 inline bool IndexToId(JSContext* cx, uint32_t index, MutableHandleId idp) {
+  if (index <= PropertyKey::IntMax) {
+    idp.set(PropertyKey::Int(index));
+    return true;
+  }
+
+  return IndexToIdSlow(cx, index, idp);
+}
+
+bool IndexToIdSlow(JSContext* cx, uint64_t index, MutableHandleId idp);
+
+inline bool IndexToId(JSContext* cx, uint64_t index, MutableHandleId idp) {
+  MOZ_ASSERT(index < uint64_t(DOUBLE_INTEGRAL_PRECISION_LIMIT));
+
   if (index <= PropertyKey::IntMax) {
     idp.set(PropertyKey::Int(index));
     return true;

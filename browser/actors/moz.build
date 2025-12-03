@@ -16,10 +16,10 @@ with Files("AboutReaderParent.sys.mjs"):
 with Files("LightweightThemeChild.sys.mjs"):
     BUG_COMPONENT = ("WebExtensions", "Themes")
 
-with Files("PageInfoChild.sys.mjs"):
+with Files("PageInfo*.sys.mjs"):
     BUG_COMPONENT = ("Firefox", "Page Info Window")
 
-with Files("PageStyleChild.sys.mjs"):
+with Files("PageStyle*.sys.mjs"):
     BUG_COMPONENT = ("Firefox", "Menus")
 
 with Files("PluginChild.sys.mjs"):
@@ -64,6 +64,7 @@ FINAL_TARGET_FILES.actors += [
     "LinkHandlerChild.sys.mjs",
     "LinkHandlerParent.sys.mjs",
     "PageInfoChild.sys.mjs",
+    "PageInfoPreviewChild.sys.mjs",
     "PageStyleChild.sys.mjs",
     "PageStyleParent.sys.mjs",
     "PluginChild.sys.mjs",

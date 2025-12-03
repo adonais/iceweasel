@@ -8,13 +8,16 @@ support-files = [
 ]
 
 ["test_backgroundtask_automaticrestart.js"]
+requesttimeoutfactor = 2  # Slow on Windows
 run-if = ["os == 'win'"]
 
 ["test_backgroundtask_deletes_profile.js"]
 
 ["test_backgroundtask_exitcodes.js"]
+requesttimeoutfactor = 2  # Slow on Windows
 
 ["test_backgroundtask_experiments.js"]
+requesttimeoutfactor = 6  # Slow on Linux and Windows
 tags = "remote-settings"
 run-if = ["buildapp == 'browser'"]
 reason = "ASRouter is Firefox-only."
@@ -28,6 +31,7 @@ reason = "ASRouter is Firefox-only."
 ["test_backgroundtask_minruntime.js"]
 
 ["test_backgroundtask_no_output.js"]
+requesttimeoutfactor = 2  # Slow on Windows
 skip-if = ["ccov"]
 reason = "Bug 1804825: code coverage harness prints [CodeCoverage] output in early startup."
 
@@ -41,6 +45,7 @@ run-sequentially = ["true"] # Uses global profile directory `DefProfRt`
 ["test_backgroundtask_profile_service_configuration.js"]
 
 ["test_backgroundtask_removeDirectory.js"]
+requesttimeoutfactor = 4  # Slow on Linux and Windows
 skip-if = ["os == 'android'"] # MultiInstanceLock doesn't work on Android
 
 ["test_backgroundtask_shouldprocessupdates.js"]
@@ -57,6 +62,7 @@ reason = "ASRouter is Firefox-only."
 ["test_backgroundtask_unique_profile.js"]
 
 ["test_backgroundtask_update_sync_manager.js"]
+requesttimeoutfactor = 2  # Slow on Windows
 
 ["test_backgroundtasksutils.js"]
 

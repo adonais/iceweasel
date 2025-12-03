@@ -6,7 +6,6 @@
 #ifndef txRtfHandler_h___
 #define txRtfHandler_h___
 
-#include "mozilla/Attributes.h"
 #include "txBufferingHandler.h"
 #include "txExprResult.h"
 #include "txXPathNode.h"

@@ -154,7 +154,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 getString(R.string.pref_key_show_search_suggestions_in_private),
                 getString(R.string.pref_key_show_trending_search_suggestions),
                 getString(R.string.pref_key_show_recent_search_suggestions),
-                getString(R.string.pref_key_show_shortcuts_suggestions),
             )
         }
 
@@ -217,11 +216,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val title = nimbusValidation.settingsTitle
         val suffix = nimbusValidation.settingsPunctuation
         val toolbarTitle = "$title$suffix"
-        if (requireContext().settings().isSettingsSearchEnabled) {
+
+        val showSearch = requireContext().settings().isSettingsSearchEnabled &&
+                (!args.searchInProgress)
+
+        if (showSearch) {
             showToolbarWithIconButton(
                 title = toolbarTitle,
                 iconResId = R.drawable.ic_search,
-                onClick = { },
+                onClick = {
+                    findNavController().navigate(R.id.action_settingsFragment_to_settingsSearchFragment)
+                },
             )
         } else {
             showToolbar(toolbarTitle)

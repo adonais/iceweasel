@@ -6,7 +6,6 @@
 #define CacheHashUtils__h__
 
 #include "nsISupports.h"
-#include "mozilla/Types.h"
 #include "prnetdb.h"
 #include "nsPrintfCString.h"
 

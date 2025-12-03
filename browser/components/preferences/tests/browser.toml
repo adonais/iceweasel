@@ -2,6 +2,10 @@
 prefs = [
   "extensions.formautofill.addresses.available='on'",
   "signon.management.page.os-auth.enabled=true",
+  "browser.backup.archive.enabled=false",
+  "browser.backup.restore.enabled=false",
+  "browser.backup.archive.overridePlatformCheck=true",
+  "browser.backup.restore.overridePlatformCheck=true",
 ]
 support-files = [
   "head.js",
@@ -25,6 +29,8 @@ run-if = ["updater"]
 ["browser_application_xml_handle_internally.js"]
 
 ["browser_applications_selection.js"]
+
+["browser_backup_visibility.js"]
 
 ["browser_basic_rebuild_fonts_test.js"]
 
@@ -54,6 +60,8 @@ support-files = ["browser_bug1184989_prevent_scrolling_when_preferences_flipped.
 run-if = ["os == 'win'"] # Windows-specific handler application selection dialog
 
 ["browser_checkspelling.js"]
+
+["browser_colors_dialog.js"]
 
 ["browser_connection.js"]
 
@@ -150,6 +158,8 @@ fail-if = ["a11y_checks"] # Bug 1854636 clicked treechildren#engineChildren may 
 
 ["browser_newtab_menu.js"]
 
+["browser_no_id_collision_between_categories_and_mainPane.js"]
+
 ["browser_notifications_do_not_disturb.js"]
 
 ["browser_open_download_preferences.js"]
@@ -193,9 +203,9 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && t
 
 ["browser_privacy_dnsoverhttps.js"]
 
-["browser_privacy_firefoxSuggest.js"]
-
 ["browser_privacy_gpc.js"]
+
+["browser_privacy_ipprotection.js"]
 
 ["browser_privacy_passwordGenerationAndAutofill.js"]
 

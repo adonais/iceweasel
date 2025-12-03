@@ -56,13 +56,13 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "IdleService",
   "@mozilla.org/widget/useridleservice;1",
-  "nsIUserIdleService"
+  Ci.nsIUserIdleService
 );
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "CaptivePortalService",
   "@mozilla.org/network/captive-portal-service;1",
-  "nsICaptivePortalService"
+  Ci.nsICaptivePortalService
 );
 
 // Get the value for an interval that's stored in preferences. To save users

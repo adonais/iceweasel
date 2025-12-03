@@ -34,7 +34,6 @@
 #include "api/crypto/crypto_options.h"
 #include "api/data_channel_interface.h"
 #include "api/dtls_transport_interface.h"
-#include "api/field_trials.h"
 #include "api/field_trials_view.h"
 #include "api/ice_transport_interface.h"
 #include "api/jsep.h"
@@ -254,7 +253,7 @@ class PeerConnectionIntegrationWrapper : public PeerConnectionObserver,
   // will set the whole offer/answer exchange in motion. Just need to wait for
   // the signaling state to reach "stable".
   void CreateAndSetAndSignalOffer() {
-    auto offer = CreateOfferAndWait();
+    std::unique_ptr<SessionDescriptionInterface> offer = CreateOfferAndWait();
     ASSERT_NE(nullptr, offer);
     EXPECT_TRUE(SetLocalDescriptionAndSendSdpMessage(std::move(offer)));
   }
@@ -735,6 +734,18 @@ class PeerConnectionIntegrationWrapper : public PeerConnectionObserver,
     return 0;
   }
 
+  uint32_t GetReceivedFrameCount() {
+    scoped_refptr<const RTCStatsReport> report = NewGetStats();
+    auto inbound_stream_stats =
+        report->GetStatsOfType<RTCInboundRtpStreamStats>();
+    for (const auto& stat : inbound_stream_stats) {
+      if (*stat->kind == "video") {
+        return stat->frames_received.value_or(0);
+      }
+    }
+    return 0;
+  }
+
   void set_connection_change_callback(
       std::function<void(PeerConnectionInterface::PeerConnectionState)> func) {
     connection_change_callback_ = std::move(func);
@@ -860,14 +871,14 @@ class PeerConnectionIntegrationWrapper : public PeerConnectionObserver,
     if (remote_offer_handler_) {
       remote_offer_handler_();
     }
-    auto answer = CreateAnswer();
+    std::unique_ptr<SessionDescriptionInterface> answer = CreateAnswer();
     ASSERT_NE(nullptr, answer);
     EXPECT_TRUE(SetLocalDescriptionAndSendSdpMessage(std::move(answer)));
   }
 
   void HandleIncomingAnswer(SdpType type, const std::string& msg) {
     RTC_LOG(LS_INFO) << debug_name_ << ": HandleIncomingAnswer of type "
-                     << SdpTypeToString(type);
+                     << type;
     std::unique_ptr<SessionDescriptionInterface> desc =
         CreateSessionDescription(type, msg);
     if (received_sdp_munger_) {
@@ -1469,12 +1480,11 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
     if (it != field_trials_overrides_.end()) {
       field_trials = it->second;
     }
-    if (!client->Init(
-            options, &modified_config, std::move(dependencies), fss_.get(),
-            network_thread_.get(), worker_thread_.get(),
-            std::make_unique<FieldTrials>(CreateTestFieldTrials(field_trials)),
-            std::move(event_log_factory), reset_encoder_factory,
-            reset_decoder_factory, create_media_engine)) {
+    if (!client->Init(options, &modified_config, std::move(dependencies),
+                      fss_.get(), network_thread_.get(), worker_thread_.get(),
+                      CreateTestFieldTrialsPtr(field_trials),
+                      std::move(event_log_factory), reset_encoder_factory,
+                      reset_decoder_factory, create_media_engine)) {
       return nullptr;
     }
     return client;
@@ -1864,12 +1874,11 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
       callee()->pc()->Close();
   }
 
-  void TestNegotiatedCipherSuite(
-      const PeerConnectionFactory::Options& caller_options,
-      const PeerConnectionFactory::Options& callee_options,
-      int expected_cipher_suite) {
-    ASSERT_TRUE(CreatePeerConnectionWrappersWithOptions(caller_options,
-                                                        callee_options));
+  void TestNegotiatedCipherSuite(const RTCConfiguration& caller_config,
+                                 const RTCConfiguration& callee_config,
+                                 int expected_cipher_suite) {
+    ASSERT_TRUE(
+        CreatePeerConnectionWrappersWithConfig(caller_config, callee_config));
     ConnectFakeSignaling();
     caller()->AddAudioVideoTracks();
     callee()->AddAudioVideoTracks();
@@ -1886,17 +1895,17 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
                                          bool remote_gcm_enabled,
                                          bool aes_ctr_enabled,
                                          int expected_cipher_suite) {
-    PeerConnectionFactory::Options caller_options;
-    caller_options.crypto_options.srtp.enable_gcm_crypto_suites =
-        local_gcm_enabled;
-    caller_options.crypto_options.srtp.enable_aes128_sha1_80_crypto_cipher =
-        aes_ctr_enabled;
-    PeerConnectionFactory::Options callee_options;
-    callee_options.crypto_options.srtp.enable_gcm_crypto_suites =
-        remote_gcm_enabled;
-    callee_options.crypto_options.srtp.enable_aes128_sha1_80_crypto_cipher =
-        aes_ctr_enabled;
-    TestNegotiatedCipherSuite(caller_options, callee_options,
+    RTCConfiguration caller_config;
+    CryptoOptions caller_crypto;
+    caller_crypto.srtp.enable_gcm_crypto_suites = local_gcm_enabled;
+    caller_crypto.srtp.enable_aes128_sha1_80_crypto_cipher = aes_ctr_enabled;
+    caller_config.crypto_options = caller_crypto;
+    RTCConfiguration callee_config;
+    CryptoOptions callee_crypto;
+    callee_crypto.srtp.enable_gcm_crypto_suites = remote_gcm_enabled;
+    callee_crypto.srtp.enable_aes128_sha1_80_crypto_cipher = aes_ctr_enabled;
+    callee_config.crypto_options = callee_crypto;
+    TestNegotiatedCipherSuite(caller_config, callee_config,
                               expected_cipher_suite);
   }
 

@@ -57,6 +57,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "extensions.dataCollectionPermissions.enabled",
   false
 );
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "FORCED_COLORS_OVERRIDE_ENABLED",
+  "browser.theme.forced-colors-override.enabled",
+  true
+);
 
 const PLUGIN_ICON_URL = "chrome://global/skin/icons/plugin.svg";
 const EXTENSION_ICON_URL =
@@ -309,7 +315,16 @@ async function getAddonMessageInfo(
       type: "warning",
     };
   } else if (addon.blocklistState === STATE_SOFTBLOCKED) {
-    const fluentBaseId = "details-notification-soft-blocked";
+    const softBlockFluentIdsMap = {
+      extension: {
+        enabled: "details-notification-soft-blocked-extension-enabled2",
+        disabled: "details-notification-soft-blocked-extension-disabled2",
+      },
+      other: {
+        enabled: "details-notification-soft-blocked-other-enabled2",
+        disabled: "details-notification-soft-blocked-other-disabled2",
+      },
+    };
     let typeSuffix = addon.type === "extension" ? "extension" : "other";
     let stateSuffix;
     // If the Addon Card is not expanded, delay changing the messagebar
@@ -320,7 +335,7 @@ async function getAddonMessageInfo(
     } else {
       stateSuffix = !isInDisabledSection ? "enabled" : "disabled";
     }
-    let messageId = `${fluentBaseId}-${typeSuffix}-${stateSuffix}`;
+    let messageId = softBlockFluentIdsMap[typeSuffix][stateSuffix];
 
     return {
       linkUrl: await addon.getBlocklistURL(),
@@ -789,7 +804,9 @@ class GlobalWarnings extends MessageBarStackElement {
 
   refresh() {
     if (this.inSafeMode) {
-      this.setWarning("safe-mode");
+      this.setWarning("safe-mode", {
+        supportPage: "diagnose-firefox-issues-using-troubleshoot-mode",
+      });
     } else if (
       AddonManager.checkUpdateSecurityDefault &&
       !AddonManager.checkUpdateSecurity
@@ -804,7 +821,7 @@ class GlobalWarnings extends MessageBarStackElement {
     }
   }
 
-  setWarning(type, opts) {
+  setWarning(type, { action, supportPage }) {
     if (
       this.globalWarning &&
       this.globalWarning.getAttribute("warning-type") !== type
@@ -817,7 +834,13 @@ class GlobalWarnings extends MessageBarStackElement {
       let { messageId, buttonId } = this.getGlobalWarningL10nIds(type);
       document.l10n.setAttributes(this.globalWarning, messageId);
       this.globalWarning.setAttribute("data-l10n-attrs", "message");
-      if (opts && opts.action) {
+      if (supportPage) {
+        let link = document.createElement("a", { is: "moz-support-link" });
+        link.setAttribute("slot", "support-link");
+        link.setAttribute("support-page", supportPage);
+        this.globalWarning.appendChild(link);
+      }
+      if (action) {
         let button = document.createElement("button");
         document.l10n.setAttributes(button, buttonId);
         button.setAttribute("action", type);
@@ -831,7 +854,7 @@ class GlobalWarnings extends MessageBarStackElement {
   getGlobalWarningL10nIds(type) {
     const WARNING_TYPE_TO_L10NID_MAPPING = {
       "safe-mode": {
-        messageId: "extensions-warning-safe-mode2",
+        messageId: "extensions-warning-safe-mode3",
       },
       "update-security": {
         messageId: "extensions-warning-update-security2",
@@ -4147,6 +4170,35 @@ class ColorwayRemovalNotice extends HTMLElement {
 }
 customElements.define("colorway-removal-notice", ColorwayRemovalNotice);
 
+class ForcedColorsNotice extends HTMLElement {
+  connectedCallback() {
+    this.forcedColorsMediaQuery = window.matchMedia("(forced-colors)");
+    this.forcedColorsMediaQuery.addListener(this);
+    this.render();
+  }
+
+  render() {
+    let shouldShowNotice =
+      FORCED_COLORS_OVERRIDE_ENABLED && this.forcedColorsMediaQuery.matches;
+    this.hidden = !shouldShowNotice;
+    if (shouldShowNotice && this.childElementCount == 0) {
+      this.appendChild(importTemplate("forced-colors-notice"));
+    }
+  }
+
+  handleEvent(e) {
+    if (e.type == "change") {
+      this.render();
+    }
+  }
+
+  disconnectedCallback() {
+    this.forcedColorsMediaQuery?.removeListener(this);
+    this.forcedColorsMediaQuery = null;
+  }
+}
+customElements.define("forced-colors-notice", ForcedColorsNotice);
+
 class TaarMessageBar extends HTMLElement {
   connectedCallback() {
     this.hidden =
@@ -4314,10 +4366,13 @@ gViewController.defineView("list", async type => {
     filterFn: disabledAddonsFilterFn,
   });
 
-  // Show the colorway warning only in themes list view
+  // Show the colorway and forced-colors notice only in themes list view.
   if (type === "theme") {
-    const warning = document.createElement("colorway-removal-notice");
-    frag.appendChild(warning);
+    const colorwayNotice = document.createElement("colorway-removal-notice");
+    frag.appendChild(colorwayNotice);
+
+    const forcedColorsNotice = document.createElement("forced-colors-notice");
+    frag.appendChild(forcedColorsNotice);
   }
 
   list.setSections(sections);

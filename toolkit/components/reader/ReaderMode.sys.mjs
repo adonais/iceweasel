@@ -248,6 +248,7 @@ export var ReaderMode = {
     }
 
     let article = await this._readerParse(doc);
+    article.textPlainDoc = result.textPlainDoc;
     // If we have to redirect, reject to the caller with the parsed article,
     // so we can update the URL before displaying it.
     if (newURL) {
@@ -328,6 +329,9 @@ export var ReaderMode = {
         );
 
         let result = { doc };
+        if (xhr.responseType != "document") {
+          result.textPlainDoc = true;
+        }
         if (responseURL != givenURL) {
           result.newURL = xhr.responseURL;
         }

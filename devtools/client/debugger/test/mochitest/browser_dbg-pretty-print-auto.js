@@ -31,12 +31,13 @@ add_task(async function testAutoPrettyPrintedOff() {
 });
 
 add_task(async function testAutoPrettyPrintedOn() {
-  // For now the preference is only read on debugger initialization, so close and re-open
-  // a debugger to see a change in behavior.
-  info("Enable auto pretty printing via the preference");
-  await pushPref("devtools.debugger.auto-pretty-print", true);
-
   let dbg = await initDebugger("doc-sourcemaps3.html", "bundle.js");
+
+  info("Enable automatic pretty printing");
+  await toggleDebuggerSettingsMenuItem(dbg, {
+    className: ".debugger-settings-menu-item-toggle-auto-pretty-print",
+    isChecked: false,
+  });
 
   // Expand the tree to make the source visible
   await waitForSourcesInSourceTree(dbg, ["bundle.js"], {

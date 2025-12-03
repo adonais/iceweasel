@@ -541,7 +541,11 @@ def test_inject_desktop_entry_file(monkeypatch):
 _MINIMAL_MANIFEST_JSON = """{
   "langpack_id": "%(lang)s",
   "manifest_version": 2,
-  "browser_specific_settings": {},
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "langpack-%(lang)s@%(remoting_name)s.mozilla.org"
+    }
+  },
   "name": "Language: %(lang)s",
   "description": "Firefox Language Pack for %(lang)s",
   "version": "136.0.20250326.231000",
@@ -561,27 +565,49 @@ def test_get_manifest_from_langpack():
 
         with zipfile.ZipFile(path, "w") as zip_file:
             zip_file.writestr(
-                "manifest.json", _MINIMAL_MANIFEST_JSON % {"lang": "dummy"}
+                "manifest.json",
+                _MINIMAL_MANIFEST_JSON % {"lang": "dummy", "remoting_name": "firefox"},
             )
         assert utils.get_manifest_from_langpack(path, d) == json.loads(
-            _MINIMAL_MANIFEST_JSON % {"lang": "dummy"}
+            _MINIMAL_MANIFEST_JSON % {"lang": "dummy", "remoting_name": "firefox"}
         )
 
 
 @pytest.mark.parametrize(
-    "languages, expected",
+    "languages, remoting_name, expected",
     (
-        ([], {}),
+        ([], "firefox", {}),
         (
             ["ach", "fr"],
+            "firefox",
             {
-                "ach": "Firefox Language Pack for ach",
-                "fr": "Firefox Language Pack for fr",
+                "ach": {
+                    "description": "Firefox Language Pack for ach",
+                    "extension_id": "langpack-ach@firefox.mozilla.org",
+                },
+                "fr": {
+                    "description": "Firefox Language Pack for fr",
+                    "extension_id": "langpack-fr@firefox.mozilla.org",
+                },
+            },
+        ),
+        (
+            ["de", "es"],
+            "devedition",
+            {
+                "de": {
+                    "description": "Firefox Language Pack for de",
+                    "extension_id": "langpack-de@devedition.mozilla.org",
+                },
+                "es": {
+                    "description": "Firefox Language Pack for es",
+                    "extension_id": "langpack-es@devedition.mozilla.org",
+                },
             },
         ),
     ),
 )
-def test_prepare_langpack_files(monkeypatch, languages, expected):
+def test_prepare_langpack_files(monkeypatch, languages, remoting_name, expected):
     def _mock_copy(source, destination):
         pass
 
@@ -592,7 +618,9 @@ def test_prepare_langpack_files(monkeypatch, languages, expected):
             path = os.path.join(xpi_dir, f"{language}.langpack.xpi")
             with zipfile.ZipFile(path, "w") as zip_file:
                 zip_file.writestr(
-                    "manifest.json", _MINIMAL_MANIFEST_JSON % {"lang": language}
+                    "manifest.json",
+                    _MINIMAL_MANIFEST_JSON
+                    % {"lang": language, "remoting_name": remoting_name},
                 )
 
         assert utils.prepare_langpack_files(output_dir, xpi_dir) == expected

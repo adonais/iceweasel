@@ -263,7 +263,7 @@ newtab-wallpaper-red = ఎరుపు
 newtab-wallpaper-dark-blue = ముదురు నీలం
 newtab-wallpaper-dark-green = ముదురాకుపచ్చ
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = ఛాయాచిత్రాలు
 newtab-wallpaper-beach-at-sunrise = ఉషాతీరం

@@ -28,6 +28,24 @@ static void GetTimeBase(mach_timebase_info_data_t* timebase) {
 
 namespace mozilla {
 
+nsresult GetCurrentProcessMemoryUsage(uint64_t* aResult) {
+  if (!aResult) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  task_vm_info_data_t info;
+  mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
+
+  kern_return_t kr = task_info(mach_task_self(), TASK_VM_INFO,
+                               reinterpret_cast<task_info_t>(&info), &count);
+
+  if (kr != KERN_SUCCESS) {
+    return NS_ERROR_FAILURE;
+  }
+  // phys_footprint matches Activity Monitor’s “Memory” column on macOS 10.11+
+  *aResult = info.phys_footprint;
+  return NS_OK;
+}
+
 nsresult GetCpuTimeSinceProcessStartInMs(uint64_t* aResult) {
   task_power_info_data_t task_power_info;
   mach_msg_type_number_t count = TASK_POWER_INFO_COUNT;

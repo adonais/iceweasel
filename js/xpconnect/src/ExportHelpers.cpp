@@ -14,7 +14,6 @@
 #include "js/Proxy.h"
 #include "js/Wrapper.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/dom/BlobImpl.h"
@@ -326,7 +325,7 @@ static void MaybeSanitizeException(JSContext* cx,
   ErrorResult rv;
   rv.ThrowInvalidStateError("An exception was thrown");
   // Can we provide a better context here?
-  Unused << rv.MaybeSetPendingException(cx);
+  (void)rv.MaybeSetPendingException(cx);
 }
 
 static bool FunctionForwarder(JSContext* cx, unsigned argc, Value* vp) {

@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.mozilla.gecko.GeckoEditableChild;
 import org.mozilla.gecko.IGeckoEditableChild;
 import org.mozilla.gecko.IGeckoEditableParent;
-import org.mozilla.gecko.InputMethods;
+import org.mozilla.gecko.MozLog;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
@@ -63,7 +63,10 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     implements InvocationHandler, Editable, SessionTextInput.EditableClient {
 
   private static final boolean DEBUG = false;
+  private static final boolean LOGGING = BuildConfig.NIGHTLY_BUILD;
   private static final String LOGTAG = "GeckoEditable";
+  private static final String MOZLOGTAG = "IMEHandler";
+
   private static final long DISMISS_VKB_DELAY_MS = 100;
 
   // Filters to implement Editable's filtering functionality
@@ -577,7 +580,11 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
   private void icOfferAction(final Action action) {
     if (DEBUG) {
       assertOnIcThread();
-      Log.d(LOGTAG, "offer: Action(" + getConstantName(Action.class, "TYPE_", action.mType) + ")");
+    }
+    if (LOGGING) {
+      final StringBuilder sb = new StringBuilder("offer: Action(");
+      sb.append(getConstantName(Action.class, "TYPE_", action.mType)).append(")");
+      MozLog.d(MOZLOGTAG, sb.toString());
     }
 
     switch (action.mType) {
@@ -952,10 +959,10 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       throws RemoteException {
     if (DEBUG) {
       assertOnIcThread();
+    }
+    if (LOGGING) {
       final StringBuilder sb = new StringBuilder("icSendComposition(");
-      sb.append("\"")
-          .append(text)
-          .append("\"")
+      debugAppend(sb, text)
           .append(", range = ")
           .append(composingStart)
           .append("-")
@@ -965,7 +972,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
           .append("-")
           .append(selEnd)
           .append(")");
-      Log.d(LOGTAG, sb.toString());
+      MozLog.d(MOZLOGTAG, sb.toString());
     }
 
     if (selEnd >= composingStart && selEnd <= composingEnd) {
@@ -1002,8 +1009,14 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       }
       final CharacterStyle[] styleSpans = text.getSpans(rangeStart, rangeEnd, CharacterStyle.class);
 
-      if (DEBUG) {
-        Log.d(LOGTAG, " found " + styleSpans.length + " spans @ " + rangeStart + "-" + rangeEnd);
+      if (LOGGING) {
+        final StringBuilder sb = new StringBuilder(" found ");
+        sb.append(styleSpans.length)
+            .append(" spans @ ")
+            .append(rangeStart)
+            .append("-")
+            .append(rangeEnd);
+        MozLog.d(MOZLOGTAG, sb.toString());
       }
 
       if (styleSpans.length == 0) {
@@ -1063,17 +1076,16 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
           rangeLineColor);
       rangeStart = rangeEnd;
 
-      if (DEBUG) {
-        Log.d(
-            LOGTAG,
-            " added "
-                + rangeType
-                + " : "
-                + Integer.toHexString(rangeStyles)
-                + " : "
-                + Integer.toHexString(rangeForeColor)
-                + " : "
-                + Integer.toHexString(rangeBackColor));
+      if (LOGGING) {
+        final StringBuilder sb = new StringBuilder(" added ");
+        sb.append(rangeType)
+            .append(" : ")
+            .append(Integer.toHexString(rangeStyles))
+            .append(" : ")
+            .append(Integer.toHexString(rangeForeColor))
+            .append(" : ")
+            .append(Integer.toHexString(rangeBackColor));
+        MozLog.d(MOZLOGTAG, sb.toString());
       }
     } while (rangeStart < composingEnd);
   }
@@ -1119,7 +1131,11 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
   private void sendKeyEvent(final @NonNull KeyEvent event, final int action, final int metaState) {
     if (DEBUG) {
       assertOnIcThread();
-      Log.d(LOGTAG, "sendKeyEvent(" + event + ", " + action + ", " + metaState + ")");
+    }
+    if (LOGGING) {
+      final StringBuilder sb = new StringBuilder("sendKeyEvent(");
+      sb.append(event).append(", ").append(action).append(", ").append(metaState).append(")");
+      MozLog.d(MOZLOGTAG, sb.toString());
     }
     /*
        We are actually sending two events to Gecko here,
@@ -1442,8 +1458,10 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       Log.w(LOGTAG, "Mismatched reply");
       return;
     }
-    if (DEBUG) {
-      Log.d(LOGTAG, "reply: Action(" + getConstantName(Action.class, "TYPE_", action.mType) + ")");
+    if (LOGGING) {
+      final StringBuilder sb = new StringBuilder("reply: Action(");
+      sb.append(getConstantName(Action.class, "TYPE_", action.mType)).append(")");
+      MozLog.d(MOZLOGTAG, sb.toString());
     }
     switch (action.mType) {
       case Action.TYPE_REPLACE_TEXT:
@@ -1965,10 +1983,10 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     }
 
     if ((flags & SessionTextInput.EditableListener.IME_FLAG_PRIVATE_BROWSING) != 0) {
-      outAttrs.imeOptions |= InputMethods.IME_FLAG_NO_PERSONALIZED_LEARNING;
+      outAttrs.imeOptions |= EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING;
     }
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1 && typeHint.length() == 0) {
+    if (typeHint.length() == 0) {
       // contenteditable allows image insertion.
       outAttrs.contentMimeTypes = new String[] {"image/gif", "image/jpeg", "image/png"};
     }
@@ -2078,7 +2096,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
   public void onSelectionChange(
       final IBinder token, final int start, final int end, final boolean causedOnlyByComposition) {
     // On Gecko or binder thread.
-    if (DEBUG) {
+    if (LOGGING) {
       final StringBuilder sb = new StringBuilder("onSelectionChange(");
       sb.append(start)
           .append(", ")
@@ -2086,7 +2104,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
           .append(", ")
           .append(causedOnlyByComposition)
           .append(")");
-      Log.d(LOGTAG, sb.toString());
+      MozLog.d(MOZLOGTAG, sb.toString());
     }
 
     if (!binderCheckToken(token, /* allowNull */ false)) {
@@ -2142,7 +2160,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       final int unboundedOldEnd,
       final boolean causedOnlyByComposition) {
     // On Gecko or binder thread.
-    if (DEBUG) {
+    if (LOGGING) {
       final StringBuilder sb = new StringBuilder("onTextChange(");
       debugAppend(sb, text)
           .append(", ")
@@ -2150,7 +2168,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
           .append(", ")
           .append(unboundedOldEnd)
           .append(")");
-      Log.d(LOGTAG, sb.toString());
+      MozLog.d(MOZLOGTAG, sb.toString());
     }
 
     if (!binderCheckToken(token, /* allowNull */ false)) {

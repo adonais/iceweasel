@@ -46,6 +46,7 @@ skip-if = [
 ["browser_address_doorhanger_postalcode.js"]
 
 ["browser_address_doorhanger_required_fields.js"]
+skip-if = ["verify-standalone"]
 
 ["browser_address_doorhanger_state.js"]
 

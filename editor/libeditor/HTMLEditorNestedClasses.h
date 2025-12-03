@@ -2076,7 +2076,7 @@ class HTMLEditor::DocumentModifiedEvent final : public Runnable {
       : Runnable("DocumentModifiedEvent"), mHTMLEditor(aHTMLEditor) {}
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() {
-    Unused << MOZ_KnownLive(mHTMLEditor)->OnModifyDocument(*this);
+    (void)MOZ_KnownLive(mHTMLEditor)->OnModifyDocument(*this);
     return NS_OK;
   }
 

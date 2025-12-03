@@ -33,6 +33,12 @@ Http2Stream::Http2Stream(nsAHttpTransaction* httpTransaction,
 Http2Stream::~Http2Stream() {}
 
 void Http2Stream::CloseStream(nsresult reason) {
+  if (reason == NS_ERROR_NET_RESET) {
+    // If we got NS_ERROR_NET_RESET, the transaction will be retried. Keep the
+    // Alt-Svc in the connection info. Dropping it could trigger an
+    // unintended proxy connection fallback.
+    mTransaction->DoNotRemoveAltSvc();
+  }
   mTransaction->Close(reason);
   mSession = nullptr;
   mClosed = true;

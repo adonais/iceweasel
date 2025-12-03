@@ -78,8 +78,10 @@ export class ContentSection extends React.PureComponent {
     }
 
     if (drawerRef) {
+      // Use measured height if valid, otherwise use a large fallback
+      // since overflow:hidden on the parent safely hides the drawer
       let drawerHeight =
-        parseFloat(window.getComputedStyle(drawerRef)?.height) || 0;
+        parseFloat(window.getComputedStyle(drawerRef)?.height) || 100;
 
       if (isOpen) {
         drawerRef.style.marginTop = "var(--space-small)";
@@ -106,6 +108,7 @@ export class ContentSection extends React.PureComponent {
       setPref,
       mayHaveTopicSections,
       exitEventFired,
+      onSubpanelToggle,
     } = this.props;
     const {
       topSitesEnabled,
@@ -126,6 +129,7 @@ export class ContentSection extends React.PureComponent {
                 setPref={setPref}
                 activeWallpaper={activeWallpaper}
                 exitEventFired={exitEventFired}
+                onSubpanelToggle={onSubpanelToggle}
               />
             </div>
             {/* If widgets section is visible, hide this divider */}
@@ -325,7 +329,11 @@ export class ContentSection extends React.PureComponent {
                           </div>
                         )}
                         {mayHaveTopicSections && (
-                          <SectionsMgmtPanel exitEventFired={exitEventFired} />
+                          <SectionsMgmtPanel
+                            exitEventFired={exitEventFired}
+                            pocketEnabled={pocketEnabled}
+                            onSubpanelToggle={onSubpanelToggle}
+                          />
                         )}
                       </div>
                     </div>

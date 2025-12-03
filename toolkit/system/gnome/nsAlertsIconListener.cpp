@@ -17,7 +17,6 @@
 #include "mozilla/XREAppData.h"
 #include "mozilla/GRefPtr.h"
 #include "mozilla/GUniquePtr.h"
-#include "mozilla/UniquePtrExtensions.h"
 
 #include <dlfcn.h>
 #include <gdk/gdk.h>
@@ -115,7 +114,11 @@ nsAlertsIconListener::nsAlertsIconListener(
       mBackend(aBackend),
       mAlertNotification(aAlertNotification) {
   if (!libNotifyHandle && !libNotifyNotAvail) {
+#ifdef __OpenBSD__
+    libNotifyHandle = dlopen("libnotify.so", RTLD_LAZY);
+#else
     libNotifyHandle = dlopen("libnotify.so.4", RTLD_LAZY);
+#endif
     if (!libNotifyHandle) {
       libNotifyHandle = dlopen("libnotify.so.1", RTLD_LAZY);
       if (!libNotifyHandle) {

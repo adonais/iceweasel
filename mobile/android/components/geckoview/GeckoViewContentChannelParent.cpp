@@ -57,7 +57,7 @@ GeckoViewContentChannelParent::Delete() {
   if (!CanSend()) {
     return NS_ERROR_UNEXPECTED;
   }
-  Unused << SendDeleteSelf();
+  (void)SendDeleteSelf();
   return NS_OK;
 }
 
@@ -93,8 +93,8 @@ GeckoViewContentChannelParent::OnStartRequest(nsIRequest* aRequest) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  Unused << SendOnStartRequest(channelStatus, contentType, entityID,
-                               WrapNotNull(uri));
+  (void)SendOnStartRequest(channelStatus, contentType, entityID,
+                           WrapNotNull(uri));
 
   return NS_OK;
 }
@@ -125,7 +125,7 @@ GeckoViewContentChannelParent::OnDataAvailable(nsIRequest* aRequest,
   nsresult channelStatus = NS_OK;
   mChannel->GetStatus(&channelStatus);
 
-  Unused << SendOnDataAvailable(channelStatus, data, aOffset, aCount);
+  (void)SendOnDataAvailable(channelStatus, data, aOffset, aCount);
 
   return NS_OK;
 }
@@ -155,7 +155,7 @@ bool GeckoViewContentChannelParent::Init(
 
   auto scopeExit = MakeScopeExit([&rv, this] {
     if (NS_FAILED(rv)) {
-      Unused << SendOnAsyncOpenFailed(rv);
+      (void)SendOnAsyncOpenFailed(rv);
     }
   });
 

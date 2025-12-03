@@ -9,7 +9,6 @@
 #include <cstdlib>
 
 #include "mozilla/Assertions.h"
-#include "mozilla/UniquePtr.h"
 #include "nsError.h"
 #include "sdp/RsdparsaSdpInc.h"
 #include "sdp/RsdparsaSdpMediaSection.h"

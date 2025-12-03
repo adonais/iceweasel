@@ -115,20 +115,20 @@ import { FileUtils } from "resource://gre/modules/FileUtils.sys.mjs";
 
 export class nsUnknownContentTypeDialog {
   // Todo (bug 1986787): these should be private, but some are used from tests.
-  /* @type {?nsIHelperAppLauncher} */
+  /** @type {?nsIHelperAppLauncher} */
   mLauncher = null;
-  /* @type {?nsIInterfaceRequestor} */
+  /** @type {?nsIInterfaceRequestor} */
   mContext = null;
   // This should be one of the 3 reason constants on nsIHelperAppDialog.
   // Right now our automated XPIDL ts generation does not generate the
   // correct enum for this. Bug 1986020 covers fixing this.
-  /* @type {number} */
+  /** @type {number} */
   mReason = null;
 
-  /* @type {?nsIDOMWindow} */
+  /** @type {?nsIDOMWindow} */
   mDialog = null;
 
-  /* @type {nsILocalHandlerApp | nsIGIOHandlerApp | null } */
+  /** @type {nsILocalHandlerApp | nsIGIOHandlerApp | null } */
   chosenApp = null;
   givenDefaultApp = false;
   updateSelf = true;

@@ -319,7 +319,7 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
           "RemoteVideoDecoder::SetSeekThreshold", std::move(setter));
       nsresult rv = mThread->Dispatch(runnable.forget());
       MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-      Unused << rv;
+      (void)rv;
     }
   }
 
@@ -348,6 +348,25 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
     return ConversionRequired::kNeedAnnexB;
   }
 
+  Maybe<MediaDataDecoder::PropertyValue> GetDecodeProperty(
+      MediaDataDecoder::PropertyName aName) const override {
+    // Android has limited amount of output buffers. See Bug 794747.
+    static constexpr uint32_t kNumOutputBuffers = 3;
+    // SurfaceTexture can have only one current/renderable image at a time.
+    // See Bug 1299068
+    static constexpr uint32_t kNumCurrentImages = 1;
+    switch (aName) {
+      case PropertyName::MaxNumVideoBuffers:
+        [[fallthrough]];
+      case PropertyName::MinNumVideoBuffers:
+        return Some(PropertyValue(kNumOutputBuffers));
+      case PropertyName::MaxNumCurrentImages:
+        return Some(PropertyValue(kNumCurrentImages));
+      default:
+        return MediaDataDecoder::GetDecodeProperty(aName);
+    }
+  }
+
  private:
   // Param and LocalRef are only valid for the duration of a JNI method call.
   // Use GlobalRef as the parameter type to keep the Java object referenced
@@ -359,7 +378,7 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
               "RemoteVideoDecoder::ProcessOutput", this,
               &RemoteVideoDecoder::ProcessOutput, std::move(aSample)));
       MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-      Unused << rv;
+      (void)rv;
       return;
     }
 
@@ -569,7 +588,7 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
               &RemoteVideoDecoder::ProcessOutputFormatChange, aColorFormat,
               aColorRange, aColorSpace));
       MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-      Unused << rv;
+      (void)rv;
       return;
     }
 
@@ -764,7 +783,7 @@ class RemoteAudioDecoder final : public RemoteDataDecoder {
               &RemoteAudioDecoder::ProcessOutput, std::move(aSample),
               std::move(aBuffer)));
       MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-      Unused << rv;
+      (void)rv;
       return;
     }
 
@@ -847,7 +866,7 @@ class RemoteAudioDecoder final : public RemoteDataDecoder {
           &RemoteAudioDecoder::ProcessOutputFormatChange, aChannels,
           aSampleRate));
       MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-      Unused << rv;
+      (void)rv;
       return;
     }
 
@@ -977,13 +996,6 @@ static CryptoInfoResult GetCryptoInfoFromSample(const MediaRawData* aSample) {
     return CryptoInfoResult(cryptoInfo);
   }
 
-  static bool supportsCBCS = java::CodecProxy::SupportsCBCS();
-  if ((cryptoObj.mCryptoScheme == CryptoScheme::Cbcs ||
-       cryptoObj.mCryptoScheme == CryptoScheme::Cbcs_1_9) &&
-      !supportsCBCS) {
-    return CryptoInfoResult(NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR);
-  }
-
   nsresult rv = java::sdk::MediaCodec::CryptoInfo::New(&cryptoInfo);
   NS_ENSURE_SUCCESS(rv, CryptoInfoResult(rv));
 
@@ -1105,7 +1117,7 @@ void RemoteDataDecoder::UpdateInputStatus(int64_t aTimestamp, bool aProcessed) {
         "RemoteDataDecoder::UpdateInputStatus", this,
         &RemoteDataDecoder::UpdateInputStatus, aTimestamp, aProcessed));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
+    (void)rv;
     return;
   }
   AssertOnThread();
@@ -1176,7 +1188,7 @@ void RemoteDataDecoder::DrainComplete() {
         NewRunnableMethod("RemoteDataDecoder::DrainComplete", this,
                           &RemoteDataDecoder::DrainComplete));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
+    (void)rv;
     return;
   }
   LOG("EOS");
@@ -1193,7 +1205,7 @@ void RemoteDataDecoder::Error(const MediaResult& aError) {
     nsresult rv = mThread->Dispatch(NewRunnableMethod<MediaResult>(
         "RemoteDataDecoder::Error", this, &RemoteDataDecoder::Error, aError));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
+    (void)rv;
     return;
   }
   AssertOnThread();

@@ -2304,7 +2304,7 @@ TEST(GeckoProfiler, Markers)
                   MarkerStack::TakeBacktrace(std::move(bt)), Tracing, "B");
 
   {
-    AUTO_PROFILER_TRACING_MARKER("C", "auto tracing", OTHER);
+    AUTO_PROFILER_MARKER("auto tracing", OTHER);
   }
 
   {
@@ -2487,7 +2487,7 @@ TEST(GeckoProfiler, Markers)
   };
 
   // Make sure the compiler doesn't complain about this unused struct.
-  mozilla::Unused << GtestUnusedMarker{};
+  (void)GtestUnusedMarker{};
 
   // Test PROFILER_MARKER_SIMPLE_PAYLOAD with various data types.
   int testInt = 42;
@@ -3044,14 +3044,12 @@ TEST(GeckoProfiler, Markers)
                       state = State(S_tracing_auto_tracing_start + 1);
                       EXPECT_EQ(typeString, "StackMarker");
                       EXPECT_TIMING_START;
-                      EXPECT_EQ_JSON(payload["category"], String, "C");
                       EXPECT_TRUE(payload["stack"].isNull());
                       break;
                     case S_tracing_auto_tracing_end:
                       state = State(S_tracing_auto_tracing_end + 1);
                       EXPECT_EQ(typeString, "StackMarker");
                       EXPECT_TIMING_END;
-                      EXPECT_EQ_JSON(payload["category"], String, "C");
                       ASSERT_TRUE(payload["stack"].isNull());
                       break;
                     default:

@@ -17,6 +17,7 @@
 #include "mozilla/a11y/Platform.h"
 #include "mozilla/FocusModel.h"
 #include "nsAccUtils.h"
+#include "nsMenuPopupFrame.h"
 #include "nsAccessibilityService.h"
 #include "ApplicationAccessible.h"
 #include "nsGenericHTMLElement.h"
@@ -316,13 +317,14 @@ uint64_t LocalAccessible::VisibilityState() const {
   // scrolled out.
   nsIFrame* curFrame = frame;
   do {
-    nsView* view = curFrame->GetView();
-    if (view && view->GetVisibility() == ViewVisibility::Hide) {
-      return states::INVISIBLE;
+    if (nsView* view = curFrame->GetView()) {
+      if (view->GetVisibility() == ViewVisibility::Hide) {
+        return states::INVISIBLE;
+      }
     }
 
-    if (nsLayoutUtils::IsPopup(curFrame)) {
-      return 0;
+    if (nsMenuPopupFrame* popup = do_QueryFrame(curFrame)) {
+      return popup->IsOpen() ? 0 : states::INVISIBLE;
     }
 
     if (curFrame->StyleUIReset()->mMozSubtreeHiddenOnlyVisually) {
@@ -495,7 +497,7 @@ LocalAccessible* LocalAccessible::LocalChildAtPoint(
   nsIFrame* startFrame = rootFrame;
 
   // Check whether the point is at popup content.
-  nsIWidget* rootWidget = rootFrame->GetView()->GetNearestWidget(nullptr);
+  nsIWidget* rootWidget = rootFrame->GetNearestWidget();
   NS_ENSURE_TRUE(rootWidget, nullptr);
 
   LayoutDeviceIntRect rootRect = rootWidget->GetScreenBounds();
@@ -1147,6 +1149,10 @@ already_AddRefed<AccAttributes> LocalAccessible::Attributes() {
     attribIter.ExposeAttr(attributes);
   }
 
+  if (nsAccUtils::HasARIAAttr(Elm(), nsGkAtoms::aria_actions)) {
+    attributes->SetAttribute(nsGkAtoms::hasActions, true);
+  }
+
   // If there is no aria-live attribute then expose default value of 'live'
   // object attribute used for ARIA role of this accessible.
   const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
@@ -1161,6 +1167,22 @@ already_AddRefed<AccAttributes> LocalAccessible::Attributes() {
         attributes->SetAttribute(nsGkAtoms::aria_live, std::move(live));
       }
     }
+  }
+
+  nsString detailsFrom;
+  AssociatedElementsIterator iter(mDoc, Elm(), nsGkAtoms::aria_details);
+  if (iter.Next()) {
+    detailsFrom.AssignLiteral("aria-details");
+  } else if (GetCommandForDetailsRelation()) {
+    detailsFrom.AssignLiteral("command-for");
+  } else if (GetPopoverTargetDetailsRelation()) {
+    detailsFrom.AssignLiteral("popover-target");
+  } else if (GetAnchorPositionTargetDetailsRelation()) {
+    detailsFrom.AssignLiteral("css-anchor");
+  }
+
+  if (!detailsFrom.IsEmpty()) {
+    attributes->SetAttribute(nsGkAtoms::details_from, std::move(detailsFrom));
   }
 
   return attributes.forget();
@@ -1404,6 +1426,14 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
     }
   }
 
+  if (aAttribute == nsGkAtoms::aria_actions && IsAdditionOrRemoval(aModType)) {
+    // We only care about the presence of aria-actions, not its value.
+    mDoc->QueueCacheUpdate(this, CacheDomain::ARIA);
+    RefPtr<AccEvent> event =
+        new AccObjectAttrChangedEvent(this, nsGkAtoms::hasActions);
+    mDoc->FireDelayedEvent(event);
+  }
+
   dom::Element* elm = Elm();
 
   if (HasNumericValue() &&
@@ -1514,7 +1544,8 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
 
   if (aAttribute == nsGkAtoms::aria_controls ||
       aAttribute == nsGkAtoms::aria_flowto ||
-      aAttribute == nsGkAtoms::aria_errormessage) {
+      aAttribute == nsGkAtoms::aria_errormessage ||
+      aAttribute == nsGkAtoms::aria_actions) {
     mDoc->QueueCacheUpdate(this, CacheDomain::Relations);
   }
 
@@ -1703,6 +1734,12 @@ void LocalAccessible::ApplyARIAState(uint64_t* aState) const {
     aria::MapToState(aria::eARIAPressed, element, aState);
   }
 
+  if (!IsTextField() && IsEditableRoot()) {
+    // HTML text fields will have their own multi/single line calcuation in
+    // NativeState.
+    aria::MapToState(aria::eARIAMultilineByDefault, element, aState);
+  }
+
   if (!roleMapEntry) return;
 
   *aState |= roleMapEntry->state;
@@ -1752,18 +1789,16 @@ void LocalAccessible::Value(nsString& aValue) const {
   }
 
   const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
-  if (!roleMapEntry) {
-    return;
-  }
 
   // Value of textbox is a textified subtree.
-  if (roleMapEntry->Is(nsGkAtoms::textbox)) {
+  if ((roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) ||
+      (IsGeneric() && IsEditableRoot())) {
     nsTextEquivUtils::GetTextEquivFromSubtree(this, aValue);
     return;
   }
 
   // Value of combobox is a text of current or selected item.
-  if (roleMapEntry->Is(nsGkAtoms::combobox)) {
+  if (roleMapEntry && roleMapEntry->Is(nsGkAtoms::combobox)) {
     LocalAccessible* option = CurrentItem();
     if (!option) {
       uint32_t childCount = ChildCount();
@@ -2408,11 +2443,13 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
       // Check early if the accessible is a tooltip. If so, it can never be a
       // valid target for an anchor's details relation.
       if (Role() != roles::TOOLTIP) {
-        if (nsIFrame* anchorFrame = nsCoreUtils::GetAnchorForPositionedFrame(
-                mDoc->PresShellPtr(), GetFrame())) {
+        if (const nsIFrame* anchorFrame =
+                nsCoreUtils::GetAnchorForPositionedFrame(mDoc->PresShellPtr(),
+                                                         GetFrame())) {
           LocalAccessible* anchorAcc =
               mDoc->GetAccessible(anchorFrame->GetContent());
-          if (anchorAcc->GetAnchorPositionTargetDetailsRelation() == this &&
+          if (anchorAcc &&
+              anchorAcc->GetAnchorPositionTargetDetailsRelation() == this &&
               nsAccUtils::IsValidDetailsTargetForAnchor(this, anchorAcc)) {
             rel.AppendTarget(anchorAcc);
           }
@@ -2429,6 +2466,14 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
     case RelationType::ERRORMSG_FOR:
       return Relation(
           new RelatedAccIterator(mDoc, mContent, nsGkAtoms::aria_errormessage));
+
+    case RelationType::ACTION:
+      return Relation(new AssociatedElementsIterator(mDoc, mContent,
+                                                     nsGkAtoms::aria_actions));
+
+    case RelationType::ACTION_FOR:
+      return Relation(
+          new RelatedAccIterator(mDoc, mContent, nsGkAtoms::aria_actions));
 
     default:
       return Relation();
@@ -2520,6 +2565,11 @@ bool LocalAccessible::IsScrollable() const {
 bool LocalAccessible::IsPopover() const {
   dom::Element* el = Elm();
   return el && el->IsHTMLElement() && el->HasAttr(nsGkAtoms::popover);
+}
+
+bool LocalAccessible::IsEditable() const {
+  dom::Element* el = Elm();
+  return el && el->State().HasState(dom::ElementState::READWRITE);
 }
 
 void LocalAccessible::AppendTextTo(nsAString& aText, uint32_t aStartOffset,
@@ -4014,6 +4064,12 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       fields->SetAttribute(CacheKey::ARIAAttributes, std::move(ariaAttrs));
     } else if (IsUpdatePush(CacheDomain::ARIA)) {
       fields->SetAttribute(CacheKey::ARIAAttributes, DeleteEntry());
+    }
+
+    if (nsAccUtils::HasARIAAttr(Elm(), nsGkAtoms::aria_actions)) {
+      fields->SetAttribute(CacheKey::HasActions, true);
+    } else if (IsUpdatePush(CacheDomain::ARIA)) {
+      fields->SetAttribute(CacheKey::HasActions, DeleteEntry());
     }
   }
 

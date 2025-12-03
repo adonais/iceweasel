@@ -7,6 +7,7 @@ package mozilla.components.feature.app.links
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import androidx.core.net.toUri
 import androidx.fragment.app.FragmentManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.browser.state.action.ContentAction
@@ -382,7 +383,7 @@ class AppLinksFeatureTest {
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
 
-        doReturn(mockDialog).`when`(feature).getOrCreateDialog(false, "", null)
+        doReturn(mockDialog).`when`(feature).getOrCreateDialog(false, false, "", null)
         doReturn(mockDialog).`when`(mockFragmentManager).findFragmentByTag(RedirectDialogFragment.FRAGMENT_TAG)
         feature.handleAppIntent(tab, intentUrl, mock(), null, null)
         verify(mockDialog, times(1)).showNow(mockFragmentManager, RedirectDialogFragment.FRAGMENT_TAG)
@@ -414,5 +415,92 @@ class AppLinksFeatureTest {
 
         feature.cancelRedirect(tab, intentUrl, aboutUrl, intent)
         verify(mockLoadUrlUseCase, times(3)).invoke(anyString(), anyString(), any(), any(), any())
+    }
+
+    @Test
+    fun `WHEN url scheme is a wallet scheme THEN wallet prompt is shown even if shouldPrompt is false`() {
+        feature = spy(
+            AppLinksFeature(
+                context = mockContext,
+                store = store,
+                fragmentManager = mockFragmentManager,
+                useCases = mockUseCases,
+                dialog = mockDialog,
+                loadUrlUseCase = mockLoadUrlUseCase,
+                shouldPrompt = { false },
+            ),
+        ).also {
+            it.start()
+        }
+
+        val walletUrl = "openid4vp://credential-offer"
+        val tab = createTab("https://example.com", private = false)
+
+        val appIntent: Intent = mock()
+
+        feature.handleAppIntent(tab, walletUrl, appIntent, null, null)
+
+        verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
+        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), any())
+    }
+
+    @Test
+    fun `WHEN intent data scheme is a wallet scheme THEN wallet prompt is shown even if shouldPrompt is false`() {
+        feature = spy(
+            AppLinksFeature(
+                context = mockContext,
+                store = store,
+                fragmentManager = mockFragmentManager,
+                useCases = mockUseCases,
+                dialog = mockDialog,
+                loadUrlUseCase = mockLoadUrlUseCase,
+                shouldPrompt = { false },
+            ),
+        ).also {
+            it.start()
+        }
+
+        val nonWalletUrl = "https://example.com"
+        val tab = createTab(nonWalletUrl, private = false)
+
+        val appIntent = Intent(Intent.ACTION_VIEW).apply {
+            data = "mdoc-openid4vp://present".toUri()
+        }
+
+        feature.handleAppIntent(tab, nonWalletUrl, appIntent, null, null)
+
+        verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
+        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), any())
+    }
+
+    @Test
+    fun `isWalletLink returns true only for wallet schemes`() {
+        val feature = AppLinksFeature(
+            context = mockContext,
+            store = store,
+            fragmentManager = mockFragmentManager,
+            useCases = mockUseCases,
+            loadUrlUseCase = mockLoadUrlUseCase,
+        )
+
+        val walletUrl = "openid4vp://credential-offer"
+        var appIntent = Intent(Intent.ACTION_VIEW)
+        assertTrue(feature.isWalletLink(walletUrl, appIntent))
+
+        val nonWalletUrl = "https://example.com"
+        appIntent = Intent(Intent.ACTION_VIEW).apply {
+            data = "mdoc-openid4vp://something".toUri()
+        }
+        assertTrue(feature.isWalletLink(nonWalletUrl, appIntent))
+
+        appIntent = Intent(Intent.ACTION_VIEW).apply {
+            data = "https://mozilla.org".toUri()
+        }
+        assertFalse(feature.isWalletLink("https://example.com", appIntent))
+
+        appIntent = Intent(Intent.ACTION_VIEW).apply {
+            data = "eudi-wallet://open".toUri()
+        }
+        assertTrue(feature.isWalletLink("openid-credential-offer://init", appIntent))
     }
 }

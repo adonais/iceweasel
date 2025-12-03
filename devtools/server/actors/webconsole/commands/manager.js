@@ -890,7 +890,7 @@ WebConsoleCommandsManager.register({
   validArguments: ["url"],
 });
 
-/*
+/**
  * Unblock a blocked a resource
  *
  * @param object filter
@@ -920,7 +920,7 @@ WebConsoleCommandsManager.register({
   validArguments: ["url"],
 });
 
-/*
+/**
  * Toggle JavaScript tracing
  *
  * @param object args

@@ -53,7 +53,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsTextControlFrame.h"
 #include "nsTextNode.h"
-#include "nsView.h"
 
 namespace mozilla {
 

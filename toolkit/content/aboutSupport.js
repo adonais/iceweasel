@@ -713,7 +713,6 @@ var snapshotFormatters = {
       "webgl2DriverExtensions",
       "webgl2Extensions",
       ["supportsHardwareH264", "hardware-h264"],
-      ["direct2DEnabled", "#Direct2D"],
       ["windowProtocol", "graphics-window-protocol"],
       ["desktopEnvironment", "graphics-desktop-environment"],
       "targetFrameRate",

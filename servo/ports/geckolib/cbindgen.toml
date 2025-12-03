@@ -84,6 +84,14 @@ exclude = [
   "NS_LogDtor",
   "SelectorList",
   "AuthorStyles",
+  "LockedStyleRule",
+  "LockedImportRule",
+  "LockedFontFaceRule",
+  "LockedCounterStyleRule",
+  "LockedKeyframesRule",
+  "LockedPageRule",
+  "LockedPositionTryRule",
+  "LockedNestedDeclarationsRule",
 ]
 include = [
   "AnchorName",
@@ -126,6 +134,8 @@ include = [
   "Platform",
   "PositionAnchor",
   "PositionArea",
+  "PositionAreaAxis",
+  "PositionAreaTrack",
   "PositionAreaKeyword",
   "PositionTryFallbacks",
   "PositionTryOrder",
@@ -184,7 +194,7 @@ include = [
   "NonNegativeLengthOrAuto",
   "TextDecorationSkipInk",
   "TextDecorationLength",
-  "TextDecorationTrim",
+  "TextDecorationInset",
   "Time",
   "Rect",
   "InitialLetter",
@@ -203,6 +213,7 @@ include = [
   "BorderRadius",
   "ColorScheme",
   "ColumnCount",
+  "CssRuleRef",
   "NonNegativeLengthOrNumberRect",
   "Perspective",
   "ZIndex",
@@ -284,9 +295,9 @@ include = [
   "WritingModeProperty",
   "Content",
   "ContentItem",
-  "AlignSelf",
-  "JustifySelf",
-  "AlignItems",
+  "ContentDistribution",
+  "SelfAlignment",
+  "ItemPlacement",
   "ComputedJustifyItems",
   "AlignContent",
   "JustifyContent",
@@ -546,6 +557,10 @@ renaming_overrides_prefixing = true
   inline bool HasPercent() const;
   inline bool DependsOnPositioningAreaSize() const;
   static inline StyleGenericPosition FromPercentage(float);
+  inline gfx::Point ToGfxPoint(const CSSSize* aBasis = nullptr) const;
+  gfx::Point ToGfxPoint(const CSSSize& aBasis) const {
+    return ToGfxPoint(&aBasis);
+  };
 """
 
 "GenericBackgroundSize" = """
@@ -843,6 +858,24 @@ renaming_overrides_prefixing = true
   gfx::Point ToGfxPoint(const CSSSize& aBasis) const {
     return ToGfxPoint(&aBasis);
   };
+"""
+
+"CommandEndPoint" = """
+  inline gfx::Point ToGfxPoint(const CSSSize* aBasis = nullptr) const;
+  gfx::Point ToGfxPoint(const CSSSize& aBasis) const {
+    return ToGfxPoint(&aBasis);
+  };
+"""
+
+"ControlPoint" = """
+  inline gfx::Point ToGfxPoint(
+    const gfx::Point aStatePos, const gfx::Point aEndPoint,
+    const bool isRelativeEndPoint, const CSSSize* aBasis = nullptr) const;
+  gfx::Point ToGfxPoint(
+    const gfx::Point aStatePos, const gfx::Point aEndPoint,
+    const bool isRelativeEndPoint, const CSSSize& aBasis) const {
+    return ToGfxPoint(aStatePos, aEndPoint, isRelativeEndPoint, &aBasis);
+  }
 """
 
 "TextOverflow" = """
@@ -1201,4 +1234,8 @@ renaming_overrides_prefixing = true
 
 "PositionArea" = """
   inline bool IsNone() const;
+  constexpr StylePositionArea()
+    : first(StylePositionAreaKeyword::None),
+      second(StylePositionAreaKeyword::None)
+  {}
 """

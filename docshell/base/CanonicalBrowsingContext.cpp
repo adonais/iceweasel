@@ -41,8 +41,10 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_docshell.h"
 #include "mozilla/StaticPrefs_fission.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/glean/DomMetrics.h"
 #include "nsILayoutHistoryState.h"
+#include "nsIParentalControlsService.h"
 #include "nsIPrintSettings.h"
 #include "nsIPrintSettingsService.h"
 #include "nsISupports.h"
@@ -159,7 +161,7 @@ CanonicalBrowsingContext::~CanonicalBrowsingContext() {
     mSessionHistory->SetBrowsingContext(nullptr);
   }
 
-  mActiveEntryList.clear();
+  mActiveEntryList = nullptr;
 }
 
 /* static */
@@ -261,6 +263,7 @@ void CanonicalBrowsingContext::ReplacedBy(
   Transaction txn;
   txn.SetBrowserId(GetBrowserId());
   txn.SetIsAppTab(GetIsAppTab());
+  txn.SetIsCaptivePortalTab(GetIsCaptivePortalTab());
   txn.SetHasSiblings(GetHasSiblings());
   txn.SetTopLevelCreatedByWebContent(GetTopLevelCreatedByWebContent());
   txn.SetHistoryID(GetHistoryID());
@@ -271,6 +274,7 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetForceOffline(GetForceOffline());
   txn.SetTopInnerSizeForRFP(GetTopInnerSizeForRFP());
   txn.SetIPAddressSpace(GetIPAddressSpace());
+  txn.SetParentalControlsEnabled(GetParentalControlsEnabled());
 
   if (!GetLanguageOverride().IsEmpty()) {
     // Reapply language override to update the corresponding realm.
@@ -319,7 +323,10 @@ void CanonicalBrowsingContext::ReplacedBy(
   }
 
   aNewContext->mRestoreState = mRestoreState.forget();
-  MOZ_ALWAYS_SUCCEEDS(SetHasRestoreData(false));
+  Transaction selfTxn;
+  selfTxn.SetHasRestoreData(false);
+  selfTxn.SetExplicitActive(ExplicitActiveStatus::Inactive);
+  MOZ_ALWAYS_SUCCEEDS(selfTxn.Commit(this));
 
   // XXXBFCache name handling is still a bit broken in Fission in general,
   // at least in case name should be cleared.
@@ -355,8 +362,8 @@ void CanonicalBrowsingContext::ReplacedBy(
   MOZ_ASSERT(!aNewContext->mActiveEntry);
   mActiveEntry.swap(aNewContext->mActiveEntry);
   if (Navigation::IsAPIEnabled()) {
-    MOZ_ASSERT(aNewContext->mActiveEntryList.isEmpty());
-    aNewContext->mActiveEntryList.extendBack(std::move(mActiveEntryList));
+    MOZ_ASSERT(!aNewContext->mActiveEntryList);
+    aNewContext->mActiveEntryList = std::move(mActiveEntryList);
   }
 
   aNewContext->mPermanentKey = mPermanentKey;
@@ -479,13 +486,17 @@ SessionHistoryEntry* CanonicalBrowsingContext::GetActiveSessionHistoryEntry() {
   return mActiveEntry;
 }
 
-void CanonicalBrowsingContext::SetActiveSessionHistoryEntry(
+void CanonicalBrowsingContext::SetActiveSessionHistoryEntryFromBFCache(
     SessionHistoryEntry* aEntry) {
   mActiveEntry = aEntry;
-  if (Navigation::IsAPIEnabled()) {
-    mActiveEntryList.clear();
-    if (mActiveEntry) {
-      mActiveEntryList.insertBack(mActiveEntry);
+  auto* activeEntries = GetActiveEntries();
+  if (Navigation::IsAPIEnabled() && activeEntries) {
+    if (StaticPrefs::dom_navigation_api_strict_enabled()) {
+      MOZ_DIAGNOSTIC_ASSERT(!aEntry || activeEntries->contains(aEntry));
+      MOZ_DIAGNOSTIC_ASSERT(aEntry || activeEntries->isEmpty());
+    } else {
+      MOZ_ASSERT(!aEntry || activeEntries->contains(aEntry));
+      MOZ_ASSERT(aEntry || activeEntries->isEmpty());
     }
   }
 }
@@ -503,6 +514,7 @@ void CanonicalBrowsingContext::SwapHistoryEntries(nsISHEntry* aOldEntry,
   }
 
   nsCOMPtr<SessionHistoryEntry> newEntry = do_QueryInterface(aNewEntry);
+  auto* activeEntries = GetActiveEntries();
   MOZ_LOG(gSHLog, LogLevel::Verbose,
           ("Swapping History Entries: mActiveEntry=%p, aNewEntry=%p. "
            "Is in list? mActiveEntry %s, aNewEntry %s. "
@@ -510,9 +522,9 @@ void CanonicalBrowsingContext::SwapHistoryEntries(nsISHEntry* aOldEntry,
            mActiveEntry.get(), aNewEntry,
            mActiveEntry && mActiveEntry->isInList() ? "yes" : "no",
            newEntry && newEntry->isInList() ? "yes" : "no",
-           mActiveEntryList.contains(newEntry) ? "yes" : "no"));
+           activeEntries->contains(newEntry) ? "yes" : "no"));
   if (!newEntry) {
-    mActiveEntryList.clear();
+    activeEntries->clear();
     mActiveEntry = nullptr;
     return;
   }
@@ -527,7 +539,7 @@ void CanonicalBrowsingContext::SwapHistoryEntries(nsISHEntry* aOldEntry,
       if (beforeOldEntry) {
         beforeOldEntry->setNext(newEntry);
       } else {
-        mActiveEntryList.insertFront(newEntry);
+        activeEntries->insertFront(newEntry);
       }
     } else {
       newEntry->setPrevious(mActiveEntry);
@@ -538,7 +550,7 @@ void CanonicalBrowsingContext::SwapHistoryEntries(nsISHEntry* aOldEntry,
 
 void CanonicalBrowsingContext::AddLoadingSessionHistoryEntry(
     uint64_t aLoadId, SessionHistoryEntry* aEntry) {
-  Unused << SetHistoryID(aEntry->DocshellID());
+  (void)SetHistoryID(aEntry->DocshellID());
   mLoadingEntries.AppendElement(LoadingSessionHistoryEntry{aLoadId, aEntry});
 }
 
@@ -564,7 +576,7 @@ void CanonicalBrowsingContext::GetLoadingSessionHistoryInfoFromParent(
           aLoadingInfo.emplace(she);
           mLoadingEntries.AppendElement(LoadingSessionHistoryEntry{
               aLoadingInfo.value().mLoadId, she.get()});
-          Unused << SetHistoryID(she->DocshellID());
+          (void)SetHistoryID(she->DocshellID());
         }
         break;
       }
@@ -602,7 +614,7 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
         MakeUnique<LoadingSessionHistoryInfo>(entry, existingLoadingInfo);
     aLoadState->SetLoadingSessionHistoryInfo(std::move(lshi));
     existingLoadingInfo = aLoadState->GetLoadingSessionHistoryInfo();
-    Unused << SetHistoryEntryCount(entry->BCHistoryLength());
+    (void)SetHistoryEntryCount(entry->BCHistoryLength());
   } else if (aLoadState->LoadType() == LOAD_REFRESH &&
              !ShouldAddEntryForRefresh(aLoadState->URI(),
                                        aLoadState->PostDataStream()) &&
@@ -639,6 +651,14 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
     bool sessionHistoryLoad =
         existingLoadingInfo && existingLoadingInfo->mLoadIsFromSessionHistory;
 
+    if (sessionHistoryLoad && !mActiveEntry) {
+      auto* activeEntries = GetActiveEntries();
+      if (activeEntries && activeEntries->isEmpty()) {
+        nsSHistory* shistory = static_cast<nsSHistory*>(GetSessionHistory());
+        shistory->ReconstructContiguousEntryListFrom(entry);
+      }
+    }
+
     MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
                 "Determining navigation type from loadType={}",
                 aLoadState->LoadType());
@@ -650,60 +670,19 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
       return loadingInfo;
     }
 
-    if (*navigationType == NavigationType::Traverse && !mActiveEntry) {
-      // We must have just been recreated from a session restore, so we need
-      // to reconstruct the list of contiguous entries.
-      auto* shistory = static_cast<nsSHistory*>(GetSessionHistory());
-      MOZ_ASSERT(mActiveEntryList.isEmpty());
-      mActiveEntryList.insertFront(entry);
+    loadingInfo->mTriggeringEntry =
+        mActiveEntry ? Some(mActiveEntry->Info()) : Nothing();
+    MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Verbose,
+                "Triggering entry was {}.",
+                fmt::ptr(loadingInfo->mTriggeringEntry
+                             .map([](auto& entry) { return &entry; })
+                             .valueOr(nullptr)));
 
-      SessionHistoryEntry* currEntry = entry;
-      while (auto* prevEntry =
-                 shistory->FindAdjacentContiguousEntryFor(currEntry, -1)) {
-        currEntry->setPrevious(prevEntry);
-        currEntry = prevEntry;
-      }
+    loadingInfo->mTriggeringNavigationType = navigationType;
+    MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Verbose,
+                "Triggering navigation type was {}.", *navigationType);
 
-      currEntry = entry;
-      while (auto* nextEntry =
-                 shistory->FindAdjacentContiguousEntryFor(currEntry, 1)) {
-        currEntry->setNext(nextEntry);
-        currEntry = nextEntry;
-      }
-    }
-
-    nsCOMPtr<nsIURI> uri =
-        mActiveEntry ? mActiveEntry->GetURIOrInheritedForAboutBlank() : nullptr;
-    nsCOMPtr<nsIURI> targetURI = entry->GetURIOrInheritedForAboutBlank();
-    bool sameOrigin =
-        NS_SUCCEEDED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
-            targetURI, uri, false, false));
-    if (entry->isInList() ||
-        (mActiveEntry && mActiveEntry->isInList() && sameOrigin)) {
-      nsSHistory::WalkContiguousEntriesInOrder(
-          entry->isInList() ? entry : mActiveEntry,
-          [activeEntry = mActiveEntry,
-           entries = &loadingInfo->mContiguousEntries,
-           navigationType = *navigationType](auto* aEntry) {
-            nsCOMPtr<SessionHistoryEntry> entry = do_QueryObject(aEntry);
-            MOZ_ASSERT(entry);
-            if (navigationType == NavigationType::Replace &&
-                entry == activeEntry) {
-              // In the case of a replace navigation, we end up dropping the
-              // active entry and all following entries.
-              return false;
-            }
-            entries->AppendElement(entry->Info());
-            // In the case of a push navigation, we end up keeping the
-            // current active entry but drop all following entries.
-            return !(navigationType == NavigationType::Push &&
-                     entry == activeEntry);
-          });
-    }
-
-    if (!sessionHistoryLoad || !sameOrigin) {
-      loadingInfo->mContiguousEntries.AppendElement(entry->Info());
-    }
+    GetContiguousEntriesForLoad(*loadingInfo, entry);
 
     if (MOZ_LOG_TEST(gNavigationAPILog, LogLevel::Debug)) {
       int32_t index = 0;
@@ -720,18 +699,6 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
                     entry.GetURI()->GetSpecOrDefault());
       }
     }
-
-    loadingInfo->mTriggeringEntry =
-        mActiveEntry ? Some(mActiveEntry->Info()) : Nothing();
-    MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Verbose,
-                "Triggering entry was {}.",
-                fmt::ptr(loadingInfo->mTriggeringEntry
-                             .map([](auto& entry) { return &entry; })
-                             .valueOr(nullptr)));
-
-    loadingInfo->mTriggeringNavigationType = navigationType;
-    MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Verbose,
-                "Triggering navigation type was {}.", *navigationType);
 
     [[maybe_unused]] auto pred = [&](auto& entry) {
       return entry.NavigationKey() == loadingInfo->mInfo.NavigationKey();
@@ -775,7 +742,7 @@ CanonicalBrowsingContext::ReplaceLoadingSessionHistoryEntryForLoad(
       loadingEntry->SetInfo(&newInfo);
 
       if (IsTop()) {
-        // Only top level pages care about Get/SetPersist.
+        // Only top level pages care about Get/SetTransient.
         nsCOMPtr<nsIURI> uri;
         aNewChannel->GetURI(getter_AddRefs(uri));
         if (!nsDocShell::ShouldAddToSessionHistory(uri, aNewChannel)) {
@@ -786,12 +753,58 @@ CanonicalBrowsingContext::ReplaceLoadingSessionHistoryEntryForLoad(
       }
       loadingEntry->SetDocshellID(GetHistoryID());
       loadingEntry->SetIsDynamicallyAdded(CreatedDynamically());
+
       auto result = MakeUnique<LoadingSessionHistoryInfo>(loadingEntry, aInfo);
-      result->mContiguousEntries = aInfo->mContiguousEntries;
+      MOZ_LOG_FMT(
+          gNavigationAPILog, LogLevel::Debug,
+          "CanonicalBrowsingContext::ReplaceLoadingSessionHistoryEntryForLoad: "
+          "Recreating the contiguous entries list after redirected navigation "
+          "to {}.",
+          ToMaybeRef(result->mInfo.GetURI())
+              .map(std::mem_fn(&nsIURI::GetSpecOrDefault))
+              .valueOr("(null URI)."_ns));
+      GetContiguousEntriesForLoad(*result, loadingEntry);
       return result;
     }
   }
   return nullptr;
+}
+
+void CanonicalBrowsingContext::GetContiguousEntriesForLoad(
+    LoadingSessionHistoryInfo& aLoadingInfo,
+    const RefPtr<SessionHistoryEntry>& aEntry) {
+  nsCOMPtr<nsIURI> uri =
+      mActiveEntry ? mActiveEntry->GetURIOrInheritedForAboutBlank() : nullptr;
+  nsCOMPtr<nsIURI> targetURI = aEntry->GetURIOrInheritedForAboutBlank();
+  bool sameOrigin =
+      NS_SUCCEEDED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
+          targetURI, uri, false, false));
+  if (aEntry->isInList() ||
+      (mActiveEntry && mActiveEntry->isInList() && sameOrigin)) {
+    nsSHistory::WalkContiguousEntriesInOrder(
+        aEntry->isInList() ? aEntry : mActiveEntry,
+        [activeEntry = mActiveEntry, entries = &aLoadingInfo.mContiguousEntries,
+         navigationType =
+             *aLoadingInfo.mTriggeringNavigationType](auto* aEntry) {
+          nsCOMPtr<SessionHistoryEntry> entry = do_QueryObject(aEntry);
+          MOZ_ASSERT(entry);
+          if (navigationType == NavigationType::Replace &&
+              entry == activeEntry) {
+            // In the case of a replace navigation, we end up dropping the
+            // active entry and all following entries.
+            return false;
+          }
+          entries->AppendElement(entry->Info());
+          // In the case of a push navigation, we end up keeping the
+          // current active entry but drop all following entries.
+          return !(navigationType == NavigationType::Push &&
+                   entry == activeEntry);
+        });
+  }
+
+  if (!aLoadingInfo.mLoadIsFromSessionHistory || !sameOrigin) {
+    aLoadingInfo.mContiguousEntries.AppendElement(aEntry->Info());
+  }
 }
 
 using PrintPromise = CanonicalBrowsingContext::PrintPromise;
@@ -905,10 +918,10 @@ RefPtr<PrintPromise> CanonicalBrowsingContext::Print(
   bool needContentAnalysis = false;
   nsCOMPtr<nsIContentAnalysis> contentAnalysis =
       mozilla::components::nsIContentAnalysis::Service();
-  Unused << NS_WARN_IF(!contentAnalysis);
+  (void)NS_WARN_IF(!contentAnalysis);
   if (contentAnalysis) {
     nsresult rv = contentAnalysis->GetIsActive(&needContentAnalysis);
-    Unused << NS_WARN_IF(NS_FAILED(rv));
+    (void)NS_WARN_IF(NS_FAILED(rv));
   }
   if (needContentAnalysis) {
     auto done = MakeRefPtr<PrintPromise::Private>(__func__);
@@ -956,7 +969,7 @@ void CanonicalBrowsingContext::ReleaseClonedPrint(
   if (NS_WARN_IF(!browserParent)) {
     return;
   }
-  Unused << browserParent->SendDestroyPrintClone(aClonedStaticBrowsingContext);
+  (void)browserParent->SendDestroyPrintClone(aClonedStaticBrowsingContext);
 #endif
 }
 
@@ -1167,12 +1180,13 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
             [](nsISHEntry* aEntry) { aEntry->SetName(EmptyString()); });
       }
 
+      auto* activeEntries = GetActiveEntries();
       MOZ_LOG(gSHLog, LogLevel::Verbose,
               ("SessionHistoryCommit called with mActiveEntry=%p, "
                "newActiveEntry=%p, "
                "active entry list does%s contain the active entry.",
                mActiveEntry.get(), newActiveEntry.get(),
-               mActiveEntryList.contains(mActiveEntry) ? "" : "n't"));
+               activeEntries->contains(mActiveEntry) ? "" : "n't"));
 
       bool addEntry = ShouldUpdateSessionHistory(aLoadType);
       if (IsTop()) {
@@ -1200,15 +1214,13 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
           if (!addEntry) {
             shistory->ReplaceEntry(index, newActiveEntry);
             if (Navigation::IsAPIEnabled() && mActiveEntry &&
-                mActiveEntry->isInList()) {
-              RefPtr entry = mActiveEntry;
-              while (entry) {
-                entry = entry->removeAndGetNext();
-              }
+                mActiveEntry->isInList() && !newActiveEntry->isInList()) {
+              mActiveEntry->setNext(newActiveEntry);
+              mActiveEntry->remove();
             }
           }
           if (Navigation::IsAPIEnabled() && !newActiveEntry->isInList()) {
-            mActiveEntryList.insertBack(newActiveEntry);
+            activeEntries->insertBack(newActiveEntry);
           }
           mActiveEntry = newActiveEntry;
         } else if (LOAD_TYPE_HAS_FLAGS(
@@ -1228,7 +1240,7 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
             }
             // TODO(avandolder): Can this check ever actually be false?
             if (!newActiveEntry->isInList()) {
-              mActiveEntryList.insertBack(newActiveEntry);
+              activeEntries->insertBack(newActiveEntry);
             }
           }
           mActiveEntry = newActiveEntry;
@@ -1236,7 +1248,7 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
           MOZ_LOG_FMT(gSHLog, LogLevel::Verbose,
                       "IsTop: No active entry, adding new entry");
           if (Navigation::IsAPIEnabled() && !newActiveEntry->isInList()) {
-            mActiveEntryList.insertBack(newActiveEntry);
+            activeEntries->insertBack(newActiveEntry);
           }
           mActiveEntry = newActiveEntry;
         } else {
@@ -1244,7 +1256,7 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
                       "IsTop: Loading from session history");
           mActiveEntry = newActiveEntry;
           if (Navigation::IsAPIEnabled() && !mActiveEntry->isInList()) {
-            mActiveEntryList.insertBack(mActiveEntry);
+            activeEntries->insertBack(mActiveEntry);
           }
         }
 
@@ -1276,9 +1288,8 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
                       "NotTop: Loading from session history");
           mActiveEntry = newActiveEntry;
           if (Navigation::IsAPIEnabled() && !mActiveEntry->isInList()) {
-            mActiveEntryList.insertBack(mActiveEntry);
+            shistory->ReconstructContiguousEntryListFrom(mActiveEntry);
           }
-
           shistory->InternalSetRequestedIndex(indexOfHistoryLoad);
           // FIXME UpdateIndex() here may update index too early (but even the
           //       old implementation seems to have similar issues).
@@ -1304,7 +1315,7 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
                                          aCloneEntryChildren);
               if (Navigation::IsAPIEnabled()) {
                 if (!mActiveEntry->isInList()) {
-                  mActiveEntryList.insertBack(mActiveEntry);
+                  activeEntries->insertBack(mActiveEntry);
                 }
                 mActiveEntry->setNext(newActiveEntry);
               }
@@ -1319,7 +1330,7 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
                           "NotTop: Adding entry without an active entry");
               mActiveEntry = newActiveEntry;
               if (Navigation::IsAPIEnabled() && !mActiveEntry->isInList()) {
-                mActiveEntryList.insertBack(mActiveEntry);
+                activeEntries->insertBack(mActiveEntry);
               }
               // FIXME Using IsInProcess for aUseRemoteSubframes isn't quite
               //       right, but aUseRemoteSubframes should be going away.
@@ -1443,21 +1454,22 @@ void CanonicalBrowsingContext::SetActiveSessionHistoryEntry(
     }
   }
 
+  auto* activeEntries = GetActiveEntries();
   MOZ_LOG(
       gSHLog, LogLevel::Verbose,
       ("SetActiveSessionHistoryEntry called with oldActiveEntry=%p, "
        "mActiveEntry=%p, active entry list does%s contain the active entry. ",
        oldActiveEntry.get(), mActiveEntry.get(),
-       mActiveEntryList.contains(mActiveEntry) ? "" : "n't"));
+       activeEntries->contains(mActiveEntry) ? "" : "n't"));
 
   if (Navigation::IsAPIEnabled() &&
       (!oldActiveEntry || oldActiveEntry->isInList())) {
-    RefPtr toRemove = oldActiveEntry ? oldActiveEntry->getNext()
-                                     : mActiveEntryList.getFirst();
+    RefPtr toRemove =
+        oldActiveEntry ? oldActiveEntry->getNext() : activeEntries->getFirst();
     while (toRemove) {
       toRemove = toRemove->removeAndGetNext();
     }
-    mActiveEntryList.insertBack(mActiveEntry);
+    activeEntries->insertBack(mActiveEntry);
   }
 
   ResetSHEntryHasUserInteractionCache();
@@ -1528,7 +1540,7 @@ void CanonicalBrowsingContext::RemoveFromSessionHistory(const nsID& aChangeID) {
       if (rootBC) {
         if (!rootBC->IsInProcess()) {
           if (ContentParent* cp = rootBC->Canonical()->GetContentParent()) {
-            Unused << cp->SendDispatchLocationChangeEvent(rootBC);
+            (void)cp->SendDispatchLocationChangeEvent(rootBC);
           }
         } else if (rootBC->GetDocShell()) {
           rootBC->GetDocShell()->DispatchLocationChangeEvent();
@@ -1636,25 +1648,14 @@ void CanonicalBrowsingContext::NavigationTraverse(
   RefPtr<SessionHistoryEntry> targetEntry;
   // 12.1 Let navigableSHEs be the result of getting session history entries
   //      given navigable.
-  Maybe<int32_t> activeIndex;
-  Maybe<int32_t> targetIndex;
-  uint32_t index = 0;
   nsSHistory::WalkContiguousEntriesInOrder(
-      mActiveEntry, [&targetEntry, aKey, activeEntry = mActiveEntry,
-                     &activeIndex, &targetIndex, &index](auto* aEntry) {
-        if (nsCOMPtr<SessionHistoryEntry> entry = do_QueryObject(aEntry)) {
-          if (entry->Info().NavigationKey() == aKey) {
-            targetEntry = entry;
-            targetIndex = Some(index);
-          }
-
-          if (entry == activeEntry) {
-            activeIndex = Some(index);
-          }
+      mActiveEntry, [&targetEntry, aKey](auto* aEntry) {
+        auto* entry = static_cast<SessionHistoryEntry*>(aEntry);
+        if (entry->Info().NavigationKey() == aKey) {
+          targetEntry = entry;
+          return false;
         }
-
-        index++;
-        return !targetIndex || !activeIndex;
+        return true;
       });
 
   if (!targetEntry) {
@@ -1665,11 +1666,18 @@ void CanonicalBrowsingContext::NavigationTraverse(
     return aResolver(NS_OK);
   }
 
-  if (!activeIndex || !targetIndex) {
+  nsCOMPtr targetRoot = nsSHistory::GetRootSHEntry(targetEntry);
+  nsCOMPtr activeRoot = nsSHistory::GetRootSHEntry(mActiveEntry);
+  if (!targetRoot || !activeRoot) {
     return aResolver(NS_ERROR_DOM_INVALID_STATE_ERR);
   }
-  int32_t offset = *targetIndex - *activeIndex;
+  int32_t targetIndex = shistory->GetIndexOfEntry(targetRoot);
+  int32_t activeIndex = shistory->GetIndexOfEntry(activeRoot);
+  if (targetIndex == -1 || activeIndex == -1) {
+    return aResolver(NS_ERROR_DOM_INVALID_STATE_ERR);
+  }
 
+  int32_t offset = targetIndex - activeIndex;
   MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, "Performing traversal by {}",
               offset);
 
@@ -1779,7 +1787,7 @@ void CanonicalBrowsingContext::RecomputeAppWindowVisibility() {
     widget = nsDocShell::Cast(docShell)->GetMainWidget();
   }
 
-  Unused << NS_WARN_IF(!widget);
+  (void)NS_WARN_IF(!widget);
   const bool isNowActive =
       ForceAppWindowActive() || (widget && !widget->IsFullyOccluded() &&
                                  widget->SizeMode() != nsSizeMode_Minimized);
@@ -1826,7 +1834,7 @@ void CanonicalBrowsingContext::NotifyStartDelayedAutoplayMedia() {
   // browsing content tree to start delayed autoplay media.
 
   Group()->EachParent([&](ContentParent* aParent) {
-    Unused << aParent->SendStartDelayedAutoplayMediaComponents(this);
+    (void)aParent->SendStartDelayedAutoplayMediaComponents(this);
   });
 }
 
@@ -1875,7 +1883,7 @@ void CanonicalBrowsingContext::UpdateMediaControlAction(
   }
   ContentMediaControlKeyHandler::HandleMediaControlAction(this, aAction);
   Group()->EachParent([&](ContentParent* aParent) {
-    Unused << aParent->SendUpdateMediaControlAction(this, aAction);
+    (void)aParent->SendUpdateMediaControlAction(this, aAction);
   });
 }
 
@@ -1890,6 +1898,11 @@ void CanonicalBrowsingContext::LoadURI(nsIURI* aURI,
   if (NS_FAILED(rv)) {
     aError.Throw(rv);
     return;
+  }
+
+  // Set the captive portal tab flag on the browsing context if requested
+  if (loadState->GetIsCaptivePortalTab()) {
+    (void)SetIsCaptivePortalTab(true);
   }
 
   LoadURI(loadState, true);
@@ -1910,6 +1923,11 @@ void CanonicalBrowsingContext::FixupAndLoadURIString(
   if (NS_FAILED(rv)) {
     aError.Throw(rv);
     return;
+  }
+
+  // Set the captive portal tab flag on the browsing context if requested
+  if (loadState->GetIsCaptivePortalTab()) {
+    (void)SetIsCaptivePortalTab(true);
   }
 
   LoadURI(loadState, true);
@@ -1937,8 +1955,8 @@ void CanonicalBrowsingContext::GoBack(
     if (aCancelContentJSEpoch.WasPassed()) {
       cancelContentJSEpoch = Some(aCancelContentJSEpoch.Value());
     }
-    Unused << cp->SendGoBack(this, cancelContentJSEpoch,
-                             aRequireUserInteraction, aUserActivation);
+    (void)cp->SendGoBack(this, cancelContentJSEpoch, aRequireUserInteraction,
+                         aUserActivation);
   }
 }
 void CanonicalBrowsingContext::GoForward(
@@ -1963,8 +1981,8 @@ void CanonicalBrowsingContext::GoForward(
     if (aCancelContentJSEpoch.WasPassed()) {
       cancelContentJSEpoch.emplace(aCancelContentJSEpoch.Value());
     }
-    Unused << cp->SendGoForward(this, cancelContentJSEpoch,
-                                aRequireUserInteraction, aUserActivation);
+    (void)cp->SendGoForward(this, cancelContentJSEpoch, aRequireUserInteraction,
+                            aUserActivation);
   }
 }
 void CanonicalBrowsingContext::GoToIndex(
@@ -1989,8 +2007,8 @@ void CanonicalBrowsingContext::GoToIndex(
     if (aCancelContentJSEpoch.WasPassed()) {
       cancelContentJSEpoch.emplace(aCancelContentJSEpoch.Value());
     }
-    Unused << cp->SendGoToIndex(this, aIndex, cancelContentJSEpoch,
-                                aUserActivation);
+    (void)cp->SendGoToIndex(this, aIndex, cancelContentJSEpoch,
+                            aUserActivation);
   }
 }
 
@@ -2007,7 +2025,7 @@ void CanonicalBrowsingContext::Reload(uint32_t aReloadFlags) {
   if (RefPtr<nsDocShell> docShell = nsDocShell::Cast(GetDocShell())) {
     docShell->Reload(aReloadFlags);
   } else if (ContentParent* cp = GetContentParent()) {
-    Unused << cp->SendReload(this, aReloadFlags);
+    (void)cp->SendReload(this, aReloadFlags);
   }
 }
 
@@ -2027,7 +2045,7 @@ void CanonicalBrowsingContext::Stop(uint32_t aStopFlags) {
   if (auto* docShell = nsDocShell::Cast(GetDocShell())) {
     docShell->Stop(aStopFlags);
   } else if (ContentParent* cp = GetContentParent()) {
-    Unused << cp->SendStopLoad(this, aStopFlags);
+    (void)cp->SendStopLoad(this, aStopFlags);
   }
 }
 
@@ -2246,7 +2264,7 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishSubframe() {
     // been destroyed.
     if (oldBrowser->CanSend()) {
       target->StartUnloadingHost(oldBrowser->Manager()->ChildID());
-      Unused << oldBrowser->SendWillChangeProcess();
+      (void)oldBrowser->SendWillChangeProcess();
       oldBrowser->Destroy();
     }
   }
@@ -2266,7 +2284,7 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishSubframe() {
                           "Attempt to process-switch from local to local?");
 
     target->SetCurrentBrowserParent(embedderBrowser);
-    Unused << embedderWindow->SendMakeFrameLocal(target, mPendingSwitchId);
+    (void)embedderWindow->SendMakeFrameLocal(target, mPendingSwitchId);
     mPromise->Resolve(std::pair{embedderBrowser, target}, __func__);
     return NS_OK;
   }
@@ -2775,7 +2793,7 @@ void CanonicalBrowsingContext::EndDocumentLoad(bool aContinueNavigating) {
   if (!aContinueNavigating) {
     // Resetting the current load identifier on a discarded context
     // has no effect when a document load has finished.
-    Unused << SetCurrentLoadIdentifier(Nothing());
+    (void)SetCurrentLoadIdentifier(Nothing());
   }
 }
 
@@ -2828,8 +2846,8 @@ void CanonicalBrowsingContext::HistoryCommitIndexAndLength(
   shistory->EvictOutOfRangeDocumentViewers(index);
 
   Group()->EachParent([&](ContentParent* aParent) {
-    Unused << aParent->SendHistoryCommitIndexAndLength(this, index, length,
-                                                       aChangeID);
+    (void)aParent->SendHistoryCommitIndexAndLength(this, index, length,
+                                                   aChangeID);
   });
 }
 
@@ -2864,12 +2882,19 @@ void CanonicalBrowsingContext::SynchronizeLayoutHistoryState() {
   }
 }
 
+void CanonicalBrowsingContext::SynchronizeNavigationAPIState(
+    nsIStructuredCloneContainer* aState) {
+  if (mActiveEntry) {
+    mActiveEntry->SetNavigationAPIState(aState);
+  }
+}
+
 void CanonicalBrowsingContext::ResetScalingZoom() {
   // This currently only ever gets called in the parent process, and we
   // pass the message on to the WindowGlobalChild for the rootmost browsing
   // context.
   if (WindowGlobalParent* topWindow = GetTopWindowContext()) {
-    Unused << topWindow->SendResetScalingZoom();
+    (void)topWindow->SendResetScalingZoom();
   }
 }
 
@@ -3192,7 +3217,7 @@ void CanonicalBrowsingContext::ShowSubframeCrashedUI(
   SetOwnerProcessId(aBridge->Manager()->Manager()->ChildID());
   SetCurrentBrowserParent(aBridge->Manager());
 
-  Unused << aBridge->SendSubFrameCrashed();
+  (void)aBridge->SendSubFrameCrashed();
 }
 
 static void LogBFCacheBlockingForDoc(BrowsingContext* aBrowsingContext,
@@ -3459,14 +3484,14 @@ void CanonicalBrowsingContext::AddPageAwakeRequest() {
   MOZ_ASSERT(IsTop());
   auto count = GetPageAwakeRequestCount();
   MOZ_ASSERT(count < UINT32_MAX);
-  Unused << SetPageAwakeRequestCount(++count);
+  (void)SetPageAwakeRequestCount(++count);
 }
 
 void CanonicalBrowsingContext::RemovePageAwakeRequest() {
   MOZ_ASSERT(IsTop());
   auto count = GetPageAwakeRequestCount();
   MOZ_ASSERT(count > 0);
-  Unused << SetPageAwakeRequestCount(--count);
+  (void)SetPageAwakeRequestCount(--count);
 }
 
 void CanonicalBrowsingContext::CloneDocumentTreeInto(
@@ -3503,7 +3528,7 @@ void CanonicalBrowsingContext::CloneDocumentTreeInto(
                           // register the end of the load (see
                           // Document::OOPChildLoadDone).
                           if (bridge) {
-                            Unused << bridge->SendMaybeFireEmbedderLoadEvents(
+                            (void)bridge->SendMaybeFireEmbedderLoadEvents(
                                 EmbedderElementEventType::NoEvent);
                           }
                           if (aValue.IsResolve() && aValue.ResolveValue()) {
@@ -3671,10 +3696,50 @@ bool CanonicalBrowsingContext::CanOpenModalPicker() {
   return true;
 }
 
+bool CanonicalBrowsingContext::ShouldEnforceParentalControls() {
+  if (StaticPrefs::security_restrict_to_adults_always()) {
+    return true;
+  }
+  if (StaticPrefs::security_restrict_to_adults_respect_platform()) {
+    bool enabled;
+    nsCOMPtr<nsIParentalControlsService> pcs =
+        do_CreateInstance("@mozilla.org/parental-controls-service;1");
+    nsresult rv = pcs->GetParentalControlsEnabled(&enabled);
+    if (NS_FAILED(rv)) {
+      return false;
+    }
+    return enabled;
+  }
+  return false;
+}
+
+void CanonicalBrowsingContext::MaybeReconstructActiveEntryList() {
+  MOZ_ASSERT(IsTop());
+  if (!Navigation::IsAPIEnabled()) {
+    return;
+  }
+
+  auto* shistory = static_cast<nsSHistory*>(GetSessionHistory());
+  if (mActiveEntry && !shistory->ContainsEntry(mActiveEntry)) {
+    shistory->ReconstructContiguousEntryList();
+  }
+}
+
+EntryList* CanonicalBrowsingContext::GetActiveEntries() {
+  if (!mActiveEntryList) {
+    auto* shistory = static_cast<nsSHistory*>(GetSessionHistory());
+    if (shistory) {
+      mActiveEntryList = shistory->EntryListFor(GetHistoryID());
+    }
+  }
+  return mActiveEntryList;
+}
+
 NS_IMPL_CYCLE_COLLECTION_CLASS(CanonicalBrowsingContext)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(CanonicalBrowsingContext,
                                                 BrowsingContext)
+  tmp->mActiveEntryList = nullptr;
   tmp->mPermanentKey.setNull();
   if (tmp->mSessionHistory) {
     tmp->mSessionHistory->SetBrowsingContext(nullptr);

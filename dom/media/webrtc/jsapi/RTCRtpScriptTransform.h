@@ -8,7 +8,6 @@
 #define MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCRTPSCRIPTTRANSFORM_H_
 
 #include "js/RootingAPI.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "nsISupports.h"
 #include "nsTArray.h"

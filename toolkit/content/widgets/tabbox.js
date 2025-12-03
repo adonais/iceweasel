@@ -270,20 +270,35 @@
      */
     #splitViewSplitter = null;
 
+    static #SPLIT_VIEW_PANEL_EVENTS = Object.freeze([
+      "click",
+      "focus",
+      "mouseover",
+      "mouseout",
+    ]);
+
     constructor() {
       super();
       this._tabbox = null;
     }
 
     handleEvent(e) {
+      const browser = e.currentTarget;
+      const tabbrowser = browser.getTabBrowser();
       switch (e.type) {
+        case "click":
         case "focus": {
-          const browser = e.currentTarget;
-          const tab = browser.getTabBrowser().getTabForBrowser(browser);
+          const tab = tabbrowser.getTabForBrowser(browser);
           const tabstrip = this.tabbox.tabs;
           tabstrip.selectedItem = tab;
           break;
         }
+        case "mouseover":
+          tabbrowser.appendStatusPanel(browser);
+          break;
+        case "mouseout":
+          tabbrowser.appendStatusPanel();
+          break;
       }
     }
 
@@ -361,7 +376,10 @@
         const panelEl = document.getElementById(panel);
         panelEl?.classList.add("split-view-panel");
         panelEl?.setAttribute("column", i);
-        panelEl?.querySelector("browser")?.addEventListener("focus", this);
+        const browser = panelEl?.querySelector("browser");
+        for (const eventType of MozTabpanels.#SPLIT_VIEW_PANEL_EVENTS) {
+          browser?.addEventListener(eventType, this);
+        }
       }
       this.#splitViewPanels = newPanels;
       this.#isSplitViewActive = !!newPanels.length;
@@ -382,7 +400,10 @@
       const panelEl = document.getElementById(panel);
       panelEl?.classList.remove("split-view-panel");
       panelEl?.removeAttribute("column");
-      panelEl?.querySelector("browser")?.removeEventListener("focus", this);
+      const browser = panelEl?.querySelector("browser");
+      for (const eventType of MozTabpanels.#SPLIT_VIEW_PANEL_EVENTS) {
+        browser?.removeEventListener(eventType, this);
+      }
       if (updateArray) {
         const index = this.#splitViewPanels.indexOf(panel);
         if (index !== -1) {

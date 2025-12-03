@@ -19,7 +19,6 @@
 #include "nsINavHistoryService.h"
 #include "nsPrintfCString.h"
 #include "nsNavHistory.h"
-#include "mozilla/Likely.h"
 #include "mozilla/Services.h"
 #include "mozilla/Utf8.h"
 #include "nsURLHelper.h"
@@ -1513,12 +1512,12 @@ SetShouldStartFrecencyRecalculationFunction::OnFunctionCall(
   // a big deal, since the recalculation will just happen at the next operation
   // changing frecency or, in the worst case, at the next session.
   if (!nsNavHistory::sShouldStartFrecencyRecalculation.exchange(true)) {
-    mozilla::Unused << NS_DispatchToMainThread(NS_NewRunnableFunction(
+    (void)NS_DispatchToMainThread(NS_NewRunnableFunction(
         "SetShouldStartFrecencyRecalculationFunction::Notify", [] {
           nsCOMPtr<nsIObserverService> os = services::GetObserverService();
           if (os) {
-            mozilla::Unused << os->NotifyObservers(
-                nullptr, "frecency-recalculation-needed", nullptr);
+            (void)os->NotifyObservers(nullptr, "frecency-recalculation-needed",
+                                      nullptr);
           }
         }));
   }

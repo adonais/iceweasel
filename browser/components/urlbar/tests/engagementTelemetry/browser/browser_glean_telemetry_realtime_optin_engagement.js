@@ -37,11 +37,14 @@ add_setup(async function () {
         ],
       },
     ],
-    prefs: [["market.featureGate", true]],
+    prefs: [
+      ["quicksuggest.online.available", true],
+      ["market.featureGate", true],
+    ],
   });
 
   registerCleanupFunction(() => {
-    UrlbarPrefs.clear("quicksuggest.dataCollection.enabled");
+    UrlbarPrefs.clear("quicksuggest.online.enabled");
     UrlbarPrefs.clear("quicksuggest.dynamicSuggestionTypes");
     UrlbarPrefs.clear("quicksuggest.realtimeOptIn.dismissTypes");
     UrlbarPrefs.clear("quicksuggest.realtimeOptIn.notNowTimeSeconds");
@@ -51,7 +54,7 @@ add_setup(async function () {
 });
 
 add_task(async function opt_in() {
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("quicksuggest.online.enabled", false);
   UrlbarPrefs.set("suggest.realtimeOptIn", true);
 
   await doTest(async () => {
@@ -73,7 +76,7 @@ add_task(async function opt_in() {
 });
 
 add_task(async function not_now_and_dismiss() {
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("quicksuggest.online.enabled", false);
   UrlbarPrefs.set("suggest.realtimeOptIn", true);
 
   await doTest(async () => {
@@ -126,7 +129,7 @@ add_task(async function not_now_and_dismiss() {
 });
 
 add_task(async function not_interested() {
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("quicksuggest.online.enabled", false);
   UrlbarPrefs.set("suggest.realtimeOptIn", true);
   UrlbarPrefs.clear("quicksuggest.realtimeOptIn.dismissTypes");
 

@@ -178,12 +178,6 @@ async function openAddEngineDialog(browser, selector) {
   return dialogWin;
 }
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.update2.engineAliasRefresh", true]],
-  });
-});
-
 add_task(async function testAddingEngines() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
   let browser = tab.linkedBrowser;

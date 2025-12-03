@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">نجی %s</string>
@@ -66,7 +73,7 @@
     %1$s is the name of the app (for example "Firefox").
     %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
   -->
-  <string name="felt_privacy_info_card_subtitle_2">جہڑیلے تُساں آپݨے سبھے نجی ٹیبز کوں بند کرین٘دے ہِیوے تاں %1$s تُہاݙی کوکیز، ہسٹری اَتے سائٹ دا ڈیٹا حذف کر ݙین٘دا ہِے۔ %2$s</string>
+  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">جہڑیلے تُساں آپݨے سبھے نجی ٹیبز کوں بند کرین٘دے ہِیوے تاں %1$s تُہاݙی کوکیز، ہسٹری اَتے سائٹ دا ڈیٹا حذف کر ݙین٘دا ہِے۔ %2$s</string>
   <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
@@ -667,10 +674,6 @@
     Content description for various wallpapers. %1$s is the name of the wallpaper.
   -->
   <string name="wallpapers_item_name_content_description">وال پیپر آئٹم: %1$s</string>
-  <!-- Snackbar message for when wallpaper is selected -->
-  <string name="wallpaper_updated_snackbar_message" tools:ignore="UnusedResources" moz:removedIn="144">وال پیپر اپ ڈیٹ تھی ڳیا!</string>
-  <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">نظارہ</string>
   <!-- Snackbar message for when wallpaper couldn't be downloaded -->
   <string name="wallpaper_download_error_snackbar_message">وال پیپر ڈاؤن لوڈ کائنی سڳا</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
@@ -1085,8 +1088,6 @@
   <string name="webcompat_reporter_url_error_invalid">براہ مہربانی ٹھیک URL درج کرو۔</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
   <string name="webcompat_reporter_label_description">مسئلہ دی وضاحت کرو (اختیاری)</string>
-  <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
-  <string name="webcompat_reporter_send_more_info" moz:removedIn="144" tools:ignore="UnusedResources">ٻیاں معلومات بھیڄو</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">منسوخ</string>
   <!-- The button text for the send button to submit the provided form data. -->
@@ -1317,10 +1318,6 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ٹیب چُݨیج ڳئی</string>
-  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">مجموعہ محفوظ تھی ڳیا!</string>
-  <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">ٹیب محفوظ تھی ڳئی!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">بند کرو</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1458,8 +1455,6 @@
   <string name="snackbar_private_data_deleted">نجی براؤزنگ ڈیٹا حذف تھی ڳِیا</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">اݨ کیتا کرو</string>
-  <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">سائٹ ہٹا ݙتی ڳئی</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -1556,14 +1551,6 @@
     text to display in the snackbar once account is signed-in
   -->
   <string name="onboarding_firefox_account_sync_is_on">ہم وقت کرݨ چالو ہے</string>
-  <!--
-    Onboarding theme
-
-    Text shown in snackbar when multiple tabs have been sent to device
-  -->
-  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">ٹیباں بھیڄ ݙٹیاں ڳیاں!</string>
-  <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">ٹیب بھیڄ ݙتی ڳئی!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">بھیڄݨ وچ ناکام</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -1880,8 +1867,6 @@
   <string name="credit_cards_edit_card">کارڈ وچ تبدیلی کرو</string>
   <!-- The header for the card number of a credit card -->
   <string name="credit_cards_card_number">کارڈ نمبر</string>
-  <!-- The header for the expiration date of a credit card -->
-  <string name="credit_cards_expiration_date">مُکݨ تریخ</string>
   <!-- The label for the expiration date month of a credit card to be used by a11y services -->
   <string name="credit_cards_expiration_date_month">مُکݨ تریخ مہینہ</string>
   <!-- The label for the expiration date year of a credit card to be used by a11y services -->

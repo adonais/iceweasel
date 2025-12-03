@@ -38,7 +38,6 @@
 #endif
 
 #include "mozilla/AppShutdown.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntentionalCrash.h"
@@ -46,7 +45,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 
 #include "mozilla/dom/workerinternals/RuntimeService.h"
 

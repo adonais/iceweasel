@@ -20,7 +20,6 @@
 #include "jsapi.h"
 #include "mozilla/Components.h"
 #include "mozilla/dom/Promise-inl.h"
-#include "mozilla/Variant.h"
 
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -35,6 +34,7 @@
 #include "mozilla/RelativeLuminanceUtils.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/ScreenBinding.h"
+#include "mozilla/intl/LocaleService.h"
 #include "mozilla/intl/OSPreferences.h"
 #include "mozilla/intl/TimeZone.h"
 #include "mozilla/widget/ScreenManager.h"
@@ -383,7 +383,7 @@ already_AddRefed<PopulatePromise> PopulateFingerprintedFonts() {
 
 void PopulatePrefs() {
   nsAutoCString acceptLang;
-  Preferences::GetLocalizedCString("intl.accept_languages", acceptLang);
+  intl::LocaleService::GetInstance()->GetAcceptLanguages(acceptLang);
   glean::characteristics::prefs_intl_accept_languages.Set(acceptLang);
 
   glean::characteristics::prefs_media_eme_enabled.Set(
@@ -490,11 +490,11 @@ void PopulateFontPrefs() {
     return;
   }
 
-  nsCString defaultLanguageGroup;
-  Preferences::GetLocalizedCString("font.language.group", defaultLanguageGroup);
+  nsCString fontLanguageGroup;
+  intl::LocaleService::GetInstance()->GetFontLanguageGroup(fontLanguageGroup);
 
 #define FONT_PREF(PREF_NAME, METRIC_NAME)                                   \
-  CollectFontPrefValue(prefRootBranch, defaultLanguageGroup, PREF_NAME,     \
+  CollectFontPrefValue(prefRootBranch, fontLanguageGroup, PREF_NAME,        \
                        glean::characteristics::METRIC_NAME##_western,       \
                        glean::characteristics::METRIC_NAME##_default_group, \
                        glean::characteristics::METRIC_NAME##_modified)
@@ -589,7 +589,7 @@ void PopulateLanguages() {
   // sufficient to only collect this information as the other properties are
   // just reformats of Navigator::GetAcceptLanguages.
   nsTArray<nsString> languages;
-  dom::Navigator::GetAcceptLanguages(languages);
+  dom::Navigator::GetAcceptLanguages(languages, nullptr);
   nsCString output = "["_ns;
 
   for (const auto& language : languages) {

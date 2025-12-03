@@ -167,6 +167,7 @@ class InputTestHelpers extends LitTestHelpers {
   async testCommonInputProperties(elementName) {
     await this.verifyLabel(elementName);
     await this.verifyAriaLabel(elementName);
+    await this.verifyAriaDescription(elementName);
     await this.verifyName(elementName);
     await this.verifyValue(elementName);
     await this.verifyIcon(elementName);
@@ -794,6 +795,11 @@ class InputTestHelpers extends LitTestHelpers {
     ]);
   }
 
+  /**
+   * Verifies that the aria-label attribute is applied to the input element.
+   *
+   * @param {string} selector - HTML tag of the element under test.
+   */
   async verifyAriaLabel(selector) {
     const ARIA_LABEL = "I'm not visible";
     let ariaLabelTemplate = this.templateFn({
@@ -813,6 +819,32 @@ class InputTestHelpers extends LitTestHelpers {
       input.inputEl.getAttribute("aria-label"),
       ARIA_LABEL,
       "The aria-label is set on the input element."
+    );
+  }
+
+  /**
+   * Verifies that the aria-description attribute is applied to the input element.
+   *
+   * @param {string} selector - HTML tag of the element under test.
+   */
+  async verifyAriaDescription(selector) {
+    const ARIA_DESCRIPTION = "I'm not visible";
+    let ariaDescriptionTemplate = this.templateFn({
+      value: "default",
+      "aria-description": ARIA_DESCRIPTION,
+    });
+    let renderTarget = await this.renderTemplate(ariaDescriptionTemplate);
+    let input = renderTarget.querySelector(selector);
+
+    ok(!input.hasDescription, "No visible description text is rendered.");
+    ok(
+      !input.getAttribute("aria-description"),
+      "aria-description is not set on the outer element."
+    );
+    is(
+      input.inputEl.getAttribute("aria-description"),
+      ARIA_DESCRIPTION,
+      "The aria-description is set on the input element."
     );
   }
 

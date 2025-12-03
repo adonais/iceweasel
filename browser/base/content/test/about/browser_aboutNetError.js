@@ -14,7 +14,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "gDNSOverride",
   "@mozilla.org/network/native-dns-override;1",
-  "nsINativeDNSResolverOverride"
+  Ci.nsINativeDNSResolverOverride
 );
 
 // This includes all the cipher suite prefs we have.

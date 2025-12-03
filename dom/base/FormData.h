@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_FormData_h
 #define mozilla_dom_FormData_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FormDataBinding.h"

@@ -20,7 +20,6 @@
 #include "mozilla/TextUtils.h"
 #include "mozilla/Try.h"
 #include "mozilla/TypedEnumBits.h"
-#include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
 
 #include <algorithm>

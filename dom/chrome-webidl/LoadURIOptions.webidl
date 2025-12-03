@@ -137,4 +137,10 @@ dictionary LoadURIOptions {
   * COLD = 1, WARM = 2, HOT = 3, UNKNOWN = 0.
   */
   unsigned long appLinkLaunchType = 0;
+
+  /**
+   * Whether this is a captive portal tab. Used to grant local network access
+   * permissions without prompting the user.
+   */
+  boolean isCaptivePortalTab = false;
 };

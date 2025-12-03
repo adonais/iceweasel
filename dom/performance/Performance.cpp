@@ -183,15 +183,15 @@ void Performance::GetEntries(nsTArray<RefPtr<PerformanceEntry>>& aRetval) {
 
 void Performance::GetEntriesByType(
     const nsAString& aEntryType, nsTArray<RefPtr<PerformanceEntry>>& aRetval) {
-  if (aEntryType.EqualsLiteral("resource")) {
+  RefPtr<nsAtom> entryType = NS_Atomize(aEntryType);
+  if (entryType == nsGkAtoms::resource) {
     aRetval = mResourceEntries.Clone();
     return;
   }
 
   aRetval.Clear();
 
-  if (aEntryType.EqualsLiteral("mark") || aEntryType.EqualsLiteral("measure")) {
-    RefPtr<nsAtom> entryType = NS_Atomize(aEntryType);
+  if (entryType == nsGkAtoms::mark || entryType == nsGkAtoms::measure) {
     for (PerformanceEntry* entry : mUserEntries) {
       if (entry->GetEntryType() == entryType) {
         aRetval.AppendElement(entry);
@@ -915,7 +915,7 @@ void Performance::InsertUserEntry(PerformanceEntry* aEntry) {
  *
  * Buffer Full Event
  */
-void Performance::BufferEvent() {
+void Performance::ResourceTimingBufferFullEvent() {
   /*
    * While resource timing secondary buffer is not empty,
    * run the following substeps:
@@ -936,7 +936,7 @@ void Performance::BufferEvent() {
      * at the Performance object.
      */
     if (!CanAddResourceTimingEntry()) {
-      DispatchBufferFullEvent();
+      DispatchResourceTimingBufferFullEvent();
     }
 
     /*
@@ -1049,7 +1049,8 @@ void Performance::InsertResourceEntry(PerformanceEntry* aEntry) {
      * Queue a task to run fire a buffer full event.
      */
     NS_DispatchToCurrentThread(NewCancelableRunnableMethod(
-        "Performance::BufferEvent", this, &Performance::BufferEvent));
+        "Performance::ResourceTimingBufferFullEvent", this,
+        &Performance::ResourceTimingBufferFullEvent));
   }
   /*
    * Add new entry to the resource timing secondary buffer.

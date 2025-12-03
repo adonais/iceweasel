@@ -33,7 +33,7 @@ add_setup(async function setup() {
       },
     ],
     prefs: [
-      ["suggest.quicksuggest.nonsponsored", true],
+      ["suggest.quicksuggest.all", true],
       ["suggest.quicksuggest.sponsored", true],
       ["quicksuggest.ampTopPickCharThreshold", 0],
     ],

@@ -278,7 +278,7 @@ class TelemetryHandler {
    * Sets the source of a SERP visit from something that occured in content
    * rather than from the browser.
    *
-   * @param {browser} browser
+   * @param {MozBrowser} browser
    *   The browser object associated with the page that should be a SERP.
    * @param {string} source
    *   The source that started the load. One of
@@ -394,7 +394,7 @@ class TelemetryHandler {
    * Records the search source for particular browsers, in case it needs
    * to be associated with a SERP.
    *
-   * @param {browser} browser
+   * @param {MozBrowser} browser
    *   The browser where the search originated.
    * @param {string} source
    *    Where the search originated from.
@@ -407,7 +407,7 @@ class TelemetryHandler {
    * Records the newtab source for particular browsers, in case it needs
    * to be associated with a SERP.
    *
-   * @param {browser} browser
+   * @param {MozBrowser} browser
    *   The browser where the search originated.
    * @param {string} newtabSessionId
    *    The sessionId of the newtab session the search originated from.
@@ -669,7 +669,7 @@ class TelemetryHandler {
    * 3. Untrack the browser if we're tracking it and switching pages.
    * 4. Track the browser if we're now on a default search page.
    *
-   * @param {BrowserElement} browser
+   * @param {MozBrowser} browser
    *   The browser element related to the request.
    * @param {string} url
    *   The url of the request.
@@ -1321,7 +1321,7 @@ class TelemetryHandler {
    * caches information that shouldn't be changed during the lifetime of the
    * impression.
    *
-   * @param {browser} browser
+   * @param {MozBrowser} browser
    *   The browser associated with the SERP.
    * @param {string} url
    *   The URL of the SERP.
@@ -1630,11 +1630,10 @@ class ContentHandler {
       (wrappedChannel.channel.loadInfo.isTopLevelLoad ||
         info.nonAdsLinkRegexps.some(r => r.test(url)))
     ) {
-      let browser = wrappedChannel.browserElement;
+      let browser = /** @type {MozBrowser} */ (wrappedChannel.browserElement);
 
       // If the load is from history, don't record an event.
       if (
-        // @ts-expect-error - Bug 1957632
         browser?.browsingContext.webProgress?.loadType &
         Ci.nsIDocShell.LOAD_CMD_HISTORY
       ) {
@@ -1669,7 +1668,6 @@ class ContentHandler {
           // If the count is more than 1, then multiple open SERPs contain the
           // same search term, so try to find the specific browser that opened
           // the request.
-          // @ts-expect-error - Bug 1957632
           let tabBrowser = browser.getTabBrowser();
           let tab = tabBrowser.getTabForBrowser(browser).openerTab;
           // A tab will not always have an openerTab, as first tabs in new
@@ -1828,10 +1826,8 @@ class ContentHandler {
     // The sponsored link could be opened in a new tab, in which case the
     // browser URI may not match a SERP. Thus, try to find a tab that contains
     // a URI matching a SERP.
-    let browser = wrappedChannel.browserElement;
-    // @ts-expect-error - Bug 1957632
+    let browser = /** @type {MozBrowser} */ (wrappedChannel.browserElement);
     if (browser?.currentURI.spec == "about:blank") {
-      // @ts-expect-error - Bug 1957632
       let tabBrowser = browser.getTabBrowser();
       let tab = tabBrowser.getTabForBrowser(browser).openerTab;
       if (tab) {
@@ -1853,7 +1849,6 @@ class ContentHandler {
       return null;
     }
 
-    // @ts-expect-error - Bug 1957632
     return browser?.currentURI.spec;
   }
 

@@ -1,3 +1,5 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
 #include <stdint.h>
 
 #include "gtest/gtest.h"

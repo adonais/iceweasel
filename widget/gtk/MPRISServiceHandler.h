@@ -10,7 +10,6 @@
 #include <gio/gio.h>
 #include "mozilla/dom/FetchImageHelper.h"
 #include "mozilla/dom/MediaControlKeySource.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "nsIFile.h"
 #include "nsMimeTypes.h"

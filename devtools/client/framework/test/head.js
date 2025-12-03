@@ -65,8 +65,8 @@ async function getParentProcessActors(callback) {
   callback(commands.client, mainProcessTargetFront);
 }
 
-function getSourceActor(aSources, aURL) {
-  const item = aSources.getItemForAttachment(a => a.source.url === aURL);
+function getSourceActor(sources, url) {
+  const item = sources.getItemForAttachment(a => a.source.url === url);
   return item && item.value;
 }
 
@@ -85,7 +85,8 @@ function synthesizeKeyElement(el) {
   EventUtils.synthesizeKey(key, mod, el.ownerDocument.defaultView);
 }
 
-/* Check the toolbox host type and prefs to make sure they match the
+/**
+ * Check the toolbox host type and prefs to make sure they match the
  * expected values
  * @param {Toolbox}
  * @param {HostType} hostType
@@ -367,7 +368,7 @@ function getElementByToolIdOrExtensionIdOrSelector(toolbox, idOrSelector) {
 
 /**
  * Returns a toolbox tab element, even if it's overflowed
- **/
+ */
 function getToolboxTab(doc, toolId) {
   return (
     doc.getElementById(`toolbox-tab-${toolId}`) ||

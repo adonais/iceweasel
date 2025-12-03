@@ -39,6 +39,7 @@ https_first_disabled = true
 ["browser_bfcache_exemption_about_pages.js"]
 run-if = ["fission"]
 skip-if = [
+  "verify-standalone",
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug", # Bug 1934436
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug", # Bug 1934436
 ]
@@ -517,6 +518,10 @@ tags = "vertical-tabs"
 ["browser_tab_groups.js"]
 support-files = ["file_new_tab_page.html"]
 tags = "vertical-tabs"
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && opt", # Bug 1928146
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && opt", # Bug 1928146
+]
 
 ["browser_tab_groups_a11y.js"]
 tags = "vertical-tabs"
@@ -554,6 +559,9 @@ tags = "vertical-tabs"
 
 ["browser_tab_manager_groups.js"]
 tags = "vertical-tabs"
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1994900
+]
 
 ["browser_tab_manager_keyboard_access.js"]
 tags = "vertical-tabs"
@@ -576,12 +584,13 @@ tags = "vertical-tabs"
 
 ["browser_tab_preview.js"]
 tags = "vertical-tabs"
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && swgl", # Bug 1980036
-  "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", # Bug 1980036
-]
 
 ["browser_tab_splitview.js"]
+
+["browser_tab_splitview_contextmenu.js"]
+skip-if = [
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", # Bug 1994508
+]
 
 ["browser_tab_splitview_keyboard_focus.js"]
 

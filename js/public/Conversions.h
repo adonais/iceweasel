@@ -11,7 +11,6 @@
 
 #include "mozilla/Casting.h"
 #include "mozilla/FloatingPoint.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/WrappingOperations.h"
 
 #include <cmath>

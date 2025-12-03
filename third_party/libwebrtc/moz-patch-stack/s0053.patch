@@ -13,7 +13,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f097eb8cbd8b7686c
  2 files changed, 9 insertions(+)
 
 diff --git a/api/task_queue/BUILD.gn b/api/task_queue/BUILD.gn
-index c1c917abb2..de937ccf7e 100644
+index 7db75d5fd3..d0feb5007c 100644
 --- a/api/task_queue/BUILD.gn
 +++ b/api/task_queue/BUILD.gn
 @@ -29,6 +29,11 @@ rtc_library("task_queue") {
@@ -29,10 +29,10 @@ index c1c917abb2..de937ccf7e 100644
  rtc_library("task_queue_test") {
    visibility = [ "*" ]
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index d9cc228c4c..c0722653fe 100644
+index 4114dc96e5..3feb70a0d1 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -663,10 +663,14 @@ if (is_mac || is_ios) {
+@@ -664,10 +664,14 @@ if (is_mac || is_ios) {
  if (is_win) {
    rtc_library("rtc_task_queue_win") {
      visibility = [ "../api/task_queue:default_task_queue_factory" ]

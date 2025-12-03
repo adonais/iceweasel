@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.4.322
- * pdfjsBuild = 657a18d7a
+ * pdfjsVersion = 5.4.396
+ * pdfjsBuild = 0a2680bca
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -107,6 +107,11 @@ const PermissionFlag = {
   COPY_FOR_ACCESSIBILITY: 0x200,
   ASSEMBLE: 0x400,
   PRINT_HIGH_QUALITY: 0x800
+};
+const MeshFigureType = {
+  TRIANGLES: 1,
+  LATTICE: 2,
+  PATCH: 3
 };
 const TextRenderingMode = {
   FILL: 0,
@@ -326,7 +331,8 @@ const DrawOPS = {
   moveTo: 0,
   lineTo: 1,
   curveTo: 2,
-  closePath: 3
+  quadraticCurveTo: 3,
+  closePath: 4
 };
 const PasswordResponses = {
   NEED_PASSWORD: 1,
@@ -514,6 +520,12 @@ class util_FeatureTest {
   }
   static get isImageDecoderSupported() {
     return shadow(this, "isImageDecoderSupported", typeof ImageDecoder !== "undefined");
+  }
+  static get isFloat16ArraySupported() {
+    return shadow(this, "isFloat16ArraySupported", typeof Float16Array !== "undefined");
+  }
+  static get isSanitizerSupported() {
+    return shadow(this, "isSanitizerSupported", typeof Sanitizer !== "undefined");
   }
   static get platform() {
     const {
@@ -1807,6 +1819,35 @@ function renderRichText({
   fragment.firstChild.classList.add("richText", className);
   container.append(fragment);
 }
+function makePathFromDrawOPS(data) {
+  const path = new Path2D();
+  if (!data) {
+    return path;
+  }
+  for (let i = 0, ii = data.length; i < ii;) {
+    switch (data[i++]) {
+      case DrawOPS.moveTo:
+        path.moveTo(data[i++], data[i++]);
+        break;
+      case DrawOPS.lineTo:
+        path.lineTo(data[i++], data[i++]);
+        break;
+      case DrawOPS.curveTo:
+        path.bezierCurveTo(data[i++], data[i++], data[i++], data[i++], data[i++], data[i++]);
+        break;
+      case DrawOPS.quadraticCurveTo:
+        path.quadraticCurveTo(data[i++], data[i++], data[i++], data[i++]);
+        break;
+      case DrawOPS.closePath:
+        path.closePath();
+        break;
+      default:
+        warn(`Unrecognized drawing path operator: ${data[i - 1]}`);
+        break;
+    }
+  }
+  return path;
+}
 
 ;// ./src/display/editor/toolbar.js
 
@@ -2115,6 +2156,54 @@ class FloatingToolbar {
 function bindEvents(obj, element, names) {
   for (const name of names) {
     element.addEventListener(name, obj[name].bind(obj));
+  }
+}
+class CurrentPointers {
+  static #pointerId = NaN;
+  static #pointerIds = null;
+  static #moveTimestamp = NaN;
+  static #pointerType = null;
+  static initializeAndAddPointerId(pointerId) {
+    (CurrentPointers.#pointerIds ||= new Set()).add(pointerId);
+  }
+  static setPointer(pointerType, pointerId) {
+    CurrentPointers.#pointerId ||= pointerId;
+    CurrentPointers.#pointerType ??= pointerType;
+  }
+  static setTimeStamp(timeStamp) {
+    CurrentPointers.#moveTimestamp = timeStamp;
+  }
+  static isSamePointerId(pointerId) {
+    return CurrentPointers.#pointerId === pointerId;
+  }
+  static isSamePointerIdOrRemove(pointerId) {
+    if (CurrentPointers.#pointerId === pointerId) {
+      return true;
+    }
+    CurrentPointers.#pointerIds?.delete(pointerId);
+    return false;
+  }
+  static isSamePointerType(pointerType) {
+    return CurrentPointers.#pointerType === pointerType;
+  }
+  static isInitializedAndDifferentPointerType(pointerType) {
+    return CurrentPointers.#pointerType !== null && !CurrentPointers.isSamePointerType(pointerType);
+  }
+  static isSameTimeStamp(timeStamp) {
+    return CurrentPointers.#moveTimestamp === timeStamp;
+  }
+  static isUsingMultiplePointers() {
+    return CurrentPointers.#pointerIds?.size >= 1;
+  }
+  static clearPointerType() {
+    CurrentPointers.#pointerType = null;
+  }
+  static clearPointerIds() {
+    CurrentPointers.#pointerId = NaN;
+    CurrentPointers.#pointerIds = null;
+  }
+  static clearTimeStamp() {
+    CurrentPointers.#moveTimestamp = NaN;
   }
 }
 class IdManager {
@@ -4488,7 +4577,7 @@ class Comment {
       comment.setAttribute("data-l10n-id", "pdfjs-show-comment-button");
     } else {
       comment.ariaControlsElements = [this.#editor._uiManager.getCommentDialogElement()];
-      comment.setAttribute("data-l10n-id", "pdfjs-editor-edit-comment-button");
+      comment.setAttribute("data-l10n-id", "pdfjs-editor-add-comment-button");
     }
     const signal = this.#editor._uiManager._signal;
     if (!(signal instanceof AbortSignal) || signal.aborted) {
@@ -5584,6 +5673,9 @@ class AnnotationEditor {
     return this.canAddComment ? this.#comment ||= new Comment(this) : null;
   }
   addStandaloneCommentButton() {
+    if (!this._uiManager.hasCommentManager()) {
+      return;
+    }
     if (this.#commentStandaloneButton) {
       if (this._uiManager.isEditingMode()) {
         this.#commentStandaloneButton.classList.remove("hidden");
@@ -6818,6 +6910,7 @@ class PrintAnnotationStorage extends AnnotationStorage {
 
 ;// ./src/display/font_loader.js
 
+
 class FontLoader {
   #systemFonts = new Set();
   constructor({
@@ -6994,7 +7087,7 @@ class FontFaceObject {
     } catch (ex) {
       warn(`getPathGenerator - ignoring character: "${ex}".`);
     }
-    const path = new Path2D(cmds || "");
+    const path = makePathFromDrawOPS(cmds);
     if (!this.fontExtraProperties) {
       objs.delete(objId);
     }
@@ -7071,6 +7164,660 @@ class FontFaceObject {
   }
   get defaultVMetrics() {
     return this.#fontData.defaultVMetrics;
+  }
+}
+
+;// ./src/shared/obj-bin-transform.js
+
+class CssFontInfo {
+  #buffer;
+  #view;
+  #decoder;
+  static strings = ["fontFamily", "fontWeight", "italicAngle"];
+  static write(info) {
+    const encoder = new TextEncoder();
+    const encodedStrings = {};
+    let stringsLength = 0;
+    for (const prop of CssFontInfo.strings) {
+      const encoded = encoder.encode(info[prop]);
+      encodedStrings[prop] = encoded;
+      stringsLength += 4 + encoded.length;
+    }
+    const buffer = new ArrayBuffer(stringsLength);
+    const data = new Uint8Array(buffer);
+    const view = new DataView(buffer);
+    let offset = 0;
+    for (const prop of CssFontInfo.strings) {
+      const encoded = encodedStrings[prop];
+      const length = encoded.length;
+      view.setUint32(offset, length);
+      data.set(encoded, offset + 4);
+      offset += 4 + length;
+    }
+    assert(offset === buffer.byteLength, "CssFontInfo.write: Buffer overflow");
+    return buffer;
+  }
+  constructor(buffer) {
+    this.#buffer = buffer;
+    this.#view = new DataView(this.#buffer);
+    this.#decoder = new TextDecoder();
+  }
+  #readString(index) {
+    assert(index < CssFontInfo.strings.length, "Invalid string index");
+    let offset = 0;
+    for (let i = 0; i < index; i++) {
+      offset += this.#view.getUint32(offset) + 4;
+    }
+    const length = this.#view.getUint32(offset);
+    return this.#decoder.decode(new Uint8Array(this.#buffer, offset + 4, length));
+  }
+  get fontFamily() {
+    return this.#readString(0);
+  }
+  get fontWeight() {
+    return this.#readString(1);
+  }
+  get italicAngle() {
+    return this.#readString(2);
+  }
+}
+class SystemFontInfo {
+  #buffer;
+  #view;
+  #decoder;
+  static strings = ["css", "loadedName", "baseFontName", "src"];
+  static write(info) {
+    const encoder = new TextEncoder();
+    const encodedStrings = {};
+    let stringsLength = 0;
+    for (const prop of SystemFontInfo.strings) {
+      const encoded = encoder.encode(info[prop]);
+      encodedStrings[prop] = encoded;
+      stringsLength += 4 + encoded.length;
+    }
+    stringsLength += 4;
+    let encodedStyleStyle,
+      encodedStyleWeight,
+      lengthEstimate = 1 + stringsLength;
+    if (info.style) {
+      encodedStyleStyle = encoder.encode(info.style.style);
+      encodedStyleWeight = encoder.encode(info.style.weight);
+      lengthEstimate += 4 + encodedStyleStyle.length + 4 + encodedStyleWeight.length;
+    }
+    const buffer = new ArrayBuffer(lengthEstimate);
+    const data = new Uint8Array(buffer);
+    const view = new DataView(buffer);
+    let offset = 0;
+    view.setUint8(offset++, info.guessFallback ? 1 : 0);
+    view.setUint32(offset, 0);
+    offset += 4;
+    stringsLength = 0;
+    for (const prop of SystemFontInfo.strings) {
+      const encoded = encodedStrings[prop];
+      const length = encoded.length;
+      stringsLength += 4 + length;
+      view.setUint32(offset, length);
+      data.set(encoded, offset + 4);
+      offset += 4 + length;
+    }
+    view.setUint32(offset - stringsLength - 4, stringsLength);
+    if (info.style) {
+      view.setUint32(offset, encodedStyleStyle.length);
+      data.set(encodedStyleStyle, offset + 4);
+      offset += 4 + encodedStyleStyle.length;
+      view.setUint32(offset, encodedStyleWeight.length);
+      data.set(encodedStyleWeight, offset + 4);
+      offset += 4 + encodedStyleWeight.length;
+    }
+    assert(offset <= buffer.byteLength, "SubstitionInfo.write: Buffer overflow");
+    return buffer.transferToFixedLength(offset);
+  }
+  constructor(buffer) {
+    this.#buffer = buffer;
+    this.#view = new DataView(this.#buffer);
+    this.#decoder = new TextDecoder();
+  }
+  get guessFallback() {
+    return this.#view.getUint8(0) !== 0;
+  }
+  #readString(index) {
+    assert(index < SystemFontInfo.strings.length, "Invalid string index");
+    let offset = 5;
+    for (let i = 0; i < index; i++) {
+      offset += this.#view.getUint32(offset) + 4;
+    }
+    const length = this.#view.getUint32(offset);
+    return this.#decoder.decode(new Uint8Array(this.#buffer, offset + 4, length));
+  }
+  get css() {
+    return this.#readString(0);
+  }
+  get loadedName() {
+    return this.#readString(1);
+  }
+  get baseFontName() {
+    return this.#readString(2);
+  }
+  get src() {
+    return this.#readString(3);
+  }
+  get style() {
+    let offset = 1;
+    offset += 4 + this.#view.getUint32(offset);
+    const styleLength = this.#view.getUint32(offset);
+    const style = this.#decoder.decode(new Uint8Array(this.#buffer, offset + 4, styleLength));
+    offset += 4 + styleLength;
+    const weightLength = this.#view.getUint32(offset);
+    const weight = this.#decoder.decode(new Uint8Array(this.#buffer, offset + 4, weightLength));
+    return {
+      style,
+      weight
+    };
+  }
+}
+class FontInfo {
+  static bools = ["black", "bold", "disableFontFace", "fontExtraProperties", "isInvalidPDFjsFont", "isType3Font", "italic", "missingFile", "remeasure", "vertical"];
+  static numbers = ["ascent", "defaultWidth", "descent"];
+  static strings = ["fallbackName", "loadedName", "mimetype", "name"];
+  static #OFFSET_NUMBERS = Math.ceil(this.bools.length * 2 / 8);
+  static #OFFSET_BBOX = this.#OFFSET_NUMBERS + this.numbers.length * 8;
+  static #OFFSET_FONT_MATRIX = this.#OFFSET_BBOX + 1 + 2 * 4;
+  static #OFFSET_DEFAULT_VMETRICS = this.#OFFSET_FONT_MATRIX + 1 + 8 * 6;
+  static #OFFSET_STRINGS = this.#OFFSET_DEFAULT_VMETRICS + 1 + 2 * 3;
+  #buffer;
+  #decoder;
+  #view;
+  constructor({
+    data,
+    extra
+  }) {
+    this.#buffer = data;
+    this.#decoder = new TextDecoder();
+    this.#view = new DataView(this.#buffer);
+    if (extra) {
+      Object.assign(this, extra);
+    }
+  }
+  #readBoolean(index) {
+    assert(index < FontInfo.bools.length, "Invalid boolean index");
+    const byteOffset = Math.floor(index / 4);
+    const bitOffset = index * 2 % 8;
+    const value = this.#view.getUint8(byteOffset) >> bitOffset & 0x03;
+    return value === 0x00 ? undefined : value === 0x02;
+  }
+  get black() {
+    return this.#readBoolean(0);
+  }
+  get bold() {
+    return this.#readBoolean(1);
+  }
+  get disableFontFace() {
+    return this.#readBoolean(2);
+  }
+  get fontExtraProperties() {
+    return this.#readBoolean(3);
+  }
+  get isInvalidPDFjsFont() {
+    return this.#readBoolean(4);
+  }
+  get isType3Font() {
+    return this.#readBoolean(5);
+  }
+  get italic() {
+    return this.#readBoolean(6);
+  }
+  get missingFile() {
+    return this.#readBoolean(7);
+  }
+  get remeasure() {
+    return this.#readBoolean(8);
+  }
+  get vertical() {
+    return this.#readBoolean(9);
+  }
+  #readNumber(index) {
+    assert(index < FontInfo.numbers.length, "Invalid number index");
+    return this.#view.getFloat64(FontInfo.#OFFSET_NUMBERS + index * 8);
+  }
+  get ascent() {
+    return this.#readNumber(0);
+  }
+  get defaultWidth() {
+    return this.#readNumber(1);
+  }
+  get descent() {
+    return this.#readNumber(2);
+  }
+  get bbox() {
+    let offset = FontInfo.#OFFSET_BBOX;
+    const numCoords = this.#view.getUint8(offset);
+    if (numCoords === 0) {
+      return undefined;
+    }
+    offset += 1;
+    const bbox = [];
+    for (let i = 0; i < 4; i++) {
+      bbox.push(this.#view.getInt16(offset, true));
+      offset += 2;
+    }
+    return bbox;
+  }
+  get fontMatrix() {
+    let offset = FontInfo.#OFFSET_FONT_MATRIX;
+    const numPoints = this.#view.getUint8(offset);
+    if (numPoints === 0) {
+      return undefined;
+    }
+    offset += 1;
+    const fontMatrix = [];
+    for (let i = 0; i < 6; i++) {
+      fontMatrix.push(this.#view.getFloat64(offset, true));
+      offset += 8;
+    }
+    return fontMatrix;
+  }
+  get defaultVMetrics() {
+    let offset = FontInfo.#OFFSET_DEFAULT_VMETRICS;
+    const numMetrics = this.#view.getUint8(offset);
+    if (numMetrics === 0) {
+      return undefined;
+    }
+    offset += 1;
+    const defaultVMetrics = [];
+    for (let i = 0; i < 3; i++) {
+      defaultVMetrics.push(this.#view.getInt16(offset, true));
+      offset += 2;
+    }
+    return defaultVMetrics;
+  }
+  #readString(index) {
+    assert(index < FontInfo.strings.length, "Invalid string index");
+    let offset = FontInfo.#OFFSET_STRINGS + 4;
+    for (let i = 0; i < index; i++) {
+      offset += this.#view.getUint32(offset) + 4;
+    }
+    const length = this.#view.getUint32(offset);
+    const stringData = new Uint8Array(length);
+    stringData.set(new Uint8Array(this.#buffer, offset + 4, length));
+    return this.#decoder.decode(stringData);
+  }
+  get fallbackName() {
+    return this.#readString(0);
+  }
+  get loadedName() {
+    return this.#readString(1);
+  }
+  get mimetype() {
+    return this.#readString(2);
+  }
+  get name() {
+    return this.#readString(3);
+  }
+  get data() {
+    let offset = FontInfo.#OFFSET_STRINGS;
+    const stringsLength = this.#view.getUint32(offset);
+    offset += 4 + stringsLength;
+    const systemFontInfoLength = this.#view.getUint32(offset);
+    offset += 4 + systemFontInfoLength;
+    const cssFontInfoLength = this.#view.getUint32(offset);
+    offset += 4 + cssFontInfoLength;
+    const length = this.#view.getUint32(offset);
+    if (length === 0) {
+      return undefined;
+    }
+    return new Uint8Array(this.#buffer, offset + 4, length);
+  }
+  clearData() {
+    let offset = FontInfo.#OFFSET_STRINGS;
+    const stringsLength = this.#view.getUint32(offset);
+    offset += 4 + stringsLength;
+    const systemFontInfoLength = this.#view.getUint32(offset);
+    offset += 4 + systemFontInfoLength;
+    const cssFontInfoLength = this.#view.getUint32(offset);
+    offset += 4 + cssFontInfoLength;
+    const length = this.#view.getUint32(offset);
+    const data = new Uint8Array(this.#buffer, offset + 4, length);
+    data.fill(0);
+    this.#view.setUint32(offset, 0);
+  }
+  get cssFontInfo() {
+    let offset = FontInfo.#OFFSET_STRINGS;
+    const stringsLength = this.#view.getUint32(offset);
+    offset += 4 + stringsLength;
+    const systemFontInfoLength = this.#view.getUint32(offset);
+    offset += 4 + systemFontInfoLength;
+    const cssFontInfoLength = this.#view.getUint32(offset);
+    if (cssFontInfoLength === 0) {
+      return null;
+    }
+    const cssFontInfoData = new Uint8Array(cssFontInfoLength);
+    cssFontInfoData.set(new Uint8Array(this.#buffer, offset + 4, cssFontInfoLength));
+    return new CssFontInfo(cssFontInfoData.buffer);
+  }
+  get systemFontInfo() {
+    let offset = FontInfo.#OFFSET_STRINGS;
+    const stringsLength = this.#view.getUint32(offset);
+    offset += 4 + stringsLength;
+    const systemFontInfoLength = this.#view.getUint32(offset);
+    if (systemFontInfoLength === 0) {
+      return null;
+    }
+    const systemFontInfoData = new Uint8Array(systemFontInfoLength);
+    systemFontInfoData.set(new Uint8Array(this.#buffer, offset + 4, systemFontInfoLength));
+    return new SystemFontInfo(systemFontInfoData.buffer);
+  }
+  static write(font) {
+    const systemFontInfoBuffer = font.systemFontInfo ? SystemFontInfo.write(font.systemFontInfo) : null;
+    const cssFontInfoBuffer = font.cssFontInfo ? CssFontInfo.write(font.cssFontInfo) : null;
+    const encoder = new TextEncoder();
+    const encodedStrings = {};
+    let stringsLength = 0;
+    for (const prop of FontInfo.strings) {
+      encodedStrings[prop] = encoder.encode(font[prop]);
+      stringsLength += 4 + encodedStrings[prop].length;
+    }
+    const lengthEstimate = FontInfo.#OFFSET_STRINGS + 4 + stringsLength + 4 + (systemFontInfoBuffer ? systemFontInfoBuffer.byteLength : 0) + 4 + (cssFontInfoBuffer ? cssFontInfoBuffer.byteLength : 0) + 4 + (font.data ? font.data.length : 0);
+    const buffer = new ArrayBuffer(lengthEstimate);
+    const data = new Uint8Array(buffer);
+    const view = new DataView(buffer);
+    let offset = 0;
+    const numBools = FontInfo.bools.length;
+    let boolByte = 0,
+      boolBit = 0;
+    for (let i = 0; i < numBools; i++) {
+      const value = font[FontInfo.bools[i]];
+      const bits = value === undefined ? 0x00 : value ? 0x02 : 0x01;
+      boolByte |= bits << boolBit;
+      boolBit += 2;
+      if (boolBit === 8 || i === numBools - 1) {
+        view.setUint8(offset++, boolByte);
+        boolByte = 0;
+        boolBit = 0;
+      }
+    }
+    assert(offset === FontInfo.#OFFSET_NUMBERS, "FontInfo.write: Boolean properties offset mismatch");
+    for (const prop of FontInfo.numbers) {
+      view.setFloat64(offset, font[prop]);
+      offset += 8;
+    }
+    assert(offset === FontInfo.#OFFSET_BBOX, "FontInfo.write: Number properties offset mismatch");
+    if (font.bbox) {
+      view.setUint8(offset++, 4);
+      for (const coord of font.bbox) {
+        view.setInt16(offset, coord, true);
+        offset += 2;
+      }
+    } else {
+      view.setUint8(offset++, 0);
+      offset += 2 * 4;
+    }
+    assert(offset === FontInfo.#OFFSET_FONT_MATRIX, "FontInfo.write: BBox properties offset mismatch");
+    if (font.fontMatrix) {
+      view.setUint8(offset++, 6);
+      for (const point of font.fontMatrix) {
+        view.setFloat64(offset, point, true);
+        offset += 8;
+      }
+    } else {
+      view.setUint8(offset++, 0);
+      offset += 8 * 6;
+    }
+    assert(offset === FontInfo.#OFFSET_DEFAULT_VMETRICS, "FontInfo.write: FontMatrix properties offset mismatch");
+    if (font.defaultVMetrics) {
+      view.setUint8(offset++, 1);
+      for (const metric of font.defaultVMetrics) {
+        view.setInt16(offset, metric, true);
+        offset += 2;
+      }
+    } else {
+      view.setUint8(offset++, 0);
+      offset += 3 * 2;
+    }
+    assert(offset === FontInfo.#OFFSET_STRINGS, "FontInfo.write: DefaultVMetrics properties offset mismatch");
+    view.setUint32(FontInfo.#OFFSET_STRINGS, 0);
+    offset += 4;
+    for (const prop of FontInfo.strings) {
+      const encoded = encodedStrings[prop];
+      const length = encoded.length;
+      view.setUint32(offset, length);
+      data.set(encoded, offset + 4);
+      offset += 4 + length;
+    }
+    view.setUint32(FontInfo.#OFFSET_STRINGS, offset - FontInfo.#OFFSET_STRINGS - 4);
+    if (!systemFontInfoBuffer) {
+      view.setUint32(offset, 0);
+      offset += 4;
+    } else {
+      const length = systemFontInfoBuffer.byteLength;
+      view.setUint32(offset, length);
+      assert(offset + 4 + length <= buffer.byteLength, "FontInfo.write: Buffer overflow at systemFontInfo");
+      data.set(new Uint8Array(systemFontInfoBuffer), offset + 4);
+      offset += 4 + length;
+    }
+    if (!cssFontInfoBuffer) {
+      view.setUint32(offset, 0);
+      offset += 4;
+    } else {
+      const length = cssFontInfoBuffer.byteLength;
+      view.setUint32(offset, length);
+      assert(offset + 4 + length <= buffer.byteLength, "FontInfo.write: Buffer overflow at cssFontInfo");
+      data.set(new Uint8Array(cssFontInfoBuffer), offset + 4);
+      offset += 4 + length;
+    }
+    if (font.data === undefined) {
+      view.setUint32(offset, 0);
+      offset += 4;
+    } else {
+      view.setUint32(offset, font.data.length);
+      data.set(font.data, offset + 4);
+      offset += 4 + font.data.length;
+    }
+    assert(offset <= buffer.byteLength, "FontInfo.write: Buffer overflow");
+    return buffer.transferToFixedLength(offset);
+  }
+}
+class PatternInfo {
+  static #KIND = 0;
+  static #HAS_BBOX = 1;
+  static #HAS_BACKGROUND = 2;
+  static #SHADING_TYPE = 3;
+  static #N_COORD = 4;
+  static #N_COLOR = 8;
+  static #N_STOP = 12;
+  static #N_FIGURES = 16;
+  constructor(buffer) {
+    this.buffer = buffer;
+    this.view = new DataView(buffer);
+    this.data = new Uint8Array(buffer);
+  }
+  static write(ir) {
+    let kind,
+      bbox = null,
+      coords = [],
+      colors = [],
+      colorStops = [],
+      figures = [],
+      shadingType = null,
+      background = null;
+    switch (ir[0]) {
+      case "RadialAxial":
+        kind = ir[1] === "axial" ? 1 : 2;
+        bbox = ir[2];
+        colorStops = ir[3];
+        if (kind === 1) {
+          coords.push(...ir[4], ...ir[5]);
+        } else {
+          coords.push(ir[4][0], ir[4][1], ir[6], ir[5][0], ir[5][1], ir[7]);
+        }
+        break;
+      case "Mesh":
+        kind = 3;
+        shadingType = ir[1];
+        coords = ir[2];
+        colors = ir[3];
+        figures = ir[4] || [];
+        bbox = ir[6];
+        background = ir[7];
+        break;
+      default:
+        throw new Error(`Unsupported pattern type: ${ir[0]}`);
+    }
+    const nCoord = Math.floor(coords.length / 2);
+    const nColor = Math.floor(colors.length / 3);
+    const nStop = colorStops.length;
+    const nFigures = figures.length;
+    let figuresSize = 0;
+    for (const figure of figures) {
+      figuresSize += 1;
+      figuresSize = Math.ceil(figuresSize / 4) * 4;
+      figuresSize += 4 + figure.coords.length * 4;
+      figuresSize += 4 + figure.colors.length * 4;
+      if (figure.verticesPerRow !== undefined) {
+        figuresSize += 4;
+      }
+    }
+    const byteLen = 20 + nCoord * 8 + nColor * 3 + nStop * 8 + (bbox ? 16 : 0) + (background ? 3 : 0) + figuresSize;
+    const buffer = new ArrayBuffer(byteLen);
+    const dataView = new DataView(buffer);
+    const u8data = new Uint8Array(buffer);
+    dataView.setUint8(PatternInfo.#KIND, kind);
+    dataView.setUint8(PatternInfo.#HAS_BBOX, bbox ? 1 : 0);
+    dataView.setUint8(PatternInfo.#HAS_BACKGROUND, background ? 1 : 0);
+    dataView.setUint8(PatternInfo.#SHADING_TYPE, shadingType);
+    dataView.setUint32(PatternInfo.#N_COORD, nCoord, true);
+    dataView.setUint32(PatternInfo.#N_COLOR, nColor, true);
+    dataView.setUint32(PatternInfo.#N_STOP, nStop, true);
+    dataView.setUint32(PatternInfo.#N_FIGURES, nFigures, true);
+    let offset = 20;
+    const coordsView = new Float32Array(buffer, offset, nCoord * 2);
+    coordsView.set(coords);
+    offset += nCoord * 8;
+    u8data.set(colors, offset);
+    offset += nColor * 3;
+    for (const [pos, hex] of colorStops) {
+      dataView.setFloat32(offset, pos, true);
+      offset += 4;
+      dataView.setUint32(offset, parseInt(hex.slice(1), 16), true);
+      offset += 4;
+    }
+    if (bbox) {
+      for (const v of bbox) {
+        dataView.setFloat32(offset, v, true);
+        offset += 4;
+      }
+    }
+    if (background) {
+      u8data.set(background, offset);
+      offset += 3;
+    }
+    for (let i = 0; i < figures.length; i++) {
+      const figure = figures[i];
+      dataView.setUint8(offset, figure.type);
+      offset += 1;
+      offset = Math.ceil(offset / 4) * 4;
+      dataView.setUint32(offset, figure.coords.length, true);
+      offset += 4;
+      const figureCoordsView = new Int32Array(buffer, offset, figure.coords.length);
+      figureCoordsView.set(figure.coords);
+      offset += figure.coords.length * 4;
+      dataView.setUint32(offset, figure.colors.length, true);
+      offset += 4;
+      const colorsView = new Int32Array(buffer, offset, figure.colors.length);
+      colorsView.set(figure.colors);
+      offset += figure.colors.length * 4;
+      if (figure.verticesPerRow !== undefined) {
+        dataView.setUint32(offset, figure.verticesPerRow, true);
+        offset += 4;
+      }
+    }
+    return buffer;
+  }
+  getIR() {
+    const dataView = this.view;
+    const kind = this.data[PatternInfo.#KIND];
+    const hasBBox = !!this.data[PatternInfo.#HAS_BBOX];
+    const hasBackground = !!this.data[PatternInfo.#HAS_BACKGROUND];
+    const nCoord = dataView.getUint32(PatternInfo.#N_COORD, true);
+    const nColor = dataView.getUint32(PatternInfo.#N_COLOR, true);
+    const nStop = dataView.getUint32(PatternInfo.#N_STOP, true);
+    const nFigures = dataView.getUint32(PatternInfo.#N_FIGURES, true);
+    let offset = 20;
+    const coords = new Float32Array(this.buffer, offset, nCoord * 2);
+    offset += nCoord * 8;
+    const colors = new Uint8Array(this.buffer, offset, nColor * 3);
+    offset += nColor * 3;
+    const stops = [];
+    for (let i = 0; i < nStop; ++i) {
+      const p = dataView.getFloat32(offset, true);
+      offset += 4;
+      const rgb = dataView.getUint32(offset, true);
+      offset += 4;
+      stops.push([p, `#${rgb.toString(16).padStart(6, "0")}`]);
+    }
+    let bbox = null;
+    if (hasBBox) {
+      bbox = [];
+      for (let i = 0; i < 4; ++i) {
+        bbox.push(dataView.getFloat32(offset, true));
+        offset += 4;
+      }
+    }
+    let background = null;
+    if (hasBackground) {
+      background = new Uint8Array(this.buffer, offset, 3);
+      offset += 3;
+    }
+    const figures = [];
+    for (let i = 0; i < nFigures; ++i) {
+      const type = dataView.getUint8(offset);
+      offset += 1;
+      offset = Math.ceil(offset / 4) * 4;
+      const coordsLength = dataView.getUint32(offset, true);
+      offset += 4;
+      const figureCoords = new Int32Array(this.buffer, offset, coordsLength);
+      offset += coordsLength * 4;
+      const colorsLength = dataView.getUint32(offset, true);
+      offset += 4;
+      const figureColors = new Int32Array(this.buffer, offset, colorsLength);
+      offset += colorsLength * 4;
+      const figure = {
+        type,
+        coords: figureCoords,
+        colors: figureColors
+      };
+      if (type === MeshFigureType.LATTICE) {
+        figure.verticesPerRow = dataView.getUint32(offset, true);
+        offset += 4;
+      }
+      figures.push(figure);
+    }
+    if (kind === 1) {
+      return ["RadialAxial", "axial", bbox, stops, Array.from(coords.slice(0, 2)), Array.from(coords.slice(2, 4)), null, null];
+    }
+    if (kind === 2) {
+      return ["RadialAxial", "radial", bbox, stops, [coords[0], coords[1]], [coords[3], coords[4]], coords[2], coords[5]];
+    }
+    if (kind === 3) {
+      const shadingType = this.data[PatternInfo.#SHADING_TYPE];
+      let bounds = null;
+      if (coords.length > 0) {
+        let minX = coords[0],
+          maxX = coords[0];
+        let minY = coords[1],
+          maxY = coords[1];
+        for (let i = 0; i < coords.length; i += 2) {
+          const x = coords[i],
+            y = coords[i + 1];
+          minX = minX > x ? x : minX;
+          minY = minY > y ? y : minY;
+          maxX = maxX < x ? x : maxX;
+          maxY = maxY < y ? y : maxY;
+        }
+        bounds = [minX, minY, maxX, maxY];
+      }
+      return ["Mesh", shadingType, coords, colors, figures, bounds, bbox, background];
+    }
+    throw new Error(`Unsupported pattern kind: ${kind}`);
   }
 }
 
@@ -8304,7 +9051,7 @@ function drawFigure(data, figure, context) {
   const cs = figure.colors;
   let i, ii;
   switch (figure.type) {
-    case "lattice":
+    case MeshFigureType.LATTICE:
       const verticesPerRow = figure.verticesPerRow;
       const rows = Math.floor(ps.length / verticesPerRow) - 1;
       const cols = verticesPerRow - 1;
@@ -8316,7 +9063,7 @@ function drawFigure(data, figure, context) {
         }
       }
       break;
-    case "triangles":
+    case MeshFigureType.TRIANGLES:
       for (i = 0, ii = ps.length; i < ii; i += 3) {
         drawTriangle(data, context, ps[i], ps[i + 1], ps[i + 2], cs[i], cs[i + 1], cs[i + 2]);
       }
@@ -9645,27 +10392,7 @@ class CanvasGraphics {
       this.dependencyTracker.resetBBox(opIdx).recordBBox(opIdx, this.ctx, minMax[0] - outerExtraSize, minMax[2] + outerExtraSize, minMax[1] - outerExtraSize, minMax[3] + outerExtraSize).recordDependencies(opIdx, ["transform"]);
     }
     if (!(path instanceof Path2D)) {
-      const path2d = data[0] = new Path2D();
-      for (let i = 0, ii = path.length; i < ii;) {
-        switch (path[i++]) {
-          case DrawOPS.moveTo:
-            path2d.moveTo(path[i++], path[i++]);
-            break;
-          case DrawOPS.lineTo:
-            path2d.lineTo(path[i++], path[i++]);
-            break;
-          case DrawOPS.curveTo:
-            path2d.bezierCurveTo(path[i++], path[i++], path[i++], path[i++], path[i++], path[i++]);
-            break;
-          case DrawOPS.closePath:
-            path2d.closePath();
-            break;
-          default:
-            warn(`Unrecognized drawing path operator: ${path[i - 1]}`);
-            break;
-        }
-      }
-      path = path2d;
+      path = data[0] = makePathFromDrawOPS(path);
     }
     Util.axialAlignedBoundingBox(minMax, getCurrentTransform(this.ctx), this.current.minMax);
     this[op](opIdx, path);
@@ -9885,7 +10612,7 @@ class CanvasGraphics {
     this.moveText(opIdx, x, y);
   }
   setTextMatrix(opIdx, matrix) {
-    this.dependencyTracker?.recordSimpleData("textMatrix", opIdx);
+    this.dependencyTracker?.resetIncrementalData("sameLineText").recordSimpleData("textMatrix", opIdx);
     const {
       current
     } = this;
@@ -11267,456 +11994,6 @@ class DOMFilterFactory extends BaseFilterFactory {
   }
 }
 
-;// ./src/shared/obj-bin-transform.js
-
-class CssFontInfo {
-  #buffer;
-  #view;
-  #decoder;
-  static strings = ["fontFamily", "fontWeight", "italicAngle"];
-  static write(info) {
-    const encoder = new TextEncoder();
-    const encodedStrings = {};
-    let stringsLength = 0;
-    for (const prop of CssFontInfo.strings) {
-      const encoded = encoder.encode(info[prop]);
-      encodedStrings[prop] = encoded;
-      stringsLength += 4 + encoded.length;
-    }
-    const buffer = new ArrayBuffer(stringsLength);
-    const data = new Uint8Array(buffer);
-    const view = new DataView(buffer);
-    let offset = 0;
-    for (const prop of CssFontInfo.strings) {
-      const encoded = encodedStrings[prop];
-      const length = encoded.length;
-      view.setUint32(offset, length);
-      data.set(encoded, offset + 4);
-      offset += 4 + length;
-    }
-    assert(offset === buffer.byteLength, "CssFontInfo.write: Buffer overflow");
-    return buffer;
-  }
-  constructor(buffer) {
-    this.#buffer = buffer;
-    this.#view = new DataView(this.#buffer);
-    this.#decoder = new TextDecoder();
-  }
-  #readString(index) {
-    assert(index < CssFontInfo.strings.length, "Invalid string index");
-    let offset = 0;
-    for (let i = 0; i < index; i++) {
-      offset += this.#view.getUint32(offset) + 4;
-    }
-    const length = this.#view.getUint32(offset);
-    return this.#decoder.decode(new Uint8Array(this.#buffer, offset + 4, length));
-  }
-  get fontFamily() {
-    return this.#readString(0);
-  }
-  get fontWeight() {
-    return this.#readString(1);
-  }
-  get italicAngle() {
-    return this.#readString(2);
-  }
-}
-class SystemFontInfo {
-  #buffer;
-  #view;
-  #decoder;
-  static strings = ["css", "loadedName", "baseFontName", "src"];
-  static write(info) {
-    const encoder = new TextEncoder();
-    const encodedStrings = {};
-    let stringsLength = 0;
-    for (const prop of SystemFontInfo.strings) {
-      const encoded = encoder.encode(info[prop]);
-      encodedStrings[prop] = encoded;
-      stringsLength += 4 + encoded.length;
-    }
-    stringsLength += 4;
-    let encodedStyleStyle,
-      encodedStyleWeight,
-      lengthEstimate = 1 + stringsLength;
-    if (info.style) {
-      encodedStyleStyle = encoder.encode(info.style.style);
-      encodedStyleWeight = encoder.encode(info.style.weight);
-      lengthEstimate += 4 + encodedStyleStyle.length + 4 + encodedStyleWeight.length;
-    }
-    const buffer = new ArrayBuffer(lengthEstimate);
-    const data = new Uint8Array(buffer);
-    const view = new DataView(buffer);
-    let offset = 0;
-    view.setUint8(offset++, info.guessFallback ? 1 : 0);
-    view.setUint32(offset, 0);
-    offset += 4;
-    stringsLength = 0;
-    for (const prop of SystemFontInfo.strings) {
-      const encoded = encodedStrings[prop];
-      const length = encoded.length;
-      stringsLength += 4 + length;
-      view.setUint32(offset, length);
-      data.set(encoded, offset + 4);
-      offset += 4 + length;
-    }
-    view.setUint32(offset - stringsLength - 4, stringsLength);
-    if (info.style) {
-      view.setUint32(offset, encodedStyleStyle.length);
-      data.set(encodedStyleStyle, offset + 4);
-      offset += 4 + encodedStyleStyle.length;
-      view.setUint32(offset, encodedStyleWeight.length);
-      data.set(encodedStyleWeight, offset + 4);
-      offset += 4 + encodedStyleWeight.length;
-    }
-    assert(offset <= buffer.byteLength, "SubstitionInfo.write: Buffer overflow");
-    return buffer.transferToFixedLength(offset);
-  }
-  constructor(buffer) {
-    this.#buffer = buffer;
-    this.#view = new DataView(this.#buffer);
-    this.#decoder = new TextDecoder();
-  }
-  get guessFallback() {
-    return this.#view.getUint8(0) !== 0;
-  }
-  #readString(index) {
-    assert(index < SystemFontInfo.strings.length, "Invalid string index");
-    let offset = 5;
-    for (let i = 0; i < index; i++) {
-      offset += this.#view.getUint32(offset) + 4;
-    }
-    const length = this.#view.getUint32(offset);
-    return this.#decoder.decode(new Uint8Array(this.#buffer, offset + 4, length));
-  }
-  get css() {
-    return this.#readString(0);
-  }
-  get loadedName() {
-    return this.#readString(1);
-  }
-  get baseFontName() {
-    return this.#readString(2);
-  }
-  get src() {
-    return this.#readString(3);
-  }
-  get style() {
-    let offset = 1;
-    offset += 4 + this.#view.getUint32(offset);
-    const styleLength = this.#view.getUint32(offset);
-    const style = this.#decoder.decode(new Uint8Array(this.#buffer, offset + 4, styleLength));
-    offset += 4 + styleLength;
-    const weightLength = this.#view.getUint32(offset);
-    const weight = this.#decoder.decode(new Uint8Array(this.#buffer, offset + 4, weightLength));
-    return {
-      style,
-      weight
-    };
-  }
-}
-class FontInfo {
-  static bools = ["black", "bold", "disableFontFace", "fontExtraProperties", "isInvalidPDFjsFont", "isType3Font", "italic", "missingFile", "remeasure", "vertical"];
-  static numbers = ["ascent", "defaultWidth", "descent"];
-  static strings = ["fallbackName", "loadedName", "mimetype", "name"];
-  static #OFFSET_NUMBERS = Math.ceil(this.bools.length * 2 / 8);
-  static #OFFSET_BBOX = this.#OFFSET_NUMBERS + this.numbers.length * 8;
-  static #OFFSET_FONT_MATRIX = this.#OFFSET_BBOX + 1 + 2 * 4;
-  static #OFFSET_DEFAULT_VMETRICS = this.#OFFSET_FONT_MATRIX + 1 + 8 * 6;
-  static #OFFSET_STRINGS = this.#OFFSET_DEFAULT_VMETRICS + 1 + 2 * 3;
-  #buffer;
-  #decoder;
-  #view;
-  constructor({
-    data,
-    extra
-  }) {
-    this.#buffer = data;
-    this.#decoder = new TextDecoder();
-    this.#view = new DataView(this.#buffer);
-    if (extra) {
-      Object.assign(this, extra);
-    }
-  }
-  #readBoolean(index) {
-    assert(index < FontInfo.bools.length, "Invalid boolean index");
-    const byteOffset = Math.floor(index / 4);
-    const bitOffset = index * 2 % 8;
-    const value = this.#view.getUint8(byteOffset) >> bitOffset & 0x03;
-    return value === 0x00 ? undefined : value === 0x02;
-  }
-  get black() {
-    return this.#readBoolean(0);
-  }
-  get bold() {
-    return this.#readBoolean(1);
-  }
-  get disableFontFace() {
-    return this.#readBoolean(2);
-  }
-  get fontExtraProperties() {
-    return this.#readBoolean(3);
-  }
-  get isInvalidPDFjsFont() {
-    return this.#readBoolean(4);
-  }
-  get isType3Font() {
-    return this.#readBoolean(5);
-  }
-  get italic() {
-    return this.#readBoolean(6);
-  }
-  get missingFile() {
-    return this.#readBoolean(7);
-  }
-  get remeasure() {
-    return this.#readBoolean(8);
-  }
-  get vertical() {
-    return this.#readBoolean(9);
-  }
-  #readNumber(index) {
-    assert(index < FontInfo.numbers.length, "Invalid number index");
-    return this.#view.getFloat64(FontInfo.#OFFSET_NUMBERS + index * 8);
-  }
-  get ascent() {
-    return this.#readNumber(0);
-  }
-  get defaultWidth() {
-    return this.#readNumber(1);
-  }
-  get descent() {
-    return this.#readNumber(2);
-  }
-  get bbox() {
-    let offset = FontInfo.#OFFSET_BBOX;
-    const numCoords = this.#view.getUint8(offset);
-    if (numCoords === 0) {
-      return undefined;
-    }
-    offset += 1;
-    const bbox = [];
-    for (let i = 0; i < 4; i++) {
-      bbox.push(this.#view.getInt16(offset, true));
-      offset += 2;
-    }
-    return bbox;
-  }
-  get fontMatrix() {
-    let offset = FontInfo.#OFFSET_FONT_MATRIX;
-    const numPoints = this.#view.getUint8(offset);
-    if (numPoints === 0) {
-      return undefined;
-    }
-    offset += 1;
-    const fontMatrix = [];
-    for (let i = 0; i < 6; i++) {
-      fontMatrix.push(this.#view.getFloat64(offset, true));
-      offset += 8;
-    }
-    return fontMatrix;
-  }
-  get defaultVMetrics() {
-    let offset = FontInfo.#OFFSET_DEFAULT_VMETRICS;
-    const numMetrics = this.#view.getUint8(offset);
-    if (numMetrics === 0) {
-      return undefined;
-    }
-    offset += 1;
-    const defaultVMetrics = [];
-    for (let i = 0; i < 3; i++) {
-      defaultVMetrics.push(this.#view.getInt16(offset, true));
-      offset += 2;
-    }
-    return defaultVMetrics;
-  }
-  #readString(index) {
-    assert(index < FontInfo.strings.length, "Invalid string index");
-    let offset = FontInfo.#OFFSET_STRINGS + 4;
-    for (let i = 0; i < index; i++) {
-      offset += this.#view.getUint32(offset) + 4;
-    }
-    const length = this.#view.getUint32(offset);
-    const stringData = new Uint8Array(length);
-    stringData.set(new Uint8Array(this.#buffer, offset + 4, length));
-    return this.#decoder.decode(stringData);
-  }
-  get fallbackName() {
-    return this.#readString(0);
-  }
-  get loadedName() {
-    return this.#readString(1);
-  }
-  get mimetype() {
-    return this.#readString(2);
-  }
-  get name() {
-    return this.#readString(3);
-  }
-  get data() {
-    let offset = FontInfo.#OFFSET_STRINGS;
-    const stringsLength = this.#view.getUint32(offset);
-    offset += 4 + stringsLength;
-    const systemFontInfoLength = this.#view.getUint32(offset);
-    offset += 4 + systemFontInfoLength;
-    const cssFontInfoLength = this.#view.getUint32(offset);
-    offset += 4 + cssFontInfoLength;
-    const length = this.#view.getUint32(offset);
-    if (length === 0) {
-      return undefined;
-    }
-    return new Uint8Array(this.#buffer, offset + 4, length);
-  }
-  clearData() {
-    let offset = FontInfo.#OFFSET_STRINGS;
-    const stringsLength = this.#view.getUint32(offset);
-    offset += 4 + stringsLength;
-    const systemFontInfoLength = this.#view.getUint32(offset);
-    offset += 4 + systemFontInfoLength;
-    const cssFontInfoLength = this.#view.getUint32(offset);
-    offset += 4 + cssFontInfoLength;
-    const length = this.#view.getUint32(offset);
-    const data = new Uint8Array(this.#buffer, offset + 4, length);
-    data.fill(0);
-    this.#view.setUint32(offset, 0);
-  }
-  get cssFontInfo() {
-    let offset = FontInfo.#OFFSET_STRINGS;
-    const stringsLength = this.#view.getUint32(offset);
-    offset += 4 + stringsLength;
-    const systemFontInfoLength = this.#view.getUint32(offset);
-    offset += 4 + systemFontInfoLength;
-    const cssFontInfoLength = this.#view.getUint32(offset);
-    if (cssFontInfoLength === 0) {
-      return null;
-    }
-    const cssFontInfoData = new Uint8Array(cssFontInfoLength);
-    cssFontInfoData.set(new Uint8Array(this.#buffer, offset + 4, cssFontInfoLength));
-    return new CssFontInfo(cssFontInfoData.buffer);
-  }
-  get systemFontInfo() {
-    let offset = FontInfo.#OFFSET_STRINGS;
-    const stringsLength = this.#view.getUint32(offset);
-    offset += 4 + stringsLength;
-    const systemFontInfoLength = this.#view.getUint32(offset);
-    if (systemFontInfoLength === 0) {
-      return null;
-    }
-    const systemFontInfoData = new Uint8Array(systemFontInfoLength);
-    systemFontInfoData.set(new Uint8Array(this.#buffer, offset + 4, systemFontInfoLength));
-    return new SystemFontInfo(systemFontInfoData.buffer);
-  }
-  static write(font) {
-    const systemFontInfoBuffer = font.systemFontInfo ? SystemFontInfo.write(font.systemFontInfo) : null;
-    const cssFontInfoBuffer = font.cssFontInfo ? CssFontInfo.write(font.cssFontInfo) : null;
-    const encoder = new TextEncoder();
-    const encodedStrings = {};
-    let stringsLength = 0;
-    for (const prop of FontInfo.strings) {
-      encodedStrings[prop] = encoder.encode(font[prop]);
-      stringsLength += 4 + encodedStrings[prop].length;
-    }
-    const lengthEstimate = FontInfo.#OFFSET_STRINGS + 4 + stringsLength + 4 + (systemFontInfoBuffer ? systemFontInfoBuffer.byteLength : 0) + 4 + (cssFontInfoBuffer ? cssFontInfoBuffer.byteLength : 0) + 4 + (font.data ? font.data.length : 0);
-    const buffer = new ArrayBuffer(lengthEstimate);
-    const data = new Uint8Array(buffer);
-    const view = new DataView(buffer);
-    let offset = 0;
-    const numBools = FontInfo.bools.length;
-    let boolByte = 0,
-      boolBit = 0;
-    for (let i = 0; i < numBools; i++) {
-      const value = font[FontInfo.bools[i]];
-      const bits = value === undefined ? 0x00 : value ? 0x02 : 0x01;
-      boolByte |= bits << boolBit;
-      boolBit += 2;
-      if (boolBit === 8 || i === numBools - 1) {
-        view.setUint8(offset++, boolByte);
-        boolByte = 0;
-        boolBit = 0;
-      }
-    }
-    assert(offset === FontInfo.#OFFSET_NUMBERS, "FontInfo.write: Boolean properties offset mismatch");
-    for (const prop of FontInfo.numbers) {
-      view.setFloat64(offset, font[prop]);
-      offset += 8;
-    }
-    assert(offset === FontInfo.#OFFSET_BBOX, "FontInfo.write: Number properties offset mismatch");
-    if (font.bbox) {
-      view.setUint8(offset++, 4);
-      for (const coord of font.bbox) {
-        view.setInt16(offset, coord, true);
-        offset += 2;
-      }
-    } else {
-      view.setUint8(offset++, 0);
-      offset += 2 * 4;
-    }
-    assert(offset === FontInfo.#OFFSET_FONT_MATRIX, "FontInfo.write: BBox properties offset mismatch");
-    if (font.fontMatrix) {
-      view.setUint8(offset++, 6);
-      for (const point of font.fontMatrix) {
-        view.setFloat64(offset, point, true);
-        offset += 8;
-      }
-    } else {
-      view.setUint8(offset++, 0);
-      offset += 8 * 6;
-    }
-    assert(offset === FontInfo.#OFFSET_DEFAULT_VMETRICS, "FontInfo.write: FontMatrix properties offset mismatch");
-    if (font.defaultVMetrics) {
-      view.setUint8(offset++, 1);
-      for (const metric of font.defaultVMetrics) {
-        view.setInt16(offset, metric, true);
-        offset += 2;
-      }
-    } else {
-      view.setUint8(offset++, 0);
-      offset += 3 * 2;
-    }
-    assert(offset === FontInfo.#OFFSET_STRINGS, "FontInfo.write: DefaultVMetrics properties offset mismatch");
-    view.setUint32(FontInfo.#OFFSET_STRINGS, 0);
-    offset += 4;
-    for (const prop of FontInfo.strings) {
-      const encoded = encodedStrings[prop];
-      const length = encoded.length;
-      view.setUint32(offset, length);
-      data.set(encoded, offset + 4);
-      offset += 4 + length;
-    }
-    view.setUint32(FontInfo.#OFFSET_STRINGS, offset - FontInfo.#OFFSET_STRINGS - 4);
-    if (!systemFontInfoBuffer) {
-      view.setUint32(offset, 0);
-      offset += 4;
-    } else {
-      const length = systemFontInfoBuffer.byteLength;
-      view.setUint32(offset, length);
-      assert(offset + 4 + length <= buffer.byteLength, "FontInfo.write: Buffer overflow at systemFontInfo");
-      data.set(new Uint8Array(systemFontInfoBuffer), offset + 4);
-      offset += 4 + length;
-    }
-    if (!cssFontInfoBuffer) {
-      view.setUint32(offset, 0);
-      offset += 4;
-    } else {
-      const length = cssFontInfoBuffer.byteLength;
-      view.setUint32(offset, length);
-      assert(offset + 4 + length <= buffer.byteLength, "FontInfo.write: Buffer overflow at cssFontInfo");
-      data.set(new Uint8Array(cssFontInfoBuffer), offset + 4);
-      offset += 4 + length;
-    }
-    if (font.data === undefined) {
-      view.setUint32(offset, 0);
-      offset += 4;
-    } else {
-      view.setUint32(offset, font.data.length);
-      data.set(font.data, offset + 4);
-      offset += 4 + font.data.length;
-    }
-    assert(offset <= buffer.byteLength, "FontInfo.write: Buffer overflow");
-    return buffer.transferToFixedLength(offset);
-  }
-}
-
 ;// ./src/display/worker_options.js
 class GlobalWorkerOptions {
   static #port = null;
@@ -12806,7 +13083,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "5.4.322",
+    apiVersion: "5.4.396",
     data,
     password,
     disableAutoFetch,
@@ -13991,8 +14268,11 @@ class WorkerTransport {
           break;
         case "FontPath":
         case "Image":
-        case "Pattern":
           this.commonObjs.resolve(id, exportedData);
+          break;
+        case "Pattern":
+          const pattern = new PatternInfo(exportedData);
+          this.commonObjs.resolve(id, pattern.getIR());
           break;
         default:
           throw new Error(`Got unknown common object type ${type}`);
@@ -14383,8 +14663,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "5.4.322";
-const build = "657a18d7a";
+const version = "5.4.396";
+const build = "0a2680bca";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -14856,6 +15136,7 @@ class AnnotationElement {
     this.hasJSActions = parameters.hasJSActions;
     this._fieldObjects = parameters.fieldObjects;
     this.parent = parameters.parent;
+    this.hasOwnCommentButton = false;
     if (isRenderable) {
       this.contentElement = this.container = this._createContainer(ignoreBorder);
     }
@@ -15360,7 +15641,7 @@ class AnnotationElement {
       contentsObj = data.contentsObj;
       modificationDate = data.modificationDate;
     }
-    const popup = this.#popupElement = new PopupAnnotationElement({
+    this.#popupElement = new PopupAnnotationElement({
       data: {
         color: data.color,
         titleObj: data.titleObj,
@@ -15377,9 +15658,6 @@ class AnnotationElement {
       parent: this.parent,
       elements: [this]
     });
-    if (!this.parent._commentManager) {
-      this.parent.div.append(popup.render());
-    }
   }
   get hasPopupElement() {
     return !!(this.#popupElement || this.popup || this.data.popupRef);
@@ -15511,7 +15789,6 @@ class EditorAnnotationElement extends AnnotationElement {
       return;
     }
     this._createPopup(editor.comment);
-    this.extraPopupElement.popup.renderCommentButton();
   }
   get hasCommentButton() {
     return this.enableComment && this.editor.hasComment;
@@ -15532,6 +15809,7 @@ class EditorAnnotationElement extends AnnotationElement {
     return this.editor.getData();
   }
   remove() {
+    this.parent.removeAnnotation(this.data.id);
     this.container.remove();
     this.container = null;
     this.removePopup();
@@ -15787,6 +16065,7 @@ class TextAnnotationElement extends AnnotationElement {
       type: this.data.name
     }));
     if (!this.data.popupRef && this.hasPopupData) {
+      this.hasOwnCommentButton = true;
       this._createPopup();
     }
     this.container.append(image);
@@ -16785,9 +17064,7 @@ class PopupElement {
     this.#firstElement = elements[0];
     this.#dateObj = PDFDateString.toDateObject(modificationDate);
     this.trigger = elements.flatMap(e => e.getElementsToTriggerPopup());
-    if (commentManager) {
-      this.renderCommentButton();
-    } else {
+    if (!commentManager) {
       this.#addEventListeners();
       this.#container.hidden = true;
       if (open) {
@@ -16830,6 +17107,9 @@ class PopupElement {
   }
   renderCommentButton() {
     if (this.#commentButton) {
+      if (!this.#commentButton.parentNode) {
+        this.#firstElement.container.after(this.#commentButton);
+      }
       return;
     }
     if (!this.#commentButtonPosition) {
@@ -16841,7 +17121,7 @@ class PopupElement {
     const {
       signal
     } = this.#popupAbortController = new AbortController();
-    const hasOwnButton = !!this.#firstElement.extraPopupElement;
+    const hasOwnButton = this.#firstElement.hasOwnCommentButton;
     const togglePopup = () => {
       this.#commentManager.toggleCommentPopup(this, true, undefined, !hasOwnButton);
     };
@@ -16900,7 +17180,9 @@ class PopupElement {
     if (this.#firstElement.extraPopupElement && !this.#firstElement.editor) {
       return;
     }
-    this.renderCommentButton();
+    if (!this.#commentButton) {
+      this.renderCommentButton();
+    }
     const [x, y] = this.#commentButtonPosition;
     const {
       style
@@ -16912,7 +17194,9 @@ class PopupElement {
     if (this.#firstElement.extraPopupElement) {
       return;
     }
-    this.renderCommentButton();
+    if (!this.#commentButton) {
+      this.renderCommentButton();
+    }
     this.#commentButton.style.backgroundColor = this.commentButtonColor || "";
   }
   get commentButtonColor() {
@@ -17313,6 +17597,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
       this.container.append(content);
     }
     if (!this.data.popupRef && this.hasPopupData) {
+      this.hasOwnCommentButton = true;
       this._createPopup();
     }
     this._editOnDoubleClick();
@@ -17346,6 +17631,7 @@ class LineAnnotationElement extends AnnotationElement {
     svg.append(line);
     this.container.append(svg);
     if (!data.popupRef && this.hasPopupData) {
+      this.hasOwnCommentButton = true;
       this._createPopup();
     }
     return this.container;
@@ -17385,6 +17671,7 @@ class SquareAnnotationElement extends AnnotationElement {
     svg.append(square);
     this.container.append(svg);
     if (!data.popupRef && this.hasPopupData) {
+      this.hasOwnCommentButton = true;
       this._createPopup();
     }
     return this.container;
@@ -17424,6 +17711,7 @@ class CircleAnnotationElement extends AnnotationElement {
     svg.append(circle);
     this.container.append(svg);
     if (!data.popupRef && this.hasPopupData) {
+      this.hasOwnCommentButton = true;
       this._createPopup();
     }
     return this.container;
@@ -17476,6 +17764,7 @@ class PolylineAnnotationElement extends AnnotationElement {
     svg.append(polyline);
     this.container.append(svg);
     if (!popupRef && this.hasPopupData) {
+      this.hasOwnCommentButton = true;
       this._createPopup();
     }
     return this.container;
@@ -17504,6 +17793,7 @@ class CaretAnnotationElement extends AnnotationElement {
   render() {
     this.container.classList.add("caretAnnotation");
     if (!this.data.popupRef && this.hasPopupData) {
+      this.hasOwnCommentButton = true;
       this._createPopup();
     }
     return this.container;
@@ -17582,6 +17872,7 @@ class InkAnnotationElement extends AnnotationElement {
       g.append(polyline);
     }
     if (!popupRef && this.hasPopupData) {
+      this.hasOwnCommentButton = true;
       this._createPopup();
     }
     this.container.append(svg);
@@ -17639,6 +17930,7 @@ class HighlightAnnotationElement extends AnnotationElement {
       }
     } = this;
     if (!popupRef && this.hasPopupData) {
+      this.hasOwnCommentButton = true;
       this._createPopup();
     }
     this.container.classList.add("highlightAnnotation");
@@ -17668,6 +17960,7 @@ class UnderlineAnnotationElement extends AnnotationElement {
       }
     } = this;
     if (!popupRef && this.hasPopupData) {
+      this.hasOwnCommentButton = true;
       this._createPopup();
     }
     this.container.classList.add("underlineAnnotation");
@@ -17696,6 +17989,7 @@ class SquigglyAnnotationElement extends AnnotationElement {
       }
     } = this;
     if (!popupRef && this.hasPopupData) {
+      this.hasOwnCommentButton = true;
       this._createPopup();
     }
     this.container.classList.add("squigglyAnnotation");
@@ -17724,6 +18018,7 @@ class StrikeOutAnnotationElement extends AnnotationElement {
       }
     } = this;
     if (!popupRef && this.hasPopupData) {
+      this.hasOwnCommentButton = true;
       this._createPopup();
     }
     this.container.classList.add("strikeoutAnnotation");
@@ -17748,6 +18043,7 @@ class StampAnnotationElement extends AnnotationElement {
     this.container.classList.add("stampAnnotation");
     this.container.setAttribute("role", "img");
     if (!this.data.popupRef && this.hasPopupData) {
+      this.hasOwnCommentButton = true;
       this._createPopup();
     }
     this._editOnDoubleClick();
@@ -17797,6 +18093,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
       }
     });
     if (!data.popupRef && this.hasPopupData) {
+      this.hasOwnCommentButton = true;
       this._createPopup();
     } else {
       trigger.classList.add("popupTriggerArea");
@@ -17821,6 +18118,8 @@ class AnnotationLayer {
   #editableAnnotations = new Map();
   #structTreeLayer = null;
   #linkService = null;
+  #elements = [];
+  #hasAriaAttributesFromStructTree = false;
   constructor({
     div,
     accessibilityManager,
@@ -17848,34 +18147,6 @@ class AnnotationLayer {
   hasEditableAnnotations() {
     return this.#editableAnnotations.size > 0;
   }
-  async #appendElement(element, id, popupElements) {
-    const {
-      contentElement,
-      container
-    } = element;
-    const annotationId = contentElement.id = `${AnnotationPrefix}${id}`;
-    const ariaAttributes = await this.#structTreeLayer?.getAriaAttributes(annotationId);
-    if (ariaAttributes) {
-      for (const [key, value] of ariaAttributes) {
-        contentElement.setAttribute(key, value);
-      }
-    }
-    if (popupElements) {
-      popupElements.at(-1).container.after(container);
-    } else {
-      this.#moveElementInDOM(container, contentElement);
-    }
-  }
-  #moveElementInDOM(container, contentElement) {
-    this.div.append(container);
-    this.#accessibilityManager?.moveElementInDOM(this.div, container, contentElement, false, node => node.nodeName === "SECTION", (prevNode, node) => {
-      if (prevNode.nextElementSibling.nodeName === "BUTTON") {
-        prevNode.nextElementSibling.after(node);
-      } else {
-        prevNode.after(node);
-      }
-    });
-  }
   async render(params) {
     const {
       annotations
@@ -17883,6 +18154,7 @@ class AnnotationLayer {
     const layer = this.div;
     setLayerDimensions(layer, this.viewport);
     const popupToElements = new Map();
+    const popupAnnotations = [];
     const elementParams = {
       data: null,
       layer,
@@ -17913,6 +18185,10 @@ class AnnotationLayer {
         if (!elements) {
           continue;
         }
+        if (!this._commentManager) {
+          popupAnnotations.push(data);
+          continue;
+        }
         elementParams.elements = elements;
       }
       elementParams.data = data;
@@ -17920,26 +18196,114 @@ class AnnotationLayer {
       if (!element.isRenderable) {
         continue;
       }
-      if (!isPopupAnnotation && data.popupRef) {
-        const elements = popupToElements.get(data.popupRef);
-        if (!elements) {
-          popupToElements.set(data.popupRef, [element]);
-        } else {
-          elements.push(element);
+      if (!isPopupAnnotation) {
+        this.#elements.push(element);
+        if (data.popupRef) {
+          const elements = popupToElements.get(data.popupRef);
+          if (!elements) {
+            popupToElements.set(data.popupRef, [element]);
+          } else {
+            elements.push(element);
+          }
         }
       }
       const rendered = element.render();
       if (data.hidden) {
         rendered.style.visibility = "hidden";
       }
-      await this.#appendElement(element, data.id, elementParams.elements);
-      element.extraPopupElement?.popup?.renderCommentButton();
       if (element._isEditable) {
         this.#editableAnnotations.set(element.data.id, element);
         this._annotationEditorUIManager?.renderAnnotationElement(element);
       }
     }
+    await this.#addElementsToDOM();
+    for (const data of popupAnnotations) {
+      const elements = elementParams.elements = popupToElements.get(data.id);
+      elementParams.data = data;
+      const element = AnnotationElementFactory.create(elementParams);
+      if (!element.isRenderable) {
+        continue;
+      }
+      const rendered = element.render();
+      element.contentElement.id = `${AnnotationPrefix}${data.id}`;
+      if (data.hidden) {
+        rendered.style.visibility = "hidden";
+      }
+      elements.at(-1).container.after(rendered);
+    }
     this.#setAnnotationCanvasMap();
+  }
+  async #addElementsToDOM() {
+    if (this.#elements.length === 0) {
+      return;
+    }
+    this.div.replaceChildren();
+    const promises = [];
+    if (!this.#hasAriaAttributesFromStructTree) {
+      this.#hasAriaAttributesFromStructTree = true;
+      for (const {
+        contentElement,
+        data: {
+          id
+        }
+      } of this.#elements) {
+        const annotationId = contentElement.id = `${AnnotationPrefix}${id}`;
+        promises.push(this.#structTreeLayer?.getAriaAttributes(annotationId).then(ariaAttributes => {
+          if (ariaAttributes) {
+            for (const [key, value] of ariaAttributes) {
+              contentElement.setAttribute(key, value);
+            }
+          }
+        }));
+      }
+    }
+    this.#elements.sort(({
+      data: {
+        rect: [a0, a1, a2, a3]
+      }
+    }, {
+      data: {
+        rect: [b0, b1, b2, b3]
+      }
+    }) => {
+      if (a0 === a2 && a1 === a3) {
+        return +1;
+      }
+      if (b0 === b2 && b1 === b3) {
+        return -1;
+      }
+      const top1 = a3;
+      const bot1 = a1;
+      const mid1 = (a1 + a3) / 2;
+      const top2 = b3;
+      const bot2 = b1;
+      const mid2 = (b1 + b3) / 2;
+      if (mid1 >= top2 && mid2 <= bot1) {
+        return -1;
+      }
+      if (mid2 >= top1 && mid1 <= bot2) {
+        return +1;
+      }
+      const centerX1 = (a0 + a2) / 2;
+      const centerX2 = (b0 + b2) / 2;
+      return centerX1 - centerX2;
+    });
+    const fragment = document.createDocumentFragment();
+    for (const element of this.#elements) {
+      fragment.append(element.container);
+      if (this._commentManager) {
+        (element.extraPopupElement?.popup || element.popup)?.renderCommentButton();
+      } else if (element.extraPopupElement) {
+        fragment.append(element.extraPopupElement.render());
+      }
+    }
+    this.div.append(fragment);
+    await Promise.all(promises);
+    if (this.#accessibilityManager) {
+      for (const element of this.#elements) {
+        this.#accessibilityManager.addPointerInTextLayer(element.contentElement, false);
+      }
+    }
   }
   async addLinkAnnotations(annotations) {
     const elementParams = {
@@ -17957,8 +18321,10 @@ class AnnotationLayer {
         continue;
       }
       element.render();
-      await this.#appendElement(element, data.id, null);
+      element.contentElement.id = `${AnnotationPrefix}${data.id}`;
+      this.#elements.push(element);
     }
+    await this.#addElementsToDOM();
   }
   update({
     viewport
@@ -18034,24 +18400,31 @@ class AnnotationLayer {
       linkService: this.#linkService,
       annotationStorage: this.#annotationStorage
     });
-    const rendered = element.render();
-    rendered.id = `${AnnotationPrefix}${id}`;
-    this.#moveElementInDOM(rendered, rendered);
+    element.render();
+    element.contentElement.id = `${AnnotationPrefix}${id}`;
     element.createOrUpdatePopup();
+    this.#elements.push(element);
     return element;
   }
-  togglePointerEvents(enabled = false) {
-    this.div.classList.toggle("disabled", !enabled);
+  removeAnnotation(id) {
+    const index = this.#elements.findIndex(el => el.data.id === id);
+    if (index < 0) {
+      return;
+    }
+    const [element] = this.#elements.splice(index, 1);
+    this.#accessibilityManager?.removePointerInTextLayer(element.contentElement);
   }
   updateFakeAnnotations(editors) {
     if (editors.length === 0) {
       return;
     }
-    window.requestAnimationFrame(() => setTimeout(() => {
-      for (const editor of editors) {
-        editor.updateFakeAnnotationElement(this);
-      }
-    }, 10));
+    for (const editor of editors) {
+      editor.updateFakeAnnotationElement(this);
+    }
+    this.#addElementsToDOM();
+  }
+  togglePointerEvents(enabled = false) {
+    this.div.classList.toggle("disabled", !enabled);
   }
   static get _defaultBorderStyle() {
     return shadow(this, "_defaultBorderStyle", Object.freeze({
@@ -20278,6 +20651,7 @@ class HighlightEditor extends AnnotationEditor {
 
 
 
+
 class DrawingOptions {
   #svgProperties = Object.create(null);
   updateProperty(name, value) {
@@ -20324,10 +20698,6 @@ class DrawingEditor extends AnnotationEditor {
   static #currentDraw = null;
   static #currentDrawingAC = null;
   static #currentDrawingOptions = null;
-  static #currentPointerId = NaN;
-  static #currentPointerType = null;
-  static #currentPointerIds = null;
-  static #currentMoveTimestamp = NaN;
   static _INNER_MARGIN = 3;
   constructor(params) {
     super(params);
@@ -20706,7 +21076,7 @@ class DrawingEditor extends AnnotationEditor {
       pointerId,
       pointerType
     } = event;
-    if (DrawingEditor.#currentPointerType && DrawingEditor.#currentPointerType !== pointerType) {
+    if (CurrentPointers.isInitializedAndDifferentPointerType(pointerType)) {
       return;
     }
     const {
@@ -20720,31 +21090,26 @@ class DrawingEditor extends AnnotationEditor {
     } = target.getBoundingClientRect();
     const ac = DrawingEditor.#currentDrawingAC = new AbortController();
     const signal = parent.combinedSignal(ac);
-    DrawingEditor.#currentPointerId ||= pointerId;
-    DrawingEditor.#currentPointerType ??= pointerType;
+    CurrentPointers.setPointer(pointerType, pointerId);
     window.addEventListener("pointerup", e => {
-      if (DrawingEditor.#currentPointerId === e.pointerId) {
+      if (CurrentPointers.isSamePointerIdOrRemove(e.pointerId)) {
         this._endDraw(e);
-      } else {
-        DrawingEditor.#currentPointerIds?.delete(e.pointerId);
       }
     }, {
       signal
     });
     window.addEventListener("pointercancel", e => {
-      if (DrawingEditor.#currentPointerId === e.pointerId) {
+      if (CurrentPointers.isSamePointerIdOrRemove(e.pointerId)) {
         this._currentParent.endDrawingSession();
-      } else {
-        DrawingEditor.#currentPointerIds?.delete(e.pointerId);
       }
     }, {
       signal
     });
     window.addEventListener("pointerdown", e => {
-      if (DrawingEditor.#currentPointerType !== e.pointerType) {
+      if (!CurrentPointers.isSamePointerType(e.pointerType)) {
         return;
       }
-      (DrawingEditor.#currentPointerIds ||= new Set()).add(e.pointerId);
+      CurrentPointers.initializeAndAddPointerId(e.pointerId);
       if (DrawingEditor.#currentDraw.isCancellable()) {
         DrawingEditor.#currentDraw.removeLastElement();
         if (DrawingEditor.#currentDraw.isEmpty()) {
@@ -20765,7 +21130,7 @@ class DrawingEditor extends AnnotationEditor {
       signal
     });
     target.addEventListener("touchmove", e => {
-      if (e.timeStamp === DrawingEditor.#currentMoveTimestamp) {
+      if (CurrentPointers.isSameTimeStamp(e.timeStamp)) {
         stopEvent(e);
       }
     }, {
@@ -20786,7 +21151,7 @@ class DrawingEditor extends AnnotationEditor {
     } = parent.drawLayer.draw(this._mergeSVGProperties(DrawingEditor.#currentDrawingOptions.toSVGProperties(), DrawingEditor.#currentDraw.defaultSVGProperties), true, false));
   }
   static _drawMove(event) {
-    DrawingEditor.#currentMoveTimestamp = -1;
+    CurrentPointers.isSameTimeStamp(event.timeStamp);
     if (!DrawingEditor.#currentDraw) {
       return;
     }
@@ -20795,15 +21160,15 @@ class DrawingEditor extends AnnotationEditor {
       offsetY,
       pointerId
     } = event;
-    if (DrawingEditor.#currentPointerId !== pointerId) {
+    if (!CurrentPointers.isSamePointerId(pointerId)) {
       return;
     }
-    if (DrawingEditor.#currentPointerIds?.size >= 1) {
+    if (CurrentPointers.isUsingMultiplePointers()) {
       this._endDraw(event);
       return;
     }
     this._currentParent.drawLayer.updateProperties(this._currentDrawId, DrawingEditor.#currentDraw.add(offsetX, offsetY));
-    DrawingEditor.#currentMoveTimestamp = event.timeStamp;
+    CurrentPointers.setTimeStamp(event.timeStamp);
     stopEvent(event);
   }
   static _cleanup(all) {
@@ -20812,14 +21177,13 @@ class DrawingEditor extends AnnotationEditor {
       this._currentParent = null;
       DrawingEditor.#currentDraw = null;
       DrawingEditor.#currentDrawingOptions = null;
-      DrawingEditor.#currentPointerType = null;
-      DrawingEditor.#currentMoveTimestamp = NaN;
+      CurrentPointers.clearPointerType();
+      CurrentPointers.clearTimeStamp();
     }
     if (DrawingEditor.#currentDrawingAC) {
       DrawingEditor.#currentDrawingAC.abort();
       DrawingEditor.#currentDrawingAC = null;
-      DrawingEditor.#currentPointerId = NaN;
-      DrawingEditor.#currentPointerIds = null;
+      CurrentPointers.clearPointerIds();
     }
   }
   static _endDraw(event) {

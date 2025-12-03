@@ -6,7 +6,6 @@
 #define nsTableWrapperFrame_h__
 
 #include "LayoutConstants.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "nsCellMap.h"
 #include "nsContainerFrame.h"

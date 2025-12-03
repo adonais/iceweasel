@@ -86,6 +86,7 @@ async function getPreviews(selectedFrame, scope, thunkArgs) {
   }
 
   const allPreviews = [];
+  const seenBindings = {};
 
   const bindingReferences = await editor.getBindingReferences(
     selectedLocation,
@@ -95,6 +96,12 @@ async function getPreviews(selectedFrame, scope, thunkArgs) {
 
   for (const level in bindingReferences) {
     for (const name in bindingReferences[level]) {
+      const valueActorID = bindingReferences[level][name].value?.actor;
+      // Ignore any binding with the same value which has already been displayed.
+      // This might occur if a variable gets hoisted and is available to the local and global scope.
+      if (seenBindings[name] && seenBindings[name] == valueActorID) {
+        continue;
+      }
       const previews = await generatePreviewsForBinding(
         bindingReferences[level][name],
         selectedLocation.line,
@@ -102,6 +109,7 @@ async function getPreviews(selectedFrame, scope, thunkArgs) {
         client,
         selectedFrame.thread
       );
+      seenBindings[name] = valueActorID;
       allPreviews.push(...previews);
     }
   }

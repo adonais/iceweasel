@@ -267,6 +267,11 @@ export class _WallpaperCategories extends React.PureComponent {
 
     this.handleUserEvent(at.WALLPAPER_CATEGORY_CLICK, event.target.id);
 
+    // Notify parent menu when subpanel opens
+    if (this.props.onSubpanelToggle) {
+      this.props.onSubpanelToggle(true);
+    }
+
     let fluent_id;
     switch (event.target.id) {
       case "abstracts":
@@ -363,6 +368,11 @@ export class _WallpaperCategories extends React.PureComponent {
 
   handleBack() {
     this.setState({ activeCategory: null }, () => {
+      // Notify parent menu when subpanel closes
+      if (this.props.onSubpanelToggle) {
+        this.props.onSubpanelToggle(false);
+      }
+
       // Wait for the category grid to be back in the DOM
       requestAnimationFrame(() => {
         this.focusCategory(this.state.focusedCategoryIndex);

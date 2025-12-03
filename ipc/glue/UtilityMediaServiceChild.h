@@ -77,7 +77,7 @@ class UtilityMediaServiceChild final : public PUtilityMediaServiceChild,
 
   // True if creating a video bridge sucessfully. Currently only used for media
   // engine cdm.
-  bool CreateVideoBridge();
+  bool CreateVideoBridge(mozilla::ipc::EndpointProcInfo aOtherProcess);
 #endif
 
 #ifdef MOZ_WMF_CDM

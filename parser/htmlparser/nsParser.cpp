@@ -27,7 +27,6 @@
 #include "nsThreadUtils.h"
 #include "nsIHTMLContentSink.h"
 
-#include "mozilla/BinarySearch.h"
 #include "mozilla/CondVar.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/Encoding.h"

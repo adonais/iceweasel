@@ -10,7 +10,6 @@
 #include <cstdint>
 
 #include "mozilla/Result.h"
-#include "mozilla/ResultExtensions.h"
 #include "nsStringFwd.h"
 
 class mozIStorageConnection;

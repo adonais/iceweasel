@@ -10,6 +10,7 @@
 #include "rtc_base/physical_socket_server.h"
 
 #include <array>
+#include <cerrno>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -19,14 +20,19 @@
 #include "api/transport/ecn_marking.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "rtc_base/async_dns_resolver.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/deprecated/recursive_critical_section.h"
+#include "rtc_base/event.h"
+#include "rtc_base/ip_address.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/net_helpers.h"
+#include "rtc_base/network_monitor.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
-
-#if defined(_MSC_VER) && _MSC_VER < 1300
-#pragma warning(disable : 4786)
-#endif
+#include "rtc_base/time_utils.h"
 
 #ifdef MEMORY_SANITIZER
 #include <sanitizer/msan_interface.h>
@@ -34,9 +40,11 @@
 
 #if defined(WEBRTC_POSIX)
 #include <fcntl.h>
+#include <netinet/tcp.h>  // for TCP_NODELAY
 #if defined(WEBRTC_USE_EPOLL)
 // "poll" will be used to wait for the signal dispatcher.
 #include <poll.h>
+#include <sys/poll.h>
 #elif defined(WEBRTC_USE_POLL)
 #include <poll.h>
 #endif
@@ -53,43 +61,27 @@
 #undef SetPort
 #endif
 
-#include <errno.h>
-
-#include "rtc_base/async_dns_resolver.h"
-#include "rtc_base/checks.h"
-#include "rtc_base/event.h"
-#include "rtc_base/ip_address.h"
-#include "rtc_base/logging.h"
-#include "rtc_base/network/ecn_marking.h"
-#include "rtc_base/network_monitor.h"
-#include "rtc_base/synchronization/mutex.h"
-#include "rtc_base/time_utils.h"
-
 #if defined(WEBRTC_LINUX)
+#include <asm-generic/socket.h>
 #include <linux/sockios.h>
+#include <sys/epoll.h>
 #endif
 
 #if defined(WEBRTC_WIN)
 #define LAST_SYSTEM_ERROR (::GetLastError())
-#elif defined(__native_client__) && __native_client__
-#define LAST_SYSTEM_ERROR (0)
 #elif defined(WEBRTC_POSIX)
 #define LAST_SYSTEM_ERROR (errno)
 #endif  // WEBRTC_WIN
 
 #if defined(WEBRTC_POSIX)
-#include <netinet/tcp.h>  // for TCP_NODELAY
-
 #define IP_MTU 14  // Until this is integrated from linux/in.h to netinet/in.h
 typedef void* SockOptArg;
-
 #endif  // WEBRTC_POSIX
 
-#if defined(WEBRTC_POSIX) && !defined(WEBRTC_MAC) && !defined(WEBRTC_BSD) && !defined(__native_client__)
+#if defined(WEBRTC_POSIX) && !defined(WEBRTC_MAC) && !defined(WEBRTC_BSD)
 #if defined(WEBRTC_LINUX)
 #include <linux/sockios.h>
 #endif
-
 int64_t GetSocketRecvTimestamp(int socket) {
   struct timeval tv_ioctl;
   int ret = ioctl(socket, SIOCGSTAMP, &tv_ioctl);
@@ -102,7 +94,6 @@ int64_t GetSocketRecvTimestamp(int socket) {
 }
 
 #else
-
 int64_t GetSocketRecvTimestamp(int /* socket */) {
   return -1;
 }
@@ -710,7 +701,7 @@ int PhysicalSocket::TranslateOption(Option opt, int* slevel, int* sopt) {
       *slevel = IPPROTO_IP;
       *sopt = IP_DONTFRAGMENT;
       break;
-#elif defined(WEBRTC_MAC) || defined(WEBRTC_BSD) || defined(__native_client__)
+#elif defined(WEBRTC_MAC) || defined(WEBRTC_BSD)
       RTC_LOG(LS_WARNING) << "Socket::OPT_DONTFRAGMENT not supported.";
       return -1;
 #elif defined(WEBRTC_POSIX)

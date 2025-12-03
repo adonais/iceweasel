@@ -12,7 +12,6 @@
 #include "libyuv/scale_argb.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/Result.h"
 #include "mozilla/dom/ImageBitmapBinding.h"
 #include "mozilla/dom/ImageUtils.h"
 #include "mozilla/gfx/Point.h"

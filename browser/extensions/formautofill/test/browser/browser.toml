@@ -18,6 +18,7 @@ support-files = [
 ]
 
 ["browser_autocomplete_footer.js"]
+skip-if = ["verify-standalone"]
 
 ["browser_autocomplete_marked_back_forward.js"]
 
@@ -73,8 +74,9 @@ skip-if = ["os == 'win' && os_version == '11.26100' && processor == 'x86_64' && 
 
 ["browser_editAddressDialog.js"]
 skip-if = [
-  "win11_2009", # Bug 1797751
   "os == 'linux'", # Bug 1788900
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone",
+  "win11_2009", # Bug 1797751
 ]
 
 ["browser_email_dropdown.js"]

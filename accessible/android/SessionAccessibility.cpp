@@ -16,7 +16,6 @@
 #include "JavaBuiltins.h"
 #include "nsAccessibilityService.h"
 #include "nsAccUtils.h"
-#include "nsViewManager.h"
 
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/BrowserParent.h"
@@ -388,12 +387,7 @@ RefPtr<SessionAccessibility> SessionAccessibility::GetInstanceFor(
     return nullptr;
   }
 
-  nsViewManager* vm = aPresShell->GetViewManager();
-  if (!vm) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIWidget> rootWidget = vm->GetRootWidget();
+  nsCOMPtr<nsIWidget> rootWidget = aPresShell->GetRootWidget();
   // `rootWidget` can be one of several types. Here we make sure it is an
   // android nsWindow.
   if (RefPtr<nsWindow> window = nsWindow::From(rootWidget)) {

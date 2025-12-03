@@ -8,8 +8,6 @@
 #define mozilla_SandboxFilter_h
 
 #include <vector>
-#include "mozilla/Atomics.h"
-#include "mozilla/Range.h"
 #include "mozilla/UniquePtr.h"
 
 namespace sandbox {

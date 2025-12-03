@@ -11,9 +11,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/ipprotection/IPProtectionUsage.sys.mjs",
   IPPNetworkErrorObserver:
     "resource:///modules/ipprotection/IPPNetworkErrorObserver.sys.mjs",
-  getDefaultLocation:
-    "resource:///modules/ipprotection/IPProtectionServerlist.sys.mjs",
-  selectServer:
+  IPProtectionServerlist:
     "resource:///modules/ipprotection/IPProtectionServerlist.sys.mjs",
 });
 
@@ -70,7 +68,7 @@ class IPPProxyManager {
   }
 
   get active() {
-    return !!this.#connection?.active;
+    return !!this.#connection?.active && !!this.#connection?.proxyInfo;
   }
 
   get isolationKey() {
@@ -86,6 +84,20 @@ class IPPProxyManager {
     this.handleProxyErrorEvent = this.#handleProxyErrorEvent.bind(this);
   }
 
+  createChannelFilter() {
+    if (!this.#connection) {
+      this.#connection = lazy.IPPChannelFilter.create();
+      this.#connection.start();
+    }
+  }
+
+  cancelChannelFilter() {
+    if (this.#connection) {
+      this.#connection.stop();
+      this.#connection = null;
+    }
+  }
+
   /**
    * Starts the proxy connection:
    * - Gets a new proxy pass if needed.
@@ -95,26 +107,28 @@ class IPPProxyManager {
    * @returns {Promise<boolean|Error>}
    */
   async start() {
+    this.createChannelFilter();
+
     // If the current proxy pass is valid, no need to re-authenticate.
     // Throws an error if the proxy pass is not available.
     if (!this.#pass?.isValid()) {
       this.#pass = await this.#getProxyPass();
     }
 
-    const location = await lazy.getDefaultLocation();
-    const server = await lazy.selectServer(location?.city);
-    lazy.logConsole.debug("Server:", server?.hostname);
-    if (this.#connection?.active) {
-      this.#connection.stop();
+    const location = lazy.IPProtectionServerlist.getDefaultLocation();
+    const server = lazy.IPProtectionServerlist.selectServer(location?.city);
+    if (!server) {
+      lazy.logConsole.error("No server found");
+      throw new Error("No server found");
     }
 
-    this.#connection = lazy.IPPChannelFilter.create(
+    lazy.logConsole.debug("Server:", server?.hostname);
+
+    this.#connection.initialize(
       this.#pass.asBearerToken(),
       server.hostname,
       server.port
     );
-
-    this.#connection.start();
 
     this.usageObserver.start();
     this.usageObserver.addIsolationKey(this.#connection.isolationKey);
@@ -137,9 +151,9 @@ class IPPProxyManager {
    * @returns {int}
    */
   stop() {
-    this.#connection?.stop();
+    this.cancelChannelFilter();
+
     this.networkErrorObserver.stop();
-    this.#connection = null;
 
     lazy.logConsole.info("Stopped");
 

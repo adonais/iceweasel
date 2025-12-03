@@ -13,8 +13,6 @@
 GFXINFO_FEATURE(ALL, "ALL", "all")
 /* Wildcard to block all optional features, starting in 123. */
 GFXINFO_FEATURE(OPTIONAL, "OPTIONAL", "optional")
-/* Whether Direct2D is supported for content rendering, always present. */
-GFXINFO_FEATURE(DIRECT2D, "DIRECT2D", "direct2d")
 /* Whether Direct3D 9 is supported for layers, always present. */
 GFXINFO_FEATURE(DIRECT3D_9_LAYERS, "DIRECT3D_9_LAYERS", "layers.direct3d9")
 /* Whether Direct3D 10.0 is supported for layers, always present. */
@@ -29,8 +27,8 @@ GFXINFO_FEATURE(WEBGL_OPENGL, "WEBGL_OPENGL", "webgl.opengl")
 GFXINFO_FEATURE(WEBGL_ANGLE, "WEBGL_ANGLE", "webgl.angle")
 /* (Unused) Whether WebGL antialiasing is supported. */
 GFXINFO_FEATURE(UNUSED_WEBGL_MSAA, "WEBGL_MSAA", "webgl.msaa")
-/* Whether Stagefright is supported, starting in 17. */
-GFXINFO_FEATURE(STAGEFRIGHT, "STAGEFRIGHT", "stagefright")
+/* (Unused) Whether Stagefright is supported, starting in 17. */
+GFXINFO_FEATURE(UNUSED_STAGEFRIGHT, "STAGEFRIGHT", "stagefright")
 /* Whether Webrtc Hardware H.264 acceleration is supported, starting in 71. */
 GFXINFO_FEATURE(WEBRTC_HW_ACCELERATION_H264, "WEBRTC_HW_ACCELERATION_H264", "webrtc.hw.acceleration.h264")
 /* Whether Direct3D 11 is supported for layers, starting in 32. */
@@ -135,3 +133,5 @@ GFXINFO_FEATURE(GL_NORM16_TEXTURES, "GL_NORM16", "gl.norm16-textures")
 GFXINFO_FEATURE(HARDWARE_VIDEO_ENCODING, "HARDWARE_VIDEO_ENCODING", "hardwarevideoencoding")
 /* Whether WebGPU's GPUExternalTexture API is supported, starting in 143. */
 GFXINFO_FEATURE(WEBGPU_EXTERNAL_TEXTURE, "WEBGPU_EXTERNAL_TEXTURE", "webgpu.external-texture")
+/* Whether Mesa threading is allowed, starting in 146. */
+GFXINFO_FEATURE(MESA_THREADING, "MESA_THREADING", "mesa.threading")

@@ -84,10 +84,14 @@ https_first_disabled = true
 ["browser_html_discover_view.js"]
 https_first_disabled = true
 support-files = ["head_disco.js"]
+skip-if = ["os == 'linux' && os_version == '24.04' && arch == 'x86_64' && opt && a11y_checks && swgl && verify-standalone"]
 
 ["browser_html_discover_view_clientid.js"]
 
 ["browser_html_discover_view_prefs.js"]
+
+["browser_html_forced_colors_notice.js"]
+skip-if = ["os != 'win'"] # Forced-colors is only supported on Windows
 
 ["browser_html_list_view.js"]
 skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks && swgl"] # Bug 1781893
@@ -123,6 +127,7 @@ https_first_disabled = true
 ["browser_html_warning_messages.js"]
 
 ["browser_installssl.js"]
+skip-if = ["verify-standalone"]
 
 ["browser_local_install.js"]
 
@@ -160,6 +165,9 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && d
 ["browser_subframe_install.js"]
 
 ["browser_task_next_test.js"]
+
+["browser_theme_forced_colors.js"]
+skip-if = ["os != 'win'"] # Forced-colors is only supported on Windows
 
 ["browser_theme_undo.js"]
 

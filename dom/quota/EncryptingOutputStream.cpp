@@ -9,7 +9,6 @@
 #include <type_traits>
 
 #include "EncryptingOutputStream_impl.h"
-#include "mozilla/MacroForEach.h"
 #include "nsStreamUtils.h"
 
 namespace mozilla::dom::quota {

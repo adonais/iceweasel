@@ -248,7 +248,10 @@ bool ScriptElement::MaybeProcessScript(const nsAString& aSourceText) {
     }
   }
 
-  RefPtr<ScriptLoader> loader = ownerDoc->ScriptLoader();
+  RefPtr<ScriptLoader> loader = ownerDoc->GetScriptLoader();
+  if (!loader) {
+    return false;
+  }
   return loader->ProcessScriptElement(this, aSourceText);
 }
 

@@ -28,6 +28,8 @@
 #include "sandbox/win/src/target_process.h"
 #include "sandbox/win/src/win_utils.h"
 
+#include "mozilla/WindowsMapRemoteView.h"
+
 namespace sandbox {
 
 namespace {
@@ -372,8 +374,27 @@ ResultCode InterceptionManager::PatchNtdll(bool hot_patch_needed) {
 
   // Reserve a full 64k memory range in the child process.
   HANDLE child = child_->Process();
-  BYTE* thunk_base = reinterpret_cast<BYTE*>(::VirtualAllocEx(
-      child, nullptr, kAllocGranularity, MEM_RESERVE, PAGE_NOACCESS));
+  HANDLE mapping = ::CreateFileMappingW(INVALID_HANDLE_VALUE, nullptr,
+                                        PAGE_EXECUTE_READWRITE | SEC_RESERVE, 0,
+                                        kAllocGranularity, nullptr);
+  // MOZ: We must crash on failure paths for parity with upstream code. This
+  //      will allow us to compare the crash volume before and after patch.
+  CHECK(mapping);
+
+  using LocalViewPtr = std::unique_ptr<void, decltype(&::UnmapViewOfFile)>;
+  LocalViewPtr local_view_ptr(
+      ::MapViewOfFile(mapping, FILE_MAP_WRITE | FILE_MAP_READ, 0, 0, 0),
+      &::UnmapViewOfFile);
+  auto* local_view = static_cast<BYTE*>(local_view_ptr.get());
+  CHECK(local_view);
+
+  // We never unmap child_view. If we succeed we want it to stay mapped, if we
+  // fail the child process will be terminated anyway.
+  auto* child_view = static_cast<BYTE*>(mozilla::MapRemoteViewOfFile(
+      mapping, child, 0ULL, nullptr, 0, 0, PAGE_EXECUTE_READ));
+  CHECK(child_view);
+
+  ::CloseHandle(mapping);
 
   // Find an aligned, random location within the reserved range.
   size_t thunk_bytes =
@@ -381,26 +402,23 @@ ResultCode InterceptionManager::PatchNtdll(bool hot_patch_needed) {
   size_t thunk_offset = internal::GetGranularAlignedRandomOffset(thunk_bytes);
 
   // Split the base and offset along page boundaries.
-  thunk_base += thunk_offset & ~(kPageSize - 1);
+  auto* local_thunk_base = local_view + (thunk_offset & ~(kPageSize - 1));
+  auto* thunk_base = child_view + (thunk_offset & ~(kPageSize - 1));
   thunk_offset &= kPageSize - 1;
 
   // Make an aligned, padded allocation, and move the pointer to our chunk.
   size_t thunk_bytes_padded = base::bits::AlignUp(thunk_bytes, kPageSize);
-  BYTE* thunk_base_rwx = reinterpret_cast<BYTE*>(
-      ::VirtualAllocEx(child, thunk_base, thunk_bytes_padded, MEM_COMMIT,
-                       PAGE_EXECUTE_READWRITE));
-  bool rwx_commit_succeeded = static_cast<bool>(thunk_base_rwx);
-  if (rwx_commit_succeeded) {
-    thunk_base = thunk_base_rwx;
-  } else {
-    thunk_base = reinterpret_cast<BYTE*>(::VirtualAllocEx(
-        child, thunk_base, thunk_bytes_padded, MEM_COMMIT, PAGE_READWRITE));
-  }
-  CHECK(thunk_base);  // If this fails we'd crash anyway on an invalid access.
+  // MOZ: Committing RW pages in the parent also commits the corresponding RX
+  //      pages in the child (see TestSharedMappingCommit).
+  local_thunk_base = reinterpret_cast<BYTE*>(::VirtualAlloc(
+      local_thunk_base, thunk_bytes_padded, MEM_COMMIT, PAGE_READWRITE));
+  CHECK(local_thunk_base);
+
   DllInterceptionData* thunks =
       reinterpret_cast<DllInterceptionData*>(thunk_base + thunk_offset);
 
-  DllInterceptionData dll_data;
+  DllInterceptionData& dll_data =
+      *reinterpret_cast<DllInterceptionData*>(local_thunk_base + thunk_offset);
   dll_data.data_bytes = thunk_bytes;
   dll_data.num_thunks = 0;
   dll_data.used_bytes = offsetof(DllInterceptionData, thunks);
@@ -413,23 +431,6 @@ ResultCode InterceptionManager::PatchNtdll(bool hot_patch_needed) {
 
   if (rc != SBOX_ALL_OK)
     return rc;
-
-  // and now write the first part of the table to the child's memory
-  SIZE_T written;
-  bool ok =
-      !!::WriteProcessMemory(child, thunks, &dll_data,
-                             offsetof(DllInterceptionData, thunks), &written);
-
-  if (!ok || (offsetof(DllInterceptionData, thunks) != written))
-    return SBOX_ERROR_CANNOT_WRITE_INTERCEPTION_THUNK;
-
-  // Attempt to protect all the thunks, but ignore failure
-  DWORD old_protection;
-  bool rx_update_succeeded = static_cast<bool>(::VirtualProtectEx(
-      child, thunks, thunk_bytes, PAGE_EXECUTE_READ, &old_protection));
-
-  // We need the EXECUTE permission on the thunks, one way or the other
-  CHECK(rwx_commit_succeeded || rx_update_succeeded);
 
   ResultCode ret =
       child_->TransferVariable("g_originals", g_originals, sizeof(g_originals));
@@ -485,6 +486,7 @@ ResultCode InterceptionManager::PatchClientFunctions(
     NTSTATUS ret = thunk.Setup(
         ntdll_base, interceptor_base, interception.function.c_str(),
         interception.interceptor.c_str(), interception.interceptor_address,
+        &dll_data->thunks[dll_data->num_thunks],
         &thunks->thunks[dll_data->num_thunks],
         thunk_bytes - dll_data->used_bytes, nullptr);
     if (!NT_SUCCESS(ret)) {

@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -149,7 +156,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s ad k-d-yefk afus ad teqqimeḍ d aqeṛṛu.</p> <p>Seqdec-it d iminig uslig: <ul> <li>Nadi sakin snirem akken iwata deg usnas</li> <li>Sewḥel ineḍfaren (neɣ leqqem iɣewwaren akken ad tsirgeḍ ineḍfaren)</li> <li>Sfeḍ inagan n tuqqna akked uzray n tunigin d unadi</li> </ul> </p> <p>%1$s yesnulfa-t-id Mozilla. Tuɣdaṭ-nneɣ ad nḥareb γef internet yeldin d tezmert-is.<br/> <a href=\"%2$s\">Issin ugar</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s ad k-d-yefk afus ad teqqimeḍ d aqeṛṛu.</p>\n<p>Seqdec-it d iminig uslig:\n<ul>\n<li>Nadi sakin snirem akken iwata deg usnas</li>\n<li>Sewḥel ineḍfaren (neɣ leqqem iɣewwaren akken ad tsirgeḍ ineḍfaren)</li>\n<li>Sfeḍ inagan n tuqqna akked uzray n tunigin d unadi</li>\n</ul> </p>\n<p>%1$s yesnulfa-t-id Mozilla. Tuɣdaṭ-nneɣ ad nḥareb γef internet yeldin d tezmert-is.<br/>\n<a href=\"%2$s\">Issin ugar</a></p>]]></string>
   <!-- A link to SUMO at the bottom of About Focus screen. -->
   <string name="about_screen_learn_more">Issin ugar</string>
   <!-- Header for the Privacy and Security settings menu -->
@@ -875,7 +882,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Aya yezmer ad yili d ugur deg twila n uqeddac, neɣ yezmer ad yili d ḥedd i iɛerrḍen ad yaker tamagit n uqeddac. <br/><br/> Ma teqqneḍ ɣer uqeddac-a akken ilaq yakan, tuccḍa tezmer ad tili d taskudant.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Ahat yella ḥedd i iɛerrḍen ad yaker tamagit n usmel, ur ilaq ara ad tkemmleḍ.</label> <br><br> <label>%1$s ur yumin ara <b>%2$s</b> acku tasiregt d tarussint, tasiregt tesɛa azmul-is, neɣ aqeddac ur d-yuzin ara tisirag timeɣta.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Ahat yella ḥedd i iɛerrḍen ad yaker tamagit n usmel, ur ilaq ara ad tkemmleḍ.</label> <br><br>\n<label>%1$s ur yumin ara <b>%2$s</b> acku tasiregt d tarussint, tasiregt tesɛa azmul-is, neɣ aqeddac ur d-yuzin ara tisirag timeɣta.</label>]]></string>
   <!--
     Sessions List
 

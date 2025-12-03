@@ -100,7 +100,10 @@ void EnvironmentFactory::Set(
 
 Environment EnvironmentFactory::CreateWithDefaults() && {
   if (field_trials_ == nullptr) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     Set(std::make_unique<FieldTrialBasedConfig>());
+#pragma clang diagnostic pop
   }
 #if defined(WEBRTC_MOZILLA_BUILD)
   // We want to use our clock, not GetRealTimeClockRaw, and we avoid

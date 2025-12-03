@@ -594,14 +594,6 @@ var CustomizableUIInternal = {
         defaultPlacements.splice(-1, 0, "developer-button");
       }
 
-      let showCharacterEncoding = Services.prefs.getComplexValue(
-        "browser.menu.showCharacterEncoding",
-        Ci.nsIPrefLocalizedString
-      ).data;
-      if (showCharacterEncoding == "true") {
-        defaultPlacements.push("characterencoding-button");
-      }
-
       savedPanelPlacements = savedPanelPlacements.filter(
         id => !defaultPlacements.includes(id)
       );

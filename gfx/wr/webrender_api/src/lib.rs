@@ -714,8 +714,6 @@ bitflags! {
         const TEXTURE_CACHE_DBG_CLEAR_EVICTED = 1 << 10;
         /// Show picture caching debug overlay
         const PICTURE_CACHING_DBG   = 1 << 11;
-        /// Highlight all primitives with colors based on kind.
-        const PRIMITIVE_DBG = 1 << 12;
         /// Draw a zoom widget showing part of the framebuffer zoomed in.
         const ZOOM_DBG = 1 << 13;
         /// Scale the debug renderer down for a smaller screen. This will disrupt
@@ -761,6 +759,9 @@ bitflags! {
         const MISSING_SNAPSHOT_PINK     = (1 as u64) << 32;
         /// Highlight backdrop filters
         const HIGHLIGHT_BACKDROP_FILTERS = (1 as u64) << 33;
+        /// Show external composite border rects in debug overlay.
+        /// TODO: Add native compositor support
+        const EXTERNAL_COMPOSITE_BORDERS = (1 as u64) << 34;
     }
 }
 
@@ -847,4 +848,15 @@ impl<'a> Drop for CrashAnnotatorGuard<'a> {
             annotator.clear(self.annotation);
         }
     }
+}
+
+/// A little bit of extra information to make memory reports more useful
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+pub enum TextureCacheCategory {
+    Atlas,
+    Standalone,
+    PictureTile,
+    RenderTarget,
 }

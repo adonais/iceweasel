@@ -390,6 +390,12 @@ mozilla::LogModule* GetMacAccessibilityLog() {
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
 
+- (id)accessibilityCustomActions {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+  return [self moxCustomActions];
+  NS_OBJC_END_TRY_BLOCK_RETURN(nil);
+}
+
 - (BOOL)isAccessibilityElement {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
@@ -537,6 +543,10 @@ mozilla::LogModule* GetMacAccessibilityLog() {
   return NO;
 }
 
+- (BOOL)moxIsTextField {
+  return NO;
+}
+
 #pragma mark -
 
 // objc-style description (from NSObject); not to be confused with the
@@ -583,6 +593,10 @@ mozilla::LogModule* GetMacAccessibilityLog() {
 }
 
 - (NSArray*)moxCustomContent {
+  return nil;
+}
+
+- (NSArray*)moxCustomActions {
   return nil;
 }
 

@@ -7,7 +7,6 @@
 #ifndef LAYOUT_SVG_SVGFILTERFRAME_H_
 #define LAYOUT_SVG_SVGFILTERFRAME_H_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/SVGContainerFrame.h"
 #include "nsQueryFrame.h"
 

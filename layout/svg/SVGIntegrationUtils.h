@@ -22,6 +22,9 @@ struct nsPoint;
 struct nsRect;
 struct nsSize;
 
+// zipstruct.h defines this and causes issues if in the same translation unit.
+#undef UNSUPPORTED
+
 enum class WrFiltersStatus {
   // Image will be rendered unftilered - the filter graph contains invalid refs
   // (which SVG spec states will be rendered as if there is no filter graph).

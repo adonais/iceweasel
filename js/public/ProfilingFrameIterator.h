@@ -161,6 +161,7 @@ class MOZ_NON_PARAM JS_PUBLIC_API ProfilingFrameIterator {
     const char* label;
     JSScript* interpreterScript;
     uint64_t realmID;
+    uint32_t sourceId;
 
    public:
     void* returnAddress() const {
@@ -237,10 +238,12 @@ class MOZ_STACK_CLASS ProfiledFrameHandle {
   void* addr_;
   void* canonicalAddr_;
   const char* label_;
+  uint32_t sourceId_;
   uint32_t depth_;
 
   ProfiledFrameHandle(JSRuntime* rt, js::jit::JitcodeGlobalEntry& entry,
-                      void* addr, const char* label, uint32_t depth);
+                      void* addr, const char* label, uint32_t sourceId,
+                      uint32_t depth);
 
  public:
   const char* label() const { return label_; }
@@ -250,6 +253,8 @@ class MOZ_STACK_CLASS ProfiledFrameHandle {
   JS_PUBLIC_API ProfilingFrameIterator::FrameKind frameKind() const;
 
   JS_PUBLIC_API uint64_t realmID() const;
+
+  JS_PUBLIC_API uint32_t sourceId() const;
 };
 
 class ProfiledFrameRange {
@@ -291,6 +296,7 @@ class ProfiledFrameRange {
   js::jit::JitcodeGlobalEntry* entry_;
   // Assume maximum inlining depth is <64
   const char* labels_[64];
+  uint32_t sourceIds_[64];
   uint32_t depth_;
 };
 

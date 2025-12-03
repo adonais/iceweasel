@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Text for confirmation for a positive action in dialog -->
   <string name="mozac_feature_prompts_ok">Լավ</string>
@@ -69,11 +76,11 @@
   <!-- February month of the year (short description), used on the month chooser dialog. -->
   <string name="mozac_feature_prompts_feb">Փետ</string>
   <!-- March month of the year (short description), used on the month chooser dialog. -->
-  <string name="mozac_feature_prompts_mar">Մարտ</string>
+  <string name="mozac_feature_prompts_mar">Մար</string>
   <!-- April month of the year (short description), used on the month chooser dialog. -->
   <string name="mozac_feature_prompts_apr">Ապր</string>
   <!-- May month of the year (short description), used on the month chooser dialog. -->
-  <string name="mozac_feature_prompts_may">Մայիս</string>
+  <string name="mozac_feature_prompts_may">Մայ</string>
   <!-- June month of the year (short description), used on the month chooser dialog. -->
   <string name="mozac_feature_prompts_jun">Հուն</string>
   <!-- July month of the year (short description), used on the month chooser dialog. -->

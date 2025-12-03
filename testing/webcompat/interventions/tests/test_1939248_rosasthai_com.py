@@ -1,25 +1,29 @@
 import pytest
-from webdriver.error import NoSuchElementException
+from webdriver.error import NoSuchElementException, StaleElementReferenceException
 
 URL = "https://rosasthai.com/locations"
 
 COOKIES_CSS = "#ccc"
 VIEW_ALL_CSS = "#view-all"
-LOADING_CSS = ".loading-location"
-SUCCESSFUL_LOAD_CSS = "#panel > [id]"
+FIRST_CARD_CSS = "#location-results [id^=card-]"
 
 
 async def does_clicking_work(client):
     await client.navigate(URL, wait="none")
+    client.await_css(COOKIES_CSS, is_displayed=True)
     client.hide_elements(COOKIES_CSS)
-    client.await_css(VIEW_ALL_CSS, is_displayed=True).click()
+    # on failure, the location cards don't load. we also confirm that the
+    # cards change after clicking "view all", just in case.
     try:
-        client.await_css(LOADING_CSS, is_displayed=True, timeout=3)
+        first_card = client.await_css(FIRST_CARD_CSS, is_displayed=True)
     except NoSuchElementException:
         return False
-    client.await_element_hidden(client.css(LOADING_CSS))
-    client.await_css(SUCCESSFUL_LOAD_CSS, is_displayed=True)
-    return True
+    client.await_css(VIEW_ALL_CSS, is_displayed=True).click()
+    try:
+        first_card.click()
+        return False
+    except StaleElementReferenceException:
+        return True
 
 
 @pytest.mark.asyncio

@@ -54,6 +54,7 @@ const PREFS_FOR_DISPLAY = [
   "browser.startup.homepage",
   "browser.startup.page",
   "browser.tabs.",
+  "browser.theme.",
   "browser.toolbars.",
   "browser.urlbar.",
   "browser.zoom.",
@@ -642,7 +643,6 @@ var dataProviders = {
         adapterDriverDate2: "driverDate2",
         isGPU2Active: null,
 
-        D2DEnabled: "direct2DEnabled",
         DWriteEnabled: "directWriteEnabled",
         DWriteVersion: "directWriteVersion",
         cleartypeParameters: "clearTypeParameters",
@@ -655,10 +655,6 @@ var dataProviders = {
         try {
           data[gfxInfoProps[prop] || prop] = gfxInfo[prop];
         } catch (e) {}
-      }
-
-      if ("direct2DEnabled" in data && !data.direct2DEnabled) {
-        data.direct2DEnabledMessage = statusMsgForFeature("DIRECT2D");
       }
     }
 

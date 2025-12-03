@@ -393,7 +393,7 @@ already_AddRefed<Promise> WebAuthnHandler::MakeCredential(
 
   WebAuthnMakeCredentialInfo info(rpId, challenge, adjustedTimeout, excludeList,
                                   rpInfo, userInfo, coseAlgos, extensions,
-                                  authSelection, attestation);
+                                  authSelection, attestation, aOptions.mHints);
 
   // Set up the transaction state. Fallible operations should not be performed
   // below this line, as we must not leave the transaction state partially
@@ -667,7 +667,7 @@ already_AddRefed<Promise> WebAuthnHandler::GetAssertion(
 
   WebAuthnGetAssertionInfo info(
       rpId, maybeAppId, challenge, adjustedTimeout, allowList, extensions,
-      aOptions.mUserVerification, aConditionallyMediated);
+      aOptions.mUserVerification, aConditionallyMediated, aOptions.mHints);
 
   // Set up the transaction state. Fallible operations should not be performed
   // below this line, as we must not leave the transaction state partially
@@ -921,7 +921,7 @@ void WebAuthnHandler::FinishGetAssertion(
   if (global) {
     nsPIDOMWindowInner* window = global->GetAsInnerWindow();
     if (window) {
-      Unused << BounceTrackingProtection::RecordUserActivation(
+      (void)BounceTrackingProtection::RecordUserActivation(
           window->GetWindowContext());
     }
   }

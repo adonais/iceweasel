@@ -24,6 +24,8 @@ import "chrome://global/content/elements/moz-support-link.mjs";
  * @property {string} iconSrc - The src for an optional icon
  * @property {string} description - The text for the description element that helps describe the checkbox
  * @property {string} supportPage - Name of the SUMO support page to link to.
+ * @property {string} ariaLabel - The aria-label text when there is no visible label.
+ * @property {string} ariaDescription - The aria-description text when there is no visible description.
  */
 export default class MozCheckbox extends MozBaseInputElement {
   static properties = {
@@ -57,8 +59,11 @@ export default class MozCheckbox extends MozBaseInputElement {
       @click=${this.handleStateChange}
       @change=${this.redispatchEvent}
       ?disabled=${this.disabled || this.parentDisabled}
-      aria-describedby="description"
       aria-label=${ifDefined(this.ariaLabel ?? undefined)}
+      aria-describedby="description"
+      aria-description=${ifDefined(
+        this.hasDescription ? undefined : this.ariaDescription
+      )}
       accesskey=${ifDefined(this.accessKey)}
     />`;
   }

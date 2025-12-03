@@ -287,7 +287,7 @@ ChildDNSService::ClearCache(bool aTrrToo) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  Unused << mTRRServiceParent->SendClearDNSCache(aTrrToo);
+  (void)mTRRServiceParent->SendClearDNSCache(aTrrToo);
   return NS_OK;
 }
 

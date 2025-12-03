@@ -171,9 +171,10 @@ class XULTreeGridCellAccessible : public LeafAccessible,
   // XULTreeGridCellAccessible
 
   /**
-   * Return true if value of cell can be modified.
+   * Return true if value of cell can be changed. Accounting for the state of
+   * its column.
    */
-  bool IsEditable() const;
+  bool IsEditableCell() const;
 
   enum { eAction_Click = 0 };
 

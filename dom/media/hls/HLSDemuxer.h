@@ -11,7 +11,6 @@
 #  include "MediaDataDemuxer.h"
 #  include "MediaDecoder.h"
 #  include "VideoUtils.h"
-#  include "mozilla/Atomics.h"
 #  include "mozilla/Maybe.h"
 #  include "mozilla/Mutex.h"
 #  include "mozilla/TaskQueue.h"

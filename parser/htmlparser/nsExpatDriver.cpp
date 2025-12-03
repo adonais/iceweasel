@@ -29,9 +29,7 @@
 #include "nsXPCOMCIDInternal.h"
 #include "nsUnicharInputStream.h"
 #include "nsContentUtils.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/BasePrincipal.h"
-#include "mozilla/IntegerTypeTraits.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/glean/ParserHtmlparserMetrics.h"
@@ -47,7 +45,6 @@ using mozilla::fallible;
 using mozilla::LogLevel;
 using mozilla::MakeStringSpan;
 using mozilla::Maybe;
-using mozilla::Unused;
 using mozilla::dom::Document;
 
 // We only pass chunks of length sMaxChunkLength to Expat in the RLBOX sandbox.
@@ -299,6 +296,8 @@ static const nsCatalogData kCatalogTable[] = {
      "htmlmathml-f.ent", nullptr},
     {"-//W3C//DTD MathML 2.0//EN", "htmlmathml-f.ent", nullptr},
     {"-//WAPFORUM//DTD XHTML Mobile 1.0//EN", "htmlmathml-f.ent", nullptr},
+    {"-//WAPFORUM//DTD XHTML Mobile 1.1//EN", "htmlmathml-f.ent", nullptr},
+    {"-//WAPFORUM//DTD XHTML Mobile 1.2//EN", "htmlmathml-f.ent", nullptr},
     {nullptr, nullptr, nullptr}};
 
 static const nsCatalogData* LookupCatalogData(const char16_t* aPublicID) {
@@ -1086,7 +1085,7 @@ nsresult nsExpatDriver::HandleError() {
   nsCOMPtr<nsIURI> baseURI;
   if (expatBase && (baseURI = GetBaseURI(expatBase.get()))) {
     // Let's ignore if this fails, we're already reporting a parse error.
-    Unused << CopyUTF8toUTF16(baseURI->GetSpecOrDefault(), uri, fallible);
+    (void)CopyUTF8toUTF16(baseURI->GetSpecOrDefault(), uri, fallible);
   }
   nsAutoString errorText;
   CreateErrorText(description.get(), uri.get(), lineNumber, colNumber,

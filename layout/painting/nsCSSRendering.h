@@ -554,13 +554,15 @@ struct nsCSSRendering {
       mozilla::Side aStartBevelSide, nscoord aStartBevelOffset,
       mozilla::Side aEndBevelSide, nscoord aEndBevelOffset);
 
-  // NOTE: pt, dirtyRect, lineSize, ascent, offset, trimLeft, and trimRight in
+  // NOTE: pt, dirtyRect, lineSize, ascent, offset, insetLeft, and insetRight in
   //       the following structs are non-rounded device pixels, not app units.
   struct DecorationRectParams {
-    // Checks if either start or end trim value is negative.
+    // Checks if either start or end inset value is negative.
     // In that situation, text decoration will extend past the edges of the
     // text.
-    bool HasNegativeTrim() const { return trimLeft < 0.0 || trimRight < 0.0; }
+    bool HasNegativeInset() const {
+      return insetLeft < 0.0 || insetRight < 0.0;
+    }
 
     // The width [length] and the height [thickness] of the decoration
     // line. This is a "logical" size in textRun orientation, so that
@@ -594,15 +596,15 @@ struct nsCSSRendering {
     // The style of the decoration line
     mozilla::StyleTextDecorationStyle style =
         mozilla::StyleTextDecorationStyle::None;
-    // Trim start/end values for this decoration.
+    // Decoration-line start/end inset values for this decoration.
     // The caller must ensure that the start/end values are translated to
     // left/right in the line-relative direction.
-    Float trimLeft = 0.0f;
-    Float trimRight = 0.0f;
+    Float insetLeft = 0.0f;
+    Float insetRight = 0.0f;
     bool vertical = false;
     bool sidewaysLeft = false;
     gfxTextRun::Range glyphRange;
-    gfxTextRun::PropertyProvider* provider;
+    gfxTextRun::PropertyProvider* provider = nullptr;
   };
 
   struct PaintDecorationLineParams : DecorationRectParams {
@@ -620,6 +622,9 @@ struct nsCSSRendering {
     Float baselineOffset = 0.0f;
     // Whether text-decoration-skip-ink behavior is to be supported.
     bool allowInkSkipping = true;
+
+    mozilla::StyleTextDecorationSkipInk skipInk =
+        mozilla::StyleTextDecorationSkipInk::None;
   };
 
   /**

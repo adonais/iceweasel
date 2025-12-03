@@ -29,6 +29,8 @@ def register():
 def options():
     return {
         "base_repository": "https://hg.mozilla.org/mozilla-unified",
+        "base_ref": "mybranch",
+        "base_rev": "1234",
         "head_repository": "https://hg.mozilla.org/mozilla-central",
         "head_rev": "abcd",
         "head_ref": "ef01",
@@ -74,7 +76,6 @@ def test_write_artifact_yml():
 @patch("gecko_taskgraph.decision.get_hg_revision_info")
 @patch("gecko_taskgraph.decision.get_hg_revision_branch")
 @patch("gecko_taskgraph.decision.get_repository")
-@patch("gecko_taskgraph.decision._determine_more_accurate_base_rev")
 @patch("gecko_taskgraph.decision.get_changed_files")
 @pytest.mark.parametrize(
     "extra_options,commit_msg,ttc,expected",
@@ -132,7 +133,6 @@ def test_write_artifact_yml():
 )
 def test_get_decision_parameters(
     mock_get_changed_files,
-    mock_determine_more_accurate_base_rev,
     mock_get_repository,
     mock_get_hg_revision_branch,
     mock_get_hg_revision_info,
@@ -149,8 +149,6 @@ def test_get_decision_parameters(
     mock_repo.default_branch = "baseref"
     mock_repo.get_commit_message.return_value = commit_msg or "commit message"
     mock_get_repository.return_value = mock_repo
-
-    mock_determine_more_accurate_base_rev.return_value = "baserev"
     mock_get_changed_files.return_value = ["foo.txt", "bar/baz.md"]
 
     options.update(extra_options)

@@ -7,7 +7,6 @@
 #ifndef jit_shared_LIR_shared_h
 #define jit_shared_LIR_shared_h
 
-#include "mozilla/Maybe.h"
 #include "jit/AtomicOp.h"
 #include "jit/shared/Assembler-shared.h"
 #include "util/Memory.h"

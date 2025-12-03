@@ -7,7 +7,7 @@
 
 newtab-page-title = Ischeda noa
 newtab-settings-button =
-    .title = Personaliza sa pàgina de s'ischeda noa
+    .title = Personaliza sa pàgina de s’ischeda noa
 newtab-customize-panel-icon-button =
     .title = Personaliza custa pàgina
 newtab-customize-panel-icon-button-label = Personaliza
@@ -17,8 +17,8 @@ newtab-personalize-settings-icon-label =
 newtab-settings-dialog-label =
     .aria-label = Cunfiguratzione
 newtab-personalize-icon-label =
-    .title = Personaliza s'ischeda noa
-    .aria-label = Personaliza s'ischeda noa
+    .title = Personaliza s’ischeda noa
+    .aria-label = Personaliza s’ischeda noa
 newtab-personalize-dialog-label =
     .aria-label = Personaliza
 newtab-logo-and-wordmark =
@@ -155,7 +155,7 @@ newtab-privacy-modal-paragraph-2 =
     Paris a su de t'ammustrare istòrias geniosas, t'ammustramus fintzas cuntenutos rilevantes e curados in manera primorosa,
     dae is patrotzinadores nostros. Non ti preocupes, <strong>sa cronologia tua non lassat mai sa còpia personale tua de { -brand-product-name }</strong>: no dda bidimus, e no dda bident
     nemmancu is patrotzinadores nostros.
-newtab-privacy-modal-link = Impara comente funtzionat sa riservadesa in s'ischeda noa
+newtab-privacy-modal-link = Impara comente funtzionat sa riservadesa in s’ischeda noa
 
 ##
 
@@ -406,7 +406,7 @@ newtab-wallpaper-abstract-purple-green = Isfumadura de lughe tanada e birde
 newtab-wallpaper-abstract-blue-purple-waves = Formas a undas biaitas e tanadas
 newtab-wallpaper-abstract-black-waves = Formas a undas nieddas
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotografias
 newtab-wallpaper-beach-at-sunrise = Ispiàgia in s'arbeschidòrgiu
@@ -426,7 +426,7 @@ newtab-wallpaper-blue-flowers = Fotografia ammanniada de frores iscuguddados a f
 #   $webpage_string (String) - The name of the webpage where the photo is located.
 newtab-wallpaper-attribution = Fotografia de <a data-l10n-name="name-link">{ $author_string }</a> subra <a data-l10n-name="webpage-link">{ $webpage_string }</a>
 newtab-wallpaper-feature-highlight-header = Proa un’istrichiddu de colore
-newtab-wallpaper-feature-highlight-content = Dona a s'ischeda noa una bisura frisca cun isfundos.
+newtab-wallpaper-feature-highlight-content = Dona a s’ischeda noa una bisura frisca cun isfundos.
 newtab-wallpaper-feature-highlight-button = Apo cumprèndidu
 # Tooltip for dismiss button
 feature-highlight-dismiss-button =
@@ -435,6 +435,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -477,8 +481,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Passa a Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Passa a Celsius
 newtab-weather-menu-hide-weather = Cua su tempus in s’ischeda noa
 newtab-weather-menu-learn-more = Àteras informatziones
+newtab-weather-menu-detect-my-location = Rileva sa positzione mia
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Is datos de su tempus non sunt a disponimentu immoe.
+newtab-weather-opt-in-see-weather = Boles bìdere su tempus in sa positzione tua?
+newtab-weather-opt-in-not-now =
+    .label = Immoe nono
+newtab-weather-opt-in-yes =
+    .label = Eja
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York
 
 ## Topic Labels
 
@@ -645,6 +657,9 @@ newtab-widget-lists-input-menu-move-up = Move in artu
 newtab-widget-lists-input-menu-move-down = Move in bàsciu
 newtab-widget-lists-input-menu-delete = Cantzella
 newtab-widget-lists-input-menu-edit = Modifica
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Crea una lista noa
 newtab-widget-lists-name-label-default =
     .label = Lista de tareas
 newtab-widget-lists-name-placeholder-default =
@@ -664,10 +679,6 @@ newtab-widget-timer-mode-focus =
     .label = Cuntzentratzione
 newtab-widget-timer-mode-break =
     .label = Pàusa
-newtab-widget-timer-play =
-    .title = Avia
-newtab-widget-timer-pause =
-    .title = Pàusa
 newtab-widget-timer-label-play =
     .label = Avia
 newtab-widget-timer-label-pause =

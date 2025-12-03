@@ -5,6 +5,7 @@
 package org.mozilla.fenix.translations
 
 import android.content.res.Configuration
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -666,22 +667,24 @@ private fun getLongestLanguageWidth(languages: List<Language>, style: TextStyle)
 @PreviewLightDark
 private fun TranslationsDialogBottomSheetPreview() {
     FirefoxTheme {
-        TranslationsDialogBottomSheet(
-            translationsDialogState = TranslationsDialogState(
-                positiveButtonType = PositiveButtonType.Enabled,
-                toLanguages = getTranslateToLanguageList(),
-                fromLanguages = getTranslateFromLanguageList(),
-            ),
-            learnMoreUrl = "",
-            showPageSettings = true,
-            showFirstTimeFlow = true,
-            onSettingClicked = {},
-            onLearnMoreClicked = {},
-            onPositiveButtonClicked = {},
-            onNegativeButtonClicked = {},
-            onFromDropdownSelected = {},
-            onToDropdownSelected = {},
-        )
+        Column(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
+            TranslationsDialogBottomSheet(
+                translationsDialogState = TranslationsDialogState(
+                    positiveButtonType = PositiveButtonType.Enabled,
+                    toLanguages = getTranslateToLanguageList(),
+                    fromLanguages = getTranslateFromLanguageList(),
+                ),
+                learnMoreUrl = "",
+                showPageSettings = true,
+                showFirstTimeFlow = true,
+                onSettingClicked = {},
+                onLearnMoreClicked = {},
+                onPositiveButtonClicked = {},
+                onNegativeButtonClicked = {},
+                onFromDropdownSelected = {},
+                onToDropdownSelected = {},
+            )
+        }
     }
 }
 

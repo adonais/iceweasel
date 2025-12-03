@@ -101,7 +101,7 @@ function testInDifferentProcess() {
  *  * Avoid moving iframes: That causes reloads on mozilla and opera.
  *
  *
- **/
+ */
 var TestRunner = {};
 TestRunner.logEnabled = false;
 TestRunner._currentTest = 0;
@@ -133,7 +133,7 @@ TestRunner._structuredFormatter = new StructuredFormatter();
 
 /**
  * Make sure the tests don't hang indefinitely.
- **/
+ */
 TestRunner._numTimeouts = 0;
 TestRunner._currentTestStartTime = new Date().valueOf();
 TestRunner._timeoutFactor = 1;
@@ -262,7 +262,7 @@ TestRunner.requestLongerTimeout = function (factor) {
 
 /**
  * This is used to loop tests
- **/
+ */
 TestRunner.repeat = 0;
 TestRunner._currentLoop = 1;
 
@@ -284,12 +284,12 @@ TestRunner.expectAssertions = function (min, max) {
 
 /**
  * This function is called after generating the summary.
- **/
+ */
 TestRunner.onComplete = null;
 
 /**
  * Adds a failed test case to a list so we can rerun only the failed tests
- **/
+ */
 TestRunner._failedTests = {};
 TestRunner._failureFile = "";
 
@@ -313,7 +313,7 @@ TestRunner.generateFailureList = function () {
 
 /**
  * If logEnabled is true, this is the logger that will be used.
- **/
+ */
 
 // This delimiter is used to avoid interleaving Mochitest/Gecko logs.
 var LOG_DELIMITER = "\ue175\uee31\u2c32\uacbf";
@@ -392,7 +392,7 @@ TestRunner.failureHandler = function () {
 
 /**
  * Toggle element visibility
- **/
+ */
 TestRunner._toggle = function (el) {
   if (el.className == "noshow") {
     el.className = "";
@@ -405,7 +405,7 @@ TestRunner._toggle = function (el) {
 
 /**
  * Creates the iframe that contains a test
- **/
+ */
 TestRunner._makeIframe = function (url, retry) {
   var iframe = $("testframe");
   if (
@@ -503,7 +503,7 @@ TestRunner.dumpPrefContext = function () {
  *
  * The arguments are the URLs of the test to be ran.
  *
- **/
+ */
 TestRunner.runTests = function (/*url...*/) {
   TestRunner.structuredLogger.info("SimpleTest START");
   TestRunner.dumpPrefContext();
@@ -540,7 +540,7 @@ TestRunner.runTests = function (/*url...*/) {
 /**
  * Used for running a set of tests in a loop for debugging purposes
  * Takes an array of URLs
- **/
+ */
 TestRunner.resetTests = function (listURLs) {
   TestRunner._currentTest = 0;
   // Reset our "Current-test" line - functionality depends on it
@@ -576,7 +576,7 @@ TestRunner.getNextUrl = function () {
 
 /**
  * Run the next test. If no test remains, calls onComplete().
- **/
+ */
 TestRunner._haltTests = false;
 async function _runNextTest() {
   if (
@@ -588,10 +588,7 @@ async function _runNextTest() {
 
     $("current-test-path").innerHTML = url;
 
-    // This newtab train-hop compatibility shim can be removed once Firefox 144
-    // makes it to the release channel.
-    TestRunner._currentTestStartTimestamp =
-      SpecialPowers.ChromeUtils.now?.() || SpecialPowers.Cu.now();
+    TestRunner._currentTestStartTimestamp = SpecialPowers.ChromeUtils.now();
     TestRunner._currentTestStartTime = new Date().valueOf();
     TestRunner._timeoutFactor = 1;
     TestRunner._expectedMinAsserts = 0;
@@ -696,7 +693,7 @@ TestRunner.expectChildProcessCrash = function () {
 
 /**
  * This stub is called by SimpleTest when a test is finished.
- **/
+ */
 TestRunner.testFinished = function (tests) {
   // Need to track subtests recorded here separately or else they'll
   // trigger the `result after SimpleTest.finish()` error.
@@ -909,7 +906,7 @@ TestRunner.testFinished = function (tests) {
 
 /**
  * This stub is called by XOrigin Tests to report assertion count.
- **/
+ */
 TestRunner._xoriginAssertionCount = 0;
 TestRunner.addAssertionCount = function (count) {
   if (!testInXOriginFrame()) {

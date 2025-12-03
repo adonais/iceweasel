@@ -165,12 +165,12 @@ void BroadcastChannelService::PostMessage(BroadcastChannelParent* aParent,
       }
     }
 
-    Unused << parent->SendNotify(newData);
+    (void)parent->SendNotify(newData);
   }
 
   // If this is a refMessageData, we need to know when it can be released.
   if (aData.data().type() == MessageDataType::TRefMessageData) {
-    Unused << aParent->SendRefMessageDelivered(
+    (void)aParent->SendRefMessageDelivered(
         aData.data().get_RefMessageData().uuid(), selectedActorsOnSamePid);
   }
 }

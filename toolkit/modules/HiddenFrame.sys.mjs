@@ -184,7 +184,7 @@ export const HiddenBrowserManager = new (class HiddenBrowserManager {
   /**
    * Releases the given hidden browser.
    *
-   * @param {XULBrowserElement} browser
+   * @param {MozBrowser} browser
    *   The hidden browser element.
    */
   #releaseBrowser(browser) {
@@ -202,7 +202,7 @@ export const HiddenBrowserManager = new (class HiddenBrowserManager {
    * This function will return whatever the callback function returns.
    *
    * @template T
-   * @param {(XULBrowserElement) => T | Promise<T>} callback
+   * @param {(MozBrowser) => T | Promise<T>} callback
    *   The callback function will be called with the browser element and may
    *   be asynchronous.
    * @returns {Promise<T>}

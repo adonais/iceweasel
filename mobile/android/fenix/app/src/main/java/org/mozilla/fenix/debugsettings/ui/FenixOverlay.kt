@@ -26,11 +26,11 @@ import mozilla.components.concept.storage.LoginsStorage
 import mozilla.components.lib.state.ext.observeAsState
 import mozilla.telemetry.glean.Glean
 import org.mozilla.fenix.R
-import org.mozilla.fenix.debugsettings.addresses.AddressesDebugLocalesRepository
+import org.mozilla.fenix.debugsettings.addresses.AddressesDebugRegionRepository
 import org.mozilla.fenix.debugsettings.addresses.AddressesTools
-import org.mozilla.fenix.debugsettings.addresses.FakeAddressesDebugLocalesRepository
+import org.mozilla.fenix.debugsettings.addresses.FakeAddressesDebugRegionRepository
 import org.mozilla.fenix.debugsettings.addresses.FakeCreditCardsAddressesStorage
-import org.mozilla.fenix.debugsettings.addresses.SharedPrefsAddressesDebugLocalesRepository
+import org.mozilla.fenix.debugsettings.addresses.SharedPrefsAddressesDebugRegionRepository
 import org.mozilla.fenix.debugsettings.cfrs.CfrToolsPreferencesMiddleware
 import org.mozilla.fenix.debugsettings.cfrs.CfrToolsState
 import org.mozilla.fenix.debugsettings.cfrs.CfrToolsStore
@@ -103,9 +103,9 @@ fun FenixOverlay(
             ),
         ),
         loginsStorage = loginsStorage,
-        addressesDebugLocalesRepository =
+        addressesDebugRegionRepository =
             context.components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
-                SharedPrefsAddressesDebugLocalesRepository(context)
+                SharedPrefsAddressesDebugRegionRepository(context)
             },
         creditCardsAddressesStorage = context.components.core.autofillStorage,
         inactiveTabsEnabled = inactiveTabsEnabled,
@@ -119,7 +119,7 @@ fun FenixOverlay(
  * @param cfrToolsStore [CfrToolsStore] used to access [CfrToolsState].
  * @param gleanDebugToolsStore [GleanDebugToolsStore] used to access [GleanDebugToolsState].
  * @param loginsStorage [LoginsStorage] used to access logins for [LoginsTools].
- * @param addressesDebugLocalesRepository used to control storage for [AddressesTools].
+ * @param addressesDebugRegionRepository used to control storage for [AddressesTools].
  * @param creditCardsAddressesStorage used to access addresses for [AddressesTools].
  * @param inactiveTabsEnabled Whether the inactive tabs feature is enabled.
  */
@@ -129,7 +129,7 @@ private fun FenixOverlay(
     cfrToolsStore: CfrToolsStore,
     gleanDebugToolsStore: GleanDebugToolsStore,
     loginsStorage: LoginsStorage,
-    addressesDebugLocalesRepository: AddressesDebugLocalesRepository,
+    addressesDebugRegionRepository: AddressesDebugRegionRepository,
     creditCardsAddressesStorage: CreditCardsAddressesStorage,
     inactiveTabsEnabled: Boolean,
 ) {
@@ -155,7 +155,7 @@ private fun FenixOverlay(
             gleanDebugToolsStore = gleanDebugToolsStore,
             inactiveTabsEnabled = inactiveTabsEnabled,
             loginsStorage = loginsStorage,
-            addressesDebugLocalesRepository = addressesDebugLocalesRepository,
+            addressesDebugRegionRepository = addressesDebugRegionRepository,
             creditCardsAddressesStorage = creditCardsAddressesStorage,
         )
     }
@@ -204,7 +204,7 @@ private fun FenixOverlayPreview() {
         ),
         inactiveTabsEnabled = true,
         loginsStorage = FakeLoginsStorage(),
-        addressesDebugLocalesRepository = FakeAddressesDebugLocalesRepository(),
+        addressesDebugRegionRepository = FakeAddressesDebugRegionRepository(),
         creditCardsAddressesStorage = FakeCreditCardsAddressesStorage(),
     )
 }

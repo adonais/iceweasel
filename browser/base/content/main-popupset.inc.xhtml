@@ -32,6 +32,13 @@
       data-lazy-l10n-id="tab-context-ungroup-tab"
       data-l10n-args='{"groupCount": 1}'
       hidden="true"/>
+    <menuitem id="context_moveTabToSplitView"
+      class="badge-new"
+      hidden="true"/>
+    <menuitem id="context_separateSplitView"
+      class="badge-new"
+      data-lazy-l10n-id="tab-context-separate-split-view"
+      hidden="true"/>
     <menuseparator/>
     <menuitem id="context_reloadTab" data-lazy-l10n-id="reload-tab"/>
     <menuitem id="context_reloadSelectedTabs" data-lazy-l10n-id="reload-tabs" hidden="true"/>
@@ -68,6 +75,7 @@
                   tbattr="tabbrowser-multiple-visible"/>
         <menuitem id="context_openTabInWindow" data-lazy-l10n-id="move-to-new-window"
                   tbattr="tabbrowser-multiple-visible"/>
+        <menuseparator id="moveTabSeparator" hidden="true"/>
       </menupopup>
     </menu>
     <menu id="context_sendTabToDevice"

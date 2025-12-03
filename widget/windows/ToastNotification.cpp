@@ -732,8 +732,7 @@ ToastNotification::HandleWindowsTag(const nsAString& aWindowsTag,
             JS::Rooted<JSObject*> obj(cx, JS_NewPlainObject(cx));
 
             JS::Rooted<JS::Value> attVal(cx, JS::BooleanValue(aTagWasHandled));
-            Unused << NS_WARN_IF(
-                !JS_SetProperty(cx, obj, "tagWasHandled", attVal));
+            (void)NS_WARN_IF(!JS_SetProperty(cx, obj, "tagWasHandled", attVal));
 
             promise->MaybeResolve(obj);
           },
@@ -860,7 +859,7 @@ ToastNotification::RemoveAllNotificationsForInstall() {
       }
 
       hr = notifier->RemoveFromSchedule(schedToast.Get());
-      Unused << NS_WARN_IF(FAILED(hr));
+      (void)NS_WARN_IF(FAILED(hr));
     }
   }();
 

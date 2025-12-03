@@ -50,13 +50,13 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "_idle",
   "@mozilla.org/widget/useridleservice;1",
-  "nsIUserIdleService"
+  Ci.nsIUserIdleService
 );
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "_taskbarService",
   "@mozilla.org/windows-taskbar;1",
-  "nsIWinTaskbar"
+  Ci.nsIWinTaskbar
 );
 
 ChromeUtils.defineESModuleGetters(lazy, {

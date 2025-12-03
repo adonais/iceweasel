@@ -8,7 +8,6 @@
 #define DOM_SVG_SVGANIMATEDINTEGERPAIR_H_
 
 #include "DOMSVGAnimatedInteger.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCycleCollectionParticipant.h"

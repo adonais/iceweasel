@@ -95,12 +95,10 @@ async function openNewTabWithIframesAndConsole(tabUrl, iframes) {
       const iframesLoadPromises = urls.map((url, i) => {
         const iframe = content.document.createElement("iframe");
         iframe.classList.add(`iframe-${i + 1}`);
-        const onLoadIframe = new Promise(resolve => {
-          iframe.addEventListener("load", resolve, { once: true });
-        });
-        content.document.body.append(iframe);
+        const onLoad = ContentTaskUtils.waitForEvent(iframe, "load");
         iframe.src = url;
-        return onLoadIframe;
+        content.document.body.append(iframe);
+        return onLoad;
       });
 
       await Promise.all(iframesLoadPromises);

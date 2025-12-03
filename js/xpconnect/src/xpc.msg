@@ -217,6 +217,12 @@ XPC_MSG_DEF(NS_ERROR_SIGNED_JAR_MANIFEST_INVALID    , "The JAR's manifest or sig
 XPC_MSG_DEF(NS_ERROR_CMS_VERIFY_NO_CONTENT_INFO     , "The PKCS#7 signature is malformed or invalid.")
 XPC_MSG_DEF(NS_ERROR_CMS_VERIFY_NOT_SIGNED          , "The PKCS#7 information is not signed.")
 
+/* Codes related to pdf signature verification */
+XPC_MSG_DEF(NS_ERROR_CMS_VERIFY_ERROR_PROCESSING    , "The PKCS#7 parsing has failed.")
+XPC_MSG_DEF(NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED   , "The PKCS#7 certificate verification was cancelled.")
+XPC_MSG_DEF(NS_ERROR_CMS_VERIFY_BAD_SIGNATURE       , "Invalid signature.")
+XPC_MSG_DEF(NS_ERROR_CMS_VERIFY_NOCERT              , "No certificate was found.")
+
 /* Codes related to signed manifests */
 XPC_MSG_DEF(NS_ERROR_SIGNED_APP_MANIFEST_INVALID   , "The signed app manifest or signature file is invalid.")
 

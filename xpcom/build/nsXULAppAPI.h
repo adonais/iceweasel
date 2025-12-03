@@ -8,7 +8,6 @@
 #define _nsXULAppAPI_h__
 
 #include "js/TypeDecls.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/ProcessType.h"
 #include "mozilla/TimeStamp.h"
 #include "nscore.h"

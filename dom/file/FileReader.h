@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_FileReader_h
 #define mozilla_dom_FileReader_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "nsCOMPtr.h"
 #include "nsIAsyncInputStream.h"

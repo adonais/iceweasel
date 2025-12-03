@@ -7,6 +7,8 @@
 #ifndef jit_ReciprocalMulConstants_h
 #define jit_ReciprocalMulConstants_h
 
+#include "mozilla/MathAlgorithms.h"
+
 #include <stdint.h>
 
 namespace js::jit {
@@ -15,8 +17,8 @@ struct ReciprocalMulConstants {
   int64_t multiplier;
   int32_t shiftAmount;
 
-  static ReciprocalMulConstants computeSignedDivisionConstants(uint32_t d) {
-    return computeDivisionConstants(d, 31);
+  static ReciprocalMulConstants computeSignedDivisionConstants(int32_t d) {
+    return computeDivisionConstants(mozilla::Abs(d), 31);
   }
 
   static ReciprocalMulConstants computeUnsignedDivisionConstants(uint32_t d) {

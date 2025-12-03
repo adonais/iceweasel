@@ -25,7 +25,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "UpdateService",
   "@mozilla.org/updates/update-service;1",
-  "nsIApplicationUpdateService"
+  Ci.nsIApplicationUpdateService
 );
 
 ChromeUtils.defineLazyGetter(lazy, "log", () => {

@@ -847,12 +847,10 @@ export class SpecialPowersParent extends JSWindowActorParent {
   /**
    * messageManager callback function
    * This will get requests from our API in the window and process them in chrome for it
-   **/
+   */
   // eslint-disable-next-line complexity
   async receiveMessage(aMessage) {
-    // This newtab train-hop compatibility shim can be removed once Firefox 144
-    // makes it to the release channel.
-    let startTime = ChromeUtils.now?.() || Cu.now();
+    let startTime = ChromeUtils.now();
     // Try block so we can use a finally statement to add a profiler marker
     // despite all the return statements.
     try {

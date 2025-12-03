@@ -14,7 +14,8 @@ import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.disableWifiNetworkConnection
 import org.mozilla.fenix.helpers.AppAndSystemHelper.enableDataSaverSystemSetting
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
-import org.mozilla.fenix.helpers.TestAssetHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.firstForeignWebPageAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.secondForeignWebPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
@@ -42,7 +43,7 @@ class TranslationsTest : TestSetup() {
     @Test
     @SkipLeaks
     fun verifyTheFirstTranslationNotNowButtonFunctionalityTest() {
-        val testPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
+        val testPage = mockWebServer.firstForeignWebPageAsset
 
         navigationToolbar {
         }.enterURL(testPage.url) {
@@ -66,7 +67,7 @@ class TranslationsTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyMainMenuTranslationButtonFunctionalityTest() {
-        val testPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
+        val testPage = mockWebServer.firstForeignWebPageAsset
 
         navigationToolbar {
         }.enterURL(testPage.url) {
@@ -88,7 +89,7 @@ class TranslationsTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyTheDownloadLanguagesFunctionalityTest() {
-        val firstTestPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
+        val firstTestPage = mockWebServer.firstForeignWebPageAsset
 
         navigationToolbar {
         }.enterURL(firstTestPage.url) {
@@ -107,8 +108,8 @@ class TranslationsTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyTheNeverTranslateOptionTest() {
-        val firstTestPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
-        val secondTestPage = TestAssetHelper.getSecondForeignWebPageAsset(mockWebServer)
+        val firstTestPage = mockWebServer.firstForeignWebPageAsset
+        val secondTestPage = mockWebServer.secondForeignWebPageAsset
 
         navigationToolbar {
         }.enterURL(firstTestPage.url) {
@@ -144,7 +145,7 @@ class TranslationsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2436642
     @Test
     fun verifyFirstTranslationBottomSheetTranslateFunctionalityTest() {
-        val testPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
+        val testPage = mockWebServer.firstForeignWebPageAsset
 
         navigationToolbar {
         }.enterURL(testPage.url) {
@@ -159,7 +160,7 @@ class TranslationsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2437112
     @Test
     fun verifyTheShowOriginalTranslationOptionTest() {
-        val testPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
+        val testPage = mockWebServer.firstForeignWebPageAsset
 
         navigationToolbar {
         }.enterURL(testPage.url) {
@@ -179,7 +180,7 @@ class TranslationsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2437111
     @Test
     fun changeTheTranslateToLanguageTest() {
-        val testPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
+        val testPage = mockWebServer.firstForeignWebPageAsset
 
         navigationToolbar {
         }.enterURL(testPage.url) {
@@ -201,8 +202,8 @@ class TranslationsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2437992
     @Test
     fun verifyTheAlwaysTranslateOptionTest() {
-        val firstTestPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
-        val secondTestPage = TestAssetHelper.getSecondForeignWebPageAsset(mockWebServer)
+        val firstTestPage = mockWebServer.firstForeignWebPageAsset
+        val secondTestPage = mockWebServer.secondForeignWebPageAsset
 
         navigationToolbar {
         }.enterURL(secondTestPage.url) {
@@ -237,7 +238,7 @@ class TranslationsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2439960
     @Test
     fun verifyTheSiteDeletionFromTheNeverTranslateListTest() {
-        val firstTestPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
+        val firstTestPage = mockWebServer.firstForeignWebPageAsset
 
         navigationToolbar {
         }.enterURL(firstTestPage.url) {
@@ -270,7 +271,7 @@ class TranslationsTest : TestSetup() {
     @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1965222")
     @Test
     fun downloadLanguageWhileDataSaverModeIsOnTest() {
-        val firstTestPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
+        val firstTestPage = mockWebServer.firstForeignWebPageAsset
 
         navigationToolbar {
         }.enterURL(firstTestPage.url) {
@@ -296,8 +297,8 @@ class TranslationsTest : TestSetup() {
     @Test
     @SkipLeaks
     fun verifyTheAlwaysOfferToTranslateOptionTest() {
-        val firstTestPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
-        val secondTestPage = TestAssetHelper.getSecondForeignWebPageAsset(mockWebServer)
+        val firstTestPage = mockWebServer.firstForeignWebPageAsset
+        val secondTestPage = mockWebServer.secondForeignWebPageAsset
 
         navigationToolbar {
         }.enterURL(firstTestPage.url) {
@@ -325,7 +326,7 @@ class TranslationsTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyTheTranslationIsDisplayedAutomaticallyTest() {
-        val firstTestPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
+        val firstTestPage = mockWebServer.firstForeignWebPageAsset
         val secondTestPage = "https://mozilla-mobile.github.io/testapp/v2.0/germanForeignWebPage.html"
 
         navigationToolbar {

@@ -394,7 +394,6 @@ menupopup[emptyplacesresult] > .hide-if-empty-places-result {
   --arrowpanel-border-color: #0060df;
   --arrowpanel-color: #fff;
   --arrowpanel-padding: 6px 10px;
-  font-weight: 400;
   font-size: 1.1rem;
 
   &::part(content) {
@@ -472,7 +471,7 @@ menupopup[emptyplacesresult] > .hide-if-empty-places-result {
 
   #confirmation-hint.with-description & {
     font-size: 1.2em;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
   }
 }
 
@@ -568,7 +567,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
     color: var(--panel-banner-item-color);
     background-color: var(--panel-banner-item-background-color);
     margin-bottom: 4px;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
   }
 
   .panel-banner-item,
@@ -702,7 +701,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
       color: var(--button-text-color);
       background-color: var(--button-background-color);
       font-size: 0.8em;
-      font-weight: 600;
+      font-weight: var(--font-weight-semibold);
 
       &:hover {
         color: var(--button-text-color-hover);
@@ -725,7 +724,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 
 #appMenu-fxa-status2[fxastatus] > #appMenu-fxa-label2 > vbox > #appMenu-header-description,
 #appMenu-fxa-text {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 :root[fxadisabled="true"] #appMenu-fxa-status2,
@@ -796,7 +795,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 
 .sync-setup-title {
   font-size: 1.1em;
-  font-weight: 400;
+  font-weight: normal;
   margin-block: auto;
 }
 
@@ -813,7 +812,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   padding: 6px 12px;
   background-color: var(--button-background-color);
   font-size: 0.9em;
-  font-weight: 500;
+  font-weight: var(--font-weight-semibold);
   max-width: fit-content;
   border-radius: var(--button-border-radius);
 
@@ -944,18 +943,6 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   margin-inline-start: var(--space-small);
 }
 
-.PanelUI-fxa-service-description-label,
-.PanelUI-remotetabs-instruction-label {
-  /* Use 'lighter' font for this to de-emphasize it compared to the title. */
-  font-weight: lighter;
-
-  @media (-moz-platform: linux) {
-    /* Use 300 on Linux because 100 is too light (lacks contrast with
-     * the background) for some fonts in combination with anti-aliasing. */
-    font-weight: 300;
-  }
-}
-
 #fxa-menu-header-title {
   color: var(--arrowpanel-color);
   text-wrap: wrap;
@@ -963,7 +950,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 
 #fxa-menu-header-description {
   color: var(--text-color-deemphasized);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--heading-font-weight);
   text-wrap: wrap;
 }
 
@@ -1581,7 +1568,7 @@ toolbarbutton[itemtype="showinactivebutton"] {
 
 .remote-tabs-undo-button {
   font-size: 0.8em;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
 }
 
 .toolbaritem-combined-buttons {
@@ -1764,7 +1751,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   margin: 5px 15px 11px;
   border: 1px solid var(--button-border-color-destructive);
   border-radius: var(--button-border-radius);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   padding: 10px;
 
   &:hover {
@@ -1797,7 +1784,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   border: 1px solid transparent;
   border-radius: var(--button-border-radius);
   padding: 10px;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   appearance: none;
 
   &:hover {
@@ -1922,7 +1909,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   .protections-popup-message-title {
     display: grid;
     font-size: 1.3em;
-    font-weight: 600;
+    font-weight: var(--heading-font-weight);
     line-height: 1.4em;
     margin: 14px 0 0;
     grid-column-start: 1;
@@ -1937,7 +1924,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 
   .text-link {
     color: inherit;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
   }
 }
 
@@ -2005,7 +1992,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 
 .PanelUI-profiler-description-title {
   font-size: 1.3em;
-  font-weight: 600;
+  font-weight: var(--heading-font-weight);
   margin-block: 2px;
 }
 
@@ -2036,7 +2023,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 }
 
 .PanelUI-profiler-content-label {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 #PanelUI-profiler-content-description {
@@ -2151,7 +2138,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 }
 
 #reset-pbm-panel-header > description {
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--heading-font-weight);
 }
 
 #reset-pbm-panel-checkbox {
@@ -2280,6 +2267,10 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   display: none;
 }
 
+#profiles-copy-profile-button {
+  list-style-image: url("chrome://global/skin/icons/edit-copy.svg");
+}
+
 #profiles-create-profile-button {
   list-style-image: url("chrome://global/skin/icons/plus.svg");
 }
@@ -2334,11 +2325,11 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   width: 400px;
 }
 
-#PanelUI-ipprotection-header {
-  width: 100%;
+#ipprotection-experiment-badge {
+  margin-inline-start: var(--space-xsmall);
+  display: inline-block;
 }
 
-#PanelUI-ipprotection .panel-header,
-#PanelUI-ipprotection .panel-header + toolbarseparator {
-  display: none;
+#ipprotection-header-button {
+  list-style-image: url(chrome://global/skin/icons/help.svg);
 }

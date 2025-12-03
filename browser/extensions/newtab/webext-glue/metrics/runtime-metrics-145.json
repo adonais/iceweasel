@@ -1,0 +1,14 @@
+{
+  "metrics": {
+    "newtab": {
+      "highlights_enabled": {
+        "description": "Whether \"highlights\" is enabled on the newtab. AKA the \"Recent Activity\" section. Corresponds to the value of the `browser.newtabpage.activity-stream.feeds.section.highlights` pref.\n",
+        "disabled": false,
+        "lifetime": "application",
+        "pings": ["newtab"],
+        "type": "boolean"
+      }
+    }
+  },
+  "pings": {}
+}

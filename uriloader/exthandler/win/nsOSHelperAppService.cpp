@@ -16,7 +16,6 @@
 #include "nsLocalFile.h"
 #include "nsIWindowsRegKey.h"
 #include "nsXULAppAPI.h"
-#include "mozilla/UniquePtrExtensions.h"
 
 // shellapi.h is needed to build with WIN32_LEAN_AND_MEAN
 #include <shellapi.h>

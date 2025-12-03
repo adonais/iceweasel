@@ -8,7 +8,6 @@
 #define mozilla_dom_nsQueryContentEventResult_h
 
 #include "Units.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/widget/IMEData.h"

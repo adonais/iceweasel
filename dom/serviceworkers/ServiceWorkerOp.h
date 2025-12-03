@@ -11,7 +11,6 @@
 
 #include "ServiceWorkerEvents.h"
 #include "ServiceWorkerOpPromise.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"

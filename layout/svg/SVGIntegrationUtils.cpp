@@ -18,7 +18,6 @@
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGUtils.h"
 #include "mozilla/StaticPrefs_layers.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/SVGElement.h"
 #include "mozilla/gfx/Point.h"
 #include "nsCSSAnonBoxes.h"

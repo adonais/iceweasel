@@ -39,6 +39,7 @@ beetmover_description_schema = Schema(
         Optional("shipping-product"): task_description_schema["shipping-product"],
         Optional("priority"): task_description_schema["priority"],
         Optional("task-from"): task_description_schema["task-from"],
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
     }
 )
 

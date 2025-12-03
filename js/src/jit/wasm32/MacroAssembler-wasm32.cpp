@@ -48,32 +48,33 @@ void MacroAssembler::PopStackPtr() { MOZ_CRASH(); }
 
 void MacroAssembler::freeStackTo(uint32_t framePushed) { MOZ_CRASH(); }
 
-void MacroAssembler::flexibleDivMod32(Register rhs, Register srcDest,
-                                      Register remOutput, bool isUnsigned,
+void MacroAssembler::flexibleDivMod32(Register lhs, Register rhs,
+                                      Register divOutput, Register remOutput,
+                                      bool isUnsigned,
                                       const LiveRegisterSet& volatileLiveRegs) {
   MOZ_CRASH();
 }
 
 void MacroAssembler::flexibleQuotient32(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
   MOZ_CRASH();
 }
 
 void MacroAssembler::flexibleQuotientPtr(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
   MOZ_CRASH();
 }
 
 void MacroAssembler::flexibleRemainder32(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
   MOZ_CRASH();
 }
 
 void MacroAssembler::flexibleRemainderPtr(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
   MOZ_CRASH();
 }
@@ -395,6 +396,11 @@ void MacroAssembler::copySignDouble(FloatRegister lhs, FloatRegister rhs,
   MOZ_CRASH();
 }
 
+void MacroAssembler::copySignFloat32(FloatRegister lhs, FloatRegister rhs,
+                                     FloatRegister output) {
+  MOZ_CRASH();
+}
+
 void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
                                      const Value& rhs, Label* label) {
   MOZ_CRASH();
@@ -425,7 +431,7 @@ void MacroAssembler::callWithABINoProfiler(const Address& fun, ABIType result) {
   MOZ_CRASH();
 }
 
-void MacroAssembler::call(const Address& addr) { MOZ_CRASH(); }
+CodeOffset MacroAssembler::call(const Address& addr) { MOZ_CRASH(); }
 
 void MacroAssembler::call(ImmWord imm) { MOZ_CRASH(); }
 

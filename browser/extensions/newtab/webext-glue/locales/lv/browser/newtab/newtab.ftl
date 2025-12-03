@@ -356,7 +356,7 @@ newtab-wallpaper-abstract-orange = Oranžas formas
 newtab-wallpaper-gradient-orange = Oranža un rozā krāsu pāreja
 newtab-wallpaper-abstract-blue-purple = Zilas un violetas formas
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotogrāfijas
 newtab-wallpaper-beach-at-sunrise = Pludmale saullēktā

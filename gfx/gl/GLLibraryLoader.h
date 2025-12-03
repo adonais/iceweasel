@@ -10,8 +10,8 @@
 
 #include "GLDefs.h"
 #include "nscore.h"
+#include "prlink.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/SharedLibrary.h"
 
 namespace mozilla {
 namespace gl {

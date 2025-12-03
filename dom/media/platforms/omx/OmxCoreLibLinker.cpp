@@ -8,7 +8,6 @@
 
 #include "MainThreadUtils.h"
 #include "PlatformDecoderModule.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Preferences.h"
 #include "prlink.h"
 

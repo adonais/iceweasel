@@ -3067,7 +3067,7 @@ class PictureInPictureChildVideoWrapper {
    * @param {Number} aSeconds
    *  The time in seconds
    * @returns {String} Timestamp string
-   **/
+   */
   timeFromSeconds(aSeconds) {
     aSeconds = isNaN(aSeconds) ? 0 : Math.round(aSeconds);
     let seconds = Math.floor(aSeconds % 60),
@@ -3088,7 +3088,7 @@ class PictureInPictureChildVideoWrapper {
    * @param {Number} aDuration
    *  The total duration in seconds
    * @returns {String} Formatted timestamp
-   **/
+   */
   formatTimestamp(aCurrentTime, aDuration) {
     // We can't format numbers that can't be represented as decimal digits.
     if (!Number.isFinite(aCurrentTime) || !Number.isFinite(aDuration)) {

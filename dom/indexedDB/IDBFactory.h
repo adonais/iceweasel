@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_idbfactory_h__
 #define mozilla_dom_idbfactory_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/GlobalTeardownObserver.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"

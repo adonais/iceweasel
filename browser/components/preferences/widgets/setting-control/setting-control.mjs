@@ -3,102 +3,30 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import {
-  Directive,
   createRef,
-  directive,
   html,
   ifDefined,
   literal,
-  noChange,
-  nothing,
   ref,
   staticHtml,
   unsafeStatic,
 } from "chrome://global/content/vendor/lit.all.mjs";
-import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
+import {
+  SettingElement,
+  spread,
+} from "chrome://browser/content/preferences/widgets/setting-element.mjs";
 
 /** @import MozCheckbox from "../../../../../toolkit/content/widgets/moz-checkbox/moz-checkbox.mjs"*/
 /** @import { Setting } from "chrome://global/content/preferences/Setting.mjs"; */
+/** @import { PreferencesSettingConfigNestedControlOption } from "chrome://global/content/preferences/Preferences.mjs"; */
 
 /**
- * A Lit directive that applies all properties of an object to a DOM element.
- *
- * This directive interprets keys in the provided props object as follows:
- * - Keys starting with `?` set or remove boolean attributes using `toggleAttribute`.
- * - Keys starting with `.` set properties directly on the element.
- * - Keys starting with `@` are currently not supported and will throw an error.
- * - All other keys are applied as regular attributes using `setAttribute`.
- *
- * It avoids reapplying values that have not changed, but does not currently
- * remove properties that were previously set and are no longer present in the new input.
- *
- * This directive is useful to "spread" an object of attributes/properties declaratively onto an
- * element in a Lit template.
+ * Properties that represent a nested HTML element that will be a direct descendant of this setting control element
+ * @typedef {object} SettingNestedElementOption
+ * @property {Array<SettingNestedElementOption>} [options]
+ * @property {string} control - The {@link HTMLElement#localName} of any HTML element
+ * @property {Record<string, string>} [controlAttrs] - Attributes for the element
  */
-class SpreadDirective extends Directive {
-  /**
-   * A record of previously applied properties to avoid redundant updates.
-   * @type {Record<string, unknown>}
-   */
-  #prevProps = {};
-
-  /**
-   * Render nothing by default as all changes are made in update using DOM APIs
-   * on the element directly.
-   * @returns {typeof nothing}
-   */
-  render() {
-    return nothing;
-  }
-
-  /**
-   * Apply props to the element using DOM APIs, updating only changed values.
-   * @param {AttributePart} part - The part of the template this directive is bound to.
-   * @param {[Record<string, unknown>]} propsArray - An array with a single object containing props to apply.
-   * @returns {typeof noChange} - Indicates to Lit that no re-render is needed.
-   */
-  update(part, [props]) {
-    // TODO: This doesn't clear any values that were set in previous calls if
-    // they are no longer present.
-    // It isn't entirely clear to me (mstriemer) what we should do if a prop is
-    // removed, or if the prop has changed from say ?foo to foo. By not
-    // implementing the auto-clearing hopefully the consumer will do something
-    // that fits their use case.
-
-    /** @type {HTMLElement} */
-    let el = part.element;
-
-    for (let [key, value] of Object.entries(props)) {
-      // Skip if the value hasn't changed since the last update.
-      if (value === this.#prevProps[key]) {
-        continue;
-      }
-
-      // Update the element based on the property key matching Lit's templates:
-      //   ?key -> el.toggleAttribute(key, value)
-      //   .key -> el.key = value
-      //   key -> el.setAttribute(key, value)
-      if (key.startsWith("?")) {
-        el.toggleAttribute(key.slice(1), Boolean(value));
-      } else if (key.startsWith(".")) {
-        el[key.slice(1)] = value;
-      } else if (key.startsWith("@")) {
-        throw new Error(
-          `Event listeners are not yet supported with spread (${key})`
-        );
-      } else {
-        el.setAttribute(key, String(value));
-      }
-    }
-
-    // Save current props for comparison in the next update.
-    this.#prevProps = props;
-
-    return noChange;
-  }
-}
-
-const spread = directive(SpreadDirective);
 
 /**
  * Mapping of parent control tag names to the literal tag name for their
@@ -123,23 +51,38 @@ const ITEM_SLOT_BY_PARENT = new Map([
   ["moz-input-search", "nested"],
   ["moz-input-folder", "nested"],
   ["moz-input-password", "nested"],
+  ["moz-radio", "nested"],
   ["moz-radio-group", "nested"],
   // NOTE: moz-select does not support the nested slot.
   ["moz-toggle", "nested"],
 ]);
 
-export class SettingControl extends MozLitElement {
-  /**
-   * @type {Setting | undefined}
-   */
-  #lastSetting;
+export class SettingNotDefinedError extends Error {
+  /** @param {string} settingId */
+  constructor(settingId) {
+    super(
+      `No Setting with id "${settingId}". Did you register it with Preferences.addSetting()?`
+    );
+    this.name = "SettingNotDefinedError";
+    this.settingId = settingId;
+  }
+}
 
+export class SettingControl extends SettingElement {
+  static SettingNotDefinedError = SettingNotDefinedError;
   static properties = {
     setting: { type: Object },
     config: { type: Object },
     value: {},
     parentDisabled: { type: Boolean },
+    showEnableExtensionMessage: { type: Boolean },
+    tabIndex: { type: Number, reflect: true },
   };
+
+  /**
+   * @type {Setting | undefined}
+   */
+  #lastSetting;
 
   constructor() {
     super();
@@ -164,6 +107,11 @@ export class SettingControl extends MozLitElement {
      * @type {boolean | undefined}
      */
     this.parentDisabled = undefined;
+
+    /**
+     * @type {boolean}
+     */
+    this.showEnableExtensionMessage = false;
   }
 
   createRenderRoot() {
@@ -190,7 +138,7 @@ export class SettingControl extends MozLitElement {
   };
 
   /**
-   * @type {MozLitElement['willUpdate']}
+   * @type {SettingElement['willUpdate']}
    */
   willUpdate(changedProperties) {
     if (changedProperties.has("setting")) {
@@ -200,6 +148,9 @@ export class SettingControl extends MozLitElement {
       this.#lastSetting = this.setting;
       this.setValue();
       this.setting.on("change", this.onSettingChange);
+    }
+    if (!this.setting) {
+      throw new SettingNotDefinedError(this.config.id);
     }
     let prevHidden = this.hidden;
     this.hidden = !this.setting.visible;
@@ -234,27 +185,21 @@ export class SettingControl extends MozLitElement {
    * Note: for the disabled property, a setting can either be locked,
    * or controlled by an extension but not both.
    *
+   * @override
    * @param {PreferencesSettingsConfig} config
-   * @returns {Record<string, any>}
+   * @returns {ReturnType<SettingElement['getCommonPropertyMapping']>}
    */
   getCommonPropertyMapping(config) {
     return {
-      id: config.id,
-      "data-l10n-id": config.l10nId,
-      "data-l10n-args": config.l10nArgs
-        ? JSON.stringify(config.l10nArgs)
-        : undefined,
-      ".iconSrc": config.iconSrc,
-      ".supportPage": config.supportPage,
+      ...super.getCommonPropertyMapping(config),
       ".setting": this.setting,
       ".control": this,
-      "data-subcategory": config.subcategory,
-      ...config.controlAttrs,
     };
   }
 
   /**
    * The default properties for an option.
+   * @param {PreferencesSettingConfigNestedControlOption | SettingNestedElementOption} config
    */
   getOptionPropertyMapping(config) {
     const props = this.getCommonPropertyMapping(config);
@@ -308,6 +253,7 @@ export class SettingControl extends MozLitElement {
 
   async disableExtension() {
     await this.setting.disableControllingExtension();
+    this.showEnableExtensionMessage = true;
   }
 
   isControlledByExtension() {
@@ -315,6 +261,18 @@ export class SettingControl extends MozLitElement {
       this.setting.controllingExtensionInfo?.id &&
       this.setting.controllingExtensionInfo?.name
     );
+  }
+
+  handleEnableExtensionDismiss() {
+    this.showEnableExtensionMessage = false;
+  }
+
+  navigateToAddons(event) {
+    if (event.target.matches("a[data-l10n-name='addons-link']")) {
+      event.preventDefault();
+      let mainWindow = window.browsingContext.topChromeWindow;
+      mainWindow.BrowserAddonUI.openAddonsMgr("addons://list/theme");
+    }
   }
 
   get extensionName() {
@@ -325,40 +283,62 @@ export class SettingControl extends MozLitElement {
     return this.setting.controllingExtensionInfo.l10nId;
   }
 
+  /**
+   * Prepare nested item config and settings.
+   * @param {PreferencesSettingConfigNestedControlOption} config
+   * @returns {Array<string>}
+   */
+  itemsTemplate(config) {
+    if (!config.items) {
+      return [];
+    }
+
+    const itemArgs = config.items.map(i => ({
+      config: i,
+      setting: this.getSetting(i.id),
+    }));
+    let control = config.control || "moz-checkbox";
+    return itemArgs.map(
+      item =>
+        html`<setting-control
+          .config=${item.config}
+          .setting=${item.setting}
+          .getSetting=${this.getSetting}
+          slot=${ifDefined(ITEM_SLOT_BY_PARENT.get(control))}
+        ></setting-control>`
+    );
+  }
+
+  /**
+   * Prepares any children (and any of its children's children) that this element may need.
+   * @param {PreferencesSettingConfigNestedControlOption | SettingNestedElementOption} config
+   * @returns {Array<string>}
+   */
+  optionsTemplate(config) {
+    if (!config.options) {
+      return [];
+    }
+    let control = config.control || "moz-checkbox";
+    return config.options.map(opt => {
+      let optionTag = opt.control
+        ? unsafeStatic(opt.control)
+        : KNOWN_OPTIONS.get(control);
+      return staticHtml`<${optionTag}
+          ${spread(this.getOptionPropertyMapping(opt))}
+        >${"items" in opt ? this.itemsTemplate(opt) : this.optionsTemplate(opt)}</${optionTag}>`;
+    });
+  }
+
   render() {
     // Allow the Setting to override the static config if necessary.
     this.config = this.setting.getControlConfig(this.config);
     let { config } = this;
     let control = config.control || "moz-checkbox";
-    let getItemArgs = items =>
-      items?.map(i => ({
-        config: i,
-        setting: this.getSetting(i.id),
-      })) || [];
 
-    // Prepare nested item config and settings.
-    let itemArgs = getItemArgs(config.items);
-    let itemTemplate = opts =>
-      html`<setting-control
-        .config=${opts.config}
-        .setting=${opts.setting}
-        .getSetting=${this.getSetting}
-        slot=${ifDefined(ITEM_SLOT_BY_PARENT.get(control))}
-      ></setting-control>`;
-    let nestedSettings = itemArgs.map(itemTemplate);
-
-    // Prepare any children that this element may need.
-    let controlChildren = nothing;
-    if (config.options) {
-      controlChildren = config.options.map(opt => {
-        let optionTag = opt.control
-          ? unsafeStatic(opt.control)
-          : KNOWN_OPTIONS.get(control);
-        return staticHtml`<${optionTag}
-          ${spread(this.getOptionPropertyMapping(opt))}
-        >${opt.items ? getItemArgs(opt.items).map(itemTemplate) : ""}</${optionTag}>`;
-      });
-    }
+    let nestedSettings =
+      "items" in config
+        ? this.itemsTemplate(config)
+        : this.optionsTemplate(config);
 
     // Get the properties for this element: id, fluent, disabled, etc.
     // These will be applied to the control using the spread directive.
@@ -366,6 +346,9 @@ export class SettingControl extends MozLitElement {
 
     let tag = unsafeStatic(control);
     let messageBar;
+
+    // NOTE: the showEnableMessage message bar should ONLY appear when
+    // there are no extensions controlling the setting.
     if (this.isControlledByExtension()) {
       let args = { name: this.extensionName };
       messageBar = html`<moz-message-bar
@@ -379,13 +362,28 @@ export class SettingControl extends MozLitElement {
           data-l10n-id="disable-extension"
         ></moz-button>
       </moz-message-bar>`;
+    } else if (this.showEnableExtensionMessage) {
+      messageBar = html`<moz-message-bar
+        class="reenable-extensions-message-bar"
+        dismissable=""
+        @message-bar:user-dismissed=${this.handleEnableExtensionDismiss}
+      >
+        <span
+          @click=${this.navigateToAddons}
+          slot="message"
+          data-l10n-id="extension-controlled-enable-2"
+        >
+          <a data-l10n-name="addons-link" href="#"></a>
+        </span>
+      </moz-message-bar>`;
     }
     return staticHtml`
     ${messageBar}
     <${tag}
       ${spread(controlProps)}
       ${ref(this.controlRef)}
-    >${controlChildren}${nestedSettings}</${tag}>`;
+      tabindex=${ifDefined(this.tabIndex)}
+    >${nestedSettings}</${tag}>`;
   }
 }
 customElements.define("setting-control", SettingControl);

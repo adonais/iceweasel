@@ -46,7 +46,6 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/TouchEvents.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/widget/GeckoViewSupport.h"
@@ -346,10 +345,10 @@ class nsAutoRetainUIKitObject {
   }
 
   CGFloat scaleFactor = [self contentScaleFactor];
-  mGeckoChild->Resize(self.frame.origin.x * scaleFactor,
-                      self.frame.origin.y * scaleFactor,
-                      self.frame.size.width * scaleFactor,
-                      self.frame.size.height * scaleFactor, false);
+  mGeckoChild->DoResize(self.frame.origin.x * scaleFactor,
+                        self.frame.origin.y * scaleFactor,
+                        self.frame.size.width * scaleFactor,
+                        self.frame.size.height * scaleFactor, false);
 }
 
 - (BOOL)canBecomeFirstResponder {
@@ -745,7 +744,7 @@ class nsAutoRetainUIKitObject {
 
 @end
 
-NS_IMPL_ISUPPORTS_INHERITED(nsWindow, nsBaseWidget, nsWindow);
+NS_IMPL_ISUPPORTS_INHERITED(nsWindow, nsIWidget, nsWindow);
 
 nsWindow::nsWindow()
     : mNativeView(nullptr),
@@ -778,7 +777,7 @@ bool nsWindow::IsTopLevel() {
 //
 
 nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
-                          widget::InitData* aInitData) {
+                          const widget::InitData& aInitData) {
   ALOG("nsWindow[%p]::Create %p [%d %d %d %d]", (void*)this, (void*)aParent,
        aRect.x, aRect.y, aRect.width, aRect.height);
   nsWindow* parent = (nsWindow*)aParent;
@@ -792,7 +791,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   mWindowType = WindowType::TopLevel;
   mBorderStyle = BorderStyle::Default;
 
-  nsBaseWidget::BaseCreate(aParent, aInitData);
+  nsIWidget::BaseCreate(aParent, aInitData);
 
   NS_ASSERTION(IsTopLevel() || parent,
                "non top level window doesn't have a parent!");
@@ -839,13 +838,13 @@ void nsWindow::Destroy() {
 
   nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
 
-  nsBaseWidget::Destroy();
+  nsIWidget::Destroy();
 
   // ReportDestroyEvent();
 
   TearDownView();
 
-  nsBaseWidget::OnDestroy();
+  nsIWidget::OnDestroy();
 }
 
 void nsWindow::Show(bool aState) {
@@ -861,14 +860,16 @@ void nsWindow::Show(bool aState) {
   }
 }
 
-void nsWindow::Move(double aX, double aY) {
-  if (!mNativeView || (mBounds.x == aX && mBounds.y == aY)) return;
+void nsWindow::Move(const DesktopPoint& aPoint) {
+  if (!mNativeView || (mBounds.x == aPoint.x && mBounds.y == aPoint.y)) {
+    return;
+  }
 
   // XXX: handle this
   // The point we have is in Gecko coordinates (origin top-left). Convert
   // it to Cocoa ones (origin bottom-left).
-  mBounds.x = aX;
-  mBounds.y = aY;
+  mBounds.x = aPoint.x;
+  mBounds.y = aPoint.y;
 
   if (mWindowType != WindowType::TopLevel) {
     mNativeView.frame = DevPixelsToUIKitPoints(mBounds, BackingScaleFactor());
@@ -879,11 +880,19 @@ void nsWindow::Move(double aX, double aY) {
   ReportMoveEvent();
 }
 
-void nsWindow::Resize(double aX, double aY, double aWidth, double aHeight,
-                      bool aRepaint) {
-  BOOL isMoving = (mBounds.x != aX || mBounds.y != aY);
-  BOOL isResizing = (mBounds.width != aWidth || mBounds.height != aHeight);
-  if (!mNativeView || (!isMoving && !isResizing)) return;
+void nsWindow::Resize(const DesktopRect& aRect, bool aRepaint) {
+  DoResize(aRect.x, aRect.y, aRect.width, aRect.height, aRepaint);
+}
+
+void nsWindow::DoResize(double aX, double aY, double aWidth, double aHeight,
+                        bool aRepaint) {
+  // FIXME: This code is confused about integers vs. double coords, and desktop
+  // vs. device pixels.
+  BOOL isMoving = mBounds.x != aX || mBounds.y != aY;
+  BOOL isResizing = mBounds.width != aWidth || mBounds.height != aHeight;
+  if (!mNativeView || (!isMoving && !isResizing)) {
+    return;
+  }
 
   if (isMoving) {
     mBounds.x = aX;
@@ -906,12 +915,14 @@ void nsWindow::Resize(double aX, double aY, double aWidth, double aHeight,
   if (isResizing) ReportSizeEvent();
 }
 
-void nsWindow::Resize(double aWidth, double aHeight, bool aRepaint) {
-  if (!mNativeView || (mBounds.width == aWidth && mBounds.height == aHeight))
+void nsWindow::Resize(const DesktopSize& aSize, bool aRepaint) {
+  if (!mNativeView ||
+      (mBounds.width == aSize.width && mBounds.height == aSize.height)) {
     return;
+  }
 
-  mBounds.width = aWidth;
-  mBounds.height = aHeight;
+  mBounds.width = aSize.width;
+  mBounds.height = aSize.height;
 
   if (mWindowType != WindowType::TopLevel) {
     [mNativeView
@@ -932,7 +943,7 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
   mSizeMode = static_cast<nsSizeMode>(aMode);
   if (aMode == nsSizeMode_Maximized || aMode == nsSizeMode_Fullscreen) {
     // Resize to fill screen
-    nsBaseWidget::InfallibleMakeFullScreen(true);
+    nsIWidget::InfallibleMakeFullScreen(true);
   }
   ReportSizeModeEvent(aMode);
 }
@@ -1029,7 +1040,7 @@ nsresult nsWindow::DispatchEvent(mozilla::WidgetGUIEvent* aEvent,
                                  nsEventStatus& aStatus) {
   aStatus = nsEventStatus_eIgnore;
   nsCOMPtr<nsIWidget> kungFuDeathGrip(aEvent->mWidget);
-  mozilla::Unused << kungFuDeathGrip;  // Not used within this function
+  (void)kungFuDeathGrip;  // Not used within this function
 
   if (mAttachedWidgetListener) {
     aStatus = mAttachedWidgetListener->HandleEvent(aEvent, mUseAttachedEvents);
@@ -1143,7 +1154,7 @@ int32_t nsWindow::RoundsWidgetCoordinatesTo() {
   return 1;
 }
 
-RefPtr<layers::NativeLayerRoot> nsWindow::GetNativeLayerRoot() {
+layers::NativeLayerRoot* nsWindow::GetNativeLayerRoot() {
   return mNativeLayerRoot;
 }
 

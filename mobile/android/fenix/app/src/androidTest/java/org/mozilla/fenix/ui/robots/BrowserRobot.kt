@@ -932,6 +932,22 @@ class BrowserRobot {
         )
     }
 
+    fun verifyOpenLinkInAnotherAppPromptIsNotShown() {
+        assertUIObjectIsGone(
+            itemContainingText(
+                getStringResource(
+                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name,
+                    appName,
+                ),
+            ),
+            itemContainingText(
+                getStringResource(
+                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_message,
+                ),
+            ),
+        )
+    }
+
     fun verifyPrivateBrowsingOpenLinkInAnotherAppPrompt(appName: String, url: String, pageObject: UiObject) {
         for (i in 1..RETRY_COUNT) {
             try {
@@ -1183,7 +1199,11 @@ class BrowserRobot {
     fun verifyWebCompatReporterViewItems(composeTestRule: ComposeTestRule, websiteURL: String) {
         Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the report broken site description is displayed")
         composeTestRule.onNodeWithContentDescription(
-            getStringResource(R.string.webcompat_reporter_description_2, appName) + " " + getStringResource(R.string.a11y_links_available),
+            getStringResource(
+                R.string.webcompat_reporter_description_3,
+                appName,
+                getStringResource(R.string.webcompat_reporter_learn_more),
+            ) + " " + getStringResource(R.string.a11y_links_available),
         ).assertIsDisplayed()
         Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the report broken site description is displayed")
         Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"URL\" header is displayed")

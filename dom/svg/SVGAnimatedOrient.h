@@ -10,7 +10,6 @@
 #include "DOMSVGAnimatedEnumeration.h"
 #include "SVGAnimatedEnumeration.h"
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/SVGAngleBinding.h"

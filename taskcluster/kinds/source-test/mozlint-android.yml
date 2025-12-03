@@ -55,6 +55,7 @@ task-defaults:
             - name: public/reports
               path: /builds/worker/checkouts/gecko/obj-firefox/gradle/build/reports
               type: directory
+    run-on-repo-type: [hg]
     run:
         using: run-task
         tooltool-downloads: internal  # For internal toolchains.

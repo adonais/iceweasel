@@ -3,7 +3,7 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-const { getDefaultLocation, selectServer } = ChromeUtils.importESModule(
+const { IPProtectionServerlist } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPProtectionServerlist.sys.mjs"
 );
 
@@ -59,17 +59,19 @@ add_setup(async function () {
     await client.db.create(country);
   }
   await client.db.importChanges({}, Date.now());
+
+  await IPProtectionServerlist.maybeFetchList();
 });
 
 add_task(async function test_getDefaultLocation() {
-  const { country, city } = await getDefaultLocation();
+  const { country, city } = IPProtectionServerlist.getDefaultLocation();
   Assert.equal(country.code, "US", "The default country should be US");
   Assert.deepEqual(city, TEST_US_CITY, "The correct city should be returned");
 });
 
 add_task(async function test_selectServer() {
   // Test with a city with multiple non-quarantined servers
-  let selected = await selectServer(TEST_US_CITY);
+  let selected = IPProtectionServerlist.selectServer(TEST_US_CITY);
   Assert.ok(
     [TEST_SERVER_1, TEST_SERVER_2].some(s => s.hostname === selected.hostname),
     "A valid server should be selected"
@@ -81,7 +83,7 @@ add_task(async function test_selectServer() {
     code: "OSC",
     servers: [TEST_SERVER_1],
   };
-  selected = await selectServer(cityWithOneServer);
+  selected = IPProtectionServerlist.selectServer(cityWithOneServer);
   Assert.deepEqual(
     selected,
     TEST_SERVER_1,
@@ -94,7 +96,7 @@ add_task(async function test_selectServer() {
     code: "MSC",
     servers: [TEST_SERVER_1, TEST_SERVER_QUARANTINED],
   };
-  selected = await selectServer(cityWithMixedServers);
+  selected = IPProtectionServerlist.selectServer(cityWithMixedServers);
   Assert.deepEqual(
     selected,
     TEST_SERVER_1,
@@ -107,7 +109,7 @@ add_task(async function test_selectServer() {
     code: "QC",
     servers: [TEST_SERVER_QUARANTINED],
   };
-  selected = await selectServer(cityWithQuarantinedServers);
+  selected = IPProtectionServerlist.selectServer(cityWithQuarantinedServers);
   Assert.equal(selected, null, "No server should be selected");
 
   // Test with a city with no servers
@@ -116,6 +118,6 @@ add_task(async function test_selectServer() {
     code: "NSC",
     servers: [],
   };
-  selected = await selectServer(cityWithNoServers);
+  selected = IPProtectionServerlist.selectServer(cityWithNoServers);
   Assert.equal(selected, null, "No server should be selected");
 });

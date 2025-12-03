@@ -20,7 +20,6 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/Logging.h"
-#include "mozilla/NotNull.h"
 #include "mozilla/PerfStats.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/SharedSubResourceCache.h"
@@ -135,7 +134,7 @@ NS_IMETHODIMP
 ScriptLoadHandler::OnStartRequest(nsIRequest* aRequest) {
   mRequest->SetMinimumExpirationTime(
       nsContentUtils::GetSubresourceCacheExpirationTime(aRequest,
-                                                        mRequest->mURI));
+                                                        mRequest->URI()));
 
   return NS_OK;
 }
@@ -296,8 +295,8 @@ bool ScriptLoadHandler::TrySetDecoder(nsIIncrementalStreamLoader* aLoader,
 nsresult ScriptLoadHandler::MaybeDecodeSRI(uint32_t* sriLength) {
   *sriLength = 0;
 
-  if (!mSRIDataVerifier || mSRIDataVerifier->IsComplete() ||
-      NS_FAILED(mSRIStatus)) {
+  if (!mSRIDataVerifier || mSRIDataVerifier->IsInvalid() ||
+      mSRIDataVerifier->IsComplete() || NS_FAILED(mSRIStatus)) {
     return NS_OK;
   }
 
@@ -336,7 +335,7 @@ nsresult ScriptLoadHandler::EnsureKnownDataType(
 
   if (mRequest->mFetchSourceOnly) {
     mRequest->SetTextSource(mRequest->mLoadContext.get());
-    TRACE_FOR_TEST(mRequest, "scriptloader_load_source");
+    TRACE_FOR_TEST(mRequest, "load:source");
     return NS_OK;
   }
 
@@ -346,14 +345,14 @@ nsresult ScriptLoadHandler::EnsureKnownDataType(
     cic->GetAlternativeDataType(altDataType);
     if (altDataType.Equals(ScriptLoader::BytecodeMimeTypeFor(mRequest))) {
       mRequest->SetBytecode();
-      TRACE_FOR_TEST(mRequest, "scriptloader_load_bytecode");
+      TRACE_FOR_TEST(mRequest, "load:diskcache");
       return NS_OK;
     }
     MOZ_ASSERT(altDataType.IsEmpty());
   }
 
   mRequest->SetTextSource(mRequest->mLoadContext.get());
-  TRACE_FOR_TEST(mRequest, "scriptloader_load_source");
+  TRACE_FOR_TEST(mRequest, "load:source");
 
   MOZ_ASSERT(!mRequest->IsUnknownDataType());
   MOZ_ASSERT(mRequest->IsFetching());
@@ -368,7 +367,7 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
   nsresult rv = NS_OK;
   if (LOG_ENABLED()) {
     nsAutoCString url;
-    mRequest->mURI->GetAsciiSpec(url);
+    mRequest->URI()->GetAsciiSpec(url);
     LOG(("ScriptLoadRequest (%p): Stream complete (url = %s)", mRequest.get(),
          url.get()));
   }
@@ -467,21 +466,9 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
 
   // Everything went well, keep the CacheInfoChannel alive such that we can
   // later save the bytecode on the cache entry.
-  if (NS_SUCCEEDED(rv) && mRequest->IsSource() &&
-      StaticPrefs::dom_script_loader_bytecode_cache_enabled()) {
-    mRequest->mCacheInfo = do_QueryInterface(channelRequest);
-    LOG(("ScriptLoadRequest (%p): nsICacheInfoChannel = %p", mRequest.get(),
-         mRequest->mCacheInfo.get()));
-  }
-
   // we have to mediate and use mRequest.
   rv = mScriptLoader->OnStreamComplete(aLoader, mRequest, aStatus, mSRIStatus,
                                        mSRIDataVerifier.get());
-
-  // In case of failure, clear the mCacheInfoChannel to avoid keeping it alive.
-  if (NS_FAILED(rv)) {
-    mRequest->DropDiskCacheReference();
-  }
 
   return rv;
 }
@@ -499,7 +486,7 @@ nsresult ScriptLoadHandler::AsyncOnChannelRedirect(
     nsIChannel* aOld, nsIChannel* aNew, uint32_t aFlags,
     nsIAsyncVerifyRedirectCallback* aCallback) {
   mRequest->SetMinimumExpirationTime(
-      nsContentUtils::GetSubresourceCacheExpirationTime(aOld, mRequest->mURI));
+      nsContentUtils::GetSubresourceCacheExpirationTime(aOld, mRequest->URI()));
 
   aCallback->OnRedirectVerifyCallback(NS_OK);
 

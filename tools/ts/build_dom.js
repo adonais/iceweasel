@@ -17,6 +17,14 @@ const { RESERVED_WORDS } = require("peggy");
 const TAGLIST = require.resolve("../../parser/htmlparser/nsHTMLTagList.h");
 const BINDINGS = require.resolve("../../dom/bindings/Bindings.conf");
 
+// TODO Bug TBD: Ideally we should get details about the generated files from
+// the build system.
+const GENERATED_WEDIDL_FILES = [
+  "CSSPageDescriptors.webidl",
+  "CSSPositionTryDescriptors.webidl",
+  "CSSStyleProperties.webidl",
+];
+
 const HEADER = `/**
  * NOTE: Do not modify this file by hand.
  * Content was generated from source .webidl files.
@@ -193,8 +201,12 @@ function postprocess(additionalExports, generated) {
 }
 
 // Build and save the dom lib.
-async function main(lib_dts, webidl_dir, ...webidl_files) {
-  let dts = await emitDom(webidl_files.map(f => `${webidl_dir}/${f}`));
+async function main(lib_dts, webidl_dir, objdir_webidl, ...webidl_files) {
+  let files = [
+    ...GENERATED_WEDIDL_FILES.map(f => `${objdir_webidl}/${f}`),
+    ...webidl_files.map(f => `${webidl_dir}/${f}`),
+  ];
+  let dts = await emitDom(files);
   console.log(`[INFO] ${lib_dts} (${dts.length.toLocaleString()} bytes)`);
   fs.writeFileSync(lib_dts, dts);
 }

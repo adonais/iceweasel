@@ -195,6 +195,14 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                 },
             ],
             [
+                ["--timeout-factor"],
+                {
+                    "action": "store",
+                    "dest": "timeout_factor",
+                    "help": "Multiplier for test timeout values",
+                },
+            ],
+            [
                 ["--filter"],
                 {
                     "action": "store",
@@ -778,6 +786,9 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                             c["this_chunk"],
                         ]
                     )
+
+                if c.get("timeout_factor"):
+                    base_cmd.extend(["--timeout-factor", c["timeout_factor"]])
 
             if c["no_random"]:
                 if suite_category == "mochitest":

@@ -11,3 +11,4 @@ env_logger = {version = "0.10", default-features = false } # disable `regex` to 
 log = "0.4"
 pkcs11-bindings = "0.1"
 rsclientcerts = { path = "../rsclientcerts" }
+rsclientcerts-util = { path = "../rsclientcerts-util" }

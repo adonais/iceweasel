@@ -11,6 +11,7 @@ pypi:fluent.pygments==1.0
 pypi:imagesize==1.4.1
 pypi:more-itertools==7.2.0
 pypi:pluggy==0.13.1
+pypi:psutil==5.9.4
 pypi:py==1.11.0
 pypi:pytz==2022.7.1
 pypi:rstcheck==6.2.4

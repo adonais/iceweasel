@@ -329,14 +329,22 @@ async function switchTab(tab, name) {
 async function toggleReaderMode() {
   logAction();
   const readerButton = document.getElementById("reader-mode-button");
-  await waitForCondition(() => readerButton.hidden === false);
+  await BrowserTestUtils.waitForMutationCondition(
+    readerButton,
+    { attributes: true, attributeFilter: ["hidden"] },
+    () => readerButton.hidden === false
+  );
 
   readerButton.getAttribute("readeractive")
     ? info("Exiting reader mode")
     : info("Entering reader mode");
 
   const readyPromise = readerButton.getAttribute("readeractive")
-    ? waitForCondition(() => !readerButton.getAttribute("readeractive"))
+    ? BrowserTestUtils.waitForMutationCondition(
+        readerButton,
+        { attributes: true, attributeFilter: ["readeractive"] },
+        () => !readerButton.getAttribute("readeractive")
+      )
     : BrowserTestUtils.waitForContentEvent(
         gBrowser.selectedBrowser,
         "AboutReaderContentReady"

@@ -314,20 +314,6 @@ LoginManagerAuthPrompter.prototype = {
     return this.__strBundle;
   },
 
-  __ellipsis: null,
-  get _ellipsis() {
-    if (!this.__ellipsis) {
-      this.__ellipsis = "\u2026";
-      try {
-        this.__ellipsis = Services.prefs.getComplexValue(
-          "intl.ellipsis",
-          Ci.nsIPrefLocalizedString
-        ).data;
-      } catch (e) {}
-    }
-    return this.__ellipsis;
-  },
-
   // Whether we are in private browsing mode
   get _inPrivateBrowsing() {
     if (this._chromeWindow) {
@@ -953,8 +939,7 @@ LoginManagerAuthPrompter.prototype = {
    */
   _sanitizeUsername(username) {
     if (username.length > 30) {
-      username = username.substring(0, 30);
-      username += this._ellipsis;
+      username = username.substring(0, 30) + Services.locale.ellipsis;
     }
     return username.replace(/['"]/g, "");
   },

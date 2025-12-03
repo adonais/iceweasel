@@ -21,8 +21,6 @@
 
   --in-content-item-hover: color-mix(in srgb, var(--button-background-color-primary) 20%, transparent);
   --in-content-item-hover-text: var(--text-color);
-  --in-content-item-selected: var(--button-background-color-primary);
-  --in-content-item-selected-text: var(--button-text-color-primary);
 
   --in-content-border-invalid: light-dark(var(--red-50), rgb(255, 132, 139));
   --in-content-border-color: light-dark(#d7d7db, rgba(249, 249, 250, 0.2));
@@ -79,8 +77,6 @@
 
     --in-content-item-hover: SelectedItem;
     --in-content-item-hover-text: SelectedItemText;
-    --in-content-item-selected: SelectedItem;
-    --in-content-item-selected-text: SelectedItemText;
 
     /* This is not great, but there is no suitable keyword for this.
      * In theory, we shouldn't be conveying invalid state just with a colour
@@ -186,7 +182,7 @@ xul|menulist {
   border: var(--button-border);
   border-radius: var(--button-border-radius);
   background-color: var(--button-background-color);
-  font-weight: 400;
+  font-weight: normal;
   padding: 0.45em 1em;
   text-decoration: none;
   margin: 4px 8px;
@@ -252,7 +248,7 @@ html|select:not([size], [multiple]) {
   -moz-context-properties: fill;
   fill: currentColor;
   font: inherit;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 
   /* See above for some explanation about these values. */
   padding-inline-start: var(--start-padding);
@@ -414,8 +410,8 @@ xul|menulist > xul|menupopup > xul|menuitem:not([disabled="true"])[_moz-menuacti
 
 xul|menulist > xul|menupopup > xul|menu:not([disabled="true"])[selected="true"],
 xul|menulist > xul|menupopup > xul|menuitem:not([disabled="true"])[selected="true"] {
-  color: var(--in-content-item-selected-text);
-  background-color: var(--in-content-item-selected);
+  color: var(--text-color-accent-primary-selected);
+  background-color: var(--color-accent-primary-selected);
 }
 
 xul|menulist > xul|menupopup > xul|menu[disabled="true"],
@@ -802,8 +798,8 @@ xul|treechildren::-moz-tree-row(hover) {
 
 xul|richlistbox > xul|richlistitem[selected],
 xul|treechildren::-moz-tree-row(selected) {
-  background-color: var(--in-content-item-selected);
-  color: var(--in-content-item-selected-text);
+  background-color: var(--color-accent-primary-selected);
+  color: var(--text-color-accent-primary-selected);
 }
 
 @media not (forced-colors) {
@@ -812,10 +808,10 @@ xul|treechildren::-moz-tree-row(selected) {
     --button-background-color: color-mix(in srgb, currentColor 15%, transparent);
     --button-background-color-hover: color-mix(in srgb, currentColor 30%, transparent);
     --button-background-color-active: color-mix(in srgb, currentColor 45%, transparent);
-    --button-text-color: var(--in-content-item-selected-text);
-    --button-text-color-hover: var(--in-content-item-selected-text);
+    --button-text-color: var(--text-color-accent-primary-selected);
+    --button-text-color-hover: var(--text-color-accent-primary-selected);
     --button-text-color-active: var(--button-text-color-hover);
-    --focus-outline-color: var(--in-content-item-selected-text);
+    --focus-outline-color: var(--text-color-accent-primary-selected);
   }
 }
 
@@ -930,7 +926,7 @@ xul|treechildren::-moz-tree-image(hover) {
 xul|treechildren::-moz-tree-cell-text(selected),
 xul|treechildren::-moz-tree-twisty(selected),
 xul|treechildren::-moz-tree-image(selected) {
-  color: var(--in-content-item-selected-text);
+  color: var(--text-color-accent-primary-selected);
 }
 
 /* Message bars */

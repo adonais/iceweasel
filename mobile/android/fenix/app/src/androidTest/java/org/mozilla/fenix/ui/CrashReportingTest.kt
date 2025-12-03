@@ -10,7 +10,7 @@ import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
-import org.mozilla.fenix.helpers.TestAssetHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.TestSetup
@@ -46,7 +46,7 @@ class CrashReportingTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2336134
     @Test
     fun restoreTabFromTabCrashedReporterTest() {
-        val website = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val website = mockWebServer.getGenericAsset(1)
 
         homeScreen {
         }.openNavigationToolbar {
@@ -63,8 +63,8 @@ class CrashReportingTest : TestSetup() {
     @SmokeTest
     @Test
     fun useAppWhileTabIsCrashedTest() {
-        val firstWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
-        val secondWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 2)
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.getGenericAsset(2)
 
         homeScreen {
         }.openNavigationToolbar {

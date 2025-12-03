@@ -52,6 +52,7 @@ add_setup(async function () {
       ["network.lna.block_trackers", true],
       ["network.lna.address_space.public.override", "127.0.0.1:4443"],
       ["network.lna.blocking", true],
+      ["network.lna.websocket.enabled", true],
       // always select allow actions for user prompts
       ["network.localhost.prompt.testing", true],
       ["network.localnetwork.prompt.testing", true],

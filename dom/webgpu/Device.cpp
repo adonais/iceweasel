@@ -231,7 +231,7 @@ already_AddRefed<Sampler> Device::CreateSampler(
   desc.address_modes[2] = ffi::WGPUAddressMode(aDesc.mAddressModeW);
   desc.mag_filter = ffi::WGPUFilterMode(aDesc.mMagFilter);
   desc.min_filter = ffi::WGPUFilterMode(aDesc.mMinFilter);
-  desc.mipmap_filter = ffi::WGPUFilterMode(aDesc.mMipmapFilter);
+  desc.mipmap_filter = ffi::WGPUMipmapFilterMode(aDesc.mMipmapFilter);
   desc.lod_min_clamp = aDesc.mLodMinClamp;
   desc.lod_max_clamp = aDesc.mLodMaxClamp;
   desc.max_anisotropy = aDesc.mMaxAnisotropy;
@@ -933,8 +933,8 @@ already_AddRefed<dom::Promise> Device::CreateRenderPipelineAsync(
 already_AddRefed<Texture> Device::InitSwapChain(
     const dom::GPUCanvasConfiguration* const aConfig,
     const layers::RemoteTextureOwnerId aOwnerId,
-    mozilla::Span<RawId const> aBufferIds, bool aUseSharedTextureInSwapChain,
-    gfx::SurfaceFormat aFormat, gfx::IntSize aCanvasSize) {
+    bool aUseSharedTextureInSwapChain, gfx::SurfaceFormat aFormat,
+    gfx::IntSize aCanvasSize) {
   MOZ_ASSERT(aConfig);
 
   // Check that aCanvasSize and aFormat will generate a texture stride
@@ -948,8 +948,7 @@ already_AddRefed<Texture> Device::InitSwapChain(
 
   ffi::wgpu_client_create_swap_chain(
       GetClient(), GetId(), mQueue->GetId(), rgbDesc.size().Width(),
-      rgbDesc.size().Height(), (int8_t)rgbDesc.format(),
-      {aBufferIds.Elements(), aBufferIds.Length()}, aOwnerId.mId,
+      rgbDesc.size().Height(), (int8_t)rgbDesc.format(), aOwnerId.mId,
       aUseSharedTextureInSwapChain);
 
   // TODO: `mColorSpace`: <https://bugzilla.mozilla.org/show_bug.cgi?id=1846608>

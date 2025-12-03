@@ -117,7 +117,9 @@ impl Counter for DenominatorMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<i32> for DenominatorMetric {
+impl glean::TestGetValue for DenominatorMetric {
+    type Output = i32;
+
     pub fn test_get_value(&self, ping_name: Option<String>) -> Option<i32> {
         match self {
             DenominatorMetric::Parent { inner, .. } => inner.test_get_value(ping_name),

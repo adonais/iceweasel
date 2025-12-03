@@ -61,8 +61,10 @@ export class RecommendationProvider {
 
   async enable(isStartup) {
     await this.loadPersonalizationScoresCache(isStartup);
-    Services.obs.addObserver(this, "idle-daily");
-    this.loaded = true;
+    if (!this.loaded) {
+      this.loaded = true;
+      Services.obs.addObserver(this, "idle-daily");
+    }
     this.store.dispatch(
       ac.BroadcastToContent({
         type: at.DISCOVERY_STREAM_PERSONALIZATION_UPDATED,
@@ -225,9 +227,9 @@ export class RecommendationProvider {
       this.provider.teardown();
     }
     if (this.loaded) {
+      this.loaded = false;
       Services.obs.removeObserver(this, "idle-daily");
     }
-    this.loaded = false;
   }
 
   async resetState() {

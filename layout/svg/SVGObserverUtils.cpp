@@ -137,7 +137,7 @@ class SVGReferenceHashKey : public PLDHashEntryHdr {
 
     nsAutoCString urlSpec, referrerSpec;
     // nsURIHashKey ignores GetSpec() failures, so we do too:
-    Unused << aKey->GetURI()->GetSpec(urlSpec);
+    (void)aKey->GetURI()->GetSpec(urlSpec);
     return AddToHash(
         HashString(aKey->GetLocalRef()), HashString(urlSpec),
         static_cast<ReferrerInfo*>(aKey->GetReferrerInfo())->Hash());
@@ -193,7 +193,7 @@ static already_AddRefed<SVGReference> ResolveURLUsingLocalRef(
   }
 
   nsCOMPtr<nsIURI> uri;
-  Unused << NS_NewURI(getter_AddRefs(uri), aURL, WrapNotNull(encoding), base);
+  (void)NS_NewURI(getter_AddRefs(uri), aURL, WrapNotNull(encoding), base);
   if (!uri) {
     return nullptr;
   }
@@ -1114,7 +1114,7 @@ void SVGMaskObserverList::ResolveImage(uint32_t aIndex) {
   const_cast<StyleImage&>(image).ResolveImage(*doc, nullptr);
   if (imgRequestProxy* req = image.GetImageRequest()) {
     // FIXME(emilio): What disassociates this request?
-    doc->StyleImageLoader()->AssociateRequestToFrame(req, mFrame);
+    doc->EnsureStyleImageLoader().AssociateRequestToFrame(req, mFrame);
   }
 }
 
@@ -1712,13 +1712,12 @@ void SVGObserverUtils::TraverseMPathObserver(
 void SVGObserverUtils::InitiateResourceDocLoads(nsIFrame* aFrame) {
   // We create observer objects and attach them to aFrame, but we do not
   // make aFrame start observing the referenced frames.
-  Unused << GetOrCreateFilterObserverListForCSS(
-      aFrame, StyleFilterType::BackdropFilter);
-  Unused << GetOrCreateFilterObserverListForCSS(aFrame,
-                                                StyleFilterType::Filter);
-  Unused << GetOrCreateClipPathObserver(aFrame);
-  Unused << GetOrCreateGeometryObserver(aFrame);
-  Unused << GetOrCreateMaskObserverList(aFrame);
+  (void)GetOrCreateFilterObserverListForCSS(aFrame,
+                                            StyleFilterType::BackdropFilter);
+  (void)GetOrCreateFilterObserverListForCSS(aFrame, StyleFilterType::Filter);
+  (void)GetOrCreateClipPathObserver(aFrame);
+  (void)GetOrCreateGeometryObserver(aFrame);
+  (void)GetOrCreateMaskObserverList(aFrame);
 }
 
 void SVGObserverUtils::RemoveTextPathObserver(nsIFrame* aTextPathFrame) {

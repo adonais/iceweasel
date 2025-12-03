@@ -57,7 +57,8 @@ class FilePickerTest {
     private val noopSingle: (Context, Uri) -> Unit = { _, _ -> }
     private val noopMulti: (Context, Array<Uri>) -> Unit = { _, _ -> }
     private val request = PromptRequest.File(
-        mimeTypes = emptyArray(),
+        // Explicitly request non-media file
+        mimeTypes = arrayOf("application/json"),
         onSingleFileSelected = noopSingle,
         onMultipleFilesSelected = noopMulti,
         onDismiss = {},

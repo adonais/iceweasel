@@ -103,18 +103,6 @@ void MacroAssembler::and64(Register64 src, Register64 dest) {
   ma_and(dest.reg, src.reg);
 }
 
-void MacroAssembler::and64(const Operand& src, Register64 dest) {
-  if (src.getTag() == Operand::MEM) {
-    UseScratchRegisterScope temps(*this);
-    Register64 scratch(temps.Acquire());
-
-    load64(src.toAddress(), scratch);
-    and64(scratch, dest);
-  } else {
-    and64(Register64(src.toReg()), dest);
-  }
-}
-
 void MacroAssembler::or64(Imm64 imm, Register64 dest) {
   UseScratchRegisterScope temps(*this);
   Register scratch = temps.Acquire();
@@ -141,32 +129,8 @@ void MacroAssembler::or64(Register64 src, Register64 dest) {
   ma_or(dest.reg, src.reg);
 }
 
-void MacroAssembler::or64(const Operand& src, Register64 dest) {
-  if (src.getTag() == Operand::MEM) {
-    UseScratchRegisterScope temps(*this);
-    Register64 scratch(temps.Acquire());
-
-    load64(src.toAddress(), scratch);
-    or64(scratch, dest);
-  } else {
-    or64(Register64(src.toReg()), dest);
-  }
-}
-
 void MacroAssembler::xor64(Register64 src, Register64 dest) {
   ma_xor(dest.reg, src.reg);
-}
-
-void MacroAssembler::xor64(const Operand& src, Register64 dest) {
-  if (src.getTag() == Operand::MEM) {
-    UseScratchRegisterScope temps(*this);
-    Register64 scratch(temps.Acquire());
-
-    load64(src.toAddress(), scratch);
-    xor64(scratch, dest);
-  } else {
-    xor64(Register64(src.toReg()), dest);
-  }
 }
 
 void MacroAssembler::xorPtr(Register src, Register dest) { ma_xor(dest, src); }
@@ -204,18 +168,6 @@ void MacroAssembler::addPtr(ImmWord imm, Register dest) {
 
 void MacroAssembler::add64(Register64 src, Register64 dest) {
   addPtr(src.reg, dest.reg);
-}
-
-void MacroAssembler::add64(const Operand& src, Register64 dest) {
-  if (src.getTag() == Operand::MEM) {
-    UseScratchRegisterScope temps(*this);
-    Register64 scratch(temps.Acquire());
-
-    load64(src.toAddress(), scratch);
-    add64(scratch, dest);
-  } else {
-    add64(Register64(src.toReg()), dest);
-  }
 }
 
 void MacroAssembler::add64(Imm32 imm, Register64 dest) {
@@ -258,18 +210,6 @@ void MacroAssembler::subPtr(Imm32 imm, Register dest) {
 
 void MacroAssembler::sub64(Register64 src, Register64 dest) {
   as_dsubu(dest.reg, dest.reg, src.reg);
-}
-
-void MacroAssembler::sub64(const Operand& src, Register64 dest) {
-  if (src.getTag() == Operand::MEM) {
-    UseScratchRegisterScope temps(*this);
-    Register64 scratch(temps.Acquire());
-
-    load64(src.toAddress(), scratch);
-    sub64(scratch, dest);
-  } else {
-    sub64(Register64(src.toReg()), dest);
-  }
 }
 
 void MacroAssembler::sub64(Imm64 imm, Register64 dest) {
@@ -330,19 +270,6 @@ void MacroAssembler::mul64(const Register64& src, const Register64& dest,
 #endif
 }
 
-void MacroAssembler::mul64(const Operand& src, const Register64& dest,
-                           const Register temp) {
-  if (src.getTag() == Operand::MEM) {
-    UseScratchRegisterScope temps(*this);
-    Register64 scratch(temps.Acquire());
-
-    load64(src.toAddress(), scratch);
-    mul64(scratch, dest, temp);
-  } else {
-    mul64(Register64(src.toReg()), dest, temp);
-  }
-}
-
 void MacroAssembler::mulBy3(Register src, Register dest) {
   UseScratchRegisterScope temps(*this);
   Register scratch = temps.Acquire();
@@ -361,43 +288,39 @@ void MacroAssembler::inc64(AbsoluteAddress dest) {
   as_sd(scratch2, scratch, 0);
 }
 
-void MacroAssembler::quotient64(Register rhs, Register srcDest,
+void MacroAssembler::quotient64(Register lhs, Register rhs, Register dest,
                                 bool isUnsigned) {
+#ifdef MIPSR6
   if (isUnsigned) {
-#ifdef MIPSR6
-    as_ddivu(srcDest, srcDest, rhs);
-#else
-    as_ddivu(srcDest, rhs);
-#endif
+    as_ddivu(dest, lhs, rhs);
   } else {
-#ifdef MIPSR6
-    as_ddiv(srcDest, srcDest, rhs);
-#else
-    as_ddiv(srcDest, rhs);
-#endif
+    as_ddiv(dest, lhs, rhs);
   }
-#ifndef MIPSR6
-  as_mflo(srcDest);
+#else
+  if (isUnsigned) {
+    as_ddivu(lhs, rhs);
+  } else {
+    as_ddiv(lhs, rhs);
+  }
+  as_mflo(dest);
 #endif
 }
 
-void MacroAssembler::remainder64(Register rhs, Register srcDest,
+void MacroAssembler::remainder64(Register lhs, Register rhs, Register dest,
                                  bool isUnsigned) {
+#ifdef MIPSR6
   if (isUnsigned) {
-#ifdef MIPSR6
-    as_dmodu(srcDest, srcDest, rhs);
-#else
-    as_ddivu(srcDest, rhs);
-#endif
+    as_dmodu(dest, lhs, rhs);
   } else {
-#ifdef MIPSR6
-    as_dmod(srcDest, srcDest, rhs);
-#else
-    as_ddiv(srcDest, rhs);
-#endif
+    as_dmod(dest, lhs, rhs);
   }
-#ifndef MIPSR6
-  as_mfhi(srcDest);
+#else
+  if (isUnsigned) {
+    as_ddivu(lhs, rhs);
+  } else {
+    as_ddiv(lhs, rhs);
+  }
+  as_mfhi(dest);
 #endif
 }
 

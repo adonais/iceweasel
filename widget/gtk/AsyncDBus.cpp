@@ -5,7 +5,6 @@
 
 #include "AsyncDBus.h"
 #include "gio/gio.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/XREAppData.h"
 
 namespace mozilla::widget {

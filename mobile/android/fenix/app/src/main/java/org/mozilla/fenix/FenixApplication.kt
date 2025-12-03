@@ -7,6 +7,7 @@ package org.mozilla.fenix
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import android.os.StrictMode
@@ -80,13 +81,13 @@ import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.GleanMetrics.PerfStartup
 import org.mozilla.fenix.GleanMetrics.Preferences
 import org.mozilla.fenix.GleanMetrics.SearchDefaultEngine
+import org.mozilla.fenix.GleanMetrics.TermsOfUse
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.Core
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.initializeGlean
 import org.mozilla.fenix.components.metrics.MozillaProductDetector
 import org.mozilla.fenix.components.startMetricsIfEnabled
-import org.mozilla.fenix.crashes.StartupCrashCanary
 import org.mozilla.fenix.experiments.maybeFetchExperiments
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.containsQueryParameters
@@ -110,9 +111,11 @@ import org.mozilla.fenix.push.WebPushEngineIntegration
 import org.mozilla.fenix.session.VisibilityLifecycleCallback
 import org.mozilla.fenix.settings.doh.DefaultDohSettingsProvider
 import org.mozilla.fenix.settings.doh.DohSettingsProvider
+import org.mozilla.fenix.startupCrash.StartupCrashActivity
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.isLargeScreenSize
 import org.mozilla.fenix.wallpapers.Wallpaper
+import java.util.Date
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 import mozilla.components.support.AppServicesInitializer.Config as AppServicesConfig
@@ -141,39 +144,8 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
     var visibilityLifecycleCallback: VisibilityLifecycleCallback? = null
         private set
 
-    /*
-     * We need to avoid initializing any components while recovering from a startup crash,
-     * so we use this flag in any Android override hook to ensure that we exit early if we
-     * are actively recovering. Transitioning between the recovery flow and the normal flow
-     * does so by killing the active process, so this state should get reset as the startup
-     * flow completes. See the README in the startup crash package for more context.
-     */
-    private enum class StartupCrashRecoveryState {
-        NotNeeded,
-        Recovering,
-    }
-
-    private var recoveryState = StartupCrashRecoveryState.NotNeeded
-
     override fun onCreate() {
         super.onCreate()
-        checkForStartupCrash()
-    }
-
-    /**
-     * Initializes Fenix, unless a startup crash was detected on the previous launch,
-     * in which case returns early to allow for the [HomeActivity] to enter the startup crash
-     * flow. See [HomeActivity.onCreate] or the README in the startup crash package for more context.
-     */
-    open fun checkForStartupCrash(
-        canary: StartupCrashCanary = StartupCrashCanary.build(applicationContext),
-        initialize: () -> Unit = ::initialize,
-    ) {
-        if (canary.startupCrashDetected) {
-            recoveryState = StartupCrashRecoveryState.Recovering
-            return
-        }
-
         initialize()
     }
 
@@ -186,7 +158,12 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
 
         setupInAllProcesses()
 
-        if (!isMainProcess() || recoveryState == StartupCrashRecoveryState.Recovering) {
+        // If the main process crashes before we've reached visual completeness, we consider it to
+        // be a startup crash and fork into the recovery flow. The activity that is responsible for
+        // that flow is hosted in a separate process, which means that we avoid the majority of
+        // initialization work that is done in `setupInMainProcess`
+        // Please see the README.md in the fenix/startupCrash package for more information.
+        if (!isMainProcess()) {
             // If this is not the main process then do not continue with the initialization here. Everything that
             // follows only needs to be done in our app's main process and should not be done in other processes like
             // a GeckoView child process or the crash handling process. Most importantly we never want to end up in a
@@ -195,6 +172,8 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         }
 
         // DO NOT ADD ANYTHING ABOVE HERE.
+        // Note: That the startup crash recovery flow is hosted in a different process,
+        // so this call will be avoided in that case
         setupInMainProcessOnly()
         // DO NOT ADD ANYTHING UNDER HERE.
 
@@ -538,10 +517,15 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
     }
 
     private fun handleCaughtException() {
-        if (isMainProcess() && !components.performance.visualCompletenessQueue.isReady()) {
-            CoroutineScope(IO).launch {
-                StartupCrashCanary.build(applicationContext).createCanary()
-            }
+        if (
+            isMainProcess() &&
+            Config.channel.isNightlyOrDebug &&
+            !components.performance.visualCompletenessQueue.isReady()
+        ) {
+            val intent = Intent(applicationContext, StartupCrashActivity::class.java)
+
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            applicationContext.startActivity(intent)
         }
     }
 
@@ -592,31 +576,30 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         }
     }
 
+    @SuppressLint("NewApi")
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-
-        // Guard against platform hooks initializing components while we are recovering
-        // from a startup crash. See the README in the startup crash package for more context.
-        if (recoveryState == StartupCrashRecoveryState.Recovering) {
-            return
-        }
 
         // Additional logging and breadcrumb to debug memory issues:
         // https://github.com/mozilla-mobile/fenix/issues/12731
 
         logger.info("onTrimMemory(), level=$level, main=${isMainProcess()}")
 
-        components.analytics.crashReporter.recordCrashBreadcrumb(
-            Breadcrumb(
-                category = "Memory",
-                message = "onTrimMemory()",
-                data = mapOf(
-                    "level" to level.toString(),
-                    "main" to isMainProcess().toString(),
+        // See Bug 1969818: Crash reporting requires updates to be compatible with
+        // isolated content process.
+        if (!android.os.Process.isIsolated()) {
+            components.analytics.crashReporter.recordCrashBreadcrumb(
+                Breadcrumb(
+                    category = "Memory",
+                    message = "onTrimMemory()",
+                    data = mapOf(
+                        "level" to level.toString(),
+                        "main" to isMainProcess().toString(),
+                    ),
+                    level = Breadcrumb.Level.INFO,
                 ),
-                level = Breadcrumb.Level.INFO,
-            ),
-        )
+            )
+        }
 
         runOnlyInMainProcess {
             components.core.icons.onTrimMemory(level)
@@ -769,6 +752,10 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
             // Set this early to guarantee it's in every ping from here on.
             distributionId.set(components.distributionIdManager.getDistributionId())
 
+            if (settings.hasAcceptedTermsOfService) {
+                setTermsOfUseStartUpMetrics(settings)
+            }
+
             defaultBrowser.set(browsersCache.all(applicationContext).isDefaultBrowser)
             mozillaProductDetector.getMozillaBrowserDefault(applicationContext)?.also {
                 defaultMozBrowser.set(it)
@@ -883,6 +870,11 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         setAutofillMetrics()
     }
 
+    private fun setTermsOfUseStartUpMetrics(settings: Settings) {
+        TermsOfUse.version.set(settings.termsOfUseAcceptedVersion.toLong())
+        TermsOfUse.date.set(Date(settings.termsOfUseAcceptedTimeInMillis))
+    }
+
     @VisibleForTesting
     internal fun getDeviceTotalRAM(): Long {
         val memoryInfo = getMemoryInfo()
@@ -931,6 +923,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
             openLinksInAppEnabled.set(settings.openLinksInExternalApp)
             signedInSync.set(settings.signedInFxaAccount)
             isolatedContentProcessesEnabled.set(settings.isIsolatedProcessEnabled)
+            appZygoteIsolatedContentProcessesEnabled.set(settings.isAppZygoteEnabled)
 
             val syncedItems = SyncEnginesStorage(applicationContext).getStatus().entries.filter {
                 it.value
@@ -1054,12 +1047,6 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
     }
 
     override fun onConfigurationChanged(config: android.content.res.Configuration) {
-        // Guard against platform hooks initializing components while we are recovering
-        // from a startup crash. See the README in the startup crash package for more context.
-        if (recoveryState == StartupCrashRecoveryState.Recovering) {
-            return
-        }
-
         // Workaround for androidx appcompat issue where follow system day/night mode config changes
         // are not triggered when also using createConfigurationContext like we do in LocaleManager
         // https://issuetracker.google.com/issues/143570309#comment3

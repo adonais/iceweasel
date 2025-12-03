@@ -242,7 +242,7 @@ add_task(async function test_about_glean_histogram() {
       //            td        svg        g.boxes    g*n     >rect+text+text
       const boxes = valueCell.firstChild.firstChild.children;
 
-      Assert.equal(boxes.length, 3);
+      Assert.equal(boxes.length, 2, "Bar graphs for bucket 0 and 1 shown");
       Assert.equal(boxes[0].children[1].textContent, "2");
       Assert.equal(boxes[0].children[2].textContent, "0");
       Assert.equal(boxes[1].children[1].textContent, "3");
@@ -444,6 +444,94 @@ add_task(async function test_about_glean_ping_groups_and_none_label() {
           "Custom ping options are alphabetically sorted"
         );
       }
+    });
+  });
+});
+
+add_task(async function test_about_glean_metrics_table_settings() {
+  Services.fog.testResetFOG();
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref("about.glean.redesign.enabled");
+  });
+  Services.prefs.setBoolPref("about.glean.redesign.enabled", true);
+
+  await BrowserTestUtils.withNewTab("about:glean", async browser => {
+    await ContentTask.spawn(browser, null, async function () {
+      const { TestUtils } = ChromeUtils.importESModule(
+        "resource://testing-common/TestUtils.sys.mjs"
+      );
+      const { Assert } = ChromeUtils.importESModule(
+        "resource://testing-common/Assert.sys.mjs"
+      );
+
+      content.document.getElementById("category-metrics-table").click();
+
+      let tableBody;
+      const fetchTableBody = () => {
+        tableBody = content.document.getElementById("metrics-table-body");
+      };
+      fetchTableBody();
+      let currentFirstChild =
+        tableBody.children[0].attributes["data-d3-row"].value;
+
+      const tableFirstChildChanged = () => {
+        fetchTableBody();
+        if (
+          currentFirstChild !=
+          tableBody.children[0].attributes["data-d3-row"].value
+        ) {
+          currentFirstChild =
+            tableBody.children[0].attributes["data-d3-row"].value;
+          return true;
+        }
+        return false;
+      };
+
+      const input = content.document.getElementById("filter-metrics");
+      input.value = "aBool";
+      input.dispatchEvent(new Event("input"));
+
+      await TestUtils.waitForCondition(
+        tableFirstChildChanged,
+        "Wait for the table's first child to change",
+        100,
+        3
+      );
+
+      content.document
+        .querySelector(
+          "[data-d3-row='testOnlyIpc.aBool'] button[data-l10n-id='about-glean-button-load-value']"
+        )
+        .click();
+
+      content.document.getElementById("metrics-table-settings-button").click();
+
+      const checkbox = content.document.getElementById(
+        "settings-hide-empty-value-rows"
+      );
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new Event("input"));
+
+      const tableNoChildren = () => {
+        fetchTableBody();
+        if (tableBody.children.length === 0) {
+          return true;
+        }
+        return false;
+      };
+
+      await TestUtils.waitForCondition(
+        tableNoChildren,
+        "Wait for the table's children to be empty",
+        100,
+        3
+      );
+
+      Assert.equal(
+        content.document.querySelector("[data-d3-row='testOnlyIpc.aBool']"),
+        null,
+        "Data row for `testOnlyIpc.aBool` should not exist"
+      );
     });
   });
 });

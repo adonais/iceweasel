@@ -7,7 +7,6 @@
 #include "mozilla/Literals.h"
 #include "mozilla/mozalloc.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/Vector.h"
 #include "mozilla/gtest/MozHelpers.h"
 #include "mozmemory.h"

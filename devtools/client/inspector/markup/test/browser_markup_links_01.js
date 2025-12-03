@@ -60,6 +60,15 @@ const TEST_DATA = [
     ],
   },
   {
+    selector: `label[for="${CSS.escape("3d")}"]`,
+    attributes: [
+      {
+        attributeName: "for",
+        links: [{ type: "idref", value: "3d" }],
+      },
+    ],
+  },
+  {
     selector: "output",
     attributes: [
       {

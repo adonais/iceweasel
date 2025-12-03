@@ -10,7 +10,6 @@
 #include "mozilla/CompactPair.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/RangedPtr.h"
 #include "mozilla/TextUtils.h"
 
 #include <algorithm>

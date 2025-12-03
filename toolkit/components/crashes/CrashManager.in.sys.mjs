@@ -570,7 +570,7 @@ CrashManager.prototype = Object.freeze({
    * @param processType (string) Process type to check for
    *
    * @return boolean True or False depending on whether ping is allowed
-   **/
+   */
   isPingAllowed(processType) {
     // gen_CrashManager.py will input the proper process pings informations.
 

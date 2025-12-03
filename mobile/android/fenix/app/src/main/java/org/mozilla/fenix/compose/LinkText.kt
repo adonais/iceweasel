@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -76,7 +77,7 @@ fun LinkText(
         textAlign = TextAlign.Center,
         color = FirefoxTheme.colors.textSecondary,
     ),
-    linkTextColor: Color = FirefoxTheme.colors.textAccent,
+    linkTextColor: Color = MaterialTheme.colorScheme.tertiary,
     linkTextDecoration: TextDecoration = TextDecoration.None,
     textAlign: TextAlign? = null,
     shouldApplyAccessibleSize: Boolean = false,
@@ -152,7 +153,7 @@ private fun LinksDialog(
                     ) {
                         Text(
                             text = linkText.text,
-                            color = FirefoxTheme.colors.textAccent,
+                            color = MaterialTheme.colorScheme.tertiary,
                             textDecoration = TextDecoration.Underline,
                             style = FirefoxTheme.typography.button,
                         )
@@ -166,7 +167,7 @@ private fun LinksDialog(
                 ) {
                     Text(
                         text = stringResource(id = R.string.standard_snackbar_error_dismiss),
-                        color = FirefoxTheme.colors.textAccent,
+                        color = MaterialTheme.colorScheme.tertiary,
                         style = FirefoxTheme.typography.button,
                     )
                 }

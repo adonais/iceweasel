@@ -20,13 +20,11 @@
 #include "mozilla/net/DashboardTypes.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/UniquePtr.h"
 #include "nsHostRecord.h"
 #include "nsRefPtrHashtable.h"
 #include "nsIThreadPool.h"
 #include "mozilla/net/NetworkConnectivityService.h"
 #include "mozilla/net/DNSByTypeRecord.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/StaticPrefs_network.h"
 
 namespace mozilla {

@@ -7,7 +7,6 @@
 #ifndef nsNumberControlFrame_h__
 #define nsNumberControlFrame_h__
 
-#include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 #include "nsContainerFrame.h"
 #include "nsIAnonymousContentCreator.h"

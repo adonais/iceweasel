@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_LocationBase_h
 #define mozilla_dom_LocationBase_h
 
+#include "mozilla/dom/NavigationBinding.h"
 #include "nsStringFwd.h"
 
 class nsIDocShell;
@@ -37,8 +38,9 @@ class LocationBase {
   virtual BrowsingContext* GetBrowsingContext() = 0;
   virtual nsIDocShell* GetDocShell() = 0;
 
-  void SetURI(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv,
-              bool aReplace = false);
+  void Navigate(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv,
+                NavigationHistoryBehavior aHistoryHandling =
+                    NavigationHistoryBehavior::Auto);
   void SetHrefWithBase(const nsACString& aHref, nsIURI* aBase,
                        nsIPrincipal& aSubjectPrincipal, bool aReplace,
                        ErrorResult& aRv);

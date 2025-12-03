@@ -10,7 +10,6 @@
 #define nsStyleSheetService_h_
 
 #include "mozilla/Array.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/StyleSheet.h"
 #include "nsIMemoryReporter.h"

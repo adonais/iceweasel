@@ -36,6 +36,7 @@ class EventListener;
 class EventListenerOptionsOrBoolean;
 class EventHandlerNonNull;
 class GlobalObject;
+class Navigation;
 class WindowProxyHolder;
 enum class CallerType : uint32_t;
 enum class EventCallbackDebuggerNotificationType : uint8_t;
@@ -136,6 +137,12 @@ class EventTarget : public nsISupports, public nsWrapperCache {
   inline const nsINode* GetAsNode() const;
   inline nsINode* AsNode();
   inline const nsINode* AsNode() const;
+
+  virtual bool IsNavigation() const { return false; }
+  inline Navigation* GetAsNavigation();
+  inline const Navigation* GetAsNavigation() const;
+  inline Navigation* AsNavigation();
+  inline const Navigation* AsNavigation() const;
 
   virtual bool IsInnerWindow() const { return false; }
   virtual bool IsOuterWindow() const { return false; }

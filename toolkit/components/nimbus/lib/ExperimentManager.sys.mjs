@@ -79,10 +79,23 @@ export const UnenrollmentCause = {
     return { reason };
   },
 
-  ChangedPref(pref) {
+  /**
+   * An unenrollment caused by a pref change.
+   *
+   * @param {object} changedPref
+   * @param {string} changedPref.name The pref that changed.
+   * @param {string} changedPref.branch The branch on which the pref
+   * was changed.
+   * @param {boolean} isAboutConfigChange Whether or not the change was caused
+   * by the user via about:config.
+   *
+   * @returns {object} The unenrollment cause.
+   */
+  ChangedPref(changedPref, isAboutConfigChange) {
     return {
       reason: lazy.NimbusTelemetry.UnenrollReason.CHANGED_PREF,
-      changedPref: pref,
+      changedPref,
+      isAboutConfigChange,
     };
   },
 
@@ -120,6 +133,9 @@ export const UnenrollmentCause = {
  * and sending experiment-related Telemetry.
  */
 export class ExperimentManager {
+  /** @type AboutConfigObserver */
+  #aboutConfigObserver;
+
   constructor({ id = "experimentmanager", store } = {}) {
     this.id = id;
     this.store = store || new lazy.ExperimentStore();
@@ -144,6 +160,8 @@ export class ExperimentManager {
     //
     // This can only be used in the parent process ExperimentManager.
     this._prefFlips = null;
+
+    this.#aboutConfigObserver = new AboutConfigObserver();
   }
 
   /**
@@ -261,6 +279,10 @@ export class ExperimentManager {
       this._handleStudiesOptOut();
     }
 
+    if (!lazy.ExperimentAPI.labsEnabled) {
+      this._handleLabsDisabled();
+    }
+
     lazy.NimbusFeatures.nimbusTelemetry.onUpdate(() => {
       // Providing default values ensure we disable metrics when unenrolling.
       const cfg = {
@@ -308,10 +330,6 @@ export class ExperimentManager {
       return;
     }
 
-    if (result.ok && recipe.isFirefoxLabsOptIn) {
-      this.optInRecipes.push(recipe);
-    }
-
     if (!result.ok) {
       lazy.NimbusTelemetry.recordEnrollmentStatus({
         slug: recipe.slug,
@@ -322,8 +340,15 @@ export class ExperimentManager {
       return;
     }
 
+    // Unenrollment due to studies becoming disabled is handled in
+    // `_handleStudiesOptOut`.
+    if (result.status === lazy.MatchStatus.DISABLED) {
+      return;
+    }
+
     if (recipe.isFirefoxLabsOptIn) {
       // We do not enroll directly into Firefox Labs opt-ins.
+      this.optInRecipes.push(recipe);
       return;
     }
 
@@ -749,8 +774,17 @@ export class ExperimentManager {
     const { EnrollmentStatus, EnrollmentStatusReason, UnenrollReason } =
       lazy.NimbusTelemetry;
 
-    if (result.ok && recipe?.isFirefoxLabsOptIn) {
-      this.optInRecipes.push(recipe);
+    if (result.ok) {
+      // Unenrollment due to studies becoming disabled is handled in
+      // `_handleStudiesOptOut`. Firefox Labs can only be disabled by policy and
+      // thus its enabled state cannot change after Nimbus is initialized.
+      if (result.status === lazy.MatchStatus.DISABLED) {
+        return false;
+      }
+
+      if (recipe?.isFirefoxLabsOptIn) {
+        this.optInRecipes.push(recipe);
+      }
     }
 
     if (enrollment.active) {
@@ -925,8 +959,12 @@ export class ExperimentManager {
   /**
    * Unenroll from all active studies if user opts out.
    */
-  async _handleStudiesOptOut() {
-    for (const enrollment of this.store.getAllActiveExperiments()) {
+  _handleStudiesOptOut() {
+    const enrollments = this.store
+      .getAll()
+      .filter(e => e.active && !e.isFirefoxLabsOptIn);
+
+    for (const enrollment of enrollments) {
       this._unenroll(
         enrollment,
         UnenrollmentCause.fromReason(
@@ -934,16 +972,26 @@ export class ExperimentManager {
         )
       );
     }
-    for (const enrollment of this.store.getAllActiveRollouts()) {
+  }
+
+  /**
+   * Unenroll from all active Firefox Labs opt-ins if Labs becomes disabled.
+   */
+  _handleLabsDisabled() {
+    const enrollments = this.store
+      .getAll()
+      .filter(e => e.active && e.isFirefoxLabsOptIn);
+
+    for (const enrollment of enrollments) {
       this._unenroll(
         enrollment,
         UnenrollmentCause.fromReason(
-          lazy.NimbusTelemetry.UnenrollReason.STUDIES_OPT_OUT
+          lazy.NimbusTelemetry.UnenrollReason.LABS_DISABLED
         )
       );
     }
 
-    this.optInRecipes = [];
+    this.optinRecipes = [];
   }
 
   /**
@@ -1553,17 +1601,20 @@ export class ExperimentManager {
       pref.featureId
     );
 
-    const changedPref = {
-      name: pref.name,
-      branch: PrefFlipsFeature.determinePrefChangeBranch(
-        pref.name,
-        pref.branch,
-        feature.value[pref.variable]
-      ),
-    };
+    const cause = UnenrollmentCause.ChangedPref(
+      {
+        name: pref.name,
+        branch: PrefFlipsFeature.determinePrefChangeBranch(
+          pref.name,
+          pref.branch,
+          feature.value[pref.variable]
+        ),
+      },
+      this.isPrefBeingChangedViaAboutConfig(pref.name)
+    );
 
     for (const enrollment of enrollments) {
-      this._unenroll(enrollment, UnenrollmentCause.ChangedPref(changedPref));
+      this._unenroll(enrollment, cause);
     }
   }
 
@@ -1622,6 +1673,18 @@ export class ExperimentManager {
   }
 
   /**
+   * Return whether or not the given pref is being changed by a user on
+   * about:config.
+   *
+   * @param {string} pref The preference to check.
+   *
+   * @returns {boolean}
+   */
+  isPrefBeingChangedViaAboutConfig(pref) {
+    return this.#aboutConfigObserver.isBeingChanged(pref);
+  }
+
+  /**
    * Return the feature configuration with the matching feature ID from the
    * given branch.
    *
@@ -1636,5 +1699,76 @@ export class ExperimentManager {
    */
   static getFeatureConfigFromBranch(branch, featureId) {
     return branch.features.find(f => f.featureId === featureId);
+  }
+}
+
+const ABOUT_CONFIG_WILL_CHANGE_PREF_TOPIC = "about-config-will-change-pref";
+const ABOUT_CONFIG_CHANGED_PREF_TOPIC = "about-config-changed-pref";
+
+/**
+ * Keep track of what prefs are being changed via about:config.
+ */
+class AboutConfigObserver {
+  /**
+   * Prefs that are currently being changed via about:config.
+   *
+   * @type Set<string>
+   */
+  #changes;
+
+  constructor() {
+    this.#changes = new Set();
+
+    Services.obs.addObserver(this, ABOUT_CONFIG_WILL_CHANGE_PREF_TOPIC);
+    Services.obs.addObserver(this, ABOUT_CONFIG_CHANGED_PREF_TOPIC);
+  }
+
+  /**
+   * Handle a notification from about:config.
+   *
+   * @param {any} _subject Unused.
+   * @param {string} topic The topic that indicates the rising vs. the falling
+   * edge of the event.
+   * @param {string} data The name of the pref being changed.
+   * @returns
+   */
+  observe(_subject, topic, data) {
+    switch (topic) {
+      case ABOUT_CONFIG_WILL_CHANGE_PREF_TOPIC:
+        this.#onWillChange(data);
+        break;
+
+      case ABOUT_CONFIG_CHANGED_PREF_TOPIC:
+        this.#onChanged(data);
+        break;
+    }
+  }
+
+  /**
+   * Record that a pref is about to change.
+   * @param {string} pref The pref.
+   */
+  #onWillChange(pref) {
+    this.#changes.add(pref);
+  }
+
+  /**
+   * Record that a pref has finished changing.
+   * @param {string} pref The pref.
+   */
+  #onChanged(pref) {
+    this.#changes.delete(pref);
+  }
+
+  /**
+   * Return whether or not a pref is in the process of being changed via
+   * `about:config`.
+   *
+   * @param {string} pref The pref in question.
+   *
+   * @returns {boolean} Whether or not the pref is being changed.
+   */
+  isBeingChanged(pref) {
+    return this.#changes.has(pref);
   }
 }

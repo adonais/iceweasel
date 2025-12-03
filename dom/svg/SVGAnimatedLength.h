@@ -7,7 +7,6 @@
 #ifndef DOM_SVG_SVGANIMATEDLENGTH_H_
 #define DOM_SVG_SVGANIMATEDLENGTH_H_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/SVGContentUtils.h"
 #include "mozilla/UniquePtr.h"

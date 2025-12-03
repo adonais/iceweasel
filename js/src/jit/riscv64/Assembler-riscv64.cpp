@@ -126,22 +126,9 @@ void Assembler::processCodeLabels(uint8_t* rawCode) {
 void Assembler::WritePoolGuard(BufferOffset branch, Instruction* dest,
                                BufferOffset afterPool) {
   DEBUG_PRINTF("\tWritePoolGuard\n");
-  int32_t off = afterPool.getOffset() - branch.getOffset();
-  if (!is_int21(off) || !((off & 0x1) == 0)) {
-    printf("%d\n", off);
-    MOZ_CRASH("imm invalid");
-  }
-  // JAL encode is
-  //   31    | 30    21  |  20     | 19     12  | 11 7 |  6   0 |
-  // imm[20] | imm[10:1] | imm[11] | imm[19:12] |  rd  |  opcode|
-  //   1           10         1           8         5       7
-  //                   offset[20:1]               dest      JAL
-  int32_t imm20 = (off & 0xff000) |          // bits 19-12
-                  ((off & 0x800) << 9) |     // bit  11
-                  ((off & 0x7fe) << 20) |    // bits 10-1
-                  ((off & 0x100000) << 11);  // bit  20
-  Instr instr = JAL | (imm20 & kImm20Mask);
-  dest->SetInstructionBits(instr);
+  Instr jal = JAL | (0 & kImm20Mask);
+  jal = SetJalOffset(branch.getOffset(), afterPool.getOffset(), jal);
+  dest->SetInstructionBits(jal);
   DEBUG_PRINTF("%p(%x): ", dest, branch.getOffset());
   disassembleInstr(dest->InstructionBits(), JitSpew_Codegen);
 }
@@ -928,8 +915,7 @@ bool Assembler::target_at_put(BufferOffset pos, BufferOffset target_pos,
         int32_t Hi20 = (((int32_t)offset + 0x800) >> 12);
         int32_t Lo12 = (int32_t)offset << 20 >> 20;
 
-        instr_auipc =
-            (instr_auipc & ~kImm31_12Mask) | ((Hi20 & kImm19_0Mask) << 12);
+        instr_auipc = SetAuipcOffset(Hi20, instr_auipc);
         instr_at_put(pos, instr_auipc);
 
         const int kImm31_20Mask = ((1 << 12) - 1) << 20;
@@ -1041,16 +1027,17 @@ uint32_t Assembler::next_link(Label* L, bool is_internal) {
 }
 
 void Assembler::bind(Label* label, BufferOffset boff) {
-  JitSpew(JitSpew_Codegen, ".set Llabel %p %d", label, currentOffset());
-  DEBUG_PRINTF(".set Llabel %p\n", label);
+  JitSpew(JitSpew_Codegen, ".set Llabel %p %u", label, currentOffset());
+  DEBUG_PRINTF(".set Llabel %p %u\n", label, currentOffset());
   // If our caller didn't give us an explicit target to bind to
   // then we want to bind to the location of the next instruction
   BufferOffset dest = boff.assigned() ? boff : nextOffset();
   if (label->used()) {
     uint32_t next;
 
-    // A used label holds a link to branch that uses it.
     do {
+      // A used label holds a link to branch that uses it.
+      // It's okay we use it here since next_link() mutates `label`.
       BufferOffset b(label);
       DEBUG_PRINTF("\tbind next:%d\n", b.getOffset());
       // Even a 0 offset may be invalid if we're out of memory.
@@ -1060,16 +1047,17 @@ void Assembler::bind(Label* label, BufferOffset boff) {
       int fixup_pos = b.getOffset();
       int dist = dest.getOffset() - fixup_pos;
       next = next_link(label, false);
-      DEBUG_PRINTF("\t%p fixup: %d next: %d\n", label, fixup_pos, next);
-      DEBUG_PRINTF("\t   fixup: %d dest: %d dist: %d %d %d\n", fixup_pos,
-                   dest.getOffset(), dist, nextOffset().getOffset(),
-                   currentOffset());
-      Instruction* instruction = editSrc(b);
-      Instr instr = instruction->InstructionBits();
+      DEBUG_PRINTF(
+          "\t%p fixup: %d next: %u dest: %d dist: %d nextOffset: %d "
+          "currOffset: %d\n",
+          label, fixup_pos, next, dest.getOffset(), dist,
+          nextOffset().getOffset(), currentOffset());
+      Instr instr = editSrc(b)->InstructionBits();
       if (IsBranch(instr)) {
-        if (dist > kMaxBranchOffset) {
+        if (!is_intn(dist, kBranchOffsetBits)) {
           MOZ_ASSERT(next != LabelBase::INVALID_OFFSET);
-          MOZ_RELEASE_ASSERT((next - fixup_pos) <= kMaxBranchOffset);
+          MOZ_RELEASE_ASSERT(
+              is_intn(static_cast<int>(next) - fixup_pos, kJumpOffsetBits));
           MOZ_ASSERT(IsAuipc(editSrc(BufferOffset(next))->InstructionBits()));
           MOZ_ASSERT(
               IsJalr(editSrc(BufferOffset(next + 4))->InstructionBits()));
@@ -1081,17 +1069,18 @@ void Assembler::bind(Label* label, BufferOffset boff) {
           m_buffer.unregisterBranchDeadline(CondBranchRangeType, deadline);
         }
       } else if (IsJal(instr)) {
-        if (dist > kMaxJumpOffset) {
+        if (!is_intn(dist, kJumpOffsetBits)) {
           MOZ_ASSERT(next != LabelBase::INVALID_OFFSET);
-          MOZ_RELEASE_ASSERT((next - fixup_pos) <= kMaxJumpOffset);
+          MOZ_RELEASE_ASSERT(
+              is_intn(static_cast<int>(next) - fixup_pos, kJumpOffsetBits));
           MOZ_ASSERT(IsAuipc(editSrc(BufferOffset(next))->InstructionBits()));
           MOZ_ASSERT(
               IsJalr(editSrc(BufferOffset(next + 4))->InstructionBits()));
           DEBUG_PRINTF("\t\ttrampolining: %d\n", next);
         } else {
           target_at_put(b, dest);
-          BufferOffset deadline(
-              b.getOffset() + ImmBranchMaxForwardOffset(UncondBranchRangeType));
+          BufferOffset deadline(b.getOffset() + ImmBranchMaxForwardOffset(
+                                                     UncondBranchRangeType));
           m_buffer.unregisterBranchDeadline(UncondBranchRangeType, deadline);
         }
       } else {
@@ -1496,11 +1485,13 @@ bool Assembler::appendRawCode(const uint8_t* code, size_t numBytes) {
 }
 
 void Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled) {
+#ifdef DEBUG
   Instruction* i0 = (Instruction*)inst_.raw();
   Instruction* i1 = (Instruction*)(inst_.raw() + 1 * kInstrSize);
   Instruction* i2 = (Instruction*)(inst_.raw() + 2 * kInstrSize);
   Instruction* i3 = (Instruction*)(inst_.raw() + 3 * kInstrSize);
   Instruction* i4 = (Instruction*)(inst_.raw() + 4 * kInstrSize);
+#endif
   Instruction* i5 = (Instruction*)(inst_.raw() + 5 * kInstrSize);
   Instruction* i6 = (Instruction*)(inst_.raw() + 6 * kInstrSize);
 
@@ -1510,6 +1501,7 @@ void Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled) {
   MOZ_ASSERT(IsOri(i3->InstructionBits()));
   MOZ_ASSERT(IsSlli(i4->InstructionBits()));
   MOZ_ASSERT(IsOri(i5->InstructionBits()));
+
   if (enabled) {
     Instr jalr_ = JALR | (ra.code() << kRdShift) | (0x0 << kFunct3Shift) |
                   (i5->RdValue() << kRs1Shift) | (0x0 << kImm12Shift);
@@ -1537,7 +1529,7 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
   // Verify that the branch range matches what's encoded.
   DEBUG_PRINTF("\t%p(%x): ", branchInst, branch.getOffset());
   disassembleInstr(branchInst->InstructionBits(), JitSpew_Codegen);
-  DEBUG_PRINTF("\t instert veneer %x, branch:%x deadline: %x\n",
+  DEBUG_PRINTF("\t insert veneer %x, branch: %x deadline: %x\n",
                veneer.getOffset(), branch.getOffset(), deadline.getOffset());
   MOZ_ASSERT(branchRange <= UncondBranchRangeType);
   MOZ_ASSERT(branchInst->GetImmBranchRangeType() == branchRange);
@@ -1551,13 +1543,13 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
   // The veneer should be an unconditional branch.
   int32_t nextElemOffset = target_at(buffer->getInst(branch), branch, false);
   int32_t dist;
-  // If offset is 0, this is the end of the linked list.
+  // If offset is kEndOfChain, this is the end of the linked list.
   if (nextElemOffset != kEndOfChain) {
     // Make the offset relative to veneer so it targets the same instruction
     // as branchInst.
     dist = nextElemOffset - veneer.getOffset();
   } else {
-    dist = 0;
+    dist = kEndOfJumpChain;
   }
   int32_t Hi20 = (((int32_t)dist + 0x800) >> 12);
   int32_t Lo12 = (int32_t)dist << 20 >> 20;

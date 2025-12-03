@@ -587,7 +587,8 @@ FxAccountsWebChannelHelpers.prototype = {
     }
   },
 
-  /** Internal function used to configure the requested services.
+  /**
+   * Internal function used to configure the requested services.
    *
    * The "services" param is an object as received from the FxA server.
    */

@@ -223,19 +223,10 @@ void Zone::setNeedsIncrementalBarrier(bool needs) {
 void Zone::changeGCState(GCState prev, GCState next) {
   MOZ_ASSERT(RuntimeHeapIsBusy());
   MOZ_ASSERT(gcState() == prev);
-
-  // This can be called when barriers have been temporarily disabled by
-  // AutoDisableBarriers. In that case, don't update needsIncrementalBarrier_
-  // and barriers will be re-enabled by ~AutoDisableBarriers() if necessary.
-  bool barriersDisabled = isGCMarking() && !needsIncrementalBarrier();
+  MOZ_ASSERT_IF(isGCMarkingOrVerifyingPreBarriers(), needsIncrementalBarrier_);
 
   gcState_ = next;
-
-  // Update the barriers state when we transition between marking and
-  // non-marking states, unless barriers have been disabled.
-  if (!barriersDisabled) {
-    needsIncrementalBarrier_ = isGCMarking();
-  }
+  needsIncrementalBarrier_ = isGCMarkingOrVerifyingPreBarriers();
 }
 
 template <class Pred>
@@ -257,7 +248,10 @@ static void EraseIf(js::gc::EphemeronEdgeVector& entries, Pred pred) {
 static void SweepEphemeronEdgesWhileMinorSweeping(
     js::gc::EphemeronEdgeVector& entries) {
   EraseIf(entries, [](js::gc::EphemeronEdge& edge) -> bool {
-    return IsAboutToBeFinalizedDuringMinorSweep(&edge.target);
+    Cell* target = edge.target();
+    bool dead = IsAboutToBeFinalizedDuringMinorSweep(&target);
+    edge = js::gc::EphemeronEdge(edge.color(), target);
+    return dead;
   });
 }
 

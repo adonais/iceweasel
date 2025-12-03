@@ -7,6 +7,7 @@ package org.mozilla.fenix.onboarding
 import mozilla.components.support.ktx.kotlin.ifNullOrEmpty
 import org.mozilla.fenix.onboarding.view.OnboardingTermsOfServiceEventHandler
 import org.mozilla.fenix.settings.SupportUtils
+import org.mozilla.fenix.termsofuse.TOU_VERSION
 import org.mozilla.fenix.utils.Settings
 
 /**
@@ -42,8 +43,10 @@ class DefaultOnboardingTermsOfServiceEventHandler(
         showManagePrivacyPreferencesDialog()
     }
 
-    override fun onAcceptTermsButtonClicked() {
+    override fun onAcceptTermsButtonClicked(nowMillis: Long) {
         telemetryRecorder.onTermsOfServiceManagerAcceptTermsButtonClick()
         settings.hasAcceptedTermsOfService = true
+        settings.termsOfUseAcceptedVersion = TOU_VERSION
+        settings.termsOfUseAcceptedTimeInMillis = nowMillis
     }
 }

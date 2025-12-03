@@ -146,7 +146,9 @@ impl Rate for RateMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<glean::Rate> for RateMetric {
+impl glean::TestGetValue for RateMetric {
+    type Output = glean::Rate;
+
     pub fn test_get_value(&self, ping_name: Option<String>) -> Option<glean::Rate> {
         match self {
             RateMetric::Parent { inner, .. } => inner.test_get_value(ping_name),

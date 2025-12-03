@@ -4,19 +4,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "Common.h"
 #include "gtest/gtest.h"
 #include "nsCRT.h"
 #include "nsIDocumentEncoder.h"
 #include "nsIParserUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
-
-const uint32_t kDefaultWrapColumn = 72;
-
-void ConvertBufToPlainText(nsString& aConBuf, int aFlag, uint32_t aWrapColumn) {
-  nsCOMPtr<nsIParserUtils> utils = do_GetService(NS_PARSERUTILS_CONTRACTID);
-  utils->ConvertToPlainText(aConBuf, aFlag, aWrapColumn, aConBuf);
-}
 
 // Test for ASCII with format=flowed; delsp=yes
 TEST(PlainTextSerializer, ASCIIWithFlowedDelSp)
@@ -45,8 +39,8 @@ TEST(PlainTextSerializer, ASCIIWithFlowedDelSp)
       "Firefox Firefox Firefox Firefox "
       "Firefox  \r\nFirefox Firefox Firefox\r\n");
 
-  ASSERT_TRUE(test.Equals(result))
-  << "Wrong HTML to ASCII text serialization with format=flowed; delsp=yes";
+  ASSERT_EQ(test, result)
+      << "Wrong HTML to ASCII text serialization with format=flowed; delsp=yes";
 }
 
 TEST(PlainTextSerializer, Bug1864820)
@@ -76,8 +70,7 @@ TEST(PlainTextSerializer, Bug1864820)
 )#");
   result.Trim(" \n");
   test.Trim(" \n");
-  ASSERT_TRUE(test.Equals(result))
-  << "Shouldn't hang with format=flowed: " << NS_ConvertUTF16toUTF8(test).get();
+  ASSERT_EQ(test, result) << "Shouldn't hang with format=flowed";
 }
 
 // Test for CJK with format=flowed; delsp=yes
@@ -111,8 +104,8 @@ TEST(PlainTextSerializer, CJKWithFlowedDelSp)
   }
   result.AppendLiteral("\r\n");
 
-  ASSERT_TRUE(test.Equals(result))
-  << "Wrong HTML to CJK text serialization with format=flowed; delsp=yes";
+  ASSERT_EQ(test, result)
+      << "Wrong HTML to CJK text serialization with format=flowed; delsp=yes";
 }
 
 // Test for CJK with DisallowLineBreaking
@@ -142,8 +135,8 @@ TEST(PlainTextSerializer, CJKWithDisallowLineBreaking)
   }
   result.AppendLiteral("\r\n");
 
-  ASSERT_TRUE(test.Equals(result))
-  << "Wrong HTML to CJK text serialization with OutputDisallowLineBreaking";
+  ASSERT_EQ(test, result)
+      << "Wrong HTML to CJK text serialization with OutputDisallowLineBreaking";
 }
 
 // Test for Latin with DisallowLineBreaking
@@ -172,8 +165,8 @@ TEST(PlainTextSerializer, LatinWithDisallowLineBreaking)
   }
   expect.AppendLiteral(" \r\n\r\n");
 
-  ASSERT_TRUE(test.Equals(expect))
-  << "Wrong HTML to Latin text serialization with OutputDisallowLineBreaking";
+  ASSERT_EQ(test, expect) << "Wrong HTML to Latin text serialization with "
+                             "OutputDisallowLineBreaking";
 }
 
 // Test for ASCII with format=flowed; and quoted lines in preformatted span.
@@ -256,8 +249,11 @@ TEST(PlainTextSerializer, PrettyPrintedHtml)
                      "</body>" NS_LINEBREAK "</html>");
 
   ConvertBufToPlainText(test, 0, kDefaultWrapColumn);
-  ASSERT_TRUE(test.EqualsLiteral("first" NS_LINEBREAK "second" NS_LINEBREAK))
-  << "Wrong prettyprinted html to text serialization";
+
+  nsAutoString expect;
+  expect.AppendLiteral("first" NS_LINEBREAK "second" NS_LINEBREAK);
+
+  ASSERT_EQ(test, expect) << "Wrong prettyprinted html to text serialization";
 }
 
 TEST(PlainTextSerializer, PreElement)
@@ -269,9 +265,12 @@ TEST(PlainTextSerializer, PreElement)
                      "</body>" NS_LINEBREAK "</html>");
 
   ConvertBufToPlainText(test, 0, kDefaultWrapColumn);
-  ASSERT_TRUE(test.EqualsLiteral("  first" NS_LINEBREAK
-                                 "  second" NS_LINEBREAK NS_LINEBREAK))
-  << "Wrong prettyprinted html to text serialization";
+
+  nsAutoString expect;
+  expect.AppendLiteral("  first" NS_LINEBREAK
+                       "  second" NS_LINEBREAK NS_LINEBREAK);
+
+  ASSERT_EQ(test, expect) << "Wrong prettyprinted html to text serialization";
 }
 
 TEST(PlainTextSerializer, BlockElement)
@@ -284,8 +283,11 @@ TEST(PlainTextSerializer, BlockElement)
                      "</body>" NS_LINEBREAK "</html>");
 
   ConvertBufToPlainText(test, 0, kDefaultWrapColumn);
-  ASSERT_TRUE(test.EqualsLiteral("first" NS_LINEBREAK "second" NS_LINEBREAK))
-  << "Wrong prettyprinted html to text serialization";
+
+  nsAutoString expect;
+  expect.AppendLiteral("first" NS_LINEBREAK "second" NS_LINEBREAK);
+
+  ASSERT_EQ(test, expect) << "Wrong prettyprinted html to text serialization";
 }
 
 TEST(PlainTextSerializer, PreWrapElementForThunderbird)
@@ -301,13 +303,16 @@ TEST(PlainTextSerializer, PreWrapElementForThunderbird)
 
   const uint32_t wrapColumn = 10;
   ConvertBufToPlainText(test, nsIDocumentEncoder::OutputWrap, wrapColumn);
+
   // "\n\n  first\nline is\ntoo long\n  second\nline is\neven\nloooonger\n\n\n"
-  ASSERT_TRUE(test.EqualsLiteral(
-      NS_LINEBREAK NS_LINEBREAK
-      "  first" NS_LINEBREAK "line is" NS_LINEBREAK "too long" NS_LINEBREAK
-      "  second" NS_LINEBREAK "line is" NS_LINEBREAK "even" NS_LINEBREAK
-      "loooonger" NS_LINEBREAK NS_LINEBREAK NS_LINEBREAK))
-  << "Wrong prettyprinted html to text serialization";
+  nsAutoString expect;
+  expect.AppendLiteral(NS_LINEBREAK NS_LINEBREAK
+                       "  first" NS_LINEBREAK "line is" NS_LINEBREAK
+                       "too long" NS_LINEBREAK "  second" NS_LINEBREAK
+                       "line is" NS_LINEBREAK "even" NS_LINEBREAK
+                       "loooonger" NS_LINEBREAK NS_LINEBREAK NS_LINEBREAK);
+
+  ASSERT_EQ(test, expect) << "Wrong prettyprinted html to text serialization";
 }
 
 TEST(PlainTextSerializer, Simple)
@@ -317,8 +322,11 @@ TEST(PlainTextSerializer, Simple)
       "<html><base>base</base><head><span>span</span></head>"
       "<body>body</body></html>");
   ConvertBufToPlainText(test, 0, kDefaultWrapColumn);
-  ASSERT_TRUE(test.EqualsLiteral("basespanbody"))
-  << "Wrong html to text serialization";
+
+  nsAutoString expect;
+  expect.AppendLiteral("basespanbody");
+
+  ASSERT_EQ(test, expect) << "Wrong html to text serialization";
 }
 
 TEST(PlainTextSerializer, OneHundredAndOneOL)
@@ -350,25 +358,4 @@ TEST(PlainTextSerializer, OneHundredAndOneOL)
   nsAutoString expected;
   expected.AppendLiteral(" 1. X" NS_LINEBREAK);
   ASSERT_EQ(test, expected);
-}
-
-TEST(PlainTextSerializer, BlockQuoteCite)
-{
-  nsAutoString test;
-  test.AppendLiteral(u"<blockquote type=cite>hello world</blockquote>");
-
-  const uint32_t wrapColumn = 10;
-  ConvertBufToPlainText(test,
-                        nsIDocumentEncoder::OutputFormatted |
-                            nsIDocumentEncoder::OutputFormatFlowed |
-                            nsIDocumentEncoder::OutputCRLineBreak |
-                            nsIDocumentEncoder::OutputLFLineBreak,
-                        wrapColumn);
-
-  constexpr auto expect = NS_LITERAL_STRING_FROM_CSTRING(
-      "> hello \r\n"
-      "> world\r\n");
-
-  ASSERT_TRUE(test.Equals(expect))
-  << "Wrong blockquote cite to text serialization";
 }

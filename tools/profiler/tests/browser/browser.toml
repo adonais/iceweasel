@@ -8,6 +8,16 @@ skip-if = ["tsan"] # Bug 1804081 - TSan times out on pretty much all of these te
 ["browser_test_feature_ipcmessages.js"]
 support-files = ["simple.html"]
 
+["browser_test_feature_js_sourceindex.js"]
+support-files = ["simple.html", "tracing.html"]
+
+["browser_test_feature_js_sources_retrieval.js"]
+support-files = [
+  "simple.html",
+  "page_with_external_js.html",
+  "external_script.js"
+]
+
 ["browser_test_feature_jsallocations.js"]
 support-files = ["do_work_500ms.html"]
 
@@ -18,7 +28,6 @@ skip-if = ["!nightly_build"] # This features is only enabled on nightly via MOZ_
 ["browser_test_feature_jstracing_objtestutils.js"]
 support-files = [
   "browser_test_feature_jstracing_objtestutils.snapshot.mjs",
-  "value_summary_reader.mjs"
 ]
 skip-if = [
   # This features is only enabled on nightly via MOZ_EXECUTION_TRACING build flag

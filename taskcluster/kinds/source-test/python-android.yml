@@ -24,6 +24,7 @@ android-gradle-build:
             PERFHERDER_EXTRA_OPTIONS: android-gradle-build
             TINDERBOX_OUTPUT: '1'
         max-run-time: 3600
+    run-on-repo-type: [hg]
     run:
         using: run-task
         command: >

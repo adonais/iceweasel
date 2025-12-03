@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -64,7 +65,7 @@ fun MenuDialogBottomSheet(
     Column(
         modifier = Modifier
             .background(
-                color = FirefoxTheme.colors.layer1,
+                color = MaterialTheme.colorScheme.surface,
                 shape = cornerShape,
             )
             .nestedScroll(rememberNestedScrollInteropConnection()),
@@ -111,7 +112,7 @@ private fun MenuBottomSheetHandle(
             .fillMaxWidth()
             .background(
                 color = if (isMenuDragBarDark) {
-                    FirefoxTheme.colors.layerSearch
+                    MaterialTheme.colorScheme.surfaceContainerHighest
                 } else {
                     Color.Transparent
                 },

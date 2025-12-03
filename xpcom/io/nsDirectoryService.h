@@ -12,7 +12,6 @@
 #include "nsIFile.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsTArray.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/StaticPtr.h"
 
 #define NS_DIRECTORY_SERVICE_CID \

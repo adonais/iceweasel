@@ -391,9 +391,15 @@
   </vbox>
 </groupbox>
 <groupbox id="nonTechnicalPrivacyGroup" data-category="panePrivacy" hidden="true">
-  <label id="nonTechnicalPrivacyHeader"><html:h2 data-l10n-id="non-technical-privacy-header"/></label>
+  <label id="nonTechnicalPrivacyHeader"><html:h2 data-l10n-id="non-technical-privacy-header" class="section-heading"/></label>
   <html:setting-group groupid="nonTechnicalPrivacy"/>
 </groupbox>
+
+<!-- Firefox VPN - IP Protection -->
+<groupbox id="dataIPProtectionGroup" data-category="panePrivacy" hidden="true">
+  <html:setting-group groupid="ipprotection"></html:setting-group>
+</groupbox>
+
 
 <groupbox id="siteDataGroup" data-category="panePrivacy" hidden="true" aria-describedby="totalSiteDataSize">
   <label><html:h2 data-l10n-id="sitedata-header"/></label>
@@ -554,9 +560,9 @@
 <groupbox id="formAutofillGroupBox"
           data-category="panePrivacy"
           data-subcategory="form-autofill" hidden="true">
-  <label><html:h2 data-l10n-id="autofill-payment-methods-title"/></label>
+  <label><html:h2 data-l10n-id="autofill-payment-methods-title" class="subsection-heading"/></label>
   <html:setting-group data-subcategory="credit-card-autofill" groupid="payments"/>
-  <label><html:h2 data-l10n-id="autofill-addresses-title"/></label>
+  <label><html:h2 data-l10n-id="autofill-addresses-title" class="subsection-heading"/></label>
   <html:setting-group data-subcategory="address-autofill" groupid="addresses"/>
 </groupbox>
 
@@ -1012,13 +1018,6 @@
 #endif # MOZ_CRASHREPORTER
   </vbox>
 #endif MOZ_DATA_REPORTING
-  <html:moz-toggle hidden="true"
-                   id="firefoxSuggestDataCollectionPrivacyToggle"
-                   preference="browser.urlbar.quicksuggest.dataCollection.enabled"
-                   data-l10n-id="addressbar-firefox-suggest-data-collection"
-                   data-l10n-attrs="label, description"
-                   support-page="firefox-suggest#w_what-setting-is-opt-in"
-  />
   <vbox id="privacySegmentationSection" data-subcategory="privacy-segmentation" hidden="true">
     <label>
       <html:h2 data-l10n-id="privacy-segmentation-section-header"/>
@@ -1044,7 +1043,7 @@
 
 <!-- addons, forgery (phishing) UI Security -->
 <groupbox data-category="panePrivacy" hidden="true">
-  <label><html:h2 data-l10n-id="security-browsing-protection"/></label>
+  <label><html:h2 data-l10n-id="security-browsing-protection" class="section-heading"/></label>
   <html:setting-group groupid="browsingProtection"></html:setting-group>
 </groupbox>
 

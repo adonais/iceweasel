@@ -59,6 +59,7 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && d
 ["browser_syncedtabs_sidebar.js"]
 
 ["browser_toolbar_sidebar_button.js"]
+skip-if = ["os == 'linux' && os_version == '24.04' && arch == 'x86_64' && opt && a11y_checks && swgl && verify-standalone"]
 
 ["browser_tools_migration.js"]
 

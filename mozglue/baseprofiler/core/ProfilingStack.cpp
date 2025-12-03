@@ -9,8 +9,6 @@
 #include <algorithm>
 
 #include "mozilla/IntegerRange.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/UniquePtrExtensions.h"
 
 #include "BaseProfiler.h"
 

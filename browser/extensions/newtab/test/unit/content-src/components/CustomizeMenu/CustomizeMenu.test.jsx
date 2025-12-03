@@ -137,4 +137,26 @@ describe("<CustomizeMenu>", () => {
       listsEnabled: true,
     });
   });
+
+  it("adds subpanel-open class when onSubpanelToggle is called", () => {
+    wrapper = mount(
+      <WrapWithProvider>
+        <CustomizeMenu {...DEFAULT_PROPS} showing={true} />
+      </WrapWithProvider>
+    );
+
+    const instance = wrapper.find("_CustomizeMenu").instance();
+
+    instance.onSubpanelToggle(true);
+    wrapper.update();
+
+    const menu = wrapper.find(".customize-menu").hostNodes();
+    assert.isTrue(menu.hasClass("subpanel-open"));
+
+    instance.onSubpanelToggle(false);
+    wrapper.update();
+
+    const menuAfter = wrapper.find(".customize-menu").hostNodes();
+    assert.isFalse(menuAfter.hasClass("subpanel-open"));
+  });
 });

@@ -25,8 +25,6 @@ run-if = ["os == 'mac'"] # Mac-only functionality
 
 ["browser_bookmarkProperties_addFolderDefaultButton.js"]
 
-["browser_bookmarkProperties_addKeywordForThisSearch.js"]
-
 ["browser_bookmarkProperties_bookmarkAllTabs.js"]
 
 ["browser_bookmarkProperties_cancel.js"]
@@ -102,6 +100,7 @@ support-files = ["pageopeningwindow.html"]
 ["browser_bookmarks_toolbar_drag_with_chevron.js"]
 
 ["browser_bookmarks_toolbar_telemetry.js"]
+skip-if = ["verify-standalone"]
 
 ["browser_bug427633_no_newfolder_if_noip.js"]
 

@@ -2,6 +2,9 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 add_task(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.dragDrop.multiselectStacking", false]],
+  });
   // Disable tab animations
   gReduceMotionOverride = true;
 

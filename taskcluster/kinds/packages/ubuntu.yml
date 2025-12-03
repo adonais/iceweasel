@@ -114,6 +114,18 @@ ub18-mercurial:
                          -e "s/__DATE__/$(date --rfc-2822)/" \
                          -e "s/__CODENAME__/bionic/" debian/changelog
 
+ub18-coreutils:
+    description: "Modern coreutils for Ubuntu bionic"
+    treeherder:
+        symbol: Ub18(coreutils)
+    run:
+        dsc:
+            url: https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/coreutils/8.32-4.1ubuntu1/coreutils_8.32-4.1ubuntu1.dsc
+            sha256: ac8f500698cb87284f6f5c750647d8c599866c5e00ff883b7dec76af23c376af
+        pre-build-command: >-
+            sed -i 's/debhelper (>= 12)/debhelper (>= 11)/' debian/control &&
+            export FORCE_UNSAFE_CONFIGURE=1
+
 ub20-python-zstandard:
     description: "python-zstandard for Ubuntu focal"
     treeherder:
@@ -154,7 +166,7 @@ ub22-python-zstandard:
         pre-build-command: debchange -v 0.24.0-1.ub22moz --distribution jammy "Mozilla backport for jammy"
 
 ub22-arm64-python-zstandard:
-    worker-type: b-linux-gcp-aarch64
+    worker-type: b-linux-aarch64
     description: "python-zstandard for Ubuntu jammy on ARM64"
     treeherder:
         symbol: Ub22a64(python-zstandard)
@@ -183,7 +195,7 @@ ub22-mercurial:
                          -e "s/__CODENAME__/jammy/" debian/changelog
 
 ub22-arm64-mercurial:
-    worker-type: b-linux-gcp-aarch64
+    worker-type: b-linux-aarch64
     description: "Modern Mercurial for Ubuntu jammy on ARM64"
     treeherder:
         symbol: Ub22a64(hg)
@@ -212,7 +224,7 @@ ub24-python-zstandard:
         pre-build-command: debchange -v 0.24.0-1.ub24moz --distribution noble "Mozilla backport for noble"
 
 ub24-arm64-python-zstandard:
-    worker-type: b-linux-gcp-aarch64
+    worker-type: b-linux-aarch64
     description: "python-zstandard for Ubuntu noble on ARM64"
     treeherder:
         symbol: Ub24a64(python-zstandard)
@@ -241,7 +253,7 @@ ub24-mercurial:
                          -e "s/__CODENAME__/noble/" debian/changelog
 
 ub24-arm64-mercurial:
-    worker-type: b-linux-gcp-aarch64
+    worker-type: b-linux-aarch64
     description: "Modern Mercurial for Ubuntu noble on ARM64"
     treeherder:
         symbol: Ub24a64(hg)

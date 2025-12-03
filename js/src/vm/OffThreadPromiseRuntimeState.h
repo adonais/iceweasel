@@ -259,6 +259,13 @@ class OffThreadPromiseRuntimeState {
   JS::DelayedDispatchToEventLoopCallback delayedDispatchToEventLoopCallback_;
   void* dispatchToEventLoopClosure_;
 
+#ifdef DEBUG
+  // Set to true when the JS shell is force-quitting.
+  // In this case the tasks won't be drained and the destructor cannot
+  // assert anything.
+  HelperThreadLockData<bool> forceQuitting_;
+#endif
+
   // A set of all OffThreadPromiseTasks that have successfully called 'init'.
   // This set doesn't own tasks. OffThreadPromiseTask's destructor decrements
   // this counter.
@@ -357,6 +364,10 @@ class OffThreadPromiseRuntimeState {
 
   // shutdown() must be called by the JSRuntime while the JSRuntime is valid.
   void shutdown(JSContext* cx);
+
+#ifdef DEBUG
+  void setForceQuitting() { forceQuitting_ = true; }
+#endif
 };
 
 }  // namespace js

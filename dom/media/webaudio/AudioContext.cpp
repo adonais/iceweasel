@@ -39,7 +39,6 @@
 #include "blink/PeriodicWave.h"
 #include "js/ArrayBuffer.h"  // JS::StealArrayBufferContents
 #include "mozilla/ErrorResult.h"
-#include "mozilla/NotNull.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
@@ -283,6 +282,7 @@ already_AddRefed<AudioContext> AudioContext::Constructor(
                          ? aOptions.mSampleRate.Value()
                          : MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE;
 
+  WEB_AUDIO_API_LOG("AudioContext sampleRate={}", sampleRate);
   RefPtr<AudioContext> object =
       new AudioContext(window, false, 2, 0, sampleRate);
 
@@ -317,6 +317,9 @@ already_AddRefed<AudioContext> AudioContext::Constructor(
     return nullptr;
   }
 
+  WEB_AUDIO_API_LOG(
+      "OfflineAudioContext numberOfChannels={} length={} sampleRate={}",
+      aNumberOfChannels, aLength, aSampleRate);
   if (aNumberOfChannels == 0 ||
       aNumberOfChannels > WebAudioUtils::MaxChannelCount) {
     aRv.ThrowNotSupportedError(
@@ -926,7 +929,7 @@ void AudioContext::SetPageAwakeRequest(bool aShouldSet) {
   }
   if (XRE_IsContentProcess()) {
     ContentChild* contentChild = ContentChild::GetSingleton();
-    Unused << contentChild->SendAddOrRemovePageAwakeRequest(bc, aShouldSet);
+    (void)contentChild->SendAddOrRemovePageAwakeRequest(bc, aShouldSet);
     return;
   }
   if (aShouldSet) {
@@ -1254,8 +1257,8 @@ void AudioContext::Unmute() const {
 void AudioContext::SetParamMapForWorkletName(
     const nsAString& aName, AudioParamDescriptorMap* aParamMap) {
   MOZ_ASSERT(!mWorkletParamDescriptors.Contains(aName));
-  Unused << mWorkletParamDescriptors.InsertOrUpdate(
-      aName, std::move(*aParamMap), fallible);
+  (void)mWorkletParamDescriptors.InsertOrUpdate(aName, std::move(*aParamMap),
+                                                fallible);
 }
 
 size_t AudioContext::SizeOfIncludingThis(

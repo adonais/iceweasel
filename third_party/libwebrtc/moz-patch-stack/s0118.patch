@@ -12,7 +12,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/14ee98c4832a55bf3
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/.gn b/.gn
-index 655830c04c..62a914c369 100644
+index 4ee826ec58..0d50e80115 100644
 --- a/.gn
 +++ b/.gn
 @@ -89,7 +89,7 @@ default_args = {

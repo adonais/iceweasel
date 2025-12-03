@@ -19,7 +19,6 @@
 #include "js/Value.h"
 #include "js/Warnings.h"  // JS::WarnUTF8
 #include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/dom/GPUUncapturedErrorEvent.h"
 #include "mozilla/dom/Promise.h"

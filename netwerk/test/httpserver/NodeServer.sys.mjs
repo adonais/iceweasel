@@ -489,11 +489,11 @@ export class NodeProxyFilter {
 }
 
 export class Http3ProxyFilter {
-  constructor(host, port, flags, pathTemplate, auth) {
+  constructor(host, port, flags, masqueTemplate, auth) {
     this._host = host;
     this._port = port;
     this._flags = flags;
-    this._pathTemplate = pathTemplate;
+    this._masqueTemplate = masqueTemplate;
     this._auth = auth;
     this.QueryInterface = ChromeUtils.generateQI(["nsIProtocolProxyFilter"]);
   }
@@ -504,7 +504,7 @@ export class Http3ProxyFilter {
       pps.newMASQUEProxyInfo(
         this._host,
         this._port,
-        this._pathTemplate,
+        this._masqueTemplate,
         this._auth,
         "",
         this._flags,

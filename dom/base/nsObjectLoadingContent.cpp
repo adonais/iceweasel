@@ -1884,7 +1884,7 @@ void nsObjectLoadingContent::MaybeStoreCrossOriginFeaturePolicy() {
   }
 
   if (ContentChild* cc = ContentChild::GetSingleton()) {
-    Unused << cc->SendSetContainerFeaturePolicy(
+    (void)cc->SendSetContainerFeaturePolicy(
         browsingContext, Some(mFeaturePolicy->ToFeaturePolicyInfo()));
   }
 }

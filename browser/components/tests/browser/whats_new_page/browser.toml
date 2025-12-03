@@ -17,6 +17,7 @@ prefs = [
 ]
 
 ["browser_whats_new_page.js"]
+skip-if = ["verify-standalone"]
 
 ["include:./browser_whats_new_page_nimbus.toml"]
 

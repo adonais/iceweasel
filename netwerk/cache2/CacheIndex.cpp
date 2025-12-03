@@ -22,7 +22,6 @@
 #include <algorithm>
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkCache2Metrics.h"
-#include "mozilla/Unused.h"
 
 #define kMinUnwrittenChanges 300
 #define kMinDumpInterval 20000  // in milliseconds
@@ -1350,8 +1349,14 @@ nsresult CacheIndex::GetEntryForEviction(EvictionSortedSnapshot& aSnapshot,
 
     ++skipped;
 
-    if (evictMedia && CacheIndexEntry::GetContentType(rec) !=
-                          nsICacheEntry::CONTENT_TYPE_MEDIA) {
+    uint32_t type = CacheIndexEntry::GetContentType(rec);
+
+    if (evictMedia && type != nsICacheEntry::CONTENT_TYPE_MEDIA) {
+      continue;
+    }
+
+    if (type == nsICacheEntry::CONTENT_TYPE_DICTIONARY) {
+      // Let them be removed by becoming empty and removing themselves
       continue;
     }
 
@@ -3236,8 +3241,8 @@ void CacheIndex::FinishUpdate(bool aSucceeded,
       NS_WARNING(("CacheIndex::FinishUpdate() - Leaking mDirEnumerator!"));
       // This can happen only in case dispatching event to IO thread failed in
       // CacheIndex::PreShutdown().
-      Unused << mDirEnumerator.forget();  // Leak it since dir enumerator is not
-                                          // threadsafe
+      mDirEnumerator.forget()
+          .leak();  // Leak it since dir enumerator is not threadsafe
     } else {
       mDirEnumerator->Close();
       mDirEnumerator = nullptr;
@@ -3872,7 +3877,7 @@ void CacheIndex::DoTelemetryReport() {
   static const nsLiteralCString
       contentTypeNames[nsICacheEntry::CONTENT_TYPE_LAST] = {
           "UNKNOWN"_ns, "OTHER"_ns,      "JAVASCRIPT"_ns, "IMAGE"_ns,
-          "MEDIA"_ns,   "STYLESHEET"_ns, "WASM"_ns};
+          "MEDIA"_ns,   "STYLESHEET"_ns, "WASM"_ns,       "DICTIONARY"_ns};
 
   for (uint32_t i = 0; i < nsICacheEntry::CONTENT_TYPE_LAST; ++i) {
     if (mIndexStats.Size() > 0) {

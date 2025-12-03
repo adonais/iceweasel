@@ -307,7 +307,8 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
 
   // Implementation of WebDriver commands
 
-  /** Clear the text of an element.
+  /**
+   * Clear the text of an element.
    *
    * @param {object} options
    * @param {Element} options.elem

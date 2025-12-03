@@ -65,13 +65,10 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FetchUtil.h"
 #include "mozilla/dom/WindowBinding.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ProcessHangMonitor.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/Sprintf.h"
-#include "mozilla/UniquePtrExtensions.h"
-#include "mozilla/Unused.h"
 #include "AccessCheck.h"
 #include "nsGlobalWindowInner.h"
 #include "nsAboutProtocolUtils.h"
@@ -2072,7 +2069,7 @@ class JSMainRuntimeRealmsReporter final : public nsIMemoryReporter {
     path.Insert(js::IsSystemRealm(realm) ? "js-main-runtime-realms/system/"_ns
                                          : "js-main-runtime-realms/user/"_ns,
                 0);
-    mozilla::Unused << data->paths.append(path);
+    (void)data->paths.append(path);
   }
 
   NS_IMETHOD CollectReports(nsIHandleReportCallback* handleReport,

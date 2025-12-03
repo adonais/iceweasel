@@ -42,7 +42,7 @@ ruleTester.run("use-services", rule, {
     ),
     invalidCode(
       `XPCOMUtils.defineLazyServiceGetters(this, {
-         uuidGen: ["@mozilla.org/uuid-generator;1", "nsIUUIDGenerator"],
+         uuidGen: ["@mozilla.org/uuid-generator;1", Ci.nsIUUIDGenerator],
        });`,
       "uuid",
       "defineLazyServiceGetters",
@@ -53,7 +53,7 @@ ruleTester.run("use-services", rule, {
          this,
          "gELS",
          "@mozilla.org/eventlistenerservice;1",
-         "nsIEventListenerService"
+         Ci.nsIEventListenerService
        );`,
       "els",
       "defineLazyServiceGetter"

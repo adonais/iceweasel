@@ -7,7 +7,6 @@
 #define DnsAndConnectSocket_h__
 
 #include "mozilla/TimeStamp.h"
-#include "mozilla/UniquePtr.h"
 #include "nsAHttpConnection.h"
 #include "nsHttpConnection.h"
 #include "nsHttpTransaction.h"

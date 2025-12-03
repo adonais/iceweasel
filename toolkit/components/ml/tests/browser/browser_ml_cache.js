@@ -585,8 +585,8 @@ add_task(async function testInvalidDomain() {
   );
 });
 
-/** Tests the method's error handling when the URL format does not include the required segments.
- *
+/**
+ * Tests the method's error handling when the URL format does not include the required segments.
  */
 add_task(async function testTooFewParts() {
   const hub = new ModelHub({

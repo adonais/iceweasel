@@ -183,9 +183,9 @@ class CookieCommons final {
   // assuming no leading dots are present.
   static bool IsSubdomainOf(const nsACString& a, const nsACString& b);
 
-  // Returns the current time in msecs using a nsIChannel, which corresponds to
+  // Returns the current time in USecs using a nsIChannel, which corresponds to
   // the response start time.
-  static int64_t GetCurrentTimeFromChannel(nsIChannel* aChannel);
+  static int64_t GetCurrentTimeInUSecFromChannel(nsIChannel* aChannel);
 };
 
 }  // namespace net

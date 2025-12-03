@@ -81,8 +81,7 @@ class SendShutdownToWorkerThread : public MainThreadWorkerControlRunnable {
 
   void DispatchToWorker() {
     MOZ_ASSERT(mTarget);
-    Unused << NS_WARN_IF(
-        NS_FAILED(mTarget->Dispatch(this, NS_DISPATCH_NORMAL)));
+    (void)NS_WARN_IF(NS_FAILED(mTarget->Dispatch(this, NS_DISPATCH_NORMAL)));
     mTarget = nullptr;
   }
 

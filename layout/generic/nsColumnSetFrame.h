@@ -9,7 +9,6 @@
 
 /* rendering object for css3 multi-column layout */
 
-#include "mozilla/Attributes.h"
 #include "nsContainerFrame.h"
 
 class nsCSSBorderRenderer;

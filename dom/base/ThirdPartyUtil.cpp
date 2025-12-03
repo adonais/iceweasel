@@ -19,8 +19,6 @@
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/StorageAccess.h"
-#include "mozilla/TextUtils.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
@@ -293,7 +291,7 @@ ThirdPartyUtil::IsThirdPartyChannel(nsIChannel* aChannel, nsIURI* aURI,
     uint32_t flags = 0;
     // Avoid checking the return value here since some channel implementations
     // may return NS_ERROR_NOT_IMPLEMENTED.
-    mozilla::Unused << httpChannelInternal->GetThirdPartyFlags(&flags);
+    (void)httpChannelInternal->GetThirdPartyFlags(&flags);
 
     doForce = (flags & nsIHttpChannelInternal::THIRD_PARTY_FORCE_ALLOW);
 

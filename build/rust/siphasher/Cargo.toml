@@ -1,0 +1,11 @@
+[package]
+name = "siphasher"
+version = "0.3.999"
+edition = "2018"
+license = "MPL-2.0"
+
+[lib]
+path = "lib.rs"
+
+[dependencies.siphasher]
+version = "1"

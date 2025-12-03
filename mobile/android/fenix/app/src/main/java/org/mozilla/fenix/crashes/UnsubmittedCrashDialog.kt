@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -114,7 +115,7 @@ private fun CrashCard(
     dispatcher(CrashAction.PromptShown)
 
     val msg = if (requestedByDevs) {
-        if (crashIDs?.size == 1) {
+        if (crashIDs.size == 1) {
             stringResource(
                 R.string.unsubmitted_crash_requested_by_devs_dialog_title,
                 stringResource(R.string.app_name),
@@ -122,7 +123,7 @@ private fun CrashCard(
         } else {
             stringResource(
                 R.string.unsubmitted_crashes_requested_by_devs_dialog_title,
-                crashIDs!!.size,
+                crashIDs.size,
                 stringResource(R.string.app_name),
             )
         }
@@ -186,7 +187,7 @@ private fun CrashCard(
                 ) {
                     Text(
                         text = stringResource(R.string.unsubmitted_crash_dialog_negative_button_2),
-                        color = FirefoxTheme.colors.textAccent,
+                        color = MaterialTheme.colorScheme.tertiary,
                         style = FirefoxTheme.typography.button,
                     )
                 }
@@ -203,7 +204,7 @@ private fun CrashCard(
                 ) {
                     Text(
                         text = stringResource(R.string.unsubmitted_crash_dialog_positive_button_2),
-                        color = FirefoxTheme.colors.textAccent,
+                        color = MaterialTheme.colorScheme.tertiary,
                         style = FirefoxTheme.typography.button,
                     )
                 }
@@ -270,7 +271,7 @@ private fun CrashCard(
                         dispatcher(
                             CrashAction.ReportTapped(
                                 automaticallySendChecked = false,
-                                crashIDs = crashIDs ?: listOf(),
+                                crashIDs = crashIDs,
                             ),
                         )
                         dismiss()
@@ -306,7 +307,7 @@ private fun AnnotatedStringBody() {
             ),
         linkTextStates = listOf(linkStateLearnMore),
         style = FirefoxTheme.typography.body2.copy(FirefoxTheme.colors.textPrimary),
-        linkTextColor = FirefoxTheme.colors.textAccent,
+        linkTextColor = MaterialTheme.colorScheme.tertiary,
         linkTextDecoration = TextDecoration.Underline,
         textAlign = null,
         shouldApplyAccessibleSize = false,

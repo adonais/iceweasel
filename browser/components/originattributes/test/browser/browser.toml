@@ -77,6 +77,7 @@ skip-if = ["os == 'win' && os_version == '11.26100' && processor == 'x86_64' && 
 ["browser_cacheAPI.js"]
 
 ["browser_clientAuth.js"]
+skip-if = ["verify-standalone"]
 
 ["browser_cookieIsolation.js"]
 

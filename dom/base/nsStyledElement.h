@@ -13,7 +13,6 @@
 #ifndef __NS_STYLEDELEMENT_H_
 #define __NS_STYLEDELEMENT_H_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/Element.h"
 #include "nsString.h"
 

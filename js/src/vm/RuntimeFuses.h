@@ -38,9 +38,23 @@ class HasSeenArrayExceedsInt32LengthFuse final
   void popFuse(JSContext* cx) override;
 };
 
-#define FOR_EACH_RUNTIME_FUSE(FUSE)                                          \
-  FUSE(HasSeenObjectEmulateUndefinedFuse, hasSeenObjectEmulateUndefinedFuse) \
-  FUSE(HasSeenArrayExceedsInt32LengthFuse, hasSeenArrayExceedsInt32LengthFuse)
+class DefaultLocaleHasDefaultCaseMappingFuse final
+    : public InvalidatingRuntimeFuse {
+  const char* name() override {
+    return "DefaultLocaleHasDefaultCaseMappingFuse";
+  }
+
+  bool checkInvariant(JSContext* cx) override;
+
+ public:
+  void popFuse(JSContext* cx) override;
+};
+
+#define FOR_EACH_RUNTIME_FUSE(FUSE)                                            \
+  FUSE(HasSeenObjectEmulateUndefinedFuse, hasSeenObjectEmulateUndefinedFuse)   \
+  FUSE(HasSeenArrayExceedsInt32LengthFuse, hasSeenArrayExceedsInt32LengthFuse) \
+  FUSE(DefaultLocaleHasDefaultCaseMappingFuse,                                 \
+       defaultLocaleHasDefaultCaseMappingFuse)
 
 struct RuntimeFuses {
   RuntimeFuses() = default;

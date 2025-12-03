@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this file,
+  You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
   <string name="mozac_feature_addons_permissions_one_site_description">Gatū riña nej si datôt guendâ %1$s</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
@@ -25,7 +32,7 @@
   -->
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Gatū riña nej si datôt riña a’ngô nej dominio</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
-  <string name="mozac_feature_addons_permissions_all_domain_count_description" tools:ignore="PluralsCandidate">Gātū riña nej si datôt guendâ nej sitiô riña nej dominio %1$d</string>
+  <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">Gātū riña nej si datôt guendâ nej sitiô riña nej dominio %1$d</string>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d riña %3$d</string>
   <!-- Description for the "privacy" WebExtensions API permission. -->
@@ -130,6 +137,21 @@
   <string name="mozac_feature_addons_permissions_tab_hide_description_for_update">Gāchrī huì\' nī dīgûn\' rakïj ñanj riñā aché nu\'.</string>
   <!-- Description for the "topSites" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_top_sites_description_for_update">Gātū riña sa gahuin nga gaché nunt.</string>
+  <!-- Description for the "trialML" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_trial_ml_description_for_update">Nādunīnj nī gā’nïnjt nej sa \'hiaj sun ngà IA riña si āgâ\'t.</string>
+  <!-- Description for the "userScripts" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_user_scripts_description_for_update">Gā’nïn da’ gātū nej scripts nāsinùnj un riña nej si datôt.</string>
+  <!-- Description for the "devtools" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_devtools_description_for_update">Nāgi\'hiaj nìko nej si rasun desarrollador da\' ga\'hue gātūt riña nej si datôt riña rakïj ñanj huā nî\'nïnj \'iát.</string>
+  <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
+  <string name="mozac_feature_addons_permissions_one_site_description_for_update">Gatū riña nej si datôt guendâ %1$s.</string>
+  <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
+  <string name="mozac_feature_addons_permissions_sites_in_domain_description_for_update">Gatū riña nej si datôt guendâ daran’ nej sitio nū riña %1$s.</string>
+  <!--
+    When an add-on requires access to more than 2 domains, for example the add-on requires access for 3 domains. We will show the first 2 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description_for_update,
+    then we will show another collapsed entry saying "Access your data on another domain.".
+  -->
+  <string name="mozac_feature_addons_permissions_one_extra_domain_description_for_update">Gātū riña nej si datôt riña a’ngô dominio.</string>
   <!-- The text shown when an extension requests the userScripts permission, near the usual description of the userScripts permission -->
   <string name="mozac_feature_addons_permissions_user_scripts_extra_warning">Gā’hue gà’huì’ yì’ì nej scripts nāsinùnj un riña si āgâ’t. Màn nej scripts ni’înt gā’hue gā’nïnjt.</string>
   <!-- The sentence used when the extension has data collection permissions. %1$s is a formatted list of permissions. -->
@@ -182,6 +204,14 @@
   <string name="mozac_feature_addons_permissions_data_collection_personalCommunications_long_description">Nāgà’huì’ nej nuguan’ a’mint achín sa ri rà nej extensión</string>
   <!-- Long description for the personallyIdentifyingInfo data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_long_description">Nāgà’huì’ nej nuguan’ a’min rayi’ît achín sa ri rà nej extensión</string>
+  <!-- Long description for the searchTerms data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_searchTerms_long_description">Nāgà’huì’ nej nuguan’ nana’huî’t riña sa ri rè nej extensiûn</string>
+  <!-- Long description for the technicalAndInteraction data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_technicalAndInteraction_long_description">Nāgà’huì’ nej nuguan’ chì’i nī nej nuguan’ arâj sunt nga aché nunt riña sa ri rè nej extensión</string>
+  <!-- Long description for the websiteActivity data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_websiteActivity_long_description">Nāgà’huì’ nej nuguan’ dàj ‘hiaj sun sitiô nan riña sa ri rà nej extensión</string>
+  <!-- Long description for the websiteContent data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_websiteContent_long_description">Nāgà’huì’ nej nuguan’ màn riña web nan riña sa ri rà nej extensión</string>
   <!-- The version on of add-on. -->
   <string name="mozac_feature_addons_version">Bersiûn</string>
   <!-- The author of an add-on. -->
@@ -200,6 +230,8 @@
   <string name="mozac_feature_addons_settings">Nāgi\'iô\'</string>
   <!-- Indicates the add-on is enabled. -->
   <string name="mozac_feature_addons_settings_on">Nāchrūn</string>
+  <!-- Indicates the add-on is allowed in private browsing mode. -->
+  <string name="mozac_feature_addons_settings_allow_in_private_browsing_2">Gā’nīn nāyi’nïn extensión riña aché hùi nunt</string>
   <!-- Indicates the add-on is allowed in private browsing mode. -->
   <string name="mozac_feature_addons_settings_run_in_private_browsing">Dūgi\'aj sun man riña aché nu huìt</string>
   <!-- This is displayed when the add-on is not allowed to run in private browsing. -->
@@ -224,6 +256,8 @@
   <string name="mozac_feature_addons_remove">Nādure\'</string>
   <!-- This is a button to report an add-on. -->
   <string name="mozac_feature_addons_report">Gānātà\'</string>
+  <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_permissions_dialog_title_2">Nutà\' %1$s</string>
   <!-- This is a button to add (install) an add-on . -->
   <string name="mozac_feature_addons_permissions_dialog_add">Nūtà\'</string>
   <!-- This is a button to allow the optional permissions requested by an add-on . -->
@@ -234,6 +268,8 @@
   <string name="mozac_feature_addons_permissions_dialog_learn_more">Gāhuin chrūn doj</string>
   <!-- This is a button to cancel the add-on installation . -->
   <string name="mozac_feature_addons_permissions_dialog_cancel">Duyichin\'</string>
+  <!-- Accessibility content description to install add-on button. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_install_addon_content_description_2">Gā’nïnj %1$s</string>
   <!-- This is the label of a button to cancel an ongoing add-on installation. -->
   <string name="mozac_feature_addons_install_addon_dialog_cancel">Dūyichin\'</string>
   <!-- Indicates how many users have rated an add-on. %1$s will be replaced with number of reviews -->
@@ -292,4 +328,10 @@
   <string name="mozac_feature_addons_updater_dialog_last_attempt">Sa rūkù ginûn huin:</string>
   <!-- Displayed in the "Status" field for the updater when an add-on has been correctly updated -->
   <string name="mozac_feature_addons_updater_dialog_status">Dàj hua riñaj:</string>
+  <!-- Confirmation button text for the dialog when add-on installation is completed. -->
+  <string name="mozac_feature_addons_installed_dialog_okay_button_2">GĀ\'HUE</string>
+  <!-- "Learn more" link displayed below an add-on status message. -->
+  <string name="mozac_feature_addons_status_learn_more">Gāhuin chrūn doj</string>
+  <!-- "See details" link displayed below an add-on status message. -->
+  <string name="mozac_feature_addons_status_see_details">Ni\'hio\' dàj huaj</string>
 </resources>

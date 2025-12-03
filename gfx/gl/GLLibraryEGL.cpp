@@ -17,7 +17,6 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_webgl.h"
-#include "mozilla/Unused.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsPrintfCString.h"

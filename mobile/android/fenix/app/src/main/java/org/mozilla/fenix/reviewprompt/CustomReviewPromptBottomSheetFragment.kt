@@ -82,7 +82,13 @@ class CustomReviewPromptBottomSheetFragment : BottomSheetDialogFragment() {
 
                     CustomReviewPromptNavigationEvent.OpenPlayStoreReviewPrompt -> {
                         val activity = activity ?: return@collect
-                        requireComponents.playStoreReviewPromptController.tryPromptReview(activity)
+                        with(requireComponents.playStoreReviewPromptController) {
+                            tryPromptReview(
+                                activity = activity,
+                                onNotDisplayed = { tryLaunchPlayStoreReview(activity) },
+                                onError = { tryLaunchPlayStoreReview(activity) },
+                            )
+                        }
                     }
 
                     is CustomReviewPromptNavigationEvent.OpenNewTab -> {

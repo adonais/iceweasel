@@ -9,7 +9,6 @@
 #ifndef mozilla_dom_CSS_h_
 #define mozilla_dom_CSS_h_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/CSSUnitValueBindingFwd.h"
 #include "nsStringFwd.h"
 

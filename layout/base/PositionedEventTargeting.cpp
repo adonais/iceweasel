@@ -21,6 +21,7 @@
 #include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/TouchEvent.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsContainerFrame.h"
@@ -178,9 +179,7 @@ static bool HasTouchListener(const nsIContent* aContent) {
     return false;
   }
 
-  // FIXME: Should this really use the pref rather than TouchEvent::PrefEnabled
-  // or such?
-  if (!StaticPrefs::dom_w3c_touch_events_enabled()) {
+  if (!TouchEvent::PrefEnabled(aContent->OwnerDoc()->GetDocShell())) {
     return false;
   }
 

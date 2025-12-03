@@ -7,7 +7,6 @@
 #ifndef nsMathMLmrootFrame_h___
 #define nsMathMLmrootFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "nsMathMLChar.h"
 #include "nsMathMLContainerFrame.h"
 

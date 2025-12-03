@@ -3,16 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { SearchOneOffs } from "moz-src:///browser/components/search/SearchOneOffs.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 /**
  * @import {LegacySearchOneOffButton} from "moz-src:///browser/components/search/SearchOneOffs.sys.mjs"
+ * @import {UrlbarView} from "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs"
  */
 
 /**
@@ -169,7 +169,7 @@ export class UrlbarSearchOneOffs extends SearchOneOffs {
   /**
    * Called when a one-off is clicked.
    *
-   * @param {event} event
+   * @param {MouseEvent|KeyboardEvent} event
    *   The event that triggered the pick.
    * @param {object} searchMode
    *   Used by UrlbarInput.setSearchMode to enter search mode. See setSearchMode
@@ -286,7 +286,7 @@ export class UrlbarSearchOneOffs extends SearchOneOffs {
    * Overrides the willHide method in the superclass to account for the local
    * search mode buttons.
    *
-   * @returns {boolean}
+   * @returns {Promise<boolean>}
    *   True if we will hide the one-offs when they are requested.
    */
   async willHide() {
@@ -361,7 +361,7 @@ export class UrlbarSearchOneOffs extends SearchOneOffs {
    * Overrides the superclass's click listener to handle clicks on local
    * one-offs in addition to engine one-offs.
    *
-   * @param {event} event
+   * @param {MouseEvent} event
    *   The click event.
    */
   _on_click(event) {
@@ -370,7 +370,7 @@ export class UrlbarSearchOneOffs extends SearchOneOffs {
       return;
     }
 
-    let button = event.originalTarget;
+    let button = /** @type {LegacySearchOneOffButton} */ (event.originalTarget);
 
     if (!button.engine && !button.source) {
       return;

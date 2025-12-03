@@ -238,7 +238,7 @@ treechildren::-moz-tree-cell-text(broken) {
 }
 
 .permissionLabel {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .permission:hover {

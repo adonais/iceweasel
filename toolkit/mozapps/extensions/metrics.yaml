@@ -214,6 +214,7 @@ addons_manager:
       - https://bugzilla.mozilla.org/1820153
       - https://bugzilla.mozilla.org/1912166
       - https://bugzilla.mozilla.org/1958151
+      - https://bugzilla.mozilla.org/1994595
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1433335#c8
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1820153#c3
@@ -291,7 +292,7 @@ addons_manager:
           site_warning, site_blocked,install_disabled_warning,
           download_started, download_completed, download_failed
         type: string
-    expires: 147
+    expires: 154
 
   update: *install_update_event
 
@@ -374,6 +375,7 @@ addons_manager:
       - https://bugzilla.mozilla.org/1912166
       - https://bugzilla.mozilla.org/1917859
       - https://bugzilla.mozilla.org/1958149
+      - https://bugzilla.mozilla.org/1994595
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1433335#c8
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1820153#c3
@@ -415,7 +417,7 @@ addons_manager:
           The add-on blocklistState (0 not-blocked, 1 soft-blocked, 2
           hard-blocked) at the time the manage event was being collected.
         type: string
-    expires: 147
+    expires: 154
 
   report_suspicious_site:
     type: event
@@ -428,6 +430,7 @@ addons_manager:
       - https://bugzilla.mozilla.org/1820153
       - https://bugzilla.mozilla.org/1912166
       - https://bugzilla.mozilla.org/1958151
+      - https://bugzilla.mozilla.org/1994595
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1806056#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1820153#c3
@@ -439,7 +442,7 @@ addons_manager:
       suspicious_site:
         description: The domain of the site that was reported.
         type: string
-    expires: 147
+    expires: 154
 
   compatibility_check_enabled:
     type: boolean
@@ -462,6 +465,7 @@ addons_manager:
       Sent when saving addonStartup.json.lz4 data back to disk fails.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1966154
+      - https://bugzilla.mozilla.org/1994595
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1966154
     data_sensitivity:
@@ -484,7 +488,7 @@ addons_manager:
           and if the application version was changing, while the write error was hit.
           The expected values are: "new", "existing" "existingWithVersionChanged"
         type: string
-    expires: 147
+    expires: 154
 
   startup_timeline:
     type: labeled_quantity

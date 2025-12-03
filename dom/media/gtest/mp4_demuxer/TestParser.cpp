@@ -11,7 +11,6 @@
 #include "TelemetryTestHelpers.h"
 #include "gtest/gtest.h"
 #include "js/Conversions.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/gtest/MozAssertions.h"
 

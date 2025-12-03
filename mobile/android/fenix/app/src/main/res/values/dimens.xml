@@ -9,8 +9,6 @@
     <dimen name="glyph_button_width">48dp</dimen>
     <dimen name="mozac_browser_menu_width_min" tools:ignore="UnusedResources">112dp</dimen>
     <dimen name="mozac_browser_menu_width_max" tools:ignore="UnusedResources">314dp</dimen>
-    <dimen name="mozac_browser_menu_corner_radius">8dp</dimen>
-    <dimen name="mozac_browser_menu2_corner_radius">8dp</dimen>
     <dimen name="mozac_browser_menu_item_checkbox_container_padding_end" tools:ignore="UnusedResources">0dp</dimen>
     <dimen name="mozac_browser_menu_item_checkbox_text_label_padding_end" tools:ignore="UnusedResources">8dp</dimen>
     <dimen name="mozac_browser_menu_item_image_checkbox_padding_start" tools:ignore="UnusedResources">8dp</dimen>
@@ -51,6 +49,7 @@
     <dimen name="top_bar_alignment_margin_start">72dp</dimen>
     <dimen name="top_bar_no_icon_alignment_margin_start">16dp</dimen>
     <dimen name="section_header_height">48dp</dimen>
+    <dimen name="dialog_edit_text_horizontal_padding">20dp</dimen>
 
     <!--Quick Settings-->
     <dimen name="quicksettings_item_height">48dp</dimen>

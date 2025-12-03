@@ -5,6 +5,7 @@ support-files = [
   "!/devtools/shared/test-helpers/allocation-tracker.js",
   "head.js",
 ]
+prefs = "extensions.webcompat.disable_debug_logging=true"
 
 # Each metrics tests is loaded in a separate .ini file. This way the test is executed
 # individually, without any other test being executed before or after.

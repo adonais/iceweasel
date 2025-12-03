@@ -88,7 +88,7 @@
     --button-border-radius: var(--border-radius-medium);
     --button-font-size: var(--font-size-root);
     --button-font-size-small: var(--font-size-small);
-    --button-font-weight: var(--font-weight-bold);
+    --button-font-weight: var(--font-weight-semibold);
     --button-icon-fill: currentColor;
     --button-icon-stroke: var(--button-icon-fill);
     --button-min-height: var(--size-item-large);
@@ -250,13 +250,14 @@
 
     /** Font Weight **/
     --font-weight: normal;
-    --font-weight-bold: 600;
+    --font-weight-bold: 700;
+    --font-weight-semibold: 600;
 
     /** Heading **/
     --heading-font-size-medium: var(--font-size-large);
     --heading-font-size-large: var(--font-size-xlarge);
     --heading-font-size-xlarge: var(--font-size-xxlarge);
-    --heading-font-weight: var(--font-weight-bold);
+    --heading-font-weight: var(--font-weight-semibold);
 
     /** Icon **/
     --icon-color: light-dark(var(--color-gray-70), var(--color-gray-05));
@@ -412,6 +413,7 @@
       --color-accent-primary: ButtonText;
       --color-accent-primary-hover: SelectedItem;
       --color-accent-primary-active: var(--color-accent-primary-hover);
+      --color-accent-primary-selected: SelectedItem;
 
       /** Focus Outline **/
       --focus-outline-color: var(--text-color);
@@ -424,6 +426,7 @@
 
       /** Text **/
       --text-color-disabled: GrayText;
+      --text-color-accent-primary-selected: SelectedItemText;
     }
   }
 }

@@ -16,6 +16,7 @@ kind-dependencies:
     - build
 
 task-defaults:
+    run-on-repo-type: [hg]
     worker-type: b-linux-gcp
     description: Python Fuzzing Smoke Tests
     worker:

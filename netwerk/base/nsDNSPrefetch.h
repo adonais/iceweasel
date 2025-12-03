@@ -11,7 +11,6 @@
 #include "nsIWeakReferenceUtils.h"
 #include "nsString.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/BasePrincipal.h"
 
 #include "nsIDNSListener.h"

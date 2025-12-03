@@ -771,8 +771,8 @@ bool BaselineInterpreterCodeGen::emitNextIC() {
   saveInterpreterPCReg();
   masm.loadPtr(frame.addressOfInterpreterICEntry(), ICStubReg);
   masm.loadPtr(Address(ICStubReg, ICEntry::offsetOfFirstStub()), ICStubReg);
-  masm.call(Address(ICStubReg, ICStub::offsetOfStubCode()));
-  uint32_t returnOffset = masm.currentOffset();
+  uint32_t returnOffset =
+      masm.call(Address(ICStubReg, ICStub::offsetOfStubCode())).offset();
   restoreInterpreterPCReg();
 
   // If this is an IC for a bytecode op where Ion may inline scripts, we need to
@@ -6422,14 +6422,14 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
   // generator returns.
   Label genStart, returnTarget;
 #ifdef JS_USE_LINK_REGISTER
-  masm.call(&genStart);
+  const CodeOffset retAddr = masm.call(&genStart);
 #else
   masm.callAndPushReturnAddress(&genStart);
+  const CodeOffset retAddr = CodeOffset(masm.currentOffset());
 #endif
 
   // Record the return address so the return offset -> pc mapping works.
-  if (!handler.recordCallRetAddr(RetAddrEntry::Kind::IC,
-                                 masm.currentOffset())) {
+  if (!handler.recordCallRetAddr(RetAddrEntry::Kind::IC, retAddr.offset())) {
     return false;
   }
 

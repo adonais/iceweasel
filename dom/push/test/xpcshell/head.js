@@ -32,7 +32,7 @@ XPCOMUtils.defineLazyServiceGetter(
   this,
   "PushServiceComponent",
   "@mozilla.org/push/Service;1",
-  "nsIPushService"
+  Ci.nsIPushService
 );
 
 const servicePrefs = new Preferences("dom.push.");

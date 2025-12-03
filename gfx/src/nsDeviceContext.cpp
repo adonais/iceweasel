@@ -284,7 +284,7 @@ nsresult nsDeviceContext::AbortDocument() {
   mIsCurrentlyPrintingDoc = false;
 
   if (mDeviceContextSpec) {
-    Unused << mDeviceContextSpec->EndDocument();
+    (void)mDeviceContextSpec->EndDocument();
   }
 
   mPrintTarget = nullptr;

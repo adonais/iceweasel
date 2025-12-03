@@ -35,7 +35,7 @@ TEST(AclAceRange, SimpleCount)
   TestAcl testAcl;
   int aceCount = 0;
   for (const auto& aceHeader : AclAceRange(testAcl.AsAclPtr())) {
-    Unused << aceHeader;
+    (void)aceHeader;
     ++aceCount;
   }
 
@@ -104,7 +104,7 @@ TEST(AclAceRange, AceCountOfZeroResultsInNoIterations)
   testAcl.acl.AceCount = 0;
   int aceCount = 0;
   for (const auto& aceHeader : AclAceRange(testAcl.AsAclPtr())) {
-    Unused << aceHeader;
+    (void)aceHeader;
     ++aceCount;
   }
 
@@ -117,7 +117,7 @@ TEST(AclAceRange, AclSizeTooSmallForAnyAcesResultsInNoIterations)
   testAcl.acl.AclSize = sizeof(ACCESS_ALLOWED_ACE) - 1;
   int aceCount = 0;
   for (const auto& aceHeader : AclAceRange(testAcl.AsAclPtr())) {
-    Unused << aceHeader;
+    (void)aceHeader;
     ++aceCount;
   }
 

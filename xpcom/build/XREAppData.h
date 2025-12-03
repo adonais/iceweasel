@@ -8,7 +8,6 @@
 #define nsXREAppData_h
 
 #include <stdint.h>
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "nsCOMPtr.h"
 #include "nsCRTGlue.h"

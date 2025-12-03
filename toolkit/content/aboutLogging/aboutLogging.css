@@ -123,7 +123,7 @@ input[type="text"] {
 }
 
 .info-box-label {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 #error {
@@ -168,7 +168,7 @@ input[type="text"] {
 }
 
 .uploaded-profile-name {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   margin-bottom: 0.25em;
 }
 

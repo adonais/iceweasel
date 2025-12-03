@@ -6,7 +6,6 @@
 #ifndef HTMLMarqueeElement_h___
 #define HTMLMarqueeElement_h___
 
-#include "mozilla/Attributes.h"
 #include "nsContentUtils.h"
 #include "nsGenericHTMLElement.h"
 

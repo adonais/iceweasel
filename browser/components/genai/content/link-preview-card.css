@@ -30,7 +30,7 @@
 .og-card-title {
   color: var(--panel-color);
   font-size: var(--og-main-font-size);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--heading-font-weight);
   margin: 0;
   overflow: hidden;
   -webkit-line-clamp: 3;
@@ -69,7 +69,7 @@
   .keypoints-header {
     display: flex;
     font-size: var(--og-main-font-size);
-    font-weight: var(--font-weight-bold);
+    font-weight: var(--heading-font-weight);
     gap: var(--space-xs);
     margin: 0;
     user-select: none;
@@ -91,7 +91,7 @@
   }
 
   .keypoints-header:has(+ .keypoints-content:not(.hidden)) .chevron-icon {
-    transform: rotateZ(180deg);
+    transform: rotateZ(-180deg);
   }
 
   img.icon {
@@ -139,7 +139,7 @@
         align-items: center;
         display: flex;
         font-size: var(--og-main-font-size);
-        font-weight: var(--font-weight-bold);
+        font-weight: var(--font-weight-semibold);
         gap: var(--space-xs);
       }
     }

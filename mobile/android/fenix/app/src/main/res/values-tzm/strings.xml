@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Uslig %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -291,14 +298,6 @@
   <string name="delete_browsing_data_on_quit_action">Ffeɣ</string>
   <!-- Text for the allow button for the data deletion dialog -->
   <string name="delete_browsing_data_prompt_allow">Kkes</string>
-  <!--
-    Onboarding theme
-
-    Text shown in snackbar when multiple tabs have been sent to device
-  -->
-  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Ttwaznen iseksal!</string>
-  <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Ittwazen useksel!</string>
   <!-- Header for categories that are being not being blocked by current Enhanced Tracking Protection settings -->
   <string name="enhanced_tracking_protection_allowed">Ittusureg</string>
   <!-- About page link text to open know your rights link -->
@@ -315,8 +314,6 @@
   <string name="credit_cards_edit_card">Ẓreg takarḍa</string>
   <!-- The header for the card number of a credit card -->
   <string name="credit_cards_card_number">Uṭṭun n tkarḍa</string>
-  <!-- The header for the expiration date of a credit card -->
-  <string name="credit_cards_expiration_date">Azemz n taggara</string>
   <!-- The label for the expiration date month of a credit card to be used by a11y services -->
   <string name="credit_cards_expiration_date_month">Ayyur n uzemz n taggar</string>
   <!-- The label for the expiration date year of a credit card to be used by a11y services -->

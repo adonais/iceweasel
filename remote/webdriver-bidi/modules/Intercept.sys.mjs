@@ -7,7 +7,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   getSeenNodesForBrowsingContext:
     "chrome://remote/content/shared/webdriver/Session.sys.mjs",
-  TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
+  NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
 });
 
 /**
@@ -87,7 +87,8 @@ function addContextIdToSerializedWindow(serialized) {
           );
 
           serialized.value = {
-            context: lazy.TabManager.getIdForBrowsingContext(browsingContext),
+            context:
+              lazy.NavigableManager.getIdForBrowsingContext(browsingContext),
           };
         }
         break;

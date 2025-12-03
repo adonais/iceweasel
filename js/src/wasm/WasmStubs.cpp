@@ -1889,17 +1889,18 @@ static bool AddStackCheckForImportFunctionEntry(jit::MacroAssembler& masm,
   wasm::StackMap* stackMap = nullptr;
   if (!CreateStackMapForFunctionEntryTrap(
           argTypes, trapExitLayout, trapExitLayoutNumWords,
-          nBytesReservedBeforeTrap, nInboundStackArgBytes, &stackMap)) {
+          nBytesReservedBeforeTrap, nInboundStackArgBytes, *stackMaps,
+          &stackMap)) {
     return false;
   }
 
   // In debug builds, we'll always have a stack map, even if there are no
   // refs to track.
   MOZ_ASSERT(stackMap);
-  if (stackMap && !stackMaps->add(trapInsnOffset.offset(), stackMap)) {
-    stackMap->destroy();
-    return false;
+  if (stackMap) {
+    return stackMaps->finalize(trapInsnOffset.offset(), stackMap);
   }
+
   return true;
 }
 

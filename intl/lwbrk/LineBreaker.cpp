@@ -16,7 +16,6 @@
 #include "nsTArray.h"
 #include "nsUnicodeProperties.h"
 #include "nsThreadUtils.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/intl/Segmenter.h"

@@ -63,6 +63,9 @@ class MOZ_STACK_CLASS WarpOracle {
   [[nodiscard]] bool addFuseDependency(RealmFuses::FuseIndex fuseIndex,
                                        bool* stillValid);
 
+  [[nodiscard]] bool addFuseDependency(RuntimeFuses::FuseIndex fuseIndex,
+                                       bool* stillValid);
+
   AbortReasonOr<WarpSnapshot*> createSnapshot();
 
   mozilla::GenericErrorResult<AbortReason> abort(HandleScript script,

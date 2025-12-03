@@ -589,10 +589,30 @@ let forms = [
     results: {
       // ISSUE 14:
       // The telephone fields are not detected at all.
-      ADDRESS_US_LOCAL: { "postal-code": "" },
-      ADDRESS_US_REMOTE: { "postal-code": "" },
-      ADDRESS_DE_LOCAL: { "postal-code": "" },
-      ADDRESS_DE_REMOTE: { "postal-code": "" },
+      ADDRESS_US_LOCAL: {
+        "postal-code": "",
+        tel1: "6172535702",
+        tel2: "6172535702",
+        tel3: "6172535702",
+      },
+      ADDRESS_US_REMOTE: {
+        "postal-code": "",
+        tel1: "030983333000",
+        tel2: "030983333000",
+        tel3: "030983333000",
+      },
+      ADDRESS_DE_LOCAL: {
+        "postal-code": "",
+        tel1: "030983333001",
+        tel2: "030983333001",
+        tel3: "030983333001",
+      },
+      ADDRESS_DE_REMOTE: {
+        "postal-code": "",
+        tel1: "033345649473",
+        tel2: "033345649473",
+        tel3: "033345649473",
+      },
     },
   },
   {
@@ -681,11 +701,12 @@ function processTestItems() {
         // This is a special case to handle when two fields of the
         // same type are present, which can be specified as, for example,
         // 'tel' and 'tel2'.
+        let fieldName = field;
         if (field.match(/[0-9]$/)) {
-          field = field.substring(0, field.length - 1);
+          fieldName = field.substring(0, field.length - 1);
         }
 
-        let fieldData = { fieldName: field };
+        let fieldData = { fieldName };
 
         let value = profileInfo[field];
         // A value starting with * means use reason="autocomplete".

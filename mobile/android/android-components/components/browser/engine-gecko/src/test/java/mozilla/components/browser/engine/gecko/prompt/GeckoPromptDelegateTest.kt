@@ -318,10 +318,10 @@ class GeckoPromptDelegateTest {
             assertEquals(maximumDate, "2019-11-30".toDate("yyyy-MM-dd"))
         }
         val selectedDate = "2019-11-28".toDate("yyyy-MM-dd")
-        (timeSelectionRequest as PromptRequest.TimeSelection).onConfirm(selectedDate)
+        timeSelectionRequest.onConfirm(selectedDate)
         verify(geckoPrompt).confirm(confirmCaptor.capture())
         assertEquals(confirmCaptor.value.toDate("yyyy-MM-dd"), selectedDate)
-        assertEquals((timeSelectionRequest as PromptRequest.TimeSelection).title, "title")
+        assertEquals(timeSelectionRequest.title, "title")
     }
 
     @Test
@@ -385,10 +385,10 @@ class GeckoPromptDelegateTest {
             assertEquals(maximumDate, "2019-11".toDate("yyyy-MM"))
         }
         val selectedDate = "2019-11".toDate("yyyy-MM")
-        (timeSelectionRequest as PromptRequest.TimeSelection).onConfirm(selectedDate)
+        timeSelectionRequest.onConfirm(selectedDate)
         verify(geckoPrompt).confirm(confirmCaptor.capture())
         assertEquals(confirmCaptor.value.toDate("yyyy-MM"), selectedDate)
-        assertEquals((timeSelectionRequest as PromptRequest.TimeSelection).title, "title")
+        assertEquals(timeSelectionRequest.title, "title")
     }
 
     @Test
@@ -450,10 +450,10 @@ class GeckoPromptDelegateTest {
             assertEquals(maximumDate, "2018-W26".toDate("yyyy-'W'ww"))
         }
         val selectedDate = "2018-W26".toDate("yyyy-'W'ww")
-        (timeSelectionRequest as PromptRequest.TimeSelection).onConfirm(selectedDate)
+        timeSelectionRequest.onConfirm(selectedDate)
         verify(geckoPrompt).confirm(confirmCaptor.capture())
         assertEquals(confirmCaptor.value.toDate("yyyy-'W'ww"), selectedDate)
-        assertEquals((timeSelectionRequest as PromptRequest.TimeSelection).title, "title")
+        assertEquals(timeSelectionRequest.title, "title")
     }
 
     @Test
@@ -515,10 +515,10 @@ class GeckoPromptDelegateTest {
             assertEquals(maximumDate, "18:00".toDate("HH:mm"))
         }
         val selectedDate = "17:00".toDate("HH:mm")
-        (timeSelectionRequest as PromptRequest.TimeSelection).onConfirm(selectedDate)
+        timeSelectionRequest.onConfirm(selectedDate)
         verify(geckoPrompt).confirm(confirmCaptor.capture())
         assertEquals(confirmCaptor.value.toDate("HH:mm"), selectedDate)
-        assertEquals((timeSelectionRequest as PromptRequest.TimeSelection).title, "title")
+        assertEquals(timeSelectionRequest.title, "title")
     }
 
     @Test
@@ -563,7 +563,7 @@ class GeckoPromptDelegateTest {
 
         selectedTime = "17:00:25"
         assertNotNull(timeSelectionRequest)
-        (timeSelectionRequest as PromptRequest.TimeSelection).onConfirm(selectedTime.toDate("HH:mm:ss"))
+        timeSelectionRequest.onConfirm(selectedTime.toDate("HH:mm:ss"))
         verify(secondsGeckoPrompt).confirm(confirmCaptor.capture())
         assertEquals(selectedTime, confirmCaptor.value)
 
@@ -571,7 +571,7 @@ class GeckoPromptDelegateTest {
 
         selectedTime = "17:00:20.100"
         assertNotNull(timeSelectionRequest)
-        (timeSelectionRequest as PromptRequest.TimeSelection).onConfirm(selectedTime.toDate("HH:mm:ss.SSS"))
+        timeSelectionRequest.onConfirm(selectedTime.toDate("HH:mm:ss.SSS"))
         verify(millisecondsGeckoPrompt).confirm(confirmCaptor.capture())
         assertEquals(selectedTime, confirmCaptor.value)
     }
@@ -659,10 +659,10 @@ class GeckoPromptDelegateTest {
             assertEquals(maximumDate, "2018-06-14T00:00".toDate("yyyy-MM-dd'T'HH:mm"))
         }
         val selectedDate = "2018-06-12T19:30".toDate("yyyy-MM-dd'T'HH:mm")
-        (timeSelectionRequest as PromptRequest.TimeSelection).onConfirm(selectedDate)
+        timeSelectionRequest.onConfirm(selectedDate)
         verify(geckoPrompt).confirm(confirmCaptor.capture())
         assertEquals(confirmCaptor.value.toDate("yyyy-MM-dd'T'HH:mm"), selectedDate)
-        assertEquals((timeSelectionRequest as PromptRequest.TimeSelection).title, "title")
+        assertEquals(timeSelectionRequest.title, "title")
     }
 
     @Test(expected = InvalidParameterException::class)
@@ -1515,11 +1515,11 @@ class GeckoPromptDelegateTest {
         geckoPrompt = geckoPopupPrompt()
         promptDelegate.onPopupPrompt(mock(), geckoPrompt)
 
-        request!!.onDeny()
+        request.onDeny()
         verify(geckoPrompt, times(1)).confirm(eq(AllowOrDeny.DENY))
         whenever(geckoPrompt.isComplete).thenReturn(true)
 
-        request!!.onDeny()
+        request.onDeny()
         verify(geckoPrompt, times(1)).confirm(eq(AllowOrDeny.DENY))
     }
 
@@ -1555,11 +1555,11 @@ class GeckoPromptDelegateTest {
         geckoPrompt = geckoRedirectPrompt()
         promptDelegate.onRedirectPrompt(mock(), geckoPrompt)
 
-        request!!.onDeny()
+        request.onDeny()
         verify(geckoPrompt, times(1)).confirm(eq(AllowOrDeny.DENY))
         whenever(geckoPrompt.isComplete).thenReturn(true)
 
-        request!!.onDeny()
+        request.onDeny()
         verify(geckoPrompt, times(1)).confirm(eq(AllowOrDeny.DENY))
     }
 
@@ -1581,21 +1581,21 @@ class GeckoPromptDelegateTest {
         promptDelegate.onBeforeUnloadPrompt(mock(), geckoPrompt)
         assertEquals(request!!.title, "")
 
-        request!!.onLeave()
+        request.onLeave()
         verify(geckoPrompt, times(1)).confirm(eq(AllowOrDeny.ALLOW))
         whenever(geckoPrompt.isComplete).thenReturn(true)
 
-        request!!.onLeave()
+        request.onLeave()
         verify(geckoPrompt, times(1)).confirm(eq(AllowOrDeny.ALLOW))
 
         geckoPrompt = geckoBeforeUnloadPrompt()
         promptDelegate.onBeforeUnloadPrompt(mock(), geckoPrompt)
 
-        request!!.onStay()
+        request.onStay()
         verify(geckoPrompt, times(1)).confirm(eq(AllowOrDeny.DENY))
         whenever(geckoPrompt.isComplete).thenReturn(true)
 
-        request!!.onStay()
+        request.onStay()
         verify(geckoPrompt, times(1)).confirm(eq(AllowOrDeny.DENY))
     }
 
@@ -1671,13 +1671,13 @@ class GeckoPromptDelegateTest {
             onFailureWasCalled = true
         }
 
-        request!!.onFailure()
+        request.onFailure()
         shadowOf(getMainLooper()).idle()
         assertTrue(onFailureWasCalled)
         whenever(geckoPrompt.isComplete).thenReturn(true)
 
         onFailureWasCalled = false
-        request!!.onFailure()
+        request.onFailure()
         shadowOf(getMainLooper()).idle()
 
         assertFalse(onFailureWasCalled)
@@ -1688,7 +1688,7 @@ class GeckoPromptDelegateTest {
             onDismissWasCalled = true
         }
 
-        request!!.onDismiss()
+        request.onDismiss()
         shadowOf(getMainLooper()).idle()
         assertTrue(onDismissWasCalled)
     }

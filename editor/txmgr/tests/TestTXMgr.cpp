@@ -8,7 +8,6 @@
 #include "nsITransactionManager.h"
 #include "nsComponentManagerUtils.h"
 #include "mozilla/gtest/MozAssertions.h"
-#include "mozilla/Likely.h"
 #include "mozilla/EditTransactionBase.h"
 #include "mozilla/TransactionManager.h"
 

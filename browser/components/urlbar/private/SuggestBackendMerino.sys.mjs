@@ -8,7 +8,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   MerinoClient: "moz-src:///browser/components/urlbar/MerinoClient.sys.mjs",
-  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
 });
 
 /**
@@ -16,12 +15,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
  */
 
 /**
- * The Suggest Merino backend. This backend is enabled when the user opts in to
- * Merino, also called "online" Suggest.
+ * The Suggest Merino backend. This backend is enabled when online Suggest is
+ * available to the user and enabled.
  */
 export class SuggestBackendMerino extends SuggestBackend {
   get enablingPreferences() {
-    return ["quicksuggest.dataCollection.enabled"];
+    return ["quickSuggestOnlineAvailable", "quicksuggest.online.enabled"];
   }
 
   /**
@@ -50,21 +49,7 @@ export class SuggestBackendMerino extends SuggestBackend {
       this.#client = new lazy.MerinoClient(this.name, { allowOhttp: true });
     }
 
-    let providers;
-    if (
-      !lazy.UrlbarPrefs.get("suggest.quicksuggest.nonsponsored") &&
-      !lazy.UrlbarPrefs.get("suggest.quicksuggest.sponsored") &&
-      !lazy.UrlbarPrefs.get("merinoProviders")
-    ) {
-      // Data collection is enabled but suggestions are not. Per product
-      // requirements, we still want to ping Merino so it can record the query,
-      // but pass an empty list of providers to tell it not to fetch any
-      // suggestions.
-      providers = [];
-    }
-
     let suggestions = await this.#client.fetch({
-      providers,
       query: searchString,
     });
 

@@ -69,7 +69,7 @@
 
     &:hover,
     &:active,
-    &:focus-visible,
+    &:focus-within,
     &.active {
       .card-stp-thumbs-buttons-wrapper {
         visibility: visible;
@@ -206,7 +206,11 @@
         min-height: 28px;
 
         .source-wrapper {
-          max-width: 175px;
+          max-width: 245px;
+        }
+
+        .source {
+          width: 217px;
         }
       }
 
@@ -234,15 +238,29 @@
     }
 
     .card-stp-button-hover-background {
-      background: transparent; }
+      background: transparent;
+    }
+
+    .card-stp-thumbs-buttons-wrapper {
+      visibility: hidden;
+    }
 
     &:hover,
     &:active,
-    &:focus-visible,
+    &:focus-within,
     &.active {
+      .card-stp-thumbs-buttons-wrapper {
+        visibility: visible;
+      }
+
       .meta {
+        .source-wrapper {
+          max-width: 175px;
+        }
+
         .source-wrapper .source {
           display: block;
+          width: unset;
         }
       }
     }
@@ -251,6 +269,10 @@
 
   .card-stp-button-position-wrapper {
     inset-inline-end: var(--space-small);
+  }
+
+  .card-stp-button-hover-background {
+    background: transparent;
   }
 
   .card-stp-thumbs-buttons-wrapper {
@@ -390,7 +412,7 @@
         .title {
           -webkit-line-clamp: 3;
           font-size: var(--font-size-large);
-          font-weight: var(--font-weight-bold);
+          font-weight: var(--heading-font-weight);
           margin-block: 0 var(--space-small);
         }
 
@@ -517,7 +539,7 @@
     .section-title {
       @include wallpaper-contrast-fix;
 
-      font-weight: var(--font-weight-bold);
+      font-weight: var(--heading-font-weight);
       font-size: var(--font-size-xlarge);
       color: var(--newtab-contextual-text-primary-color);
       margin-block: 0;

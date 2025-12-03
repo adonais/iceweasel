@@ -19,7 +19,6 @@
 using mozilla::LogLevel;
 using mozilla::MakeUnique;
 using mozilla::UniquePtr;
-using mozilla::Unused;
 using mozilla::WrapUnique;
 
 txStylesheet::txStylesheet() : mRootFrame(nullptr) {}
@@ -34,7 +33,7 @@ nsresult txStylesheet::init() {
   UniquePtr<txNodeTest> nt(new txNodeTypeTest(txNodeTypeTest::NODE_TYPE));
   UniquePtr<Expr> nodeExpr(
       new LocationStep(nt.get(), LocationStep::CHILD_AXIS));
-  Unused << nt.release();
+  (void)nt.release();
 
   txPushNewContext* pushContext = new txPushNewContext(std::move(nodeExpr));
   mContainerTemplate->mNext = WrapUnique(pushContext);
@@ -55,7 +54,7 @@ nsresult txStylesheet::init() {
   // attribute/textnode template
   nt = MakeUnique<txNodeTypeTest>(txNodeTypeTest::NODE_TYPE);
   nodeExpr = MakeUnique<LocationStep>(nt.get(), LocationStep::SELF_AXIS);
-  Unused << nt.release();
+  (void)nt.release();
 
   mCharactersTemplate = MakeUnique<txValueOf>(std::move(nodeExpr), false);
   mCharactersTemplate->mNext = MakeUnique<txReturn>();
@@ -318,7 +317,7 @@ nsresult txStylesheet::doneCompiling() {
     rv = mDecimalFormats.add(txExpandedName(), format.get());
     NS_ENSURE_SUCCESS(rv, rv);
 
-    Unused << format.release();
+    (void)format.release();
   }
 
   return NS_OK;
@@ -332,7 +331,7 @@ nsresult txStylesheet::addTemplate(txTemplateItem* aTemplate,
   mTemplateInstructions.add(instr);
 
   // mTemplateInstructions now owns the instructions
-  Unused << aTemplate->mFirstInstruction.release();
+  (void)aTemplate->mFirstInstruction.release();
 
   if (!aTemplate->mName.isNull()) {
     nsresult rv = mNamedTemplates.add(aTemplate->mName, instr);
@@ -451,7 +450,7 @@ nsresult txStylesheet::addAttributeSet(txAttributeSetItem* aAttributeSetItem) {
                             aAttributeSetItem->mFirstInstruction.get());
     NS_ENSURE_SUCCESS(rv, rv);
 
-    Unused << aAttributeSetItem->mFirstInstruction.release();
+    (void)aAttributeSetItem->mFirstInstruction.release();
 
     return NS_OK;
   }
@@ -473,7 +472,7 @@ nsresult txStylesheet::addAttributeSet(txAttributeSetItem* aAttributeSetItem) {
                           aAttributeSetItem->mFirstInstruction.get());
   NS_ENSURE_SUCCESS(rv, rv);
 
-  Unused << aAttributeSetItem->mFirstInstruction.release();
+  (void)aAttributeSetItem->mFirstInstruction.release();
 
   lastNonReturn->mNext =
       WrapUnique(oldInstr);  // ...and link up the old instructions.
@@ -491,7 +490,7 @@ nsresult txStylesheet::addGlobalVariable(txVariableItem* aVariable) {
   nsresult rv = mGlobalVariables.add(aVariable->mName, var.get());
   NS_ENSURE_SUCCESS(rv, rv);
 
-  Unused << var.release();
+  (void)var.release();
 
   return NS_OK;
 }
@@ -529,7 +528,7 @@ nsresult txStylesheet::addDecimalFormat(const txExpandedName& aName,
   nsresult rv = mDecimalFormats.add(aName, aFormat.get());
   NS_ENSURE_SUCCESS(rv, rv);
 
-  Unused << aFormat.release();
+  (void)aFormat.release();
 
   return NS_OK;
 }

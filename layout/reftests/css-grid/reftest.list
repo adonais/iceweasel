@@ -116,7 +116,7 @@ fails == grid-flex-min-sizing-003.html grid-flex-min-sizing-003-ref.html
 # == grid-item-auto-min-size-clamp-004.html grid-item-auto-min-size-clamp-004-ref.html # bug 1421976
 == grid-item-auto-min-size-clamp-005.html grid-item-auto-min-size-clamp-005-ref.html
 # == grid-item-auto-min-size-clamp-006.html grid-item-auto-min-size-clamp-006-ref.html # bug 1421976
-== grid-item-auto-min-size-clamp-007.html grid-item-auto-min-size-clamp-007-ref.html
+test-pref(layout.css.webkit-fill-available.enabled,false) == grid-item-auto-min-size-clamp-007.html grid-item-auto-min-size-clamp-007-ref.html # bug 1989136
 == grid-item-overflow-stretch-001.html grid-item-overflow-stretch-001-ref.html
 == grid-item-overflow-stretch-002.html grid-item-overflow-stretch-002-ref.html
 == grid-item-overflow-stretch-003.html grid-item-overflow-stretch-003-ref.html

@@ -403,7 +403,7 @@ newtab-wallpaper-abstract-purple-green = 紫色與綠色漸層
 newtab-wallpaper-abstract-blue-purple-waves = 藍色與紫色波浪圖
 newtab-wallpaper-abstract-black-waves = 黑色波浪圖
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = 相片
 newtab-wallpaper-beach-at-sunrise = 海邊日出
@@ -432,6 +432,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -672,10 +676,6 @@ newtab-widget-timer-mode-focus =
     .label = 專注
 newtab-widget-timer-mode-break =
     .label = 休息
-newtab-widget-timer-play =
-    .title = 播放
-newtab-widget-timer-pause =
-    .title = 暫停
 newtab-widget-timer-label-play =
     .label = 播放
 newtab-widget-timer-label-pause =

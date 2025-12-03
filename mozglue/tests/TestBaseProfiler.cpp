@@ -1761,8 +1761,8 @@ static void TestChunkManagerSingle() {
   MOZ_RELEASE_ASSERT(chunk->RangeStart() == 0);
   chunk->SetRangeStart(100);
   MOZ_RELEASE_ASSERT(chunk->RangeStart() == 100);
-  Unused << chunk->ReserveInitialBlockAsTail(1);
-  Unused << chunk->ReserveBlock(2);
+  (void)chunk->ReserveInitialBlockAsTail(1);
+  (void)chunk->ReserveBlock(2);
   MOZ_RELEASE_ASSERT(chunk->ChunkHeader().mOffsetFirstBlock == 1);
   MOZ_RELEASE_ASSERT(chunk->ChunkHeader().mOffsetPastLastBlock == 1 + 2);
 
@@ -1829,8 +1829,8 @@ static void TestChunkManagerSingle() {
   MOZ_RELEASE_ASSERT(chunk->RangeStart() == 0);
   chunk->SetRangeStart(200);
   MOZ_RELEASE_ASSERT(chunk->RangeStart() == 200);
-  Unused << chunk->ReserveInitialBlockAsTail(3);
-  Unused << chunk->ReserveBlock(4);
+  (void)chunk->ReserveInitialBlockAsTail(3);
+  (void)chunk->ReserveBlock(4);
   MOZ_RELEASE_ASSERT(chunk->ChunkHeader().mOffsetFirstBlock == 3);
   MOZ_RELEASE_ASSERT(chunk->ChunkHeader().mOffsetPastLastBlock == 3 + 4);
 
@@ -1866,7 +1866,7 @@ static void TestChunkManagerSingle() {
   MOZ_RELEASE_ASSERT(chunk->RangeStart() == 0, "Got non-recycled chunk");
 
   // Enough testing! Clean-up.
-  Unused << chunk->ReserveInitialBlockAsTail(0);
+  (void)chunk->ReserveInitialBlockAsTail(0);
   chunk->MarkDone();
   cm.ForgetUnreleasedChunks();
 
@@ -1950,8 +1950,8 @@ static void TestChunkManagerWithLocalLimit() {
     const ProfileBufferIndex index = 1 + i * chunkActualBufferBytes;
     chunk->SetRangeStart(index);
     MOZ_RELEASE_ASSERT(chunk->RangeStart() == index);
-    Unused << chunk->ReserveInitialBlockAsTail(1);
-    Unused << chunk->ReserveBlock(2);
+    (void)chunk->ReserveInitialBlockAsTail(1);
+    (void)chunk->ReserveBlock(2);
     MOZ_RELEASE_ASSERT(chunk->ChunkHeader().mOffsetFirstBlock == 1);
     MOZ_RELEASE_ASSERT(chunk->ChunkHeader().mOffsetPastLastBlock == 1 + 2);
 
@@ -2000,18 +2000,18 @@ static void TestChunkManagerWithLocalLimit() {
   cm.RequestChunk([&](UniquePtr<ProfileBufferChunk> aChunk) {
     ran = true;
     MOZ_RELEASE_ASSERT(!!aChunk, "Chunk request should always work");
-    Unused << aChunk->ReserveInitialBlockAsTail(0);
+    (void)aChunk->ReserveInitialBlockAsTail(0);
     WaitUntilTimeStampChanges();  // Force "done" timestamp to change.
     aChunk->MarkDone();
     UniquePtr<ProfileBufferChunk> anotherChunk = cm.GetChunk();
     MOZ_RELEASE_ASSERT(!!anotherChunk);
-    Unused << anotherChunk->ReserveInitialBlockAsTail(0);
+    (void)anotherChunk->ReserveInitialBlockAsTail(0);
     WaitUntilTimeStampChanges();  // Force "done" timestamp to change.
     anotherChunk->MarkDone();
     cm.RequestChunk([&](UniquePtr<ProfileBufferChunk> aChunk) {
       ranInner = true;
       MOZ_RELEASE_ASSERT(!!aChunk, "Chunk request should always work");
-      Unused << aChunk->ReserveInitialBlockAsTail(0);
+      (void)aChunk->ReserveInitialBlockAsTail(0);
       WaitUntilTimeStampChanges();  // Force "done" timestamp to change.
       aChunk->MarkDone();
     });
@@ -2033,7 +2033,7 @@ static void TestChunkManagerWithLocalLimit() {
       ran, "2nd FulfillChunkRequests should invoke the inner request callback");
 
   // Enough testing! Clean-up.
-  Unused << chunk->ReserveInitialBlockAsTail(0);
+  (void)chunk->ReserveInitialBlockAsTail(0);
   WaitUntilTimeStampChanges();  // Force "done" timestamp to change.
   chunk->MarkDone();
   cm.ForgetUnreleasedChunks();
@@ -2049,7 +2049,7 @@ static void TestChunkManagerWithLocalLimit() {
   for (unsigned i = 0; i < RandomReleaseChunkLoop; ++i) {
     UniquePtr<ProfileBufferChunk> chunk = cm.GetChunk();
     MOZ_RELEASE_ASSERT(chunk);
-    Unused << chunk->ReserveInitialBlockAsTail(0);
+    (void)chunk->ReserveInitialBlockAsTail(0);
     chunk->MarkDone();
     MOZ_RELEASE_ASSERT(!chunk->ChunkHeader().mDoneTimeStamp.IsNull());
     chunksTimeStamps.infallibleEmplaceBack(chunk->ChunkHeader().mDoneTimeStamp);
@@ -2096,8 +2096,8 @@ static void TestChunkManagerWithLocalLimit() {
     MOZ_RELEASE_ASSERT(extantReleasedChunks, "Not enough released chunks");
     MOZ_RELEASE_ASSERT(extantReleasedChunks->ChunkHeader().mDoneTimeStamp ==
                        chunksTimeStamps[i]);
-    Unused << std::exchange(extantReleasedChunks,
-                            extantReleasedChunks->ReleaseNext());
+    (void)std::exchange(extantReleasedChunks,
+                        extantReleasedChunks->ReleaseNext());
   }
   MOZ_RELEASE_ASSERT(!extantReleasedChunks, "Too many released chunks");
 
@@ -2208,7 +2208,7 @@ static void TestControlledChunkManagerUpdate() {
     auto chunk = ProfileBufferChunk::Create(aChunkToBeat.BufferBytes() * 2);
     MOZ_RELEASE_ASSERT(!!chunk);
     MOZ_RELEASE_ASSERT(chunk->BufferBytes() >= aChunkToBeat.BufferBytes() * 2);
-    Unused << chunk->ReserveInitialBlockAsTail(0);
+    (void)chunk->ReserveInitialBlockAsTail(0);
     chunk->MarkDone();
     MOZ_RELEASE_ASSERT(chunk->ChunkHeader().mDoneTimeStamp >
                        aChunkToBeat.ChunkHeader().mDoneTimeStamp);
@@ -2220,7 +2220,7 @@ static void TestControlledChunkManagerUpdate() {
   // Create initial update with 2 released chunks and 1 unreleased chunk.
   auto released = ProfileBufferChunk::Create(10);
   ProfileBufferChunk* c1 = released.get();
-  Unused << c1->ReserveInitialBlockAsTail(0);
+  (void)c1->ReserveInitialBlockAsTail(0);
   c1->MarkDone();
 
   released->SetLast(CreateBiggerChunkAfter(*c1));
@@ -2336,7 +2336,7 @@ static void TestControlledChunkManagerUpdate() {
   // released.
   auto recycled = std::exchange(released, released->ReleaseNext());
   recycled->MarkRecycled();
-  Unused << recycled->ReserveInitialBlockAsTail(0);
+  (void)recycled->ReserveInitialBlockAsTail(0);
   recycled->MarkDone();
   released->SetLast(std::move(unreleased));
   unreleased = std::move(recycled);
@@ -2463,8 +2463,8 @@ static void TestControlledChunkManagerWithLocalLimit() {
     const ProfileBufferIndex index =
         ProfileBufferIndex(chunkActualBufferBytes) * i + 1;
     chunk->SetRangeStart(index);
-    Unused << chunk->ReserveInitialBlockAsTail(1);
-    Unused << chunk->ReserveBlock(2);
+    (void)chunk->ReserveInitialBlockAsTail(1);
+    (void)chunk->ReserveBlock(2);
 
     // Request a new chunk.
     UniquePtr<ProfileBufferChunk> newChunk;
@@ -2539,7 +2539,7 @@ static void TestControlledChunkManagerWithLocalLimit() {
   }
 
   // Enough testing! Clean-up.
-  Unused << chunk->ReserveInitialBlockAsTail(0);
+  (void)chunk->ReserveInitialBlockAsTail(0);
   chunk->MarkDone();
   cm.ForgetUnreleasedChunks();
   MOZ_RELEASE_ASSERT(
@@ -4079,8 +4079,8 @@ void TestProfiler() {
         ::mozilla::baseprofiler::markers::NoPayload{}));
 
     MOZ_RELEASE_ASSERT(baseprofiler::AddMarker(
-        "tracing", mozilla::baseprofiler::category::OTHER, {},
-        mozilla::baseprofiler::markers::Tracing{}, "category"));
+        "stackmarker", mozilla::baseprofiler::category::OTHER, {},
+        mozilla::baseprofiler::markers::StackMarker{}));
 
     MOZ_RELEASE_ASSERT(baseprofiler::AddMarker(
         "text", mozilla::baseprofiler::category::OTHER, {},
@@ -4153,7 +4153,7 @@ void TestProfiler() {
     // Check for some expected marker schema JSON output.
     MOZ_RELEASE_ASSERT(profileSV.find("\"markerSchema\":[") != svnpos);
     MOZ_RELEASE_ASSERT(profileSV.find("\"name\":\"Text\",") != svnpos);
-    MOZ_RELEASE_ASSERT(profileSV.find("\"name\":\"tracing\",") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"name\":\"StackMarker\",") != svnpos);
     MOZ_RELEASE_ASSERT(profileSV.find("\"name\":\"MediaSample\",") != svnpos);
     MOZ_RELEASE_ASSERT(profileSV.find("\"display\":[") != svnpos);
     MOZ_RELEASE_ASSERT(profileSV.find("\"marker-chart\"") != svnpos);
@@ -4710,9 +4710,9 @@ void TestPredefinedMarkers() {
       mozilla::ProfileChunkedBuffer::ThreadSafety::WithoutMutex, chunkManager);
 
   MOZ_RELEASE_ASSERT(mozilla::baseprofiler::AddMarkerToBuffer(
-      buffer, std::string_view("tracing"),
+      buffer, std::string_view("stackmarker"),
       mozilla::baseprofiler::category::OTHER, {},
-      mozilla::baseprofiler::markers::Tracing{}, "category"));
+      mozilla::baseprofiler::markers::StackMarker{}));
 
   MOZ_RELEASE_ASSERT(mozilla::baseprofiler::AddMarkerToBuffer(
       buffer, std::string_view("text"), mozilla::baseprofiler::category::OTHER,

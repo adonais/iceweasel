@@ -6,7 +6,6 @@
 
 #include "VsyncParent.h"
 
-#include "mozilla/Unused.h"
 #include "nsIThread.h"
 #include "nsThreadUtils.h"
 
@@ -56,7 +55,7 @@ void VsyncParent::DispatchVsyncEvent(const VsyncEvent& aVsync) {
   // notification.
   if (mObservingVsync && !mDestroyed) {
     TimeDuration vsyncRate = mVsyncDispatcher->GetVsyncRate();
-    Unused << SendNotify(aVsync, vsyncRate.ToMilliseconds());
+    (void)SendNotify(aVsync, vsyncRate.ToMilliseconds());
   }
 }
 

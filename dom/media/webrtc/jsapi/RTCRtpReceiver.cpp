@@ -944,14 +944,14 @@ void RTCRtpReceiver::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
         }
         RTCRtpCodecParameters codec;
         RTCRtpTransceiver::ToDomRtpCodecParameters(*jsepCodec, &codec);
-        Unused << mParameters.mCodecs.Value().AppendElement(codec, fallible);
+        (void)mParameters.mCodecs.Value().AppendElement(codec, fallible);
         if (jsepCodec->Type() == SdpMediaSection::kVideo) {
           const JsepVideoCodecDescription& videoJsepCodec =
               static_cast<JsepVideoCodecDescription&>(*jsepCodec);
           if (videoJsepCodec.mRtxEnabled) {
             RTCRtpCodecParameters rtx;
             RTCRtpTransceiver::ToDomRtpCodecParametersRtx(videoJsepCodec, &rtx);
-            Unused << mParameters.mCodecs.Value().AppendElement(rtx, fallible);
+            (void)mParameters.mCodecs.Value().AppendElement(rtx, fallible);
           }
         }
       }

@@ -164,7 +164,7 @@ newtab-menu-bookmark = הוספת סימנייה
 
 newtab-menu-copy-download-link = העתקת קישור ההורדה
 newtab-menu-go-to-download-page = מעבר לעמוד ההורדה
-newtab-menu-remove-download = הסרה מההיסטורייה
+newtab-menu-remove-download = הסרה מההיסטוריה
 
 ## Context Menu - Download Menu: These are platform specific strings found in the context menu of an item that has
 ## been downloaded. The intention behind "this action" is that it will show where the downloaded file exists on the file
@@ -401,7 +401,7 @@ newtab-wallpaper-abstract-purple-green = מעברי צבע סגול וירוק
 newtab-wallpaper-abstract-blue-purple-waves = צורות גליות בצבע כחול וסגול
 newtab-wallpaper-abstract-black-waves = צורות גליות בצבע שחור
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = תצלומים
 newtab-wallpaper-beach-at-sunrise = זריחה בחוף הים
@@ -430,6 +430,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -670,10 +674,6 @@ newtab-widget-timer-mode-focus =
     .label = ריכוז
 newtab-widget-timer-mode-break =
     .label = הפסקה
-newtab-widget-timer-play =
-    .title = הפעלה
-newtab-widget-timer-pause =
-    .title = השהייה
 newtab-widget-timer-label-play =
     .label = הפעלה
 newtab-widget-timer-label-pause =

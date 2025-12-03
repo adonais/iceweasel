@@ -6,7 +6,6 @@
 #ifndef TRANSFRMX_XSLT_FUNCTIONS_H
 #define TRANSFRMX_XSLT_FUNCTIONS_H
 
-#include "mozilla/UniquePtr.h"
 #include "txExpr.h"
 #include "txNamespaceMap.h"
 #include "txXMLUtils.h"

@@ -261,8 +261,7 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
 
   // Loader could be null during unlink, see bug 1425866.
   // ... No need to update if updating is disabled, as well.
-  if (!doc || !doc->CSSLoader() || !doc->CSSLoader()->GetEnabled() ||
-      !mUpdatesEnabled) {
+  if (!doc || !doc->EnsureCSSLoader().GetEnabled() || !mUpdatesEnabled) {
     return Update{};
   }
 
@@ -276,7 +275,7 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
   Maybe<SheetInfo> info = GetStyleSheetInfo();
   if (aForceUpdate == ForceUpdate::No && mStyleSheet && info &&
       !info->mIsInline && info->mURI) {
-    if (nsIURI* oldURI = mStyleSheet->GetSheetURI()) {
+    if (nsIURI* oldURI = mStyleSheet->GetOriginalURI()) {
       bool equal;
       nsresult rv = oldURI->Equals(info->mURI, &equal);
       if (NS_SUCCEEDED(rv) && equal) {
@@ -331,7 +330,7 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
     }
 
     // Parse the style sheet.
-    return doc->CSSLoader()->LoadInlineStyle(*info, text, aObserver);
+    return doc->EnsureCSSLoader().LoadInlineStyle(*info, text, aObserver);
   }
   if (thisContent.IsElement()) {
     nsAutoString integrity;
@@ -342,7 +341,7 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
                NS_ConvertUTF16toUTF8(integrity).get()));
     }
   }
-  auto resultOrError = doc->CSSLoader()->LoadStyleLink(*info, aObserver);
+  auto resultOrError = doc->EnsureCSSLoader().LoadStyleLink(*info, aObserver);
   if (resultOrError.isErr()) {
     // Don't propagate LoadStyleLink() errors further than this, since some
     // consumers (e.g. nsXMLContentSink) will completely abort on innocuous
@@ -390,7 +389,7 @@ void LinkStyle::MaybeFinishCopyStyleSheet(Document* aDocument) {
   }
   RefPtr<StyleSheet> sheet = mStyleSheet->Clone(nullptr, root);
   SetStyleSheet(sheet.get());
-  aDocument->CSSLoader()->InsertSheetInTree(*sheet);
+  aDocument->EnsureCSSLoader().InsertSheetInTree(*sheet);
 }
 
 }  // namespace mozilla::dom

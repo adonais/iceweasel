@@ -51,6 +51,7 @@ class ClientInfo;
 class ClientSource;
 class EventTarget;
 enum class NavigationHistoryBehavior : uint8_t;
+struct NavigationAPIMethodTracker;
 class SessionHistoryInfo;
 struct LoadingSessionHistoryInfo;
 struct Wireframe;
@@ -576,6 +577,7 @@ class nsDocShell final : public nsDocLoader,
   //
 
   nsresult EnsureDocumentViewer();
+  void DestroyDocumentViewer();
 
   // aPrincipal can be passed in if the caller wants. If null is
   // passed in, the about:blank principal will end up being used.
@@ -781,6 +783,11 @@ class nsDocShell final : public nsDocLoader,
     DisplayLoadError(aError, aURI, aURL, aFailedChannel, &didDisplayLoadError);
     return didDisplayLoadError;
   }
+
+  // Called when a document is recognised as content the device owner doesn't
+  // want to be displayed. Stops parsing, stops scripts, and displays an
+  // error page with DisplayLoadError.
+  void DisplayRestrictedContentError();
 
   //
   // Uncategorized
@@ -1033,7 +1040,7 @@ class nsDocShell final : public nsDocLoader,
                             bool aUserActivation);
   nsresult LoadHistoryEntry(
       const mozilla::dom::LoadingSessionHistoryInfo& aEntry, uint32_t aLoadType,
-      bool aUserActivation);
+      bool aUserActivation, bool aNotifiedBeforeUnloadListeners);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult LoadHistoryEntry(nsDocShellLoadState* aLoadState, uint32_t aLoadType,
                             bool aLoadingCurrentEntry);
@@ -1194,7 +1201,9 @@ class nsDocShell final : public nsDocLoader,
       mozilla::Maybe<mozilla::NotNull<JSContext*>> aCx, uint32_t aReloadFlags,
       nsIStructuredCloneContainer* aNavigationAPIState = nullptr,
       mozilla::dom::UserNavigationInvolvement aUserInvolvement =
-          mozilla::dom::UserNavigationInvolvement::None);
+          mozilla::dom::UserNavigationInvolvement::None,
+      mozilla::dom::NavigationAPIMethodTracker* aNavigationAPIMethodTracker =
+          nullptr);
 
  private:
   MOZ_CAN_RUN_SCRIPT

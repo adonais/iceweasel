@@ -42,23 +42,10 @@ class MozTextLabel extends HTMLLabelElement {
       );
       if (MozTextLabel.#underlineAccesskey) {
         try {
-          const nsIPrefLocalizedString = Ci.nsIPrefLocalizedString;
-          const prefNameInsertSeparator =
-            "intl.menuitems.insertseparatorbeforeaccesskeys";
-          const prefNameAlwaysAppendAccessKey =
-            "intl.menuitems.alwaysappendaccesskeys";
-
-          let val = Services.prefs.getComplexValue(
-            prefNameInsertSeparator,
-            nsIPrefLocalizedString
-          ).data;
-          this.#insertSeparator = val == "true";
-          val = Services.prefs.getComplexValue(
-            prefNameAlwaysAppendAccessKey,
-            nsIPrefLocalizedString
-          ).data;
-          this.#alwaysAppendAccessKey = val == "true";
-        } catch (e) {
+          this.#insertSeparator =
+            Services.locale.insertSeparatorBeforeAccesskeys;
+          this.#alwaysAppendAccessKey = Services.locale.alwaysAppendAccesskeys;
+        } catch {
           this.#insertSeparator = this.#alwaysAppendAccessKey = true;
         }
       }

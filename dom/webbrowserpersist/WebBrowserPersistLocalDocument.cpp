@@ -8,7 +8,6 @@
 #include "WebBrowserPersistDocumentParent.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/Try.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/Attr.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -762,7 +761,7 @@ nsresult PersistNodeFixup::FixupAnchor(nsINode* aNode) {
     nsresult rv = NS_NewURI(getter_AddRefs(newURI), oldCValue,
                             mParent->GetCharacterSet(), relativeURI);
     if (NS_SUCCEEDED(rv) && newURI) {
-      Unused << NS_MutateURI(newURI).SetUserPass(""_ns).Finalize(newURI);
+      (void)NS_MutateURI(newURI).SetUserPass(""_ns).Finalize(newURI);
       nsAutoCString uriSpec;
       rv = newURI->GetSpec(uriSpec);
       NS_ENSURE_SUCCESS(rv, rv);

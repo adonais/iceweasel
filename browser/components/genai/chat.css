@@ -222,7 +222,7 @@ browser {
 
   .text {
     flex-direction: column;
-    font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-semibold);
     margin: 5px;
     text-align: start;
   }

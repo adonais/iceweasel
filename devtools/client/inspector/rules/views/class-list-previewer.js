@@ -18,7 +18,7 @@ const { debounce } = require("resource://devtools/shared/debounce.js");
  * used to toggle classes on the current node selection, and add new classes.
  */
 class ClassListPreviewer {
-  /*
+  /**
    * @param {Inspector} inspector
    *        The current inspector instance.
    * @param {DomNode} containerEl

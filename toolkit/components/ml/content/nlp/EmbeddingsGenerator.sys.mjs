@@ -25,7 +25,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "mlUtils",
   "@mozilla.org/ml-utils;1",
-  "nsIMLUtils"
+  Ci.nsIMLUtils
 );
 
 ChromeUtils.defineESModuleGetters(lazy, {

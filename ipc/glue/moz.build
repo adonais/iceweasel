@@ -38,7 +38,6 @@ EXPORTS.mozilla.ipc += [
     "IPCForwards.h",
     "IPCStreamUtils.h",
     "IPCTypes.h",
-    "IPDLParamTraits.h",
     "IPDLStructMember.h",
     "LaunchError.h",
     "MessageChannel.h",
@@ -293,6 +292,8 @@ if CONFIG["TARGET_OS"] == "OSX":
     OS_LIBS += ["bsm"]  # for audit_token_to_pid
 elif CONFIG["TARGET_OS"] == "iOS":
     OS_LIBS += ["-framework BrowserEngineKit"]
+elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+    OS_LIBS += ["android"]
 
 for var in (
     "MOZ_CHILD_PROCESS_NAME",

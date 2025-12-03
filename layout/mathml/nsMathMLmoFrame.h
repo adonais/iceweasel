@@ -7,7 +7,6 @@
 #ifndef nsMathMLmoFrame_h___
 #define nsMathMLmoFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "nsMathMLChar.h"
 #include "nsMathMLTokenFrame.h"
 

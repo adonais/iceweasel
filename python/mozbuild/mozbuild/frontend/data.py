@@ -610,6 +610,15 @@ class RustTests(ContextDerived):
         self.output_category = "rusttests"
 
 
+class LegacyRunTests(ContextDerived):
+    __slots__ = ("tests", "output_category")
+
+    def __init__(self, context, tests):
+        ContextDerived.__init__(self, context)
+        self.tests = tests
+        self.output_category = "runtests"
+
+
 class BaseLibrary(Linkable):
     """Generic context derived container object for libraries."""
 

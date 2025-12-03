@@ -8,7 +8,6 @@
 
 #include "nsCSSAnonBoxes.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "nsGkAtomConsts.h"
 #include "nsStaticAtomUtils.h"
 

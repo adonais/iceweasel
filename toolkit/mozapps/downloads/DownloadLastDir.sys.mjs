@@ -36,7 +36,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "cps2",
   "@mozilla.org/content-pref/service;1",
-  "nsIContentPrefService2"
+  Ci.nsIContentPrefService2
 );
 
 let nonPrivateLoadContext = Cu.createLoadContext();

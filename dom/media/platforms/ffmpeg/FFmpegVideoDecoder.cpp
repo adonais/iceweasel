@@ -65,7 +65,6 @@
 #if LIBAVCODEC_VERSION_MAJOR > 58
 #  define AV_PIX_FMT_VAAPI_VLD AV_PIX_FMT_VAAPI
 #endif
-#include "mozilla/PodOperations.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/TaskQueue.h"
@@ -124,7 +123,7 @@ typedef mozilla::layers::BufferRecycleBin BufferRecycleBin;
 namespace mozilla {
 
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
-MOZ_RUNINIT nsTArray<AVCodecID>
+MOZ_CONSTINIT nsTArray<AVCodecID>
     FFmpegVideoDecoder<LIBAV_VER>::mAcceleratedFormats;
 #endif
 
@@ -1063,6 +1062,14 @@ static int64_t GetFramePts(const AVFrame* aFrame) {
 #endif
 }
 
+static bool IsKeyFrame(const AVFrame* aFrame) {
+#if LIBAVCODEC_VERSION_MAJOR > 61
+  return !!(aFrame->flags & AV_FRAME_FLAG_KEY);
+#else
+  return !!aFrame->key_frame;
+#endif
+}
+
 #if LIBAVCODEC_VERSION_MAJOR >= 58
 void FFmpegVideoDecoder<LIBAV_VER>::DecodeStats::DecodeStart() {
   mDecodeStart = TimeStamp::Now();
@@ -1271,6 +1278,12 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
 #  endif
 
     int res = mLib->avcodec_receive_frame(mCodecContext, mFrame);
+    int64_t fpos =
+#  if LIBAVCODEC_VERSION_MAJOR > 61
+        packet->pos;
+#  else
+        mFrame->pkt_pos;
+#  endif
     if (res == int(AVERROR_EOF)) {
       if (MaybeQueueDrain(aResults)) {
         FFMPEG_LOG("  Output buffer shortage.");
@@ -1306,11 +1319,11 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
             RESULT_DETAIL("HW decoding is slow, switching back to SW decode"));
       }
       if (mUsingV4L2) {
-        rv = CreateImageV4L2(mFrame->pkt_pos, GetFramePts(mFrame),
-                             Duration(mFrame), aResults);
+        rv = CreateImageV4L2(fpos, GetFramePts(mFrame), Duration(mFrame),
+                             aResults);
       } else {
-        rv = CreateImageVAAPI(mFrame->pkt_pos, GetFramePts(mFrame),
-                              Duration(mFrame), aResults);
+        rv = CreateImageVAAPI(fpos, GetFramePts(mFrame), Duration(mFrame),
+                              aResults);
       }
 
       // If VA-API/V4L2 playback failed, just quit. Decoder is going to be
@@ -1323,15 +1336,15 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
       }
 #    elif defined(MOZ_ENABLE_D3D11VA)
       mDecodeStats.UpdateDecodeTimes(Duration(mFrame));
-      rv = CreateImageD3D11(mFrame->pkt_pos, GetFramePts(mFrame),
-                            Duration(mFrame), aResults);
+      rv = CreateImageD3D11(fpos, GetFramePts(mFrame), Duration(mFrame),
+                            aResults);
 #    elif defined(MOZ_WIDGET_ANDROID)
       InputInfo info(aSample);
       info.mTimecode = -1;
       TakeInputInfo(mFrame, info);
       mDecodeStats.UpdateDecodeTimes(info.mDuration);
-      rv = CreateImageMediaCodec(mFrame->pkt_pos, GetFramePts(mFrame),
-                                 info.mTimecode, info.mDuration, aResults);
+      rv = CreateImageMediaCodec(fpos, GetFramePts(mFrame), info.mTimecode,
+                                 info.mDuration, aResults);
 #    else
       mDecodeStats.UpdateDecodeTimes(Duration(mFrame));
       return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
@@ -1341,8 +1354,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
 #  endif
     {
       mDecodeStats.UpdateDecodeTimes(Duration(mFrame));
-      rv = CreateImage(mFrame->pkt_pos, GetFramePts(mFrame), Duration(mFrame),
-                       aResults);
+      rv = CreateImage(fpos, GetFramePts(mFrame), Duration(mFrame), aResults);
     }
     if (NS_FAILED(rv)) {
       return rv;
@@ -1697,7 +1709,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
     v = VideoData::CreateFromImage(
         mInfo.mDisplay, aOffset, TimeUnit::FromMicroseconds(aPts),
         TimeUnit::FromMicroseconds(aDuration), wrapper->AsImage(),
-        !!mFrame->key_frame, TimeUnit::FromMicroseconds(-1));
+        IsKeyFrame(mFrame), TimeUnit::FromMicroseconds(-1));
   }
 #endif
 #if defined(MOZ_WIDGET_GTK) && defined(MOZ_USE_HWDECODE)
@@ -1735,7 +1747,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
         v = VideoData::CreateFromImage(
             mInfo.mDisplay, aOffset, TimeUnit::FromMicroseconds(aPts),
             TimeUnit::FromMicroseconds(aDuration), surface->GetAsImage(),
-            !!mFrame->key_frame, TimeUnit::FromMicroseconds(-1));
+            IsKeyFrame(mFrame), TimeUnit::FromMicroseconds(-1));
       } else {
         FFMPEG_LOG("Failed to uploaded video data to DMABuf");
       }
@@ -1755,7 +1767,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
     Result<already_AddRefed<VideoData>, MediaResult> r =
         VideoData::CreateAndCopyData(
             mInfo, mImageContainer, aOffset, TimeUnit::FromMicroseconds(aPts),
-            TimeUnit::FromMicroseconds(aDuration), b, !!mFrame->key_frame,
+            TimeUnit::FromMicroseconds(aDuration), b, IsKeyFrame(mFrame),
             TimeUnit::FromMicroseconds(mFrame->pkt_dts),
             mInfo.ScaledImageRect(mFrame->width, mFrame->height),
             mImageAllocator);
@@ -1833,11 +1845,10 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageVAAPI(
              mInfo.mTransferFunction
                  ? TransferFunctionToString(mInfo.mTransferFunction.value())
                  : "unknown");
-
   RefPtr<VideoData> vp = VideoData::CreateFromImage(
       mInfo.mDisplay, aOffset, TimeUnit::FromMicroseconds(aPts),
       TimeUnit::FromMicroseconds(aDuration), surface->GetAsImage(),
-      !!mFrame->key_frame, TimeUnit::FromMicroseconds(mFrame->pkt_dts));
+      IsKeyFrame(mFrame), TimeUnit::FromMicroseconds(mFrame->pkt_dts));
 
   if (!vp) {
     return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
@@ -1886,7 +1897,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageV4L2(
   RefPtr<VideoData> vp = VideoData::CreateFromImage(
       mInfo.mDisplay, aOffset, TimeUnit::FromMicroseconds(aPts),
       TimeUnit::FromMicroseconds(aDuration), surface->GetAsImage(),
-      !!mFrame->key_frame, TimeUnit::FromMicroseconds(mFrame->pkt_dts));
+      IsKeyFrame(mFrame), TimeUnit::FromMicroseconds(mFrame->pkt_dts));
 
   if (!vp) {
     return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
@@ -2340,7 +2351,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageD3D11(
 
   RefPtr<VideoData> v = VideoData::CreateFromImage(
       mInfo.mDisplay, aOffset, TimeUnit::FromMicroseconds(aPts),
-      TimeUnit::FromMicroseconds(aDuration), image, !!mFrame->key_frame,
+      TimeUnit::FromMicroseconds(aDuration), image, IsKeyFrame(mFrame),
       TimeUnit::FromMicroseconds(mFrame->pkt_dts));
   if (!v) {
     nsPrintfCString msg("D3D image allocation error");

@@ -43,6 +43,14 @@ and should have a comment explaining why it cannot be automatically moved to
 moz-src:///.
 """.strip()
 
+NEWTAB_WARNING = """
+WARNING: Some files in browser/extensions/newtab/ cannot be automatically
+updated for moz-src. You should manually replace the relevant imports
+with the ImportHelper.import() method as needed.
+
+The affected files are:
+""".strip()
+
 excluded_from_convert_re = list(
     map(
         re.compile,
@@ -70,6 +78,14 @@ def is_excluded_from_convert(path):
             return True
 
     return False
+
+
+NEWTAB_NORM = os.path.normpath("browser/extensions/newtab/")
+
+
+def is_path_newtab_extension(path):
+    """Returns true if the path is in browser/extensions/newtab/"""
+    return os.path.normpath(path).startswith(NEWTAB_NORM)
 
 
 def extract_info_from_mozbuild(command_context, paths):
@@ -273,6 +289,12 @@ def use_moz_src(command_context, paths):
             paths=updated_files,
             fix=True,
         )
+        newtab_files = list(filter(is_path_newtab_extension, updated_files))
+        if len(newtab_files) > 0:
+            _log.log(
+                logging.ERROR,
+                NEWTAB_WARNING + "\n  {}".format("\n  ".join(newtab_files)),
+            )
 
     _log.log(
         logging.INFO, "Done. Make sure to test the result before submitting patches."

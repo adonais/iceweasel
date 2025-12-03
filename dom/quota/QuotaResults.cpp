@@ -8,7 +8,6 @@
 
 #include "ErrorList.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/MacroForEach.h"
 #include "nscore.h"
 
 namespace mozilla::dom::quota {

@@ -12,7 +12,6 @@
 #include "imgIContainer.h"
 #include "imgINotificationObserver.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/StaticPtr.h"
 #include "nsAtomicContainerFrame.h"
 #include "nsDisplayList.h"

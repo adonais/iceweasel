@@ -116,6 +116,7 @@ dependencies {
     implementation project(':components:lib-fetch-httpurlconnection')
     implementation project(":components:lib-publicsuffixlist")
     implementation project(':components:service-digitalassetlinks')
+    implementation project(":components:service-firefox-relay")
     // Add a dependency on glean to simplify the testing workflow
     // for engineers that want to test Gecko metrics exfiltrated via the Glean
     // SDK. See bug 1592935 for more context.

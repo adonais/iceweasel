@@ -929,7 +929,8 @@ export let ProfileDataUpgrader = {
       Services.prefs.setBoolPref("signon.reencryptionNeeded", true);
     }
 
-    if (existingDataVersion < 161) {
+    // Updating from 161 to 162 to trigger the re-migration of the Rusts store.
+    if (existingDataVersion < 162) {
       // Force all logins to be re-migrated to the rust store.
       Services.prefs.setBoolPref("signon.rustMirror.migrationNeeded", true);
     }

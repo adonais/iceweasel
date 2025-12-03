@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.termsofuse.store
 
+import org.mozilla.fenix.termsofuse.TOU_VERSION
 import org.mozilla.fenix.utils.Settings
 
 /**
@@ -11,9 +12,11 @@ import org.mozilla.fenix.utils.Settings
  */
 interface TermsOfUsePromptRepository {
     /**
-     * Updates the 'has accepted terms of use' preference to true.
+     * Updates the Terms of Use related preferences when the user accepts the ToU.
+     *
+     *  @param nowMillis the current time in milliseconds.
      */
-    fun updateHasAcceptedTermsOfUsePreference()
+    fun updateHasAcceptedTermsOfUsePreference(nowMillis: Long = System.currentTimeMillis())
 
     /**
      * Updates the 'has postponed accepting terms of use' preference to true.
@@ -28,31 +31,23 @@ interface TermsOfUsePromptRepository {
     fun updateLastTermsOfUsePromptTimeInMillis(currentTimeInMillis: Long = System.currentTimeMillis())
 
     /**
-     * Updates the 'has clicked the term of use prompt link' preference to true.
-     */
-    fun updateHasClickedTermOfUsePromptLinkPreference()
-
-    /**
-     * Updates the 'has clicked the term of use prompt "remind me later" action' preference to true.
-     */
-    fun updateHasClickedTermOfUsePromptRemindMeLaterPreference()
-
-    /**
      * Increments the number of times the Terms of Use prompt has been displayed by 1.
      */
     fun incrementTermsOfUsePromptDisplayedCount()
 }
 
 /**
- * Default implementation of [TermsOfUsePromptRepository]
+ * Default implementation of [TermsOfUsePromptRepository].
  *
  * @param settings the preferences settings
  */
 class DefaultTermsOfUsePromptRepository(
     private val settings: Settings,
 ) : TermsOfUsePromptRepository {
-    override fun updateHasAcceptedTermsOfUsePreference() {
+    override fun updateHasAcceptedTermsOfUsePreference(nowMillis: Long) {
         settings.hasAcceptedTermsOfService = true
+        settings.termsOfUseAcceptedVersion = TOU_VERSION
+        settings.termsOfUseAcceptedTimeInMillis = nowMillis
     }
 
     override fun updateHasPostponedAcceptingTermsOfUsePreference() {
@@ -61,14 +56,6 @@ class DefaultTermsOfUsePromptRepository(
 
     override fun updateLastTermsOfUsePromptTimeInMillis(currentTimeInMillis: Long) {
         settings.lastTermsOfUsePromptTimeInMillis = currentTimeInMillis
-    }
-
-    override fun updateHasClickedTermOfUsePromptLinkPreference() {
-        settings.hasClickedTermOfUsePromptLink = true
-    }
-
-    override fun updateHasClickedTermOfUsePromptRemindMeLaterPreference() {
-        settings.hasClickedTermOfUsePromptRemindMeLater = true
     }
 
     override fun incrementTermsOfUsePromptDisplayedCount() {

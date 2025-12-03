@@ -159,7 +159,7 @@ nsresult CacheIOThread::Init() {
   // IMPORTANT: The thread now owns this reference, so it's important that we
   // leak it here, otherwise we'll end up with a bad refcount.
   // See the dont_AddRef in ThreadFunc().
-  Unused << self.forget().take();
+  self.forget().leak();
 
   return NS_OK;
 }

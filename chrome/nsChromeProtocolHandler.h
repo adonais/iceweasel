@@ -8,7 +8,6 @@
 
 #include "nsIProtocolHandler.h"
 #include "nsWeakReference.h"
-#include "mozilla/Attributes.h"
 
 #define NS_CHROMEPROTOCOLHANDLER_CID          \
   {/* 61ba33c0-3031-11d3-8cd0-0060b0fc14a3 */ \

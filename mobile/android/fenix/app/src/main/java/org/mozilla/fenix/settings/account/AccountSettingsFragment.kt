@@ -16,6 +16,7 @@ import android.view.View
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import androidx.preference.CheckBoxPreference
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
@@ -54,12 +55,14 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.requirePreference
+import org.mozilla.fenix.settings.showCustomEditTextPreferenceDialog
 
 @SuppressWarnings("TooManyFunctions", "LargeClass")
 class AccountSettingsFragment : PreferenceFragmentCompat() {
     private lateinit var accountManager: FxaAccountManager
     private lateinit var accountSettingsStore: AccountSettingsFragmentStore
     private lateinit var accountSettingsInteractor: AccountSettingsInteractor
+    private val args by navArgs<AccountSettingsFragmentArgs>()
 
     // Navigate away from this fragment when we encounter auth problems or logout events.
     private val accountStateObserver = object : AccountObserver {
@@ -85,6 +88,9 @@ class AccountSettingsFragment : PreferenceFragmentCompat() {
     override fun onResume() {
         super.onResume()
         showToolbar(getString(R.string.preferences_account_settings))
+        args.preferenceToScrollTo?.let {
+            scrollToPreference(it)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -252,6 +258,14 @@ class AccountSettingsFragment : PreferenceFragmentCompat() {
             owner = this,
             autoPause = true,
         )
+    }
+
+    override fun onDisplayPreferenceDialog(preference: Preference) {
+        val handled = showCustomEditTextPreferenceDialog(preference)
+
+        if (!handled) {
+            super.onDisplayPreferenceDialog(preference)
+        }
     }
 
     /**

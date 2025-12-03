@@ -124,6 +124,7 @@ fuzzy(0-21,0-1000000) == feGaussianBlur-alpha-01.svg feGaussianBlur-alpha-01-ref
 == feMorphology-radius-negative-02.svg pass.svg
 == feMorphology-radius-zero-01.svg pass.svg
 == feMorphology-radius-zero-02.svg pass.svg
+== feMorphology-radius-zero-03.svg pass.svg
 
 == feTile-large-01.svg pass.svg
 == feTile-large-02.svg feTile-large-02-ref.svg

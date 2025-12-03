@@ -25,7 +25,6 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/TextUtils.h"
 
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/DebuggerUtilsBinding.h"
@@ -1198,7 +1197,7 @@ nsresult nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest) {
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mRequest, &rv));
   if (NS_SUCCEEDED(rv)) {
     nsAutoCString method;
-    Unused << httpChannel->GetRequestMethod(method);
+    (void)httpChannel->GetRequestMethod(method);
     // XXX does Necko have a way to renavigate POST, etc. without hitting
     // the network?
     if (!method.EqualsLiteral("GET")) {
@@ -2532,7 +2531,7 @@ void nsHtml5StreamParser::ParseAvailableData() {
       }
     }
     if (mLookingForMetaCharset) {
-      Unused << ProcessLookingForMetaCharset(false);
+      (void)ProcessLookingForMetaCharset(false);
     }
   }
 }

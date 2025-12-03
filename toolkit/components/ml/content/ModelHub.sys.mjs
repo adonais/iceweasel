@@ -1500,7 +1500,8 @@ export class ModelHub {
     };
   }
 
-  /** Creates the file URL from the organization, model, and version.
+  /**
+   * Creates the file URL from the organization, model, and version.
    *
    * @param {object} config - The configuration object to be updated.
    * @param {string} config.model - model name
@@ -1522,7 +1523,8 @@ export class ModelHub {
     });
   }
 
-  /** Checks the model and revision inputs.
+  /**
+   * Checks the model and revision inputs.
    *
    * @param { string } model
    * @param { string } revision

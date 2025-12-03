@@ -8,9 +8,7 @@
 #define mozilla_dom_ImageTrack_h
 
 #include "FrameTimeout.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/NotNull.h"
 #include "mozilla/dom/ImageDecoderBinding.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"

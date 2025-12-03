@@ -5,12 +5,6 @@ const { setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
 );
 
-let max_round_trip_time_ms = 90;
-
-const MAX_ROUND_TRIP_TIME_MS = max_round_trip_time_ms;
-
-const MAX_RETRIES = 5;
-
 let PYTHON;
 let PYTHON_BIN;
 let PYTHON_DIR;
@@ -175,54 +169,6 @@ add_task(async function test_subprocess_huge() {
 
   equal(exitCode, 0, "Got expected exit code");
 });
-
-add_task(
-  { skip_if: () => mozinfo.ccov },
-  async function test_subprocess_round_trip_perf() {
-    let roundTripTime = Infinity;
-    for (
-      let i = 0;
-      i < MAX_RETRIES && roundTripTime > MAX_ROUND_TRIP_TIME_MS;
-      i++
-    ) {
-      let proc = await Subprocess.call({
-        command: PYTHON,
-        arguments: ["-u", TEST_SCRIPT, "echo"],
-      });
-
-      const LINE = "I'm a leaf on the wind.\n";
-
-      let now = Date.now();
-      const COUNT = 1000;
-      for (let j = 0; j < COUNT; j++) {
-        let [output] = await Promise.all([
-          read(proc.stdout),
-          proc.stdin.write(LINE),
-        ]);
-
-        // We don't want to log this for every iteration, but we still need
-        // to fail if it goes wrong.
-        if (output !== LINE) {
-          equal(output, LINE, "Got expected output");
-        }
-      }
-
-      roundTripTime = (Date.now() - now) / COUNT;
-
-      await proc.stdin.close();
-
-      let { exitCode } = await proc.wait();
-
-      equal(exitCode, 0, "Got expected exit code");
-    }
-
-    Assert.lessOrEqual(
-      roundTripTime,
-      MAX_ROUND_TRIP_TIME_MS,
-      `Expected round trip time (${roundTripTime}ms) to be less than ${MAX_ROUND_TRIP_TIME_MS}ms`
-    );
-  }
-);
 
 add_task(async function test_subprocess_stderr_default() {
   const LINE1 = "I'm a leaf on the wind.\n";

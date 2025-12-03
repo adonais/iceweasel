@@ -15,10 +15,10 @@ const PREF_PRIVATE_BROWSING_SHORTCUT_CREATED =
 const lazy = {};
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
-  BrowserHandler: ["@mozilla.org/browser/clh;1", "nsIBrowserHandler"],
+  BrowserHandler: ["@mozilla.org/browser/clh;1", Ci.nsIBrowserHandler],
   profileService: [
     "@mozilla.org/toolkit/profile-service;1",
-    "nsIToolkitProfileService",
+    Ci.nsIToolkitProfileService,
   ],
 });
 

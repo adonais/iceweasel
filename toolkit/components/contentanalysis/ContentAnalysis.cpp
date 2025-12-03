@@ -11,7 +11,6 @@
 #include "base/process_util.h"
 #include "GMPUtils.h"  // ToHexString
 #include "MainThreadUtils.h"
-#include "mozilla/Array.h"
 #include "mozilla/Components.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
@@ -3796,7 +3795,7 @@ ContentAnalysis::PrintToPDFToDetermineIfPrintAllowed(
                   nsresult rv = contentAnalysis->GetIsActive(&isActive);
                   // Should not be called if content analysis is not active
                   MOZ_ASSERT(isActive);
-                  Unused << NS_WARN_IF(NS_FAILED(rv));
+                  (void)NS_WARN_IF(NS_FAILED(rv));
                   AutoTArray<RefPtr<nsIContentAnalysisRequest>, 1> requests{
                       contentAnalysisRequest};
                   rv = contentAnalysis->AnalyzeContentRequestsCallback(

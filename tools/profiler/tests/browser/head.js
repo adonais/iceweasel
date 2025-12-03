@@ -69,7 +69,8 @@ async function waitSamplingAndStopProfilerAndGetThreads(contentPid) {
   return stopProfilerNowAndGetThreads(contentPid);
 }
 
-/** This tries to find the service worker thread by targeting a very specific
+/**
+ * This tries to find the service worker thread by targeting a very specific
  * UserTiming marker. Indeed we use performance.mark to add this marker from the
  * service worker's events.
  * Then from this thread we get its parent thread. Indeed the parent thread is

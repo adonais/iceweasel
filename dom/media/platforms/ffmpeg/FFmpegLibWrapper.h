@@ -9,7 +9,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/DefineEnum.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/Types.h"
 
 struct AVCodec;
 struct AVCodecContext;

@@ -32,7 +32,7 @@ class SendGamepadUpdateRunnable final : public Runnable {
   }
   NS_IMETHOD Run() override {
     AssertIsOnBackgroundThread();
-    Unused << mParent->SendGamepadUpdate(mEvent);
+    (void)mParent->SendGamepadUpdate(mEvent);
     return NS_OK;
   }
 };

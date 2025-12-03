@@ -8,7 +8,6 @@
 
 #include "MessagePortParent.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/RefMessageBodyService.h"
 #include "mozilla/dom/SharedMessageBody.h"
@@ -234,7 +233,7 @@ bool MessagePortService::DisentanglePort(
     return false;
   }
 
-  Unused << data->mParent->Entangled(std::move(array));
+  (void)data->mParent->Entangled(std::move(array));
   return true;
 }
 
@@ -352,7 +351,7 @@ bool MessagePortService::PostMessages(
         return false;
       }
 
-      Unused << data->mParent->SendReceiveData(messages);
+      (void)data->mParent->SendReceiveData(messages);
     }
     // `messages` borrows the underlying JSStructuredCloneData so we need to
     // avoid destroying the `mMessages` until after we've destroyed `messages`.

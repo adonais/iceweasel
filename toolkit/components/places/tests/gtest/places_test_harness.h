@@ -31,7 +31,6 @@
 #include "nsWidgetsCID.h"
 #include "prinrval.h"
 #include "prtime.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/PlacesEvent.h"
 #include "mozilla/dom/PlacesObservers.h"
 #include "mozilla/places/INativePlacesEventCallback.h"

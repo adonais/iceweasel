@@ -84,6 +84,7 @@ import mozilla.components.lib.fetch.httpurlconnection.HttpURLConnectionClient
 import mozilla.components.lib.publicsuffixlist.PublicSuffixList
 import mozilla.components.service.digitalassetlinks.local.StatementApi
 import mozilla.components.service.digitalassetlinks.local.StatementRelationChecker
+import mozilla.components.service.fxrelay.FxRelay
 import mozilla.components.service.location.LocationService
 import mozilla.components.service.sync.logins.SyncableLoginsStorage
 import mozilla.components.support.base.android.NotificationsDelegate
@@ -271,6 +272,10 @@ open class DefaultComponents(private val applicationContext: Context) {
         StatementRelationChecker(StatementApi(client))
     }
 
+    val relayService by lazy {
+        FxRelay("https://relay.firefox.com")
+    }
+
     // Intent
     val tabIntentProcessor by lazy {
         TabIntentProcessor(tabsUseCases, searchUseCases.newTabSearch)
@@ -348,6 +353,16 @@ open class DefaultComponents(private val applicationContext: Context) {
             },
             SimpleBrowserMenuItem("Restore after crash") {
                 sessionUseCases.crashRecovery.invoke()
+            },
+            SimpleBrowserMenuItem("Relay") {
+                MainScope().launch {
+                    val addressList = relayService.fetchAllAddresses()
+                    Toast.makeText(
+                        applicationContext,
+                        "Fetched ${addressList.size} addresses",
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
             },
             BrowserMenuDivider(),
         )
@@ -474,7 +489,7 @@ open class DefaultComponents(private val applicationContext: Context) {
     }
 
     val tabsUseCases: TabsUseCases by lazy { TabsUseCases(store) }
-    val downloadsUseCases: DownloadsUseCases by lazy { DownloadsUseCases(store) }
+    val downloadsUseCases: DownloadsUseCases by lazy { DownloadsUseCases(store, applicationContext) }
     val contextMenuUseCases: ContextMenuUseCases by lazy { ContextMenuUseCases(store) }
 
     val crashReporter: CrashReporter by lazy {

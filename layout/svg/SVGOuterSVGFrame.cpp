@@ -731,8 +731,8 @@ void SVGOuterSVGFrame::MaybeSendIntrinsicSizeAndRatioToEmbedder(
   }
 
   if (BrowserChild* browserChild = BrowserChild::GetFrom(docShell)) {
-    Unused << browserChild->SendIntrinsicSizeOrRatioChanged(aIntrinsicSize,
-                                                            aIntrinsicRatio);
+    (void)browserChild->SendIntrinsicSizeOrRatioChanged(aIntrinsicSize,
+                                                        aIntrinsicRatio);
   }
 }
 

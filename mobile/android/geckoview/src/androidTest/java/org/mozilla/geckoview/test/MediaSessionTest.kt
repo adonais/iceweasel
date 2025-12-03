@@ -358,32 +358,32 @@ class MediaSessionTest : BaseSessionTest() {
         mediaSession1!!.pause()
 
         sessionRule.waitForResult(completedStep3)
-        mediaSession1!!.play()
+        mediaSession1.play()
 
         sessionRule.waitForResult(completedStep4)
         sessionRule.waitForResult(completedStep5)
-        mediaSession1!!.pause()
-        mediaSession1!!.nextTrack()
-        mediaSession1!!.play()
+        mediaSession1.pause()
+        mediaSession1.nextTrack()
+        mediaSession1.play()
 
         sessionRule.waitForResult(completedStep6)
-        mediaSession1!!.pause()
-        mediaSession1!!.nextTrack()
-        mediaSession1!!.play()
+        mediaSession1.pause()
+        mediaSession1.nextTrack()
+        mediaSession1.play()
 
         sessionRule.waitForResult(completedStep7)
-        mediaSession1!!.pause()
+        mediaSession1.pause()
 
         sessionRule.waitForResult(completedStep8a)
-        mediaSession1!!.previousTrack()
-        mediaSession1!!.play()
+        mediaSession1.previousTrack()
+        mediaSession1.play()
 
         sessionRule.waitForResult(completedStep8b)
         sessionRule.waitForResult(completedStep9)
-        mediaSession1!!.play()
+        mediaSession1.play()
 
         sessionRule.waitForResult(completedStep10)
-        mediaSession1!!.stop()
+        mediaSession1.stop()
 
         sessionRule.waitForResult(completedStep11)
     }
@@ -476,7 +476,7 @@ class MediaSessionTest : BaseSessionTest() {
         mediaSession1!!.pause()
 
         sessionRule.waitForResult(completedStep3)
-        mediaSession1!!.play()
+        mediaSession1.play()
 
         sessionRule.waitForResult(completedStep4)
         sessionRule.waitForResult(completedStep5)
@@ -607,7 +607,7 @@ class MediaSessionTest : BaseSessionTest() {
 
                 assertThat(
                     "Should be active",
-                    mediaSession1?.isActive,
+                    mediaSession1.isActive,
                     equalTo(true),
                 )
             }
@@ -741,7 +741,7 @@ class MediaSessionTest : BaseSessionTest() {
                 )
                 assertThat(
                     "Should be active",
-                    mediaSession2!!.isActive,
+                    mediaSession2.isActive,
                     equalTo(true),
                 )
             }
@@ -818,9 +818,9 @@ class MediaSessionTest : BaseSessionTest() {
         mediaSession2!!.pause()
         sessionRule.waitForResult(completedStep6)
 
-        mediaSession1!!.pause()
-        mediaSession1!!.nextTrack()
-        mediaSession1!!.play()
+        mediaSession1.pause()
+        mediaSession1.nextTrack()
+        mediaSession1.play()
         sessionRule.waitForResult(completedStep7)
         sessionRule.waitForResult(completedStep8)
     }

@@ -10,6 +10,7 @@ import android.os.IBinder;
 import android.util.Log;
 import androidx.annotation.Nullable;
 import java.util.HashMap;
+import java.util.Objects;
 import org.mozilla.geckoview.BuildConfig;
 import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.GeckoResult;
@@ -84,6 +85,9 @@ public class XpcshellTestRunnerService extends Service {
                     .build())
             .lowMemoryDetection(false) // Avoid unpredictability in tests
             .isolatedProcessEnabled(BuildConfig.MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS)
+            .appZygoteProcessEnabled(
+                Objects.equals(
+                    System.getenv("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE"), "1"))
             .build();
 
     sRuntime = GeckoRuntime.create(this, runtimeSettings);

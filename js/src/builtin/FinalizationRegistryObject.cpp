@@ -272,6 +272,7 @@ void FinalizationRegistryObject::traceWeak(JSTracer* trc) {
   // Trace and update the contents of the registrations map's keys, which
   // are weakly held.
   MOZ_ASSERT(registrations());
+
   for (auto iter = registrations()->modIter(); !iter.done(); iter.next()) {
     auto result = TraceWeakEdge(trc, &iter.getMutable().mutableKey(),
                                 "FinalizationRegistry unregister token");
@@ -285,6 +286,8 @@ void FinalizationRegistryObject::traceWeak(JSTracer* trc) {
       iter.remove();
     }
   }
+
+  registrations()->compact();
 }
 
 /* static */

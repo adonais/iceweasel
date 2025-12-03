@@ -56,7 +56,7 @@ export var SiteDataManager = {
    *        updated. This can be used to e.g. fill a UI that lists sites without
    *        blocking on the entire update to finish.
    * @returns a Promise that resolves when updating is done.
-   **/
+   */
   async updateSites(entryUpdatedCallback) {
     Services.obs.notifyObservers(null, "sitedatamanager:updating-sites");
     // Clear old data and requests first

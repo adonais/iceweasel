@@ -10,6 +10,7 @@ import android.graphics.Color
 import android.os.Looper.getMainLooper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.ExperimentalAndroidComponentsApi
+import mozilla.components.browser.engine.gecko.autofill.RuntimeAddressStructureAccessor
 import mozilla.components.browser.engine.gecko.ext.getAntiTrackingPolicy
 import mozilla.components.browser.engine.gecko.mediaquery.toGeckoValue
 import mozilla.components.browser.engine.gecko.preferences.GeckoPreferenceAccessor
@@ -2773,7 +2774,7 @@ class GeckoEngineTest {
         assertEquals("www.tracker.com", trackerLog.url)
         assertTrue(trackerLog.blockedCategories.contains(TrackingCategory.MOZILLA_SOCIAL))
 
-        var trackerLog2 = trackersLog!![1]
+        var trackerLog2 = trackersLog[1]
         assertFalse(trackerLog2.cookiesHasBeenBlocked)
         assertEquals("www.tracker2.com", trackerLog2.url)
         assertTrue(trackerLog2.loadedCategories.contains(TrackingCategory.MOZILLA_SOCIAL))
@@ -2786,12 +2787,12 @@ class GeckoEngineTest {
         engine.getTrackersLog(mockSession, onSuccess = { trackersLog = it })
         logEntriesResult.complete(createSocialTrackersLogEntryList())
 
-        trackerLog = trackersLog!!.first()
+        trackerLog = trackersLog.first()
         assertTrue(trackerLog.cookiesHasBeenBlocked)
         assertEquals("www.tracker.com", trackerLog.url)
         assertTrue(trackerLog.blockedCategories.contains(TrackingCategory.MOZILLA_SOCIAL))
 
-        trackerLog2 = trackersLog!![1]
+        trackerLog2 = trackersLog[1]
         assertFalse(trackerLog2.cookiesHasBeenBlocked)
         assertEquals("www.tracker2.com", trackerLog2.url)
         assertTrue(trackerLog2.loadedCategories.contains(TrackingCategory.MOZILLA_SOCIAL))
@@ -4480,6 +4481,16 @@ class GeckoEngineTest {
 
         assert(onSuccessCalled) { "Should have successfully completed." }
         assert(!onErrorCalled) { "Should not have called an error." }
+    }
+
+    @Test
+    fun `WHEN getAddressStructure is called THEN addressStructureAccessor should be called`() {
+        var getAddressStructureCalled = false
+        val engine = GeckoEngine(testContext, runtime = runtime, addressStructureAccessor = { region, success, error ->
+            getAddressStructureCalled = true
+        })
+        engine.getAddressStructure("JP", { _ -> }, { _ -> })
+        assertTrue("AddressStructureAccessor should be called,", getAddressStructureCalled)
     }
 
     private fun createSocialTrackersLogEntryList(): List<ContentBlockingController.LogEntry> {

@@ -12,6 +12,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.launch
+import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.PrivateModeUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.EnterEditMode
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ExitEditMode
@@ -70,6 +71,9 @@ class BrowserToolbarSearchStatusSyncMiddleware(
             distinctUntilChangedBy { it.searchState.isSearchActive }
                 .collect {
                     if (it.searchState.isSearchActive) {
+                        context.dispatch(
+                            PrivateModeUpdated(environment?.browsingModeManager?.mode?.isPrivate == true),
+                        )
                         context.dispatch(EnterEditMode)
                     } else {
                         context.dispatch(ExitEditMode)

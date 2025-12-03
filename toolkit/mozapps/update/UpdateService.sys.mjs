@@ -32,31 +32,31 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "AUS",
   "@mozilla.org/updates/update-service;1",
-  "nsIApplicationUpdateService"
+  Ci.nsIApplicationUpdateService
 );
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "UM",
   "@mozilla.org/updates/update-manager;1",
-  "nsIUpdateManager"
+  Ci.nsIUpdateManager
 );
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "CheckSvc",
   "@mozilla.org/updates/update-checker;1",
-  "nsIUpdateChecker"
+  Ci.nsIUpdateChecker
 );
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "UpdateServiceStub",
   "@mozilla.org/updates/update-service-stub;1",
-  "nsIApplicationUpdateServiceStub"
+  Ci.nsIApplicationUpdateServiceStub
 );
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "UpdateMutex",
   "@mozilla.org/updates/update-mutex;1",
-  "nsIUpdateMutex"
+  Ci.nsIUpdateMutex
 );
 
 const UPDATESERVICE_CID = Components.ID(
@@ -826,7 +826,7 @@ function getCanStageUpdates(transient = true) {
   return lazy.gCanStageUpdatesSession;
 }
 
-/*
+/**
  * Whether or not the application can use BITS to download updates.
  *
  * @param {boolean} [transient] Whether transient factors such as the update

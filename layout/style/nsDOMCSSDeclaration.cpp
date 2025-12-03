@@ -217,7 +217,7 @@ nsDOMCSSDeclaration::GetParsingEnvironmentForRule(const css::Rule* aRule,
     return {
         sheet->URLData(),
         document->GetCompatibilityMode(),
-        document->CSSLoader(),
+        document->GetExistingCSSLoader(),
         aRuleType,
     };
   }

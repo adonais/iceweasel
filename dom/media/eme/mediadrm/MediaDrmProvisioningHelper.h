@@ -45,7 +45,7 @@ class MediaDrmProvisioningHelper final : public dom::PromiseNativeHandler {
       return;
     }
 
-    Unused << mEventTarget->Dispatch(NS_NewRunnableFunction(
+    (void)mEventTarget->Dispatch(NS_NewRunnableFunction(
         __func__, [result = std::move(aResult),
                    resolver = std::move(mResolver)]() { resolver(result); }));
     mResolver = nullptr;

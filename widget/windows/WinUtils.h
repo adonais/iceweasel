@@ -35,7 +35,6 @@
 #include "nsIWidget.h"
 #include "nsWindowsHelpers.h"
 
-#include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/LazyIdleThread.h"
 #include "mozilla/UniquePtr.h"
@@ -217,7 +216,6 @@ class WinUtils {
    */
   static double SystemScaleFactor();
 
-  static bool IsPerMonitorDPIAware();
   /**
    * Get the DPI of the given monitor if it's per-monitor DPI aware, otherwise
    * return the system DPI.
@@ -569,6 +567,8 @@ class WinUtils {
   static void GetClipboardFormatAsString(UINT aFormat, nsAString& aOutput);
 
   static nsresult GetProcessImageName(DWORD aProcessId, nsAString& aName);
+
+  static void InvalidateWindowPreviews();
 
  private:
   static WhitelistVec BuildWhitelist();

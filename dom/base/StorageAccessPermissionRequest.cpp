@@ -99,8 +99,8 @@ StorageAccessPermissionRequest::MaybeDelayAutomaticGrants() {
       p->Reject(false, __func__);
     } else {
       // Leak the references here! We'll release them inside the callback.
-      Unused << timer.forget();
-      Unused << promise.forget();
+      timer.forget().leak();
+      promise.forget().leak();
     }
   } else {
     p->Resolve(false, __func__);

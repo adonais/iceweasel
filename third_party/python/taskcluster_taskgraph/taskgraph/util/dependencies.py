@@ -2,7 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from typing import Dict, Iterator, Optional
+from collections.abc import Iterator
+from typing import Optional
 
 from taskgraph.task import Task
 from taskgraph.transforms.base import TransformConfig
@@ -47,7 +48,7 @@ def group_by_attribute(config, tasks, attr):
     return groups.values()
 
 
-def get_dependencies(config: TransformConfig, task: Dict) -> Iterator[Task]:
+def get_dependencies(config: TransformConfig, task: dict) -> Iterator[Task]:
     """Iterate over all dependencies as ``Task`` objects.
 
     Args:
@@ -67,7 +68,7 @@ def get_dependencies(config: TransformConfig, task: Dict) -> Iterator[Task]:
             yield dep
 
 
-def get_primary_dependency(config: TransformConfig, task: Dict) -> Optional[Task]:
+def get_primary_dependency(config: TransformConfig, task: dict) -> Optional[Task]:
     """Return the ``Task`` object associated with the primary dependency,
     which is assumed to be available in the ``primary-dependency`` attribute.
     (Which is always the case for tasks created with ``from_deps``.)

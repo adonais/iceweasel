@@ -113,6 +113,13 @@ extern bool SetLengthProperty(JSContext* cx, HandleObject obj, uint32_t length);
 extern bool GetElements(JSContext* cx, HandleObject aobj, uint32_t length,
                         js::Value* vp);
 
+/*
+ * If the property at the given index exists, get its value into |vp| and set
+ * |*hole| to false. Otherwise set |*hole| to true and |vp| to Undefined.
+ */
+extern bool HasAndGetElement(JSContext* cx, HandleObject obj, uint64_t index,
+                             bool* hole, MutableHandleValue vp);
+
 /* Natives exposed for optimization by the interpreter and JITs. */
 
 extern bool array_includes(JSContext* cx, unsigned argc, js::Value* vp);

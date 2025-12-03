@@ -21,7 +21,6 @@
 #include "nsNavHistoryQuery.h"
 #include "Database.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/intl/Collator.h"
 #include "mozilla/UniquePtr.h"
 #include "mozIStorageVacuumParticipant.h"

@@ -17,7 +17,6 @@
 #include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/Result.h"
 #include "nsISupportsImpl.h"
 
 namespace mozilla {

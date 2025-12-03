@@ -10,6 +10,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/MediaControlKeySource.h"
 #include "mozilla/dom/BrowsingContextWebProgress.h"
+#include "mozilla/dom/EntryList.h"
 #include "mozilla/dom/FeaturePolicy.h"
 #include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/Promise.h"
@@ -128,7 +129,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   nsISHistory* GetSessionHistory();
   SessionHistoryEntry* GetActiveSessionHistoryEntry();
-  void SetActiveSessionHistoryEntry(SessionHistoryEntry* aEntry);
+  void SetActiveSessionHistoryEntryFromBFCache(SessionHistoryEntry* aEntry);
 
   bool ManuallyManagesActiveness() const;
 
@@ -337,6 +338,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   void SynchronizeLayoutHistoryState();
 
+  void SynchronizeNavigationAPIState(nsIStructuredCloneContainer* aState);
+
   void ResetScalingZoom();
 
   void SetContainerFeaturePolicy(
@@ -450,6 +453,10 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   already_AddRefed<BounceTrackingState> GetBounceTrackingState();
 
   bool CanOpenModalPicker();
+
+  static bool ShouldEnforceParentalControls();
+
+  void MaybeReconstructActiveEntryList();
 
  protected:
   // Called when the browsing context is being discarded.
@@ -580,6 +587,11 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   already_AddRefed<nsDocShellLoadState> CreateLoadInfo(
       SessionHistoryEntry* aEntry);
 
+  void GetContiguousEntriesForLoad(LoadingSessionHistoryInfo& aLoadingInfo,
+                                   const RefPtr<SessionHistoryEntry>& aEntry);
+
+  EntryList* GetActiveEntries();
+
   // XXX(farre): Store a ContentParent pointer here rather than mProcessId?
   // Indicates which process owns the docshell.
   uint64_t mProcessId;
@@ -620,7 +632,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     RefPtr<SessionHistoryEntry> mEntry;
   };
   nsTArray<LoadingSessionHistoryEntry> mLoadingEntries;
-  LinkedList<SessionHistoryEntry> mActiveEntryList;
+  RefPtr<EntryList> mActiveEntryList;
   RefPtr<SessionHistoryEntry> mActiveEntry;
 
   RefPtr<nsSecureBrowserUI> mSecureBrowserUI;

@@ -4,10 +4,10 @@
 
 @import url("chrome://browser/content/profiles/profiles-pages.css");
 
-#profile-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xlarge);
+:host(:not([iscopy])) {
+  #profile-content {
+    gap: var(--space-xlarge);
+  }
 }
 
 #profile-content h1[data-l10n-id="edit-profile-page-header"] {

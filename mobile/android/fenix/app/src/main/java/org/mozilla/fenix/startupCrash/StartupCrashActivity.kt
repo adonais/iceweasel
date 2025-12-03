@@ -14,7 +14,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import mozilla.components.lib.crash.CrashReporter
 import org.mozilla.fenix.R
-import org.mozilla.fenix.crashes.StartupCrashCanary
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -39,8 +38,6 @@ class StartupCrashActivity : AppCompatActivity() {
                                 settings = LocalContext.current.settings(),
                                 crashReporter = installCrashReporter(),
                                 restartHandler = ::restartFenix,
-                                startupCrashCanaryCache =
-                                    StartupCrashCanary.build(applicationContext),
                             ),
                         ),
                     ),

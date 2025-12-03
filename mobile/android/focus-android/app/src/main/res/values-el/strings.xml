@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -149,7 +156,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>Το %1$s σάς δίνει τον έλεγχο.</p> <p>Χρησιμοποιήστε το για: <ul> <li>Αναζήτηση και περιήγηση</li> <li>Φραγή ιχνηλατών (ή αποδοχή, ενημερώνοντας τις ρυθμίσεις)</li> <li>Διαγραφή των cookie και του ιστορικού αναζητήσεων και περιήγησης</li> </ul> </p> <p>Το %1$s αναπτύσσεται από τη Mozilla. Αποστολή μας είναι ένα υγιές και ανοικτό διαδίκτυο.<br/> <a href=\"%2$s\">Μάθετε περισσότερα</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>Το %1$s σάς δίνει τον έλεγχο.</p>\n<p>Χρησιμοποιήστε το για:\n<ul>\n<li>Αναζήτηση και περιήγηση</li>\n<li>Φραγή ιχνηλατών (ή αποδοχή, ενημερώνοντας τις ρυθμίσεις)</li>\n<li>Διαγραφή των cookie και του ιστορικού αναζητήσεων και περιήγησης</li>\n</ul> </p>\n<p>Το %1$s αναπτύσσεται από τη Mozilla. Αποστολή μας είναι ένα υγιές και ανοικτό διαδίκτυο.<br/>\n<a href=\"%2$s\">Μάθετε περισσότερα</a></p>]]></string>
   <!-- A link to SUMO at the bottom of About Focus screen. -->
   <string name="about_screen_learn_more">Μάθετε περισσότερα</string>
   <!-- Header for the Privacy and Security settings menu -->
@@ -875,7 +882,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Ενδέχεται να υπάρχει πρόβλημα με τη διαμόρφωση του διακομιστή ή κάποιος ίσως προσπαθεί να μιμηθεί τον διακομιστή. <br/><br/> Εάν έχετε συνδεθεί επιτυχώς σε αυτόν τον διακομιστή στο παρελθόν, το σφάλμα είναι μάλλον προσωρινό.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Κάποιος ίσως προσπαθεί να μιμηθεί τον ιστότοπο και θα ήταν επικίνδυνο να συνεχίσετε.</label> <br><br> <label>Το %1$s δεν εμπιστεύεται το <b>%2$s</b>, επειδή ο εκδότης του πιστοποιητικού του είναι άγνωστος, το πιστοποιητικό είναι αυτοϋπογεγραμμένο ή ο διακομιστής δεν στέλνει τα σωστά ενδιάμεσα πιστοποιητικά.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Κάποιος ίσως προσπαθεί να μιμηθεί τον ιστότοπο και θα ήταν επικίνδυνο να συνεχίσετε.</label> <br><br>\n<label>Το %1$s δεν εμπιστεύεται το <b>%2$s</b>, επειδή ο εκδότης του πιστοποιητικού του είναι άγνωστος, το πιστοποιητικό είναι αυτοϋπογεγραμμένο ή ο διακομιστής δεν στέλνει τα σωστά ενδιάμεσα πιστοποιητικά.</label>]]></string>
   <!--
     Sessions List
 

@@ -142,6 +142,16 @@ absl::optional<base::win::AccessToken> CreateRestrictedToken(
         restricted_token.AddUserSidForDenyOnly();
       }
       break;
+    case USER_LOCKDOWN_WITH_TRAVERSE:
+      if (use_restricting_sids) {
+        restricted_token.AddRestrictingSid(base::win::WellKnownSid::kNull);
+        if (unique_restricted_sid) {
+          restricted_token.AddRestrictingSid(*unique_restricted_sid);
+        }
+      } else {
+        restricted_token.AddUserSidForDenyOnly();
+      }
+      break;
     case USER_LOCKDOWN:
       remove_traverse_privilege = true;
       if (use_restricting_sids) {

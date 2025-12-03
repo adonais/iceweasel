@@ -58,7 +58,7 @@ void HttpConnectionBase::SetTrafficCategory(HttpTrafficCategory aCategory) {
       mTrafficCategory.Contains(aCategory)) {
     return;
   }
-  Unused << mTrafficCategory.AppendElement(aCategory);
+  (void)mTrafficCategory.AppendElement(aCategory);
 }
 
 void HttpConnectionBase::ChangeConnectionState(ConnectionState aState) {

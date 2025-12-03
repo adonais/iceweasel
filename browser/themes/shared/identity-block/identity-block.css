@@ -307,8 +307,10 @@
 
     list-style-image: url(chrome://browser/skin/trust-icon-active.svg);
 
-    &.insecure {
+    &:where(.insecure) {
       list-style-image: url(chrome://browser/skin/trust-icon-insecure.svg);
+      background-color: var(--urlbar-box-bgcolor);
+      color: var(--urlbar-box-text-color);
     }
 
     &.inactive {
@@ -326,5 +328,9 @@
     .urlbar-input-container[pageproxystate="valid"] > &:not(.chickletShown) {
       display: flex;
     }
+  }
+
+  #trust-icon-container:not(.insecure) > #trust-label {
+    display: none;
   }
 }

@@ -9,7 +9,6 @@
 
 #include "SpeechRecognitionAlternative.h"
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"

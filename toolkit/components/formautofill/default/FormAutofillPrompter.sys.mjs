@@ -826,7 +826,7 @@ export class AddressEditDoorhanger extends AutofillDoorhanger {
     return div;
   }
 
-  /*
+  /**
    * This method generates a unique input ID using the field name of the address field.
    *
    * @param {string} fieldName The name of the address field

@@ -10,7 +10,6 @@
 #include "ClientSourceChild.h"
 #include "ClientState.h"
 #include "ReferrerInfo.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "nsDocShellLoadState.h"

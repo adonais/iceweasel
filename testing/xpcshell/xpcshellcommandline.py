@@ -271,6 +271,13 @@ def add_common_arguments(parser):
         "and CPU x 4 when running in automation",
     )
     parser.add_argument(
+        "--timeout-factor",
+        type=float,
+        dest="timeoutFactor",
+        default=1.0,
+        help="multiplier for test timeout values",
+    )
+    parser.add_argument(
         "--variant",
         action="store",
         default="",

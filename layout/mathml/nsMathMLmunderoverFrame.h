@@ -7,7 +7,6 @@
 #ifndef nsMathMLmunderoverFrame_h___
 #define nsMathMLmunderoverFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "nsIReflowCallback.h"
 #include "nsMathMLContainerFrame.h"
 

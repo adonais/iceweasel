@@ -152,7 +152,7 @@ void JSActorManager::ReceiveRawMessage(
   // reported.
   ErrorResult error;
   auto autoSetException =
-      MakeScopeExit([&] { Unused << error.MaybeSetPendingException(cx); });
+      MakeScopeExit([&] { (void)error.MaybeSetPendingException(cx); });
 
   // If an async stack was provided, set up our async stack state.
   JS::Rooted<JSObject*> stack(cx);

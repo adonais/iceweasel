@@ -16,6 +16,7 @@
 #include "mozilla/dom/SanitizerBinding.h"
 #include "mozilla/dom/SanitizerDefaultConfig.h"
 #include "nsContentUtils.h"
+#include "nsFmtString.h"
 #include "nsGenericHTMLElement.h"
 #include "nsIContentInlines.h"
 #include "nsNameSpaceManager.h"
@@ -189,26 +190,9 @@ void Sanitizer::SetDefaultConfig() {
   ClearOnShutdown(&sDefaultAttributes);
 }
 
-auto& GetAsSanitizerElementNamespace(
-    const StringOrSanitizerElementNamespace& aElement) {
-  return aElement.GetAsSanitizerElementNamespace();
-}
-auto& GetAsSanitizerElementNamespace(
-    const OwningStringOrSanitizerElementNamespace& aElement) {
-  return aElement.GetAsSanitizerElementNamespace();
-}
-auto& GetAsSanitizerElementNamespace(
-    const StringOrSanitizerElementNamespaceWithAttributes& aElement) {
-  return aElement.GetAsSanitizerElementNamespaceWithAttributes();
-}
-auto& GetAsSanitizerElementNamespace(
-    const OwningStringOrSanitizerElementNamespaceWithAttributes& aElement) {
-  return aElement.GetAsSanitizerElementNamespaceWithAttributes();
-}
-
 // https://wicg.github.io/sanitizer-api/#canonicalize-a-sanitizer-element
 template <typename SanitizerElement>
-static CanonicalName CanonicalizeElement(const SanitizerElement& aElement) {
+static CanonicalElement CanonicalizeElement(const SanitizerElement& aElement) {
   // return the result of canonicalize a sanitizer name with element and the
   // HTML namespace as the default namespace.
 
@@ -219,12 +203,12 @@ static CanonicalName CanonicalizeElement(const SanitizerElement& aElement) {
   // → defaultNamespace]».
   if (aElement.IsString()) {
     RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(aElement.GetAsString());
-    return CanonicalName(nameAtom, nsGkAtoms::nsuri_xhtml);
+    return CanonicalElement(nameAtom, nsGkAtoms::nsuri_xhtml);
   }
 
   // Step 3. Assert: name is a dictionary and both name["name"] and
   // name["namespace"] exist.
-  const auto& elem = GetAsSanitizerElementNamespace(aElement);
+  const auto& elem = GetAsDictionary(aElement);
   MOZ_ASSERT(!elem.mName.IsVoid());
 
   // Step 4. If name["namespace"] is the empty string, then set it to null.
@@ -239,12 +223,12 @@ static CanonicalName CanonicalizeElement(const SanitizerElement& aElement) {
   //  )
   // ]».
   RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(elem.mName);
-  return CanonicalName(nameAtom, namespaceAtom);
+  return CanonicalElement(nameAtom, namespaceAtom);
 }
 
 // https://wicg.github.io/sanitizer-api/#canonicalize-a-sanitizer-attribute
 template <typename SanitizerAttribute>
-static CanonicalName CanonicalizeAttribute(
+static CanonicalAttribute CanonicalizeAttribute(
     const SanitizerAttribute& aAttribute) {
   // return the result of canonicalize a sanitizer name with attribute and
   // null as the default namespace.
@@ -256,7 +240,7 @@ static CanonicalName CanonicalizeAttribute(
   // → defaultNamespace]».
   if (aAttribute.IsString()) {
     RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(aAttribute.GetAsString());
-    return CanonicalName(nameAtom, nullptr);
+    return CanonicalAttribute(nameAtom, nullptr);
   }
 
   // Step 3. Assert: name is a dictionary and both name["name"] and
@@ -276,17 +260,22 @@ static CanonicalName CanonicalizeAttribute(
   //  )
   // ]».
   RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(attr.mName);
-  return CanonicalName(nameAtom, namespaceAtom);
+  return CanonicalAttribute(nameAtom, namespaceAtom);
 }
 
 // https://wicg.github.io/sanitizer-api/#canonicalize-a-sanitizer-element-with-attributes
+//
+// If aErrorMsg is not nullptr, this function will abort for duplicate
+// attributes and set an error message, but otherwise they are ignored.
 template <typename SanitizerElementWithAttributes>
-static CanonicalElementWithAttributes CanonicalizeElementWithAttributes(
-    const SanitizerElementWithAttributes& aElement) {
+static CanonicalElementAttributes CanonicalizeElementAttributes(
+    const SanitizerElementWithAttributes& aElement,
+    nsACString* aErrorMsg = nullptr) {
   // Step 1. Let result be the result of canonicalize a sanitizer element with
   // element.
-  CanonicalElementWithAttributes result =
-      CanonicalElementWithAttributes(CanonicalizeElement(aElement));
+  //
+  // NOTE: CanonicalizeElement is the responsibility of the caller.
+  CanonicalElementAttributes result{};
 
   // Step 2. If element is a dictionary:
   if (aElement.IsSanitizerElementNamespaceWithAttributes()) {
@@ -295,13 +284,21 @@ static CanonicalElementWithAttributes CanonicalizeElementWithAttributes(
     // Step 2.1. If element["attributes"] exists:
     if (elem.mAttributes.WasPassed()) {
       // Step 2.1.1. Let attributes be « ».
-      ListSet<CanonicalName> attributes;
+      CanonicalAttributeSet attributes;
 
       // Step 2.1.2. For each attribute of element["attributes"]:
       for (const auto& attribute : elem.mAttributes.Value()) {
         // Step 2.1.2.1. Append the result of canonicalize a sanitizer attribute
         // with attribute to attributes.
-        attributes.Insert(CanonicalizeAttribute(attribute));
+        CanonicalAttribute canonicalAttr = CanonicalizeAttribute(attribute);
+        if (!attributes.EnsureInserted(canonicalAttr)) {
+          if (aErrorMsg) {
+            aErrorMsg->Assign(nsFmtCString(
+                FMT_STRING("Duplicate attribute {} in 'attributes' of {}."),
+                canonicalAttr, CanonicalizeElement(aElement)));
+            return CanonicalElementAttributes();
+          }
+        }
       }
 
       // Step 2.1.3. Set result["attributes"] to attributes.
@@ -311,13 +308,22 @@ static CanonicalElementWithAttributes CanonicalizeElementWithAttributes(
     // Step 2.2. If element["attributes"] exists:
     if (elem.mRemoveAttributes.WasPassed()) {
       // Step 2.2.1. Let attributes be « ».
-      ListSet<CanonicalName> attributes;
+      CanonicalAttributeSet attributes;
 
       // Step 2.2.2. For each attribute of element["removeAttributes"]:
       for (const auto& attribute : elem.mRemoveAttributes.Value()) {
         // Step 2.2.2.1. Append the result of canonicalize a sanitizer attribute
         // with attribute to attributes.
-        attributes.Insert(CanonicalizeAttribute(attribute));
+        CanonicalAttribute canonicalAttr = CanonicalizeAttribute(attribute);
+        if (!attributes.EnsureInserted(canonicalAttr)) {
+          if (aErrorMsg) {
+            aErrorMsg->Assign(nsFmtCString(
+                FMT_STRING(
+                    "Duplicate attribute {} in 'removeAttributes' of {}."),
+                canonicalAttr, CanonicalizeElement(aElement)));
+            return CanonicalElementAttributes();
+          }
+        }
       }
 
       // Step 2.2.3. Set result["removeAttributes"] to attributes.
@@ -329,7 +335,8 @@ static CanonicalElementWithAttributes CanonicalizeElementWithAttributes(
   // result["removeAttributes"] exist:
   if (!result.mAttributes && !result.mRemoveAttributes) {
     // Step 3.1. Set result["removeAttributes"] to « ».
-    result.mRemoveAttributes = Some(ListSet<CanonicalName>());
+    CanonicalAttributeSet set{};
+    result.mRemoveAttributes = Some(std::move(set));
   }
 
   // Step 4. Return result.
@@ -337,8 +344,12 @@ static CanonicalElementWithAttributes CanonicalizeElementWithAttributes(
 }
 
 // https://wicg.github.io/sanitizer-api/#configuration-canonicalize
-void Sanitizer::CanonicalizeConfiguration(
-    const SanitizerConfig& aConfig, bool aAllowCommentsAndDataAttributes) {
+void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
+                                          bool aAllowCommentsAndDataAttributes,
+                                          ErrorResult& aRv) {
+  // This function is only called while constructing a new Sanitizer object.
+  AssertNoLists();
+
   // Step 1. If neither configuration["elements"] nor
   // configuration["removeElements"] exist, then set
   // configuration["removeElements"] to « [] ».
@@ -357,82 +368,121 @@ void Sanitizer::CanonicalizeConfiguration(
   // Step 3. If configuration["elements"] exists:
   if (aConfig.mElements.WasPassed()) {
     // Step 3.1. Let elements be « [] »
-    nsTArray<CanonicalElementWithAttributes> elements;
+    CanonicalElementMap elements;
 
+    nsAutoCString errorMsg;
     // Step 3.2. For each element of configuration["elements"] do:
     for (const auto& element : aConfig.mElements.Value()) {
       // Step 3.3.2.1. Append the result of canonicalize a sanitizer element
       // with attributes element to elements.
-      elements.AppendElement(CanonicalizeElementWithAttributes(element));
+      CanonicalElement elementName = CanonicalizeElement(element);
+      if (elements.Contains(elementName)) {
+        aRv.ThrowTypeError(nsFmtCString(
+            FMT_STRING("Duplicate element {} in 'elements'."), elementName));
+        return;
+      }
+
+      CanonicalElementAttributes elementAttributes =
+          CanonicalizeElementAttributes(element, &errorMsg);
+      if (!errorMsg.IsEmpty()) {
+        aRv.ThrowTypeError(errorMsg);
+        return;
+      }
+
+      elements.InsertOrUpdate(elementName, std::move(elementAttributes));
     }
 
     // Step 3.3. Set configuration["elements"] to elements.
-    mElements = Some(ListSet(std::move(elements)));
+    mElements = Some(std::move(elements));
   }
 
   // Step 4. If configuration["removeElements"] exists:
   if (aConfig.mRemoveElements.WasPassed()) {
     // Step 4.1. Let elements be « [] »
-    nsTArray<CanonicalName> elements;
+    CanonicalElementSet elements;
 
     // Step 4.2. For each element of configuration["removeElements"] do:
     for (const auto& element : aConfig.mRemoveElements.Value()) {
       // Step 4.2.1. Append the result of canonicalize a sanitizer element
       // element to elements.
-      elements.AppendElement(CanonicalizeElement(element));
+      CanonicalElement canonical = CanonicalizeElement(element);
+      if (!elements.EnsureInserted(canonical)) {
+        aRv.ThrowTypeError(nsFmtCString(
+            FMT_STRING("Duplicate element {} in 'removeElements'."),
+            canonical));
+        return;
+      }
     }
 
     // Step 4.3. Set configuration["removeElements"] to elements.
-    mRemoveElements = Some(ListSet(std::move(elements)));
+    mRemoveElements = Some(std::move(elements));
   }
 
   // Step 5. If configuration["replaceWithChildrenElements"] exists:
   if (aConfig.mReplaceWithChildrenElements.WasPassed()) {
     // Step 5.1. Let elements be « [] »
-    nsTArray<CanonicalName> elements;
+    CanonicalElementSet elements;
 
     // Step 5.2. For each element of
     // configuration["replaceWithChildrenElements"] do:
     for (const auto& element : aConfig.mReplaceWithChildrenElements.Value()) {
       // Step 5.2.1. Append the result of canonicalize a sanitizer element
       // element to elements.
-      elements.AppendElement(CanonicalizeElement(element));
+      CanonicalElement canonical = CanonicalizeElement(element);
+      if (!elements.EnsureInserted(canonical)) {
+        aRv.ThrowTypeError(nsFmtCString(
+            FMT_STRING(
+                "Duplicate element {} in 'replaceWithChildrenElements'."),
+            canonical));
+        return;
+      }
     }
 
     // Step 5.3. Set configuration["replaceWithChildrenElements"] to elements.
-    mReplaceWithChildrenElements = Some(ListSet(std::move(elements)));
+    mReplaceWithChildrenElements = Some(std::move(elements));
   }
 
   // Step 6. If configuration["attributes"] exists:
   if (aConfig.mAttributes.WasPassed()) {
     // Step 6.1. Let attributes be « [] »
-    nsTArray<CanonicalName> attributes;
+    CanonicalAttributeSet attributes;
 
     // Step 6.2. For each attribute of configuration["attributes"] do:
     for (const auto& attribute : aConfig.mAttributes.Value()) {
       // Step 6.2.1. Append the result of canonicalize a sanitizer attribute
       // attribute to attributes.
-      attributes.AppendElement(CanonicalizeAttribute(attribute));
+      CanonicalAttribute canonical = CanonicalizeAttribute(attribute);
+      if (!attributes.EnsureInserted(canonical)) {
+        aRv.ThrowTypeError(nsFmtCString(
+            FMT_STRING("Duplicate attribute {} in 'attributes'."), canonical));
+        return;
+      }
     }
 
     // Step 6.3. Set configuration["attributes"] to attributes.
-    mAttributes = Some(ListSet(std::move(attributes)));
+    mAttributes = Some(std::move(attributes));
   }
 
   // Step 7. If configuration["removeAttributes"] exists:
   if (aConfig.mRemoveAttributes.WasPassed()) {
     // Step 7.1. Let attributes be « [] »
-    nsTArray<CanonicalName> attributes;
+    CanonicalAttributeSet attributes;
 
     // Step 7.2. For each attribute of configuration["removeAttributes"] do:
     for (const auto& attribute : aConfig.mRemoveAttributes.Value()) {
       // Step 7.2.2. Append the result of canonicalize a sanitizer attribute
       // attribute to attributes.
-      attributes.AppendElement(CanonicalizeAttribute(attribute));
+      CanonicalAttribute canonical = CanonicalizeAttribute(attribute);
+      if (!attributes.EnsureInserted(canonical)) {
+        aRv.ThrowTypeError(nsFmtCString(
+            FMT_STRING("Duplicate attribute {} in 'removeAttributes'."),
+            canonical));
+        return;
+      }
     }
 
     // Step 7.3. Set configuration["removeAttributes"] to attributes.
-    mRemoveAttributes = Some(ListSet(std::move(attributes)));
+    mRemoveAttributes = Some(std::move(attributes));
   }
 
   // Step 8. If configuration["comments"] does not exist, then set
@@ -463,7 +513,7 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
              "Must have either due to CanonicalizeConfiguration");
   if (mElements && mRemoveElements) {
     aRv.ThrowTypeError(
-        "'elements' and 'removeElements' are not allowed at the same time");
+        "'elements' and 'removeElements' are not allowed at the same time.");
     return;
   }
 
@@ -474,7 +524,7 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
   if (mAttributes && mRemoveAttributes) {
     aRv.ThrowTypeError(
         "'attributes' and 'removeAttributes' are not allowed at the same "
-        "time");
+        "time.");
     return;
   }
 
@@ -486,37 +536,21 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
   // Step 4. None of config[elements], config[removeElements],
   // config[replaceWithChildrenElements], config[attributes], or
   // config[removeAttributes], if they exist, has duplicates.
-  if (mElements && mElements->HasDuplicates()) {
-    aRv.ThrowTypeError("Duplicate element in 'elements'");
-    return;
-  }
-  if (mRemoveElements && mRemoveElements->HasDuplicates()) {
-    aRv.ThrowTypeError("Duplicate element in 'removeElement'");
-    return;
-  }
-  if (mReplaceWithChildrenElements &&
-      mReplaceWithChildrenElements->HasDuplicates()) {
-    aRv.ThrowTypeError("Duplicate element in 'replaceWithChildrenElements'");
-    return;
-  }
-  if (mAttributes && mAttributes->HasDuplicates()) {
-    aRv.ThrowTypeError("Duplicate attribute in 'attributes'");
-    return;
-  }
-  if (mRemoveAttributes && mRemoveAttributes->HasDuplicates()) {
-    aRv.ThrowTypeError("Duplicate attribute in 'removeAttributes'");
-    return;
-  }
+  //
+  // NOTE: The Sanitizer::CanonicalizeConfiguration method would have already
+  // thrown an error for duplicate elements/attributes by this point. The map
+  // and sets can't have duplicates by definition.
 
   // Step 5. If both config[elements] and config[replaceWithChildrenElements]
   // exist, then the intersection of config[elements] and
   // config[replaceWithChildrenElements] is empty.
   if (mElements && mReplaceWithChildrenElements) {
-    for (const CanonicalElementWithAttributes& name : mElements->Values()) {
+    for (const CanonicalElement& name : mElements->Keys()) {
       if (mReplaceWithChildrenElements->Contains(name)) {
         aRv.ThrowTypeError(
-            "Element can't be in both 'elements' and "
-            "'replaceWithChildrenElements'");
+            nsFmtCString(FMT_STRING("Element {} can't be in both 'elements' "
+                                    "and 'replaceWithChildrenElements'."),
+                         name));
         return;
       }
     }
@@ -526,11 +560,12 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
   // config[replaceWithChildrenElements] exist, then the intersection of
   // config[removeElements] and config[replaceWithChildrenElements] is empty.
   if (mRemoveElements && mReplaceWithChildrenElements) {
-    for (const CanonicalName& name : mRemoveElements->Values()) {
+    for (const CanonicalElement& name : *mRemoveElements) {
       if (mReplaceWithChildrenElements->Contains(name)) {
-        aRv.ThrowTypeError(
-            "Element can't be in both 'removeElements' and "
-            "'replaceWithChildrenElements'");
+        aRv.ThrowTypeError(nsFmtCString(
+            FMT_STRING("Element {} can't be in both 'removeElements' and "
+                       "'replaceWithChildrenElements'."),
+            name));
         return;
       }
     }
@@ -541,25 +576,27 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
     // Step 7.1. If config[elements] exists:
     if (mElements) {
       // Step 7.1.1 For any element in config[elements]:
-      for (const CanonicalElementWithAttributes& elem : mElements->Values()) {
+      for (const auto& entry : *mElements) {
+        const CanonicalElementAttributes& elemAttributes = entry.GetData();
+
         // Step 7.1.1.1. Neither element[attributes] or
         // element[removeAttributes], if they exist, has duplicates.
-        if (elem.mAttributes && elem.mAttributes->HasDuplicates()) {
-          aRv.ThrowTypeError("Duplicate attribute in local 'attributes'");
-          return;
-        }
-        if (elem.mRemoveAttributes && elem.mRemoveAttributes->HasDuplicates()) {
-          aRv.ThrowTypeError("Duplicate attribute in local 'removeAttributes'");
-          return;
-        }
+        //
+        // NOTE: The Sanitizer::CanonicalizeConfiguration (specifically
+        // CanonicalizeElementAttributes) method would have already thrown an
+        // error for duplicate attributes by this point. The attribute sets
+        // can't have duplicates by definition.
 
         // Step 7.1.1.2. The intersection of config[attributes] and
         // element[attributes] with default « [] » is empty.
-        if (elem.mAttributes) {
-          for (const CanonicalName& name : mAttributes->Values()) {
-            if (elem.mAttributes->Contains(name)) {
-              aRv.ThrowTypeError(
-                  "Same attribute both in local and global 'attributes'");
+        if (elemAttributes.mAttributes) {
+          for (const CanonicalAttribute& name : *elemAttributes.mAttributes) {
+            if (mAttributes->Contains(name)) {
+              aRv.ThrowTypeError(nsFmtCString(
+                  FMT_STRING(
+                      "Attribute {} can't be part of both the 'attributes' of "
+                      "the element {} and the global 'attributes'."),
+                  name, entry.GetKey()));
               return;
             }
           }
@@ -567,12 +604,15 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
 
         // Step 7.1.1.3. element[removeAttributes] is a subset of
         // config[attributes].
-        if (elem.mRemoveAttributes) {
-          for (const CanonicalName& name : elem.mRemoveAttributes->Values()) {
+        if (elemAttributes.mRemoveAttributes) {
+          for (const CanonicalAttribute& name :
+               *elemAttributes.mRemoveAttributes) {
             if (!mAttributes->Contains(name)) {
-              aRv.ThrowTypeError(
-                  "Attribute in local 'removeAttributes' but not in global "
-                  "'attributes'");
+              aRv.ThrowTypeError(nsFmtCString(
+                  FMT_STRING(
+                      "Attribute {} can't be in 'removeAttributes' of the "
+                      "element {} but not in the global 'attributes'."),
+                  name, entry.GetKey()));
               return;
             }
           }
@@ -582,14 +622,17 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
                    "mDataAttributes exists iff mAttributes exists");
 
         // Step 7.1.1.4. If dataAttributes is true:
-        if (*mDataAttributes && elem.mAttributes) {
+        if (*mDataAttributes && elemAttributes.mAttributes) {
+          // TODO: Merge with loop above?
           // Step 7.1.1.4.1. element[attributes] does not contain a custom
           // data attribute.
-          for (const CanonicalName& name : elem.mAttributes->Values()) {
+          for (const CanonicalAttribute& name : *elemAttributes.mAttributes) {
             if (name.IsDataAttribute()) {
-              aRv.ThrowTypeError(
-                  "Local 'attributes' contains a data attribute, which is "
-                  "redundant with 'dataAttributes' being true");
+              aRv.ThrowTypeError(nsFmtCString(
+                  FMT_STRING(
+                      "Data attribute {} in the 'attributes' of the element {} "
+                      "is redundant with 'dataAttributes' being true."),
+                  name, entry.GetKey()));
               return;
             }
           }
@@ -604,11 +647,12 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
     if (*mDataAttributes) {
       // Step 7.2.1. config[attributes] does not contain a custom data
       // attribute.
-      for (const CanonicalName& name : mAttributes->Values()) {
+      for (const CanonicalAttribute& name : *mAttributes) {
         if (name.IsDataAttribute()) {
-          aRv.ThrowTypeError(
-              "Global 'attributes' contains a data attribute, which is "
-              "redundant with 'dataAttributes' being true");
+          aRv.ThrowTypeError(nsFmtCString(
+              FMT_STRING("Data attribute {} in the global 'attributes' is "
+                         "redundant with 'dataAttributes' being true."),
+              name));
           return;
         }
       }
@@ -620,28 +664,52 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
     // Step 8.1. If config[elements] exists, then for any element in
     // config[elements]:
     if (mElements) {
-      for (const CanonicalElementWithAttributes& elem : mElements->Values()) {
-        // Step 8.1.1. The intersection of config[removeAttributes] and
+      for (const auto& entry : *mElements) {
+        const CanonicalElementAttributes& elemAttributes = entry.GetData();
+
+        // Step 8.1.1. Not both element[attributes] and
+        // element[removeAttributes] exist.
+        if (elemAttributes.mAttributes && elemAttributes.mRemoveAttributes) {
+          return aRv.ThrowTypeError(
+              nsFmtCString(FMT_STRING("Element {} can't have both 'attributes' "
+                                      "and 'removeAttributes'."),
+                           entry.GetKey()));
+        }
+
+        // Step 8.1.2. Neither element[attributes] nor
+        // element[removeAttributes], if they exist, has duplicates.
+        //
+        // NOTE: The Sanitizer::CanonicalizeConfiguration (specifically
+        // CanonicalizeElementAttributes) method would have already thrown an
+        // error for duplicate attributes by this point. The attribute sets
+        // can't have duplicates by definition.
+
+        // Step 8.1.3. The intersection of config[removeAttributes] and
         // element[attributes] with default « [] » is empty.
-        if (elem.mAttributes) {
-          for (const CanonicalName& name : elem.mAttributes->Values()) {
+        if (elemAttributes.mAttributes) {
+          for (const CanonicalAttribute& name : *elemAttributes.mAttributes) {
             if (mRemoveAttributes->Contains(name)) {
-              aRv.ThrowTypeError(
-                  "Same attribute both in local 'attributes' and global "
-                  "'removeAttributes'.");
+              aRv.ThrowTypeError(nsFmtCString(
+                  FMT_STRING(
+                      "Attribute {} can't be in 'attributes' of the element {} "
+                      "while in the global 'removeAttributes'."),
+                  name, entry.GetKey()));
               return;
             }
           }
         }
 
-        // Step 8.1.2. The intersection of config[removeAttributes] and
+        // Step 8.1.4. The intersection of config[removeAttributes] and
         // element[removeAttributes] with default « [] » is empty.
-        if (elem.mRemoveAttributes) {
-          for (const CanonicalName& name : elem.mRemoveAttributes->Values()) {
+        if (elemAttributes.mRemoveAttributes) {
+          for (const CanonicalAttribute& name :
+               *elemAttributes.mRemoveAttributes) {
             if (mRemoveAttributes->Contains(name)) {
-              aRv.ThrowTypeError(
-                  "Same attribute both in local and global "
-                  "'removeAttributes'.");
+              aRv.ThrowTypeError(nsFmtCString(
+                  FMT_STRING("Attribute {} can't be part of both the "
+                             "'removeAttributes' of the element {} and the "
+                             "global 'removeAttributes'."),
+                  name, entry.GetKey()));
               return;
             }
           }
@@ -653,7 +721,7 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
     if (mDataAttributes) {
       aRv.ThrowTypeError(
           "'removeAttributes' and 'dataAttributes' aren't allowed at the "
-          "same time");
+          "same time.");
     }
   }
 }
@@ -671,7 +739,10 @@ void Sanitizer::SetConfig(const SanitizerConfig& aConfig,
                           bool aAllowCommentsAndDataAttributes,
                           ErrorResult& aRv) {
   // Step 1. Canonicalize configuration with allowCommentsAndDataAttributes.
-  CanonicalizeConfiguration(aConfig, aAllowCommentsAndDataAttributes);
+  CanonicalizeConfiguration(aConfig, aAllowCommentsAndDataAttributes, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
 
   // Step 2. If configuration is not valid, then return false.
   IsValid(aRv);
@@ -694,26 +765,27 @@ void Sanitizer::MaybeMaterializeDefaultConfig() {
 
   AssertNoLists();
 
-  nsTArray<CanonicalElementWithAttributes> elements;
+  CanonicalElementMap elements;
   auto insertElements = [&elements](
                             mozilla::Span<nsStaticAtom* const> aElements,
                             nsStaticAtom* aNamespace,
                             nsStaticAtom* const* aElementWithAttributes) {
     size_t i = 0;
     for (nsStaticAtom* name : aElements) {
-      CanonicalElementWithAttributes element(CanonicalName(name, aNamespace));
+      CanonicalElementAttributes elementAttributes{};
 
       if (name == aElementWithAttributes[i]) {
-        nsTArray<CanonicalName> attributes;
+        CanonicalAttributeSet attributes;
         while (aElementWithAttributes[++i]) {
-          attributes.AppendElement(
-              CanonicalName(aElementWithAttributes[i], nullptr));
+          attributes.Insert(
+              CanonicalAttribute(aElementWithAttributes[i], nullptr));
         }
         i++;
-        element.mAttributes = Some(ListSet(std::move(attributes)));
+        elementAttributes.mAttributes = Some(std::move(attributes));
       }
 
-      elements.AppendElement(std::move(element));
+      CanonicalElement elementName(name, aNamespace);
+      elements.InsertOrUpdate(elementName, std::move(elementAttributes));
     }
   };
   insertElements(Span(kDefaultHTMLElements), nsGkAtoms::nsuri_xhtml,
@@ -722,61 +794,100 @@ void Sanitizer::MaybeMaterializeDefaultConfig() {
                  kMathMLElementWithAttributes);
   insertElements(Span(kDefaultSVGElements), nsGkAtoms::nsuri_svg,
                  kSVGElementWithAttributes);
-  mElements = Some(ListSet(std::move(elements)));
+  mElements = Some(std::move(elements));
 
-  nsTArray<CanonicalName> attributes;
+  CanonicalAttributeSet attributes;
   for (nsStaticAtom* name : kDefaultAttributes) {
-    attributes.AppendElement(CanonicalName(name, nullptr));
+    attributes.Insert(CanonicalAttribute(name, nullptr));
   }
-  mAttributes = Some(ListSet(std::move(attributes)));
+  mAttributes = Some(std::move(attributes));
 
   mIsDefaultConfig = false;
 }
 
+// https://wicg.github.io/sanitizer-api/#dom-sanitizer-get
 void Sanitizer::Get(SanitizerConfig& aConfig) {
   MaybeMaterializeDefaultConfig();
 
+  // Step 1. Let config be this’s configuration.
+  // Step 2. If config["elements"] exists:
   if (mElements) {
     nsTArray<OwningStringOrSanitizerElementNamespaceWithAttributes> elements;
-    for (const CanonicalElementWithAttributes& canonical :
-         mElements->Values()) {
-      elements.AppendElement()->SetAsSanitizerElementNamespaceWithAttributes() =
-          canonical.ToSanitizerElementNamespaceWithAttributes();
+    // Step 2.1. For any element of config["elements"]:
+    for (const auto& entry : *mElements) {
+      // Step 2.1.1. If element["attributes"] exists:
+      // Step 2.1.2. If element["removeAttributes"] exists:
+      // ...
+      // (The attributes are sorted by the ToSanitizerAttributes call in
+      // ToSanitizerElementNamespaceWithAttributes)
+      OwningStringOrSanitizerElementNamespaceWithAttributes owning;
+      owning.SetAsSanitizerElementNamespaceWithAttributes() =
+          entry.GetKey().ToSanitizerElementNamespaceWithAttributes(
+              entry.GetData());
+
+      // Step 2.2. Set config["elements"] to the result of sort in ascending
+      // order config["elements"], with elementA being less than item elementB.
+      // (Instead of sorting at the end, we sort during insertion)
+      elements.InsertElementSorted(owning,
+                                   SanitizerComparator<decltype(owning)>());
     }
     aConfig.mElements.Construct(std::move(elements));
   } else {
+    // Step 3. If config["removeElements"] exists:
+    // Step 3.1. Set config["removeElements"] to the result of sort in ascending
+    // order config["removeElements"], with elementA being less than item
+    // elementB.
     nsTArray<OwningStringOrSanitizerElementNamespace> removeElements;
-    for (const CanonicalName& canonical : mRemoveElements->Values()) {
-      removeElements.AppendElement()->SetAsSanitizerElementNamespace() =
+    for (const CanonicalElement& canonical : *mRemoveElements) {
+      OwningStringOrSanitizerElementNamespace owning;
+      owning.SetAsSanitizerElementNamespace() =
           canonical.ToSanitizerElementNamespace();
+      removeElements.InsertElementSorted(
+          owning, SanitizerComparator<decltype(owning)>());
     }
     aConfig.mRemoveElements.Construct(std::move(removeElements));
   }
 
+  // Step 4. If config["replaceWithChildrenElements"] exists:
   if (mReplaceWithChildrenElements) {
+    // Step 4.1. Set config["replaceWithChildrenElements"] to the result of sort
+    // in ascending order config["replaceWithChildrenElements"], with elementA
+    // being less than item elementB.
     nsTArray<OwningStringOrSanitizerElementNamespace>
         replaceWithChildrenElements;
-    for (const CanonicalName& canonical :
-         mReplaceWithChildrenElements->Values()) {
-      replaceWithChildrenElements.AppendElement()
-          ->SetAsSanitizerElementNamespace() =
+    for (const CanonicalElement& canonical : *mReplaceWithChildrenElements) {
+      OwningStringOrSanitizerElementNamespace owning;
+      owning.SetAsSanitizerElementNamespace() =
           canonical.ToSanitizerElementNamespace();
+      replaceWithChildrenElements.InsertElementSorted(
+          owning, SanitizerComparator<decltype(owning)>());
     }
     aConfig.mReplaceWithChildrenElements.Construct(
         std::move(replaceWithChildrenElements));
   }
 
+  // Step 5. If config["attributes"] exists:
   if (mAttributes) {
+    // Step 5.1. Set config["attributes"] to the result of sort in ascending
+    // order config["attributes"], with attrA being less than item attrB.
+    // (Sorting is done by ToSanitizerAttributes)
     aConfig.mAttributes.Construct(ToSanitizerAttributes(*mAttributes));
   } else {
+    // Step 6. If config["removeAttributes"] exists:
+    // Step 6.1. Set config["removeAttributes"] to the result of sort in
+    // ascending order config["removeAttributes"], with attrA being less than
+    // item attrB.
     aConfig.mRemoveAttributes.Construct(
         ToSanitizerAttributes(*mRemoveAttributes));
   }
 
+  // (In the spec these already exist in the |config| and don't need sorting)
   aConfig.mComments.Construct(mComments);
   if (mDataAttributes) {
     aConfig.mDataAttributes.Construct(*mDataAttributes);
   }
+
+  // Step 7. Return config.
 }
 
 // https://wicg.github.io/sanitizer-api/#sanitizerconfig-allow-an-element
@@ -786,106 +897,141 @@ bool Sanitizer::AllowElement(
 
   // Step 1. Set element to the result of canonicalize a sanitizer element
   // with attributes with element.
-  CanonicalElementWithAttributes element =
-      CanonicalizeElementWithAttributes(aElement);
+  CanonicalElement elementName = CanonicalizeElement(aElement);
+  // NOTE: Duplicate attributes are removed/ignored.
+  CanonicalElementAttributes elementAttributes =
+      CanonicalizeElementAttributes(aElement);
 
   // Step 2 If configuration["elements"] exists:
   if (mElements) {
     // Step 2.1. Set modified to the result of remove element from
     // configuration["replaceWithChildrenElements"].
-    bool modified = mReplaceWithChildrenElements
-                        ? mReplaceWithChildrenElements->Remove(element)
-                        : false;
+    bool modified =
+        mReplaceWithChildrenElements
+            ? mReplaceWithChildrenElements->EnsureRemoved(elementName)
+            : false;
 
     // Step 2.2. Comment: We need to make sure the per-element attributes do
     // not overlap with global attributes.
 
-    // Step 2.3. If element["attributes"] exists:
-    if (element.mAttributes) {
-      nsTArray<CanonicalName> attributes;
-      for (const CanonicalName& attr : element.mAttributes->Values()) {
-        // Step 2.3.1. Set element["attributes"] to remove duplicates from
-        // element["attributes"].
-        if (attributes.Contains(attr)) {
-          continue;
-        }
+    // Step 2.3. If configuration["attributes"] exists:
+    if (mAttributes) {
+      // Step 2.3.1. If element["attributes"] exists:
+      if (elementAttributes.mAttributes) {
+        CanonicalAttributeSet attributes;
+        for (const CanonicalAttribute& attr : *elementAttributes.mAttributes) {
+          // Step 2.3.1.1. Set element["attributes"] to remove duplicates from
+          // element["attributes"].
+          MOZ_ASSERT(!attributes.Contains(attr));
 
-        // Step 2.3.2. If configuration["attributes"] exists:
-        if (mAttributes) {
-          // Step 2.3.2.1. Set element["attributes"] to the difference of
+          // Step 2.3.1.2. Set element["attributes"] to the difference of
           // element["attributes"] and configuration["attributes"].
           if (mAttributes->Contains(attr)) {
             continue;
           }
 
+          // Step 2.3.1.3. If configuration["dataAttributes"] is true:
           MOZ_ASSERT(mDataAttributes.isSome(),
                      "mDataAttributes exists iff mAttributes");
-
-          // Step 2.3.2.2. If configuration["dataAttributes"] is true:
           if (*mDataAttributes) {
-            // Step 2.3.2.2.1. Remove all items item from element["attributes"]
+            // Step 2.3.1.3.1 Remove all items item from element["attributes"]
             // where item is a custom data attribute.
             if (attr.IsDataAttribute()) {
               continue;
             }
           }
-        }
 
-        // Step 2.3.3. If configuration["removeAttributes"] exists:
-        if (mRemoveAttributes) {
-          // Step 2.3.3.1. Set element["attributes"] to the difference of
-          // element["attributes"] and configuration["removeAttributes"].
-          if (mRemoveAttributes->Contains(attr)) {
-            continue;
-          }
+          attributes.Insert(attr.Clone());
         }
-
-        attributes.AppendElement(attr.Clone());
+        elementAttributes.mAttributes = Some(std::move(attributes));
       }
-      element.mAttributes = Some(ListSet(std::move(attributes)));
-    }
 
-    // Step 2.4. If element["removeAttributes"] exists:
-    if (element.mRemoveAttributes) {
-      nsTArray<CanonicalName> removeAttributes;
-      for (const CanonicalName& attr : element.mRemoveAttributes->Values()) {
-        // Step 2.4.1. Set element["removeAttributes"] to remove duplicates from
-        // element["removeAttributes"].
-        if (removeAttributes.Contains(attr)) {
-          continue;
-        }
+      // Step 2.3.2. If element["removeAttributes"] exists:
+      if (elementAttributes.mRemoveAttributes) {
+        CanonicalAttributeSet removeAttributes;
+        for (const CanonicalAttribute& attr :
+             *elementAttributes.mRemoveAttributes) {
+          // Step 2.3.2.1. Set element["removeAttributes"] to remove duplicates
+          // from element["removeAttributes"].
+          //
+          // NOTE: CanonicalizeElementAttributes removed all duplicates for us.
+          MOZ_ASSERT(!removeAttributes.Contains(attr));
 
-        // Step 2.4.2. If configuration["attributes"] exists:
-        if (mAttributes) {
-          // Step 2.4.2.1. Set element["removeAttributes"] to the intersection
+          // Step 2.3.2.2. Set element["removeAttributes"] to the intersection
           // of element["removeAttributes"] and configuration["attributes"].
           if (!mAttributes->Contains(attr)) {
             continue;
           }
-        }
 
-        // Step 2.4.3. If configuration["removeAttributes"] exists:
-        if (mRemoveAttributes) {
-          // Step 2.4.3.1. Set element["removeAttributes"] to the difference of
+          removeAttributes.Insert(attr.Clone());
+        }
+        elementAttributes.mRemoveAttributes = Some(std::move(removeAttributes));
+      }
+    } else {
+      // Step 2.4. Otherwise:
+
+      // Step 2.4.1. If element["attributes"] exists:
+      if (elementAttributes.mAttributes) {
+        CanonicalAttributeSet attributes;
+        for (const CanonicalAttribute& attr : *elementAttributes.mAttributes) {
+          // Step 2.4.1.1. Set element["attributes"] to remove duplicates from
+          // element["attributes"].
+          //
+          // NOTE: CanonicalizeElementAttributes removed all duplicates for us.
+          MOZ_ASSERT(!attributes.Contains(attr));
+
+          // Step 2.4.1.2. Set element["attributes"] to the difference of
+          // element["attributes"] and element["removeAttributes"] with default
+          // « ».
+          if (elementAttributes.mRemoveAttributes &&
+              elementAttributes.mRemoveAttributes->Contains(attr)) {
+            continue;
+          }
+
+          // Step 2.4.1.4. Set element["attributes"] to the difference of
+          // element["attributes"] and configuration["removeAttributes"].
+          if (mRemoveAttributes->Contains(attr)) {
+            continue;
+          }
+
+          attributes.Insert(attr.Clone());
+        }
+        elementAttributes.mAttributes = Some(std::move(attributes));
+
+        // Step 2.4.1.3. Remove element["removeAttributes"].
+        elementAttributes.mRemoveAttributes = Nothing();
+      }
+
+      // Step 2.4.2. If element["removeAttributes"] exists:
+      if (elementAttributes.mRemoveAttributes) {
+        CanonicalAttributeSet removeAttributes;
+        for (const CanonicalAttribute& attr :
+             *elementAttributes.mRemoveAttributes) {
+          // Step 2.4.2.1. Set element["removeAttributes"] to remove duplicates
+          // from element["removeAttributes"].
+          MOZ_ASSERT(!removeAttributes.Contains(attr));
+
+          // Step 2.4.2.2. Set element["removeAttributes"] to the difference of
           // element["removeAttributes"] and configuration["removeAttributes"].
           if (mRemoveAttributes->Contains(attr)) {
             continue;
           }
-        }
 
-        removeAttributes.AppendElement(attr.Clone());
+          removeAttributes.Insert(attr.Clone());
+        }
+        elementAttributes.mRemoveAttributes = Some(std::move(removeAttributes));
       }
-      element.mRemoveAttributes = Some(ListSet(std::move(removeAttributes)));
     }
 
     // Step 2.5. If configuration["elements"] does not contain element:
-    CanonicalElementWithAttributes* existingElement = mElements->Get(element);
-    if (!existingElement) {
+    const CanonicalElementAttributes* existingElementAttributes =
+        mElements->Lookup(elementName).DataPtrOrNull();
+    if (!existingElementAttributes) {
       // Step 2.5.1. Comment: This is the case with a global allow-list that
       // does not yet contain element.
 
       // Step 2.5.2. Append element to configuration["elements"].
-      mElements->Insert(std::move(element));
+      mElements->InsertOrUpdate(elementName, std::move(elementAttributes));
 
       // Step 2.5.3. Return true.
       return true;
@@ -896,18 +1042,16 @@ bool Sanitizer::AllowElement(
 
     // Step 2.7. Let current element be the item in configuration["elements"]
     // where item[name] equals element[name] and item[namespace] equals
-    // element[namespace]. (implict with existingElement)
+    // element[namespace]. (implict with existingElementAttributes)
 
     // Step 2.8. If element equals current element then return modified.
-    if (element.EqualAttributes(*existingElement)) {
+    if (elementAttributes.Equals(*existingElementAttributes)) {
       return modified;
     }
 
     // Step 2.9. Remove element from configuration["elements"].
-    mElements->Remove(element);
-
     // Step 2.10. Append element to configuration["elements"].
-    mElements->Insert(std::move(element));
+    mElements->InsertOrUpdate(elementName, std::move(elementAttributes));
 
     // Step 2.11. Return true.
     return true;
@@ -916,8 +1060,9 @@ bool Sanitizer::AllowElement(
   // Step 3. Otherwise:
   // Step 3.1. If element["attributes"] exists or element["removeAttributes"]
   // with default « » is not empty:
-  if (element.mAttributes ||
-      (element.mRemoveAttributes && !element.mRemoveAttributes->IsEmpty())) {
+  if (elementAttributes.mAttributes ||
+      (elementAttributes.mRemoveAttributes &&
+       !elementAttributes.mRemoveAttributes->IsEmpty())) {
     // Step 3.1.1. The user agent may report a warning to the console that this
     // operation is not supported.
     LogLocalizedString("SanitizerAllowElementIgnored", {},
@@ -930,11 +1075,11 @@ bool Sanitizer::AllowElement(
   // Step 3.2. Set modified to the result of remove element from
   // configuration["replaceWithChildrenElements"].
   bool modified = mReplaceWithChildrenElements
-                      ? mReplaceWithChildrenElements->Remove(element)
+                      ? mReplaceWithChildrenElements->EnsureRemoved(elementName)
                       : false;
 
   // Step 3.3. If configuration["removeElements"] does not contain element:
-  if (!mRemoveElements->Contains(element)) {
+  if (!mRemoveElements->Contains(elementName)) {
     // Step 3.3.1. Comment: This is the case with a global remove-list that
     // does not contain element.
 
@@ -946,7 +1091,7 @@ bool Sanitizer::AllowElement(
   // contains element.
 
   // Step 3.5. Remove element from configuration["removeElements"].
-  mRemoveElements->Remove(element);
+  mRemoveElements->Remove(elementName);
 
   // Step 3.6. Return true.
   return true;
@@ -959,16 +1104,16 @@ bool Sanitizer::RemoveElement(
 
   // Step 1. Set element to the result of canonicalize a sanitizer element
   // with element.
-  CanonicalName element = CanonicalizeElement(aElement);
+  CanonicalElement element = CanonicalizeElement(aElement);
 
   return RemoveElementCanonical(std::move(element));
 }
 
-bool Sanitizer::RemoveElementCanonical(CanonicalName&& aElement) {
+bool Sanitizer::RemoveElementCanonical(CanonicalElement&& aElement) {
   // Step 2. Set modified to the result of remove element from
   // configuration["replaceWithChildrenElements"].
   bool modified = mReplaceWithChildrenElements
-                      ? mReplaceWithChildrenElements->Remove(aElement)
+                      ? mReplaceWithChildrenElements->EnsureRemoved(aElement)
                       : false;
 
   // Step 3. If configuration["elements"] exists:
@@ -1019,7 +1164,7 @@ bool Sanitizer::ReplaceElementWithChildren(
 
   // Step 1. Set element to the result of canonicalize a sanitizer element
   // with element.
-  CanonicalName element = CanonicalizeElement(aElement);
+  CanonicalElement element = CanonicalizeElement(aElement);
 
   // Step 2. If configuration["replaceWithChildrenElements"] contains element:
   if (mReplaceWithChildrenElements &&
@@ -1053,7 +1198,7 @@ bool Sanitizer::AllowAttribute(
 
   // Step 1. Set attribute to the result of canonicalize a sanitizer attribute
   // with attribute.
-  CanonicalName attribute = CanonicalizeAttribute(aAttribute);
+  CanonicalAttribute attribute = CanonicalizeAttribute(aAttribute);
 
   // Step 2. If configuration["attributes"] exists:
   if (mAttributes) {
@@ -1080,18 +1225,21 @@ bool Sanitizer::AllowAttribute(
     // Step 2.5. If configuration["elements"] exists:
     if (mElements) {
       // Step 2.5.1. For each element in configuration["elements"]:
-      for (CanonicalElementWithAttributes& element : mElements->Values()) {
+      for (auto iter = mElements->Iter(); !iter.Done(); iter.Next()) {
+        CanonicalElementAttributes& elemAttributes = iter.Data();
+
         // Step 2.5.1.1. If element["attributes"] with default « [] » contains
         // attribute:
-        if (element.mAttributes && element.mAttributes->Contains(attribute)) {
+        if (elemAttributes.mAttributes &&
+            elemAttributes.mAttributes->Contains(attribute)) {
           // Step 2.5.1.1.1. Remove attribute from element["attributes"].
-          element.mAttributes->Remove(attribute);
+          elemAttributes.mAttributes->Remove(attribute);
         }
 
         // Step 2.5.1.2. Assert: element["removeAttributes"] with default « []
         // » does not contain attribute.
-        MOZ_ASSERT_IF(element.mRemoveAttributes,
-                      !element.mRemoveAttributes->Contains(attribute));
+        MOZ_ASSERT_IF(elemAttributes.mRemoveAttributes,
+                      !elemAttributes.mRemoveAttributes->Contains(attribute));
       }
     }
 
@@ -1128,12 +1276,12 @@ bool Sanitizer::RemoveAttribute(
 
   // Step 1. Set attribute to the result of canonicalize a sanitizer attribute
   // with attribute.
-  CanonicalName attribute = CanonicalizeAttribute(aAttribute);
+  CanonicalAttribute attribute = CanonicalizeAttribute(aAttribute);
 
   return RemoveAttributeCanonical(std::move(attribute));
 }
 
-bool Sanitizer::RemoveAttributeCanonical(CanonicalName&& aAttribute) {
+bool Sanitizer::RemoveAttributeCanonical(CanonicalAttribute&& aAttribute) {
   // Step 2. If configuration["attributes"] exists:
   if (mAttributes) {
     // Step 2.1. Comment: If we have a global allow-list, we need to add
@@ -1150,14 +1298,15 @@ bool Sanitizer::RemoveAttributeCanonical(CanonicalName&& aAttribute) {
     // Step 2.4. If configuration["elements"] exists:
     if (mElements) {
       // Step 2.4.1. For each element in configuration["elements"]:
-      for (CanonicalElementWithAttributes& element : mElements->Values()) {
+      for (auto iter = mElements->Iter(); !iter.Done(); iter.Next()) {
+        CanonicalElementAttributes& elemAttributes = iter.Data();
         // Step 2.4.1.1. If element["removeAttributes"] with default « [] »
         // contains attribute:
-        if (element.mRemoveAttributes &&
-            element.mRemoveAttributes->Contains(aAttribute)) {
+        if (elemAttributes.mRemoveAttributes &&
+            elemAttributes.mRemoveAttributes->Contains(aAttribute)) {
           // Step 2.4.1.1.1. Remove attribute from
           // element["removeAttributes"].
-          element.mRemoveAttributes->Remove(aAttribute);
+          elemAttributes.mRemoveAttributes->Remove(aAttribute);
         }
       }
     }
@@ -1183,20 +1332,22 @@ bool Sanitizer::RemoveAttributeCanonical(CanonicalName&& aAttribute) {
   // Step 3.4. If configuration["elements"] exists:
   if (mElements) {
     // Step 3.4.1. For each element in configuration["elements"]:
-    for (CanonicalElementWithAttributes& element : mElements->Values()) {
+    for (auto iter = mElements->Iter(); !iter.Done(); iter.Next()) {
+      CanonicalElementAttributes& elemAttributes = iter.Data();
       // Step 3.4.1.1. If element["attributes"] with default « [] » contains
       // attribute:
-      if (element.mAttributes && element.mAttributes->Contains(aAttribute)) {
+      if (elemAttributes.mAttributes &&
+          elemAttributes.mAttributes->Contains(aAttribute)) {
         // Step 3.4.1.1.1. Remove attribute from element["attributes"].
-        element.mAttributes->Remove(aAttribute);
+        elemAttributes.mAttributes->Remove(aAttribute);
       }
 
       // Step 3.4.1.2. If element["removeAttributes"] with default « [] »
       // contains attribute:
-      if (element.mRemoveAttributes &&
-          element.mRemoveAttributes->Contains(aAttribute)) {
+      if (elemAttributes.mRemoveAttributes &&
+          elemAttributes.mRemoveAttributes->Contains(aAttribute)) {
         // Step 3.4.1.2.1. Remove attribute from element["removeAttributes"].
-        element.mRemoveAttributes->Remove(aAttribute);
+        elemAttributes.mRemoveAttributes->Remove(aAttribute);
       }
     }
   }
@@ -1251,20 +1402,21 @@ bool Sanitizer::SetDataAttributes(bool aAllow) {
 
     // Step 3.1. Remove any items attr from configuration["attributes"] where
     // attr is a custom data attribute.
-    mAttributes->Values().RemoveElementsBy([](const CanonicalName& aAttribute) {
+    mAttributes->RemoveIf([](const CanonicalAttribute& aAttribute) {
       return aAttribute.IsDataAttribute();
     });
 
     // Step 3.2. If configuration["elements"] exists:
     if (mElements) {
       // Step 3.2.1. For each element in configuration["elements"]:
-      for (CanonicalElementWithAttributes& element : mElements->Values()) {
+      for (auto iter = mElements->Iter(); !iter.Done(); iter.Next()) {
+        CanonicalElementAttributes& elemAttributes = iter.Data();
         // Step 3.2.1.1. If element[attributes] exists:
-        if (element.mAttributes) {
+        if (elemAttributes.mAttributes) {
           // Step 3.2.1.1.1. Remove any items attr from element[attributes]
           // where attr is a custom data attribute.
-          element.mAttributes->Values().RemoveElementsBy(
-              [](const CanonicalName& aAttribute) {
+          elemAttributes.mAttributes->RemoveIf(
+              [](const CanonicalAttribute& aAttribute) {
                 return aAttribute.IsDataAttribute();
               });
         }
@@ -1282,11 +1434,11 @@ bool Sanitizer::SetDataAttributes(bool aAllow) {
 // https://wicg.github.io/sanitizer-api/#built-in-safe-baseline-configuration
 // The built-in safe baseline configuration
 #define FOR_EACH_BASELINE_REMOVE_ELEMENT(ELEMENT) \
-  ELEMENT(XHTML, xhtml, script)                   \
+  ELEMENT(XHTML, xhtml, embed)                    \
   ELEMENT(XHTML, xhtml, frame)                    \
   ELEMENT(XHTML, xhtml, iframe)                   \
   ELEMENT(XHTML, xhtml, object)                   \
-  ELEMENT(XHTML, xhtml, embed)                    \
+  ELEMENT(XHTML, xhtml, script)                   \
   ELEMENT(SVG, svg, script)                       \
   ELEMENT(SVG, svg, use)
 
@@ -1303,12 +1455,12 @@ bool Sanitizer::RemoveUnsafe() {
 
   // Step 3. For each element in built-in safe baseline
   // configuration[removeElements]:
-#define ELEMENT(_, NSURI, LOCAL_NAME)                                        \
-  /* Step 3.1. Call remove an element element from configuration. */         \
-  if (RemoveElementCanonical(                                                \
-          CanonicalName(nsGkAtoms::LOCAL_NAME, nsGkAtoms::nsuri_##NSURI))) { \
-    /* Step 3.2. If the call returned true, set result to true. */           \
-    result = true;                                                           \
+#define ELEMENT(_, NSURI, LOCAL_NAME)                                       \
+  /* Step 3.1. Call remove an element element from configuration. */        \
+  if (RemoveElementCanonical(CanonicalElement(nsGkAtoms::LOCAL_NAME,        \
+                                              nsGkAtoms::nsuri_##NSURI))) { \
+    /* Step 3.2. If the call returned true, set result to true. */          \
+    result = true;                                                          \
   }
 
   FOR_EACH_BASELINE_REMOVE_ELEMENT(ELEMENT)
@@ -1325,7 +1477,8 @@ bool Sanitizer::RemoveUnsafe() {
       EventNameType_All & ~EventNameType_XUL,
       [self = MOZ_KnownLive(this), &result](nsAtom* aName) {
         // Step 5.1. Call remove an attribute attribute from configuration.
-        if (self->RemoveAttributeCanonical(CanonicalName(aName, nullptr))) {
+        if (self->RemoveAttributeCanonical(
+                CanonicalAttribute(aName, nullptr))) {
           // Step 5.2. If the call returned true, set result to true.
           result = true;
         }
@@ -1428,7 +1581,7 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
     nsAtom* nameAtom = child->NodeInfo()->NameAtom();
     int32_t namespaceID = child->NodeInfo()->NamespaceID();
     // Make sure this is optimized away when using the default config.
-    Maybe<CanonicalName> elementName;
+    Maybe<CanonicalElement> elementName;
     // This is only used for the default config case.
     [[maybe_unused]] StaticAtomSet* elementAttributes = nullptr;
     if constexpr (!IsDefaultConfig) {
@@ -1643,7 +1796,7 @@ static bool RemoveJavascriptNavigationURLAttribute(Element* aElement,
 }
 
 void Sanitizer::SanitizeAttributes(Element* aChild,
-                                   const CanonicalName& aElementName,
+                                   const CanonicalElement& aElementName,
                                    bool aSafe) {
   MOZ_ASSERT(!mIsDefaultConfig);
 
@@ -1652,10 +1805,11 @@ void Sanitizer::SanitizeAttributes(Element* aChild,
 
   // Step 7. Let elementWithLocalAttributes be « [] ».
   // Step 8. If configuration["elements"] exists and configuration["elements"]
-  // contains elementName: Step 8.1. Set elementWithLocalAttributes to
+  // contains elementName:
+  // Step 8.1. Set elementWithLocalAttributes to
   // configuration["elements"][elementName].
-  const CanonicalElementWithAttributes* elementWithAttributes =
-      mElements ? mElements->Get(aElementName) : nullptr;
+  const CanonicalElementAttributes* elementAttributes =
+      mElements ? mElements->Lookup(aElementName).DataPtrOrNull() : nullptr;
 
   // Step 9. For each attribute in child’s attribute list:
   int32_t count = int32_t(aChild->GetAttrCount());
@@ -1665,7 +1819,7 @@ void Sanitizer::SanitizeAttributes(Element* aChild,
     const nsAttrName* attr = aChild->GetAttrNameAt(i);
     RefPtr<nsAtom> attrLocalName = attr->LocalName();
     int32_t attrNs = attr->NamespaceID();
-    CanonicalName attrName(attrLocalName, ToNamespace(attrNs));
+    CanonicalAttribute attrName(attrLocalName, ToNamespace(attrNs));
 
     bool remove = false;
     // Optimization: Remove unsafe event handler content attributes.
@@ -1678,9 +1832,8 @@ void Sanitizer::SanitizeAttributes(Element* aChild,
 
     // Step 9.2. If elementWithLocalAttributes["removeAttributes"] with default
     // « [] » contains attrName:
-    else if (elementWithAttributes &&
-             elementWithAttributes->mRemoveAttributes &&
-             elementWithAttributes->mRemoveAttributes->Contains(attrName)) {
+    else if (elementAttributes && elementAttributes->mRemoveAttributes &&
+             elementAttributes->mRemoveAttributes->Contains(attrName)) {
       // Step 9.2.1. Remove attribute.
       remove = true;
     }
@@ -1695,8 +1848,8 @@ void Sanitizer::SanitizeAttributes(Element* aChild,
       MOZ_ASSERT(mDataAttributes.isSome(),
                  "mDataAttributes exists iff mAttributes exists");
       if (!mAttributes->Contains(attrName) &&
-          !(elementWithAttributes && elementWithAttributes->mAttributes &&
-            elementWithAttributes->mAttributes->Contains(attrName)) &&
+          !(elementAttributes && elementAttributes->mAttributes &&
+            elementAttributes->mAttributes->Contains(attrName)) &&
           !(*mDataAttributes && IsDataAttribute(attrLocalName, attrNs))) {
         // Step 9.3.1.1. Remove attribute.
         remove = true;
@@ -1707,8 +1860,8 @@ void Sanitizer::SanitizeAttributes(Element* aChild,
     else {
       // Step 9.4.1. If elementWithLocalAttributes["attributes"] exists and
       // elementWithLocalAttributes["attributes"] does not contain attrName:
-      if (elementWithAttributes && elementWithAttributes->mAttributes &&
-          !elementWithAttributes->mAttributes->Contains(attrName)) {
+      if (elementAttributes && elementAttributes->mAttributes &&
+          !elementAttributes->mAttributes->Contains(attrName)) {
         // Step 9.4.1.1. Remove attribute.
         remove = true;
       }

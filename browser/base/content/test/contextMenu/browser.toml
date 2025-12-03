@@ -59,6 +59,9 @@ skip-if = ["os == 'linux' && socketprocess_networking"]
 support-files = ["browser_contextmenu_loadblobinnewtab.html"]
 skip-if = ["os == 'linux' && socketprocess_networking"]
 
+["browser_contextmenu_plaintextlinks.js"]
+skip-if = ["a11y_checks"] # Bugs 1858041 and 1835079 for causing intermittent crashes
+
 ["browser_contextmenu_save_blocked.js"]
 skip-if = ["os == 'linux' && socketprocess_networking"]
 

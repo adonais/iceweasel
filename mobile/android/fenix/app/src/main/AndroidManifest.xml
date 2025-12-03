@@ -491,6 +491,7 @@
         <activity
             android:name=".startupCrash.StartupCrashActivity"
             android:exported="false"
+            android:process=":StartupCrashActivityProcess"
             >
         </activity>
 
@@ -507,48 +508,28 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="enable_private_browsing"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="home"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="home_collections"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="install_search_widget"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="make_default_browser"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="open"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="settings"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="settings_accessibility"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="settings_addon_manager"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="settings_delete_browsing_data"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="settings_logins"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="settings_notifications"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="settings_privacy"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="settings_search_engine"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="settings_tracking_protection"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="settings_app_icon"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="share_sheet"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="turn_on_sync"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="urls_bookmarks"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="urls_history"/>
-                <data android:scheme="${deepLinkScheme}"
-                    android:host="settings_private_browsing"/>
+                <data android:scheme="${deepLinkScheme}"/>
+                <data android:host="enable_private_browsing"/>
+                <data android:host="home"/>
+                <data android:host="home_collections"/>
+                <data android:host="install_search_widget"/>
+                <data android:host="make_default_browser"/>
+                <data android:host="open"/>
+                <data android:host="settings"/>
+                <data android:host="settings_accessibility"/>
+                <data android:host="settings_addon_manager"/>
+                <data android:host="settings_delete_browsing_data"/>
+                <data android:host="settings_logins"/>
+                <data android:host="settings_notifications"/>
+                <data android:host="settings_privacy"/>
+                <data android:host="settings_search_engine"/>
+                <data android:host="settings_tracking_protection"/>
+                <data android:host="settings_app_icon"/>
+                <data android:host="share_sheet"/>
+                <data android:host="turn_on_sync"/>
+                <data android:host="urls_bookmarks"/>
+                <data android:host="urls_history"/>
+                <data android:host="settings_private_browsing"/>
             </intent-filter>
         </activity>
 

@@ -57,14 +57,14 @@
 }
 
 #release {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   font-size: 125%;
   margin-top: 10px;
   margin-inline-start: 0;
 }
 
 #version {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   margin-inline-start: 0;
   user-select: text;
   -moz-user-focus: normal;
@@ -131,7 +131,7 @@
 #currentChannel {
   margin: 0;
   padding: 0;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 #updateBox {

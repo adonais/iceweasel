@@ -6,7 +6,9 @@ package org.mozilla.fenix.ext
 
 import android.content.Context
 import android.content.res.Configuration
+import android.view.WindowManager
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDirections
@@ -20,6 +22,8 @@ import io.mockk.spyk
 import io.mockk.verify
 import junit.framework.TestCase.assertEquals
 import mozilla.components.support.test.robolectric.testContext
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,6 +31,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.navigation.NavControllerProvider
 import org.mozilla.fenix.utils.Settings
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
@@ -346,5 +351,50 @@ class FragmentTest {
         val bottomToolbarHeight = fragment.getBottomToolbarHeight()
 
         assertEquals(0, bottomToolbarHeight)
+    }
+
+    @Test
+    fun `WHEN allowScreenCaptureInSecureScreens is true and a fragment is secured THEN FLAG_SECURE flag is added to the LayoutParams`() {
+        every { settings.allowScreenCaptureInSecureScreens } returns false
+
+        val testFragment = TestFragment(mockContext)
+
+        startFragment(testFragment)
+
+        testFragment.secure()
+
+        val flags = testFragment.requireActivity().window.attributes.flags
+        assertTrue(flags and WindowManager.LayoutParams.FLAG_SECURE != 0)
+    }
+
+    @Test
+    fun `WHEN allowScreenCaptureInSecureScreens is false and a fragment is secured THEN no window flags are added to the LayoutParams`() {
+        every { settings.allowScreenCaptureInSecureScreens } returns true
+
+        val testFragment = TestFragment(mockContext)
+
+        startFragment(testFragment)
+
+        testFragment.secure()
+
+        val flags = testFragment.requireActivity().window.attributes.flags
+        assertFalse(flags and WindowManager.LayoutParams.FLAG_SECURE != 0)
+    }
+
+    class TestFragment(private val mockContext: Context) : Fragment() {
+        override fun getContext(): Context? {
+            return mockContext
+        }
+    }
+
+    private fun startFragment(fragment: Fragment) {
+        val activity = Robolectric.buildActivity(FragmentActivity::class.java)
+            .create()
+            .start()
+            .resume()
+            .get()
+        activity.supportFragmentManager.beginTransaction()
+            .add(fragment, null)
+            .commitNow()
     }
 }

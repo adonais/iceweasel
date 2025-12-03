@@ -100,7 +100,8 @@ function autocompleteUpdate(force, getterPath, expressionVars) {
  * @param {Array<String>} getterPath The new getter path
  * @param {{[String]: String}} mappedVars Map of original to generated variable names.
  * @returns {Array<Array<String>>} The updated authorized evaluations (the original array,
- * if it was updated in place) */
+ * if it was updated in place)
+ */
 function updateAuthorizedEvaluations(
   authorizedEvaluations,
   getterPath,

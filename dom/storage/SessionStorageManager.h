@@ -43,6 +43,16 @@ bool RecvLoadSessionStorageData(
 bool RecvClearStoragesForOrigin(const nsACString& aOriginAttrs,
                                 const nsACString& aOriginKey);
 
+// DomainMatchingMode is used to allow ClearStorages to mimic one of
+// the LSNG behaviours - exact domain match.
+// When ClearStorages is invoked with EXACT_MATCH, it clears only the
+// data for a given domain, and would not affect any subdomains.
+// Currently EXACT_MATCH is only passed when browser:purge-sessionStorage event
+// is triggered. By default, ClearStorages is called with PREFIX_MATCH, which
+// clears data for a given domain and all the subdomains. This ensures that the
+// behaviour of other events that call ClearStorages remain unchanged.
+enum class DomainMatchingMode { PREFIX_MATCH, EXACT_MATCH };
+
 class BrowsingContext;
 class ContentParent;
 class SSSetItemInfo;
@@ -90,8 +100,9 @@ class SessionStorageManagerBase {
     FlippedOnce<false> mLoaded;
   };
 
-  void ClearStoragesInternal(const OriginAttributesPattern& aPattern,
-                             const nsACString& aOriginScope);
+  void ClearStoragesInternal(
+      const OriginAttributesPattern& aPattern, const nsACString& aOriginScope,
+      DomainMatchingMode aMode = DomainMatchingMode::PREFIX_MATCH);
 
   void ClearStoragesForOriginInternal(const nsACString& aOriginAttrs,
                                       const nsACString& aOriginKey);
@@ -153,8 +164,9 @@ class SessionStorageManager final : public SessionStorageManagerBase,
                                         SessionStorageCache* aCloneFrom,
                                         RefPtr<SessionStorageCache>* aRetVal);
 
-  void ClearStorages(const OriginAttributesPattern& aPattern,
-                     const nsACString& aOriginScope);
+  void ClearStorages(
+      const OriginAttributesPattern& aPattern, const nsACString& aOriginScope,
+      DomainMatchingMode aMode = DomainMatchingMode::PREFIX_MATCH);
 
   SessionStorageCacheChild* EnsureCache(nsIPrincipal& aPrincipal,
                                         const nsACString& aOriginKey,
@@ -213,8 +225,9 @@ class BackgroundSessionStorageManager final : public SessionStorageManagerBase {
   void UpdateData(const nsACString& aOriginAttrs, const nsACString& aOriginKey,
                   const nsTArray<SSSetItemInfo>& aData);
 
-  void ClearStorages(const OriginAttributesPattern& aPattern,
-                     const nsACString& aOriginScope);
+  void ClearStorages(
+      const OriginAttributesPattern& aPattern, const nsACString& aOriginScope,
+      DomainMatchingMode aMode = DomainMatchingMode::PREFIX_MATCH);
 
   void ClearStoragesForOrigin(const nsACString& aOriginAttrs,
                               const nsACString& aOriginKey);

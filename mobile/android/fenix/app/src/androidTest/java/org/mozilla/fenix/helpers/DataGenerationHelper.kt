@@ -72,6 +72,8 @@ object DataGenerationHelper {
 
     fun getStringResource(id: Int, argument: String = TestHelper.appName) = TestHelper.appContext.resources.getString(id, argument)
 
+    fun getStringResource(id: Int, vararg args: Any) = TestHelper.appContext.resources.getString(id, *args)
+
     private val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
     fun generateRandomString(stringLength: Int): String {
         Log.i(TAG, "generateRandomString: Trying to generate a random string with $stringLength characters")

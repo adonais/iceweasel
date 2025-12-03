@@ -18,7 +18,6 @@
 #include "jsapi/RTCEncodedFrameBase.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/RTCEncodedVideoFrameBinding.h"
 #include "mozilla/dom/RTCRtpScriptTransformer.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
@@ -56,7 +55,8 @@ RTCEncodedVideoFrame::RTCEncodedVideoFrame(
     nsIGlobalObject* aGlobal,
     std::unique_ptr<webrtc::TransformableFrameInterface> aFrame,
     uint64_t aCounter, RTCRtpScriptTransformer* aOwner)
-    : RTCEncodedVideoFrameData{{std::move(aFrame), aCounter, /*timestamp*/ 0}},
+    : RTCEncodedVideoFrameData{RTCEncodedFrameState{std::move(aFrame), aCounter,
+                                                    /*timestamp*/ 0}},
       RTCEncodedFrameBase(aGlobal, static_cast<RTCEncodedFrameState&>(*this)),
       mOwner(aOwner) {
   InitMetadata();
@@ -67,10 +67,10 @@ RTCEncodedVideoFrame::RTCEncodedVideoFrame(
 
 RTCEncodedVideoFrame::RTCEncodedVideoFrame(nsIGlobalObject* aGlobal,
                                            RTCEncodedVideoFrameData&& aData)
-    : RTCEncodedVideoFrameData{{std::move(aData.mFrame), aData.mCounter,
-                                aData.mTimestamp},
-                               aData.mType,
-                               std::move(aData.mMetadata),
+    : RTCEncodedVideoFrameData{RTCEncodedFrameState{std::move(aData.mFrame),
+                                                    aData.mCounter,
+                                                    aData.mTimestamp},
+                               aData.mType, std::move(aData.mMetadata),
                                aData.mRid},
       RTCEncodedFrameBase(aGlobal, static_cast<RTCEncodedFrameState&>(*this)),
       mOwner(nullptr) {
@@ -91,7 +91,7 @@ void RTCEncodedVideoFrame::InitMetadata() {
   }
   mMetadata.mDependencies.Construct();
   for (const auto dep : metadata.GetFrameDependencies()) {
-    Unused << mMetadata.mDependencies.Value().AppendElement(
+    (void)mMetadata.mDependencies.Value().AppendElement(
         static_cast<unsigned long long>(dep), fallible);
   }
   mMetadata.mWidth.Construct(metadata.GetWidth());
@@ -106,8 +106,7 @@ void RTCEncodedVideoFrame::InitMetadata() {
   mMetadata.mPayloadType.Construct(videoFrame.GetPayloadType());
   mMetadata.mContributingSources.Construct();
   for (const auto csrc : metadata.GetCsrcs()) {
-    Unused << mMetadata.mContributingSources.Value().AppendElement(csrc,
-                                                                   fallible);
+    (void)mMetadata.mContributingSources.Value().AppendElement(csrc, fallible);
   }
 
   // The metadata timestamp is different, and not presently present in the
@@ -166,13 +165,12 @@ already_AddRefed<RTCEncodedVideoFrame> RTCEncodedVideoFrame::Constructor(
 
 RTCEncodedVideoFrameData RTCEncodedVideoFrameData::Clone() const {
   return RTCEncodedVideoFrameData{
-      {webrtc::CloneVideoFrame(
-           static_cast<webrtc::TransformableVideoFrameInterface*>(
-               mFrame.get())),
-       mCounter, mTimestamp},
-      mType,
-      RTCEncodedVideoFrameMetadata(mMetadata),
-      mRid};
+      RTCEncodedFrameState{
+          webrtc::CloneVideoFrame(
+              static_cast<webrtc::TransformableVideoFrameInterface*>(
+                  mFrame.get())),
+          mCounter, mTimestamp},
+      mType, RTCEncodedVideoFrameMetadata(mMetadata), mRid};
 }
 
 nsIGlobalObject* RTCEncodedVideoFrame::GetParentObject() const {

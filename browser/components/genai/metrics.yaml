@@ -41,7 +41,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D214470
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -92,7 +92,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D214470
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -109,7 +109,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D217782
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -126,7 +126,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D217782
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -143,7 +143,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D214470
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -181,7 +181,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D214470
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -207,7 +207,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D237127
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -227,7 +227,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D214470
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -247,7 +247,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D226205
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -319,7 +319,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D223938
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -342,7 +342,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D223938
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -365,7 +365,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D223938
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -388,7 +388,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D223938
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -411,7 +411,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D223938
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -434,7 +434,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D223938
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -495,7 +495,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D214470
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -521,7 +521,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D217782
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -541,7 +541,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D217782
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -569,7 +569,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D225895
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -595,7 +595,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D223938
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -615,7 +615,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D217782
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -641,7 +641,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D223938
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -661,7 +661,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D223938
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -684,7 +684,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D223938
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -704,7 +704,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D223938
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -727,7 +727,7 @@ genai.chatbot:
       - https://phabricator.services.mozilla.com/D214470
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:

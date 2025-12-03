@@ -51,10 +51,10 @@ class WallpaperSettingsFragment : Fragment() {
                 FirefoxTheme {
                     val wallpapers = appStore.observeAsComposableState { state ->
                         state.wallpaperState.availableWallpapers
-                    }.value ?: listOf()
+                    }.value
                     val currentWallpaper = appStore.observeAsComposableState { state ->
                         state.wallpaperState.currentWallpaper
-                    }.value ?: Wallpaper.Default
+                    }.value
 
                     val coroutineScope = rememberCoroutineScope()
 

@@ -6,8 +6,6 @@
 #ifndef nsDirectoryIndexStream_h__
 #define nsDirectoryIndexStream_h__
 
-#include "mozilla/Attributes.h"
-
 #include "nsString.h"
 #include "nsIInputStream.h"
 #include "nsCOMArray.h"

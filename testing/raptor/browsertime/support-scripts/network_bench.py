@@ -701,7 +701,7 @@ class NetworkBench(BasePythonSupport):
             "alertThreshold": float(test.get("alert_threshold", 2.0)),
             "unit": unit,
             "replicates": replicates,
-            "shouldAlert": False,
+            "shouldAlert": True,
             "value": round(filters.mean(replicates), 3),
         }
 

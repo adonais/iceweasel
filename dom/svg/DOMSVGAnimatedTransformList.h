@@ -8,7 +8,6 @@
 #define DOM_SVG_DOMSVGANIMATEDTRANSFORMLIST_H_
 
 #include "SVGElement.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"

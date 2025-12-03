@@ -53,8 +53,6 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
-#include "mozilla/Utf8.h"
 #include "mozilla/Variant.h"
 #include "mozilla/dom/ClientManagerService.h"
 #include "mozilla/dom/FlippedOnce.h"
@@ -627,7 +625,7 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateStorageConnection(
       // Windows caches the file size, let's force it to stat the file again.
       QM_TRY_INSPECT(const bool& exists,
                      MOZ_TO_RESULT_INVOKE_MEMBER(aDBFile, Exists));
-      Unused << exists;
+      (void)exists;
 
       QM_TRY_INSPECT(const int64_t& fileSize,
                      MOZ_TO_RESULT_INVOKE_MEMBER(aDBFile, GetFileSize));
@@ -2837,7 +2835,7 @@ using PrivateDatastoreHashtable =
 // event of an (unlikely) race where the private browsing windows are still
 // being torn down, will cause the Datastore to be discarded when the last
 // window actually goes away.
-MOZ_RUNINIT UniquePtr<PrivateDatastoreHashtable> gPrivateDatastores;
+MOZ_CONSTINIT UniquePtr<PrivateDatastoreHashtable> gPrivateDatastores;
 
 using DatabaseArray = nsTArray<Database*>;
 
@@ -3189,7 +3187,7 @@ bool VerifyOriginKey(const nsACString& aOriginKey,
   QM_TRY_INSPECT((const auto& [originAttrSuffix, originKey]),
                  GenerateOriginKey2(aPrincipalInfo), false);
 
-  Unused << originAttrSuffix;
+  (void)originAttrSuffix;
 
   QM_TRY(OkIf(originKey == aOriginKey), false,
          ([&originKey = originKey, &aOriginKey](const auto) {
@@ -4220,7 +4218,7 @@ nsresult Connection::RollbackWriteTransaction() {
 
   // This may fail if SQLite already rolled back the transaction so ignore any
   // errors.
-  Unused << stmt->Execute();
+  (void)stmt->Execute();
 
   return NS_OK;
 }
@@ -5724,7 +5722,7 @@ void Snapshot::MarkDirty() {
   AssertIsOnBackgroundThread();
 
   if (!mSentMarkDirty) {
-    Unused << SendMarkDirty();
+    (void)SendMarkDirty();
     mSentMarkDirty = true;
   }
 }
@@ -6177,9 +6175,9 @@ void Observer::Observe(Database* aDatabase, const nsString& aDocumentURI,
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aDatabase);
 
-  Unused << SendObserve(aDatabase->GetPrincipalInfo(),
-                        aDatabase->PrivateBrowsingId(), aDocumentURI, aKey,
-                        aOldValue, aNewValue);
+  (void)SendObserve(aDatabase->GetPrincipalInfo(),
+                    aDatabase->PrivateBrowsingId(), aDocumentURI, aKey,
+                    aOldValue, aNewValue);
 }
 
 void Observer::ActorDestroy(ActorDestroyReason aWhy) {
@@ -6505,8 +6503,7 @@ void LSRequestBase::SendResults() {
       response = ResultCode();
     }
 
-    Unused << PBackgroundLSRequestParent::Send__delete__(this,
-                                                         std::move(response));
+    (void)PBackgroundLSRequestParent::Send__delete__(this, std::move(response));
   }
 
   Cleanup();
@@ -8135,7 +8132,7 @@ void LSSimpleRequestBase::SendResults() {
       response = ResultCode();
     }
 
-    Unused << PBackgroundLSSimpleRequestParent::Send__delete__(this, response);
+    (void)PBackgroundLSSimpleRequestParent::Send__delete__(this, response);
   }
 
   mState = State::Completed;
@@ -8582,7 +8579,7 @@ Result<UsageInfo, nsresult> QuotaClient::InitOrigin(
 
         switch (dirEntryKind) {
           case nsIFileKind::ExistsAsDirectory:
-            Unused << WARN_IF_FILE_IS_UNKNOWN(*file);
+            (void)WARN_IF_FILE_IS_UNKNOWN(*file);
             break;
 
           case nsIFileKind::ExistsAsFile: {
@@ -8597,7 +8594,7 @@ Result<UsageInfo, nsresult> QuotaClient::InitOrigin(
               return Ok{};
             }
 
-            Unused << WARN_IF_FILE_IS_UNKNOWN(*file);
+            (void)WARN_IF_FILE_IS_UNKNOWN(*file);
 
             break;
           }
@@ -9075,7 +9072,7 @@ QuotaClient::CreateArchivedOriginScope(const OriginScope& aOriginScope) {
     QM_TRY_INSPECT((const auto& [originAttrSuffix, originKey]),
                    GenerateOriginKey2(principalInfo));
 
-    Unused << originAttrSuffix;
+    (void)originAttrSuffix;
 
     return ArchivedOriginScope::CreateFromPrefix(originKey);
   }

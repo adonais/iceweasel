@@ -7,7 +7,6 @@
 #define nsURLParsers_h__
 
 #include "nsIURLParser.h"
-#include "mozilla/Attributes.h"
 
 //----------------------------------------------------------------------------
 // base class for url parsers

@@ -7,8 +7,6 @@
 #ifndef __ChromeObjectWrapper_h__
 #define __ChromeObjectWrapper_h__
 
-#include "mozilla/Attributes.h"
-
 #include "FilteringWrapper.h"
 
 namespace xpc {

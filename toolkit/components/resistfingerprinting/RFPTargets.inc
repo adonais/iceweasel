@@ -35,7 +35,7 @@ ITEM_VALUE(NavigatorHWConcurrency,      16)
 ITEM_VALUE(NavigatorOscpu,              17)
 ITEM_VALUE(NavigatorPlatform,           18)
 ITEM_VALUE(NavigatorUserAgent,          19)
-ITEM_VALUE(PointerId,                   20)
+// We no longer use PointerId, it can renamed and reused
 ITEM_VALUE(StreamVideoFacingMode,       21)
 ITEM_VALUE(JSDateTimeUTC,               22)
 ITEM_VALUE(JSMathFdlibm,                23)
@@ -109,6 +109,7 @@ ITEM_VALUE(NavigatorHWConcurrencyTiered,74)
 ITEM_VALUE(WebGLRandomization,          75)
 ITEM_VALUE(EfficientCanvasRandomization, 76)
 
+// !!! Adding a new target? Rename PointerId and repurpose it.
 
 /*
  * In certain cases, we precompute the value of ShouldRFP for e.g. a Document.

@@ -198,7 +198,7 @@ inline auto TakeN(MediaEventSourceImpl<Lp, Args...>& aEvent, size_t aN)
  * executed on aTarget.
  */
 inline void WaitForMirrors(const RefPtr<nsISerialEventTarget>& aTarget) {
-  Unused << WaitFor(InvokeAsync(aTarget, __func__, [] {
+  (void)WaitFor(InvokeAsync(aTarget, __func__, [] {
     return GenericPromise::CreateAndResolve(true, "WaitForMirrors resolver");
   }));
 }

@@ -29,12 +29,10 @@
 #include "nsNetCID.h"
 #include "nsThread.h"
 #include "VRProcessManager.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/MemoryReportingProcess.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RDDProcessManager.h"
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/Services.h"
 #include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/UniquePtrExtensions.h"
@@ -1680,7 +1678,7 @@ class AndroidMemoryReporter final : public nsIMemoryReporter {
   NS_IMETHOD
   CollectReports(nsIHandleReportCallback* aHandleReport, nsISupports* aData,
                  bool aAnonymize) override {
-    if (!jni::IsAvailable() || jni::GetAPIVersion() < 23) {
+    if (!jni::IsAvailable()) {
       return NS_OK;
     }
 

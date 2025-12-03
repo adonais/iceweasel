@@ -35,21 +35,19 @@
 #include "mozilla/gfx/Tools.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SVGImageContext.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "nsGfxCIID.h"
 #include "gfxContext.h"
 #include "WinUtils.h"
 #include "WinWindowOcclusionTracker.h"
 #include "nsIWidgetListener.h"
-#include "mozilla/Unused.h"
 #include "nsDebug.h"
 #include "WindowRenderer.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "ImageRegion.h"
 
-#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/webrender/RenderThread.h"
 #include "InProcessWinCompositorWidget.h"
 
 using namespace mozilla;
@@ -149,9 +147,8 @@ bool nsWindow::OnPaint() {
     gfxCriticalNote << "(nsWindow) Detected device reset: " << (int)resetReason;
 
     gfxWindowsPlatform::GetPlatform()->UpdateRenderMode();
-
-    GPUProcessManager::GPUProcessManager::NotifyDeviceReset(
-        resetReason, gfx::DeviceResetDetectPlace::WIDGET);
+    wr::RenderThread::PostHandleDeviceReset(gfx::DeviceResetDetectPlace::WIDGET,
+                                            resetReason);
 
     gfxCriticalNote << "(nsWindow) Finished device reset.";
     return false;
@@ -395,7 +392,7 @@ void nsWindow::MaybeEnableWindowOcclusion(bool aEnable) {
 // call for RequesetFxrOutput as soon as the compositor for this widget is
 // available.
 void nsWindow::CreateCompositor() {
-  nsBaseWidget::CreateCompositor();
+  nsIWidget::CreateCompositor();
 
   MaybeEnableWindowOcclusion(/* aEnable */ true);
 
@@ -407,7 +404,7 @@ void nsWindow::CreateCompositor() {
 void nsWindow::DestroyCompositor() {
   MaybeEnableWindowOcclusion(/* aEnable */ false);
 
-  nsBaseWidget::DestroyCompositor();
+  nsIWidget::DestroyCompositor();
 }
 
 void nsWindow::RequestFxrOutput() {

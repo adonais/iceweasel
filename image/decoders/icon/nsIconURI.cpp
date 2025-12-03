@@ -7,7 +7,6 @@
 
 #include "nsIconURI.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/Sprintf.h"
 

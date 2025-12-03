@@ -1043,6 +1043,9 @@ class Assembler : public AssemblerX86Shared {
         masm.leaq_mr(src.disp(), src.base(), src.index(), src.scale(),
                      dest.encoding());
         break;
+      case Operand::MEM_SCALE_NOBASE:
+        masm.leaq_mr(src.disp(), src.index(), src.scale(), dest.encoding());
+        break;
       default:
         MOZ_CRASH("unexepcted operand kind");
     }

@@ -14,7 +14,6 @@
 #include "nsCOMPtr.h"
 #include "nsString.h"
 
-#include "mozilla/Attributes.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/TimeStamp.h"

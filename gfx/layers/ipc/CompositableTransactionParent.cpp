@@ -17,9 +17,8 @@
 #include "mozilla/layers/TextureHost.h"        // for TextureHost
 #include "mozilla/layers/WebRenderImageHost.h"
 #include "mozilla/mozalloc.h"  // for operator delete
-#include "mozilla/Unused.h"
-#include "nsDebug.h"   // for NS_WARNING, NS_ASSERTION
-#include "nsRegion.h"  // for nsIntRegion
+#include "nsDebug.h"           // for NS_WARNING, NS_ASSERTION
+#include "nsRegion.h"          // for nsIntRegion
 
 namespace mozilla {
 namespace layers {

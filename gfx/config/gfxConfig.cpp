@@ -6,7 +6,6 @@
 
 #include "gfxConfig.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/gfx/GraphicsMessages.h"
 
@@ -167,9 +166,6 @@ void gfxConfig::Inherit(EnumSet<Feature> aFeatures,
       case Feature::OPENGL_COMPOSITING:
         status = aDevicePrefs.oglCompositing();
         break;
-      case Feature::DIRECT2D:
-        status = aDevicePrefs.useD2D1();
-        break;
       default:
         break;
     }
@@ -195,7 +191,7 @@ void gfxConfig::EnableFallback(Fallback aFallback, const char* aMessage) {
 
   if (XRE_IsGPUProcess()) {
     nsCString message(aMessage);
-    Unused << GPUParent::GetSingleton()->SendUsedFallback(aFallback, message);
+    (void)GPUParent::GetSingleton()->SendUsedFallback(aFallback, message);
     return;
   }
 

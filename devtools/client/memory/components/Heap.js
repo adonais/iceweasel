@@ -273,9 +273,8 @@ class Heap extends Component {
       "initial",
       dom.button(
         {
-          className: "devtools-button take-snapshot",
+          className: "devtools-button devtools-button-standalone take-snapshot",
           onClick: onSnapshotClick,
-          "data-standalone": true,
         },
         L10N.getStr("take-snapshot")
       )

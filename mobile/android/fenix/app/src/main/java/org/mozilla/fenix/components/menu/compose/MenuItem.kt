@@ -12,17 +12,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -44,10 +44,10 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.WEB_EXTENSION_ITEM
 import org.mozilla.fenix.compose.list.IconListItem
-import org.mozilla.fenix.compose.list.ImageListItem
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
@@ -139,14 +139,16 @@ internal fun MenuItem(
             .wrapContentSize()
             .clip(shape = ROUNDED_CORNER_SHAPE)
             .background(
-                color = FirefoxTheme.colors.layer3,
+                color = MaterialTheme.colorScheme.surfaceDimVariant,
             ),
         labelModifier = labelModifier,
-        labelTextColor = labelTextColor,
+        colors = ListItemDefaults.colors(
+            headlineColor = labelTextColor,
+            supportingColor = descriptionTextColor,
+            ),
         maxLabelLines = 2,
         description = description,
         maxDescriptionLines = maxDescriptionLines,
-        descriptionTextColor = descriptionTextColor,
         enabled = enabled,
         minHeight = if (description != null) {
             MENU_ITEM_HEIGHT_WITH_DESC
@@ -196,7 +198,7 @@ internal fun MenuTextItem(
         modifier = modifier
             .clip(shape = ROUNDED_CORNER_SHAPE)
             .background(
-                color = FirefoxTheme.colors.layer3,
+                color = MaterialTheme.colorScheme.surfaceDimVariant,
             ),
         iconPainter = iconPainter,
         onClick = onClick,
@@ -220,18 +222,18 @@ internal fun MenuTextItem(
 internal fun WebExtensionMenuItem(
     label: String,
     iconPainter: Painter,
-    iconTint: Color? = null,
+    iconTint: Color = Color.Unspecified,
     enabled: Boolean?,
     badgeText: String?,
     index: Int = 0,
     onClick: (() -> Unit)? = null,
     onSettingsClick: (() -> Unit)? = null,
 ) {
-    ImageListItem(
+    IconListItem(
         label = label,
-        iconPainter = iconPainter,
         enabled = enabled == true,
-        iconTint = iconTint,
+        beforeIconTint = iconTint,
+        beforeIconPainter = iconPainter,
         onClick = onClick,
         modifier = Modifier
             .testTag(WEB_EXTENSION_ITEM)
@@ -250,9 +252,9 @@ internal fun WebExtensionMenuItem(
             .wrapContentSize()
             .clip(shape = ROUNDED_CORNER_SHAPE)
             .background(
-                color = FirefoxTheme.colors.layer3,
+                color = MaterialTheme.colorScheme.surfaceDimVariant,
             ),
-        afterListItemAction = {
+        afterListAction = {
             Row(
                 modifier = Modifier.padding(start = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -261,17 +263,10 @@ internal fun WebExtensionMenuItem(
                 if (!badgeText.isNullOrEmpty()) {
                     Badge(
                         badgeText = badgeText,
-                        badgeBackgroundColor = FirefoxTheme.colors.layer2,
                     )
                 }
 
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(vertical = 6.dp)
-                        .fillMaxHeight()
-                        .width(1.dp),
-                    color = FirefoxTheme.colors.borderPrimary,
-                )
+                VerticalDivider()
 
                 IconButton(
                     modifier = Modifier.size(24.dp),
@@ -279,7 +274,7 @@ internal fun WebExtensionMenuItem(
                 ) {
                     Icon(
                         painter = painterResource(iconsR.drawable.mozac_ic_settings_24),
-                        tint = FirefoxTheme.colors.iconPrimary,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         contentDescription = null,
                     )
                 }
@@ -301,10 +296,10 @@ internal fun MenuBadgeItem(
     val badgeBackgroundColor: Color
 
     if (checked) {
-        badgeBackgroundColor = FirefoxTheme.colors.badgeActive
+        badgeBackgroundColor = MaterialTheme.colorScheme.primaryContainer
         state = MenuItemState.ACTIVE
     } else {
-        badgeBackgroundColor = FirefoxTheme.colors.layer2
+        badgeBackgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
         state = MenuItemState.DISABLED
     }
 
@@ -316,7 +311,7 @@ internal fun MenuBadgeItem(
             ) { onClick() }
             .clip(shape = ROUNDED_CORNER_SHAPE)
             .background(
-                color = FirefoxTheme.colors.layer3,
+                color = MaterialTheme.colorScheme.surfaceDimVariant,
             )
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -339,7 +334,7 @@ internal fun MenuBadgeItem(
                 modifier = Modifier
                     .defaultMinSize(minHeight = 20.dp)
                     .wrapContentHeight(),
-                color = FirefoxTheme.colors.textSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = FirefoxTheme.typography.caption,
             )
         }
@@ -356,13 +351,13 @@ internal fun MenuBadgeItem(
 internal fun Badge(
     badgeText: String,
     state: MenuItemState = MenuItemState.ENABLED,
-    badgeBackgroundColor: Color?,
+    badgeBackgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
 ) {
     Column(
         modifier = Modifier
             .clip(shape = RoundedCornerShape(BADGE_ROUNDED_CORNER))
             .background(
-                color = badgeBackgroundColor ?: FirefoxTheme.colors.layer2,
+                color = badgeBackgroundColor,
             )
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -372,7 +367,7 @@ internal fun Badge(
             text = badgeText,
             color = getLabelTextColor(state),
             overflow = TextOverflow.Ellipsis,
-            style = FirefoxTheme.typography.subtitle2,
+            style = FirefoxTheme.typography.headline8,
             maxLines = 1,
         )
     }
@@ -411,29 +406,29 @@ enum class MenuItemState {
 @Composable
 private fun getLabelTextColor(state: MenuItemState): Color {
     return when (state) {
-        MenuItemState.ACTIVE -> FirefoxTheme.colors.textAccent
-        MenuItemState.WARNING -> FirefoxTheme.colors.textCritical
-        else -> FirefoxTheme.colors.textPrimary
+        MenuItemState.ACTIVE -> MaterialTheme.colorScheme.tertiary
+        MenuItemState.WARNING -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onSurface
     }
 }
 
 @Composable
 private fun getDescriptionTextColor(state: MenuItemState): Color {
     return when (state) {
-        MenuItemState.ACTIVE -> FirefoxTheme.colors.textAccent
-        MenuItemState.WARNING -> FirefoxTheme.colors.textCritical
-        MenuItemState.DISABLED -> FirefoxTheme.colors.textDisabled
-        else -> FirefoxTheme.colors.textSecondary
+        MenuItemState.ACTIVE -> MaterialTheme.colorScheme.tertiary
+        MenuItemState.WARNING -> MaterialTheme.colorScheme.error
+        MenuItemState.DISABLED -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 }
 
 @Composable
 private fun getIconTint(state: MenuItemState): Color {
     return when (state) {
-        MenuItemState.ACTIVE -> FirefoxTheme.colors.iconAccentViolet
-        MenuItemState.WARNING -> FirefoxTheme.colors.iconCritical
+        MenuItemState.ACTIVE -> MaterialTheme.colorScheme.tertiary
+        MenuItemState.WARNING -> MaterialTheme.colorScheme.error
         MenuItemState.CRITICAL -> Color.Unspecified
-        else -> FirefoxTheme.colors.iconPrimary
+        else -> MaterialTheme.colorScheme.onSurface
     }
 }
 
@@ -443,11 +438,22 @@ private fun WebExtensionMenuItemPreview() {
     FirefoxTheme {
         Column(
             modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer2),
+                .background(color = MaterialTheme.colorScheme.surface),
         ) {
             WebExtensionMenuItem(
                 label = "label",
                 iconPainter = painterResource(iconsR.drawable.mozac_ic_web_extension_default_icon),
+                iconTint = MaterialTheme.colorScheme.onSurface,
+                enabled = true,
+                badgeText = "17",
+                onClick = {},
+                onSettingsClick = {},
+            )
+            // Web extensions may have multi-colored assets with no tint.
+            WebExtensionMenuItem(
+                label = "colorful icon",
+                iconPainter = painterResource(iconsR.drawable.mozac_ic_shield_slash_critical_24),
+                iconTint = Color.Unspecified,
                 enabled = true,
                 badgeText = "17",
                 onClick = {},
@@ -463,7 +469,7 @@ private fun MenuItemPreview() {
     FirefoxTheme {
         Column(
             modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer3)
+                .background(color = MaterialTheme.colorScheme.surface)
                 .padding(16.dp),
         ) {
             MenuGroup {
@@ -474,8 +480,6 @@ private fun MenuItemPreview() {
                         state = state,
                         onClick = {},
                     )
-
-                    HorizontalDivider(color = FirefoxTheme.colors.borderSecondary)
                 }
 
                 for (state in MenuItemState.entries) {
@@ -486,8 +490,6 @@ private fun MenuItemPreview() {
                         onClick = {},
                         afterIconPainter = painterResource(id = iconsR.drawable.mozac_ic_chevron_right_24),
                     )
-
-                    HorizontalDivider(color = FirefoxTheme.colors.borderSecondary)
                 }
 
                 for (state in MenuItemState.entries) {
@@ -500,8 +502,6 @@ private fun MenuItemPreview() {
                         afterIconPainter = painterResource(id = iconsR.drawable.mozac_ic_plus_24),
                         onAfterIconClick = {},
                     )
-
-                    HorizontalDivider(color = FirefoxTheme.colors.borderSecondary)
                 }
             }
         }
@@ -514,7 +514,8 @@ private fun MenuBadgeItemPreview() {
     FirefoxTheme {
         Column(
             modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer2),
+                .background(color = MaterialTheme.colorScheme.surface)
+                .padding(all = FirefoxTheme.layout.space.static200),
         ) {
             MenuBadgeItem(
                 label = stringResource(id = R.string.protection_panel_etp_toggle_label),

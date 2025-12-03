@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -149,7 +156,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s îți oferă controlul.</p> <p>Folosește-l ca browser privat: <ul> <li>Caută și navighează direct în aplicație</li> <li>Blochează elementele de urmărire (sau actualizează setările pentru a permite elementele de urmărire)</li> <li>Șterge pentru a elimina cookie-urile, precum și istoricul de căutare și navigare</li> </ul> </p> <p>%1$s este produs de Mozilla. Misiunea noastră este să promovăm un internet sănătos și deschis.<br/> <a href=\"%2$s\">Află mai multe</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s îți oferă controlul.</p>\n<p>Folosește-l ca browser privat:\n<ul>\n<li>Caută și navighează direct în aplicație</li>\n<li>Blochează elementele de urmărire (sau actualizează setările pentru a permite elementele de urmărire)</li>\n<li>Șterge pentru a elimina cookie-urile, precum și istoricul de căutare și navigare</li>\n</ul> </p>\n<p>%1$s este produs de Mozilla. Misiunea noastră este să promovăm un internet sănătos și deschis.<br/>\n<a href=\"%2$s\">Află mai multe</a></p>]]></string>
   <!-- A link to SUMO at the bottom of About Focus screen. -->
   <string name="about_screen_learn_more">Află mai multe</string>
   <!-- Header for the Privacy and Security settings menu -->
@@ -875,7 +882,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Poate fi o problemă de configurare a serverului sau ar putea fi cineva care încearcă să uzurpe identitatea serverului. <br/><br/> Dacă te-ai conectat cu succes la server în trecut, eroarea ar putea fi temporară.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Ar putea fi cineva care încearcă să uzurpe identitatea site-ului și ar fi riscant să mergi mai departe.</label> <br><br> <label>%1$s nu are încredere în <b>%2$s</b> pentru că emitentul certificatului este necunoscut, certificatul este autosemnat sau serverul nu trimite certificatele intermediare corecte.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Ar putea fi cineva care încearcă să uzurpe identitatea site-ului și ar fi riscant să mergi mai departe.</label> <br><br>\n<label>%1$s nu are încredere în <b>%2$s</b> pentru că emitentul certificatului este necunoscut, certificatul este autosemnat sau serverul nu trimite certificatele intermediare corecte.</label>]]></string>
   <!--
     Sessions List
 

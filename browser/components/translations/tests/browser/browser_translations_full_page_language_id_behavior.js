@@ -296,3 +296,57 @@ add_task(async function test_language_identification_behavior() {
     await cleanup();
   }
 });
+
+/**
+ * This test case tests the behavior when the page has no declared language
+ * tag and the detected language is not supported by Translations.
+ */
+add_task(async function test_detected_language_unsupported() {
+  info("Testing unsupported detected language with no declared language");
+  TranslationsParent.testAutomaticPopup = true;
+
+  let wasPopupShown = false;
+  window.FullPageTranslationsPanel.elements; // De-lazify the panel.
+
+  const { resolve } = Promise.withResolvers();
+  const panel = window.document.getElementById("full-page-translations-panel");
+
+  function handlePopupShown() {
+    wasPopupShown = true;
+    panel.removeEventListener("popupshown", handlePopupShown);
+    resolve();
+  }
+  panel.addEventListener("popupshown", handlePopupShown);
+
+  const { cleanup, runInPage } = await loadTestPage({
+    page: SPANISH_PAGE_UNDECLARED_URL,
+    // Deliberately omit Spanish so that it is not supported.
+    languagePairs: [
+      { fromLang: "en", toLang: "fr" },
+      { fromLang: "fr", toLang: "en" },
+      { fromLang: "en", toLang: "uk" },
+      { fromLang: "uk", toLang: "en" },
+    ],
+    autoDownloadFromRemoteSettings: true,
+    contentEagerMode: true,
+  });
+
+  await FullPageTranslationsTestUtils.assertTranslationsButton(
+    { button: false },
+    "The translations button is not visible when the detected language is unsupported."
+  );
+
+  await FullPageTranslationsTestUtils.assertPageIsNotTranslated(
+    runInPage,
+    "No translation should occur when the detected language is unsupported."
+  );
+
+  is(
+    wasPopupShown,
+    false,
+    "A translation was not offered for an unsupported detected language."
+  );
+
+  TranslationsParent.testAutomaticPopup = false;
+  await cleanup();
+});

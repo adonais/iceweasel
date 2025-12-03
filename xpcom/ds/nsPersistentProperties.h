@@ -12,7 +12,6 @@
 #include "nsString.h"
 #include "nsCOMPtr.h"
 #include "mozilla/ArenaAllocator.h"
-#include "mozilla/Attributes.h"
 
 class nsIUnicharInputStream;
 

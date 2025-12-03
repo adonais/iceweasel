@@ -269,6 +269,145 @@
           "Label was set from controlAttrs"
         );
       });
+
+      add_task(async function testNestedControlOptions() {
+        const PREF = "test.setting-control-custom-nested.one";
+        const SETTING = "setting-control-custom-nested-one";
+        await SpecialPowers.pushPrefEnv({
+          set: [[PREF, 1]],
+        });
+        Preferences.addAll([{ id: PREF, type: "int" }]);
+        Preferences.addSetting({
+          id: SETTING,
+          pref: PREF,
+        });
+
+        let itemConfig = {
+          control: "moz-button-group",
+          id: SETTING,
+          options: [
+            {
+              control: "div",
+              options: [
+                {
+                  control: "moz-checkbox",
+                },
+              ],
+            },
+          ],
+        };
+        let control = await renderTemplate(itemConfig);
+
+        is(
+          control.controlEl.localName,
+          "moz-button-group",
+          "The control rendered a moz-button-group as parent control"
+        );
+        const nestedControl = control.controlEl.children[0];
+
+        is(
+          nestedControl.localName,
+          "div",
+          "Rendered the nested div element control under the parent control"
+        );
+
+        const nestedControlOption = nestedControl.children[0];
+
+        is(
+          nestedControlOption.localName,
+          "moz-checkbox",
+          "Rendered the moz-checkbox option under the div element control"
+        );
+      });
+
+      add_task(async function testNestedControlOptionItems() {
+        const PREF = "test.setting-control-custom-nested-items.one";
+        const SETTING = "setting-control-custom-nested-items-one";
+
+        const FIRST_NESTED_ITEM_PREF = "test.settings-group.itemone";
+        const FIRST_NESTED_ITEM_SETTING = "setting-item-one";
+
+        const SECOND_NESTED_ITEM_PREF = "test.settings-group.itemtwo";
+        const SECOND_NESTED_ITEM_SETTING = "setting-item-two";
+
+        await SpecialPowers.pushPrefEnv({
+          set: [
+            [PREF, 1],
+            [FIRST_NESTED_ITEM_PREF, true],
+            [SECOND_NESTED_ITEM_PREF, false],
+          ],
+        });
+        Preferences.addAll([
+          { id: PREF, type: "int" },
+          { id: FIRST_NESTED_ITEM_PREF, type: "bool" },
+          { id: SECOND_NESTED_ITEM_PREF, type: "bool" },
+        ]);
+        Preferences.addSetting({
+          id: SETTING,
+          pref: PREF,
+        });
+
+        Preferences.addSetting({
+          id: FIRST_NESTED_ITEM_SETTING,
+          pref: FIRST_NESTED_ITEM_PREF,
+        });
+        Preferences.addSetting({
+          id: SECOND_NESTED_ITEM_SETTING,
+          pref: SECOND_NESTED_ITEM_PREF,
+        });
+
+        let itemConfig = {
+          control: "moz-radio-group",
+          l10nId: LABEL_L10N_ID,
+          id: SETTING,
+          options: [
+            {
+              control: "moz-radio",
+              l10nId: LABEL_L10N_ID,
+              items: [
+                {
+                  l10nId: LABEL_L10N_ID,
+                  id: FIRST_NESTED_ITEM_SETTING,
+                  control: "moz-box-button",
+                },
+              ],
+            },
+          ],
+        };
+        let control = await renderTemplate(itemConfig);
+
+        is(
+          control.controlEl.localName,
+          "moz-radio-group",
+          "The control rendered a moz-radio-group as parent control"
+        );
+        const nestedOptionControl = control.controlEl.children[0];
+
+        is(
+          nestedOptionControl.localName,
+          "moz-radio",
+          "Rendered moz-radio as the nested control option"
+        );
+
+        const nestedControlItems = nestedOptionControl.children;
+        is(nestedControlItems.length, 1, "Rendered nested control item");
+        const [firstNestedControlItem] = nestedControlItems;
+        is(
+          firstNestedControlItem.localName,
+          "setting-control",
+          "Rendered the first nested setting-control item"
+        );
+        is(
+          firstNestedControlItem.controlEl.id,
+          FIRST_NESTED_ITEM_SETTING,
+          "Rendered the first nested setting ID"
+        );
+        is(
+          firstNestedControlItem.controlEl.localName,
+          "moz-box-button",
+          "Rendered moz-box-button as the first nested control item"
+        );
+      });
     </script>
   </head>
   <body>

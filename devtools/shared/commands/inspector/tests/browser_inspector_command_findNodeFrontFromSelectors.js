@@ -4,6 +4,11 @@
 "use strict";
 
 add_task(async () => {
+  // This test istied to the legacy 5ms timeout for findNodeFrontFromSelectors.
+  // Restore the original timeout when calling findNodeFrontFromSelectors.
+  const { getSystemInfo } = require("resource://devtools/shared/system.js");
+  const legacyTimeout = 5000 / getSystemInfo().timeoutMultiplier;
+
   // Build a simple test page with a remote iframe, using two distinct origins .com and .org
   const iframeOrgHtml = encodeURIComponent(
     `<h2 id="in-iframe">in org - same origin</h2>`
@@ -41,8 +46,10 @@ add_task(async () => {
   );
 
   info("Check that it returns null when a string is passed");
-  nodeFront =
-    await commands.inspectorCommand.findNodeFrontFromSelectors("body main");
+  nodeFront = await commands.inspectorCommand.findNodeFrontFromSelectors(
+    "body main",
+    legacyTimeout
+  );
   is(
     nodeFront,
     null,
@@ -50,7 +57,10 @@ add_task(async () => {
   );
 
   info("Check it returns null when an empty array is passed");
-  nodeFront = await commands.inspectorCommand.findNodeFrontFromSelectors([]);
+  nodeFront = await commands.inspectorCommand.findNodeFrontFromSelectors(
+    [],
+    legacyTimeout
+  );
   is(
     nodeFront,
     null,
@@ -58,9 +68,10 @@ add_task(async () => {
   );
 
   info("Check that passing a selector for a non-matching element returns null");
-  nodeFront = await commands.inspectorCommand.findNodeFrontFromSelectors([
-    "h1",
-  ]);
+  nodeFront = await commands.inspectorCommand.findNodeFrontFromSelectors(
+    ["h1"],
+    legacyTimeout
+  );
   is(
     nodeFront,
     null,
@@ -68,9 +79,10 @@ add_task(async () => {
   );
 
   info("Check passing a selector for an element in the top document");
-  nodeFront = await commands.inspectorCommand.findNodeFrontFromSelectors([
-    "button",
-  ]);
+  nodeFront = await commands.inspectorCommand.findNodeFrontFromSelectors(
+    ["button"],
+    legacyTimeout
+  );
   is(
     nodeFront.typeName,
     "domnode",
@@ -83,10 +95,10 @@ add_task(async () => {
   );
 
   info("Check passing a selector for an element in a same origin iframe");
-  nodeFront = await commands.inspectorCommand.findNodeFrontFromSelectors([
-    "#iframe-org",
-    "#in-iframe",
-  ]);
+  nodeFront = await commands.inspectorCommand.findNodeFrontFromSelectors(
+    ["#iframe-org", "#in-iframe"],
+    legacyTimeout
+  );
   is(
     nodeFront.displayName,
     "h2",
@@ -102,7 +114,7 @@ add_task(async () => {
     // Default timeout for findNodeFrontFromSelectors is 5s.
     // Iframe loads in 6s, with only 3s remaining when we reach this step.
     // Use a bigger timeout to avoid intermittent failures.
-    Services.appinfo.OS === "Darwin" ? 20000 : undefined
+    (Services.appinfo.OS === "Darwin" ? 4 : 1) * legacyTimeout
   );
   is(
     nodeFront.displayName,
@@ -113,10 +125,10 @@ add_task(async () => {
   info(
     "Check passing a selector for an non-existing element in an existing iframe"
   );
-  nodeFront = await commands.inspectorCommand.findNodeFrontFromSelectors([
-    "iframe",
-    "#non-existant-id",
-  ]);
+  nodeFront = await commands.inspectorCommand.findNodeFrontFromSelectors(
+    ["iframe", "#non-existant-id"],
+    legacyTimeout
+  );
   is(
     nodeFront.displayName,
     "#document",

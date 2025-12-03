@@ -16,7 +16,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/net/DocumentChannelChild.h"
 #include "mozilla/net/ParentProcessDocumentChannel.h"

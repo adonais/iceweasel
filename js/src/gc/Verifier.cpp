@@ -4,7 +4,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Maybe.h"
 #include "mozilla/Sprintf.h"
 
 #include <algorithm>
@@ -928,8 +927,9 @@ void HeapCheckTracerBase::dumpCellInfo(Cell* cell) {
   }
   fprintf(stderr, " %p", cell);
   if (obj) {
-    fprintf(stderr, " (compartment %p)", obj->compartment());
+    fprintf(stderr, " in compartment %p", obj->compartment());
   }
+  fprintf(stderr, " in zone %p", cell->zone());
 }
 
 void HeapCheckTracerBase::dumpCellPath(const char* name) {
@@ -1201,8 +1201,13 @@ bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
   // Symbols key must be marked in the atom marking bitmap for the zone.
   if (key->is<JS::Symbol>()) {
     GCRuntime* gc = &mapRuntime->gc;
-    if (!gc->atomMarking.atomIsMarked(zone, key->as<JS::Symbol>())) {
-      fprintf(stderr, "Symbol key %p not marked in atom marking bitmap\n", key);
+    CellColor bitmapColor =
+        gc->atomMarking.getAtomMarkColor(zone, key->as<JS::Symbol>());
+    if (bitmapColor < keyColor) {
+      fprintf(stderr, "Atom marking bitmap is less marked than symbol key %p\n",
+              key);
+      fprintf(stderr, "(key %p is %s, bitmap is %s)\n", key,
+              CellColorName(keyColor), CellColorName(bitmapColor));
       ok = false;
     }
   }

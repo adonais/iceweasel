@@ -218,6 +218,18 @@ class ProtocolParserProtobufV5 final : public ProtocolParser {
   nsresult ProcessAddition4Bytes(TableUpdateV4& aTableUpdate,
                                  const v5::RiceDeltaEncoded32Bit& aAddition);
 
+  // Process the additions for a 8-byte encoded prefixes.
+  nsresult ProcessAddition8Bytes(TableUpdateV4& aTableUpdate,
+                                 const v5::RiceDeltaEncoded64Bit& aAddition);
+
+  // Process the additions for a 16-byte encoded prefixes.
+  nsresult ProcessAddition16Bytes(TableUpdateV4& aTableUpdate,
+                                  const v5::RiceDeltaEncoded128Bit& aAddition);
+
+  // Process the additions for a 32-byte encoded prefixes.
+  nsresult ProcessAddition32Bytes(TableUpdateV4& aTableUpdate,
+                                  const v5::RiceDeltaEncoded256Bit& aAddition);
+
   // Process the removals for a encoded prefixes.
   nsresult ProcessRemoval(TableUpdateV4& aTableUpdate,
                           const v5::RiceDeltaEncoded32Bit& aRemoval);

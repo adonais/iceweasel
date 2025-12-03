@@ -117,44 +117,6 @@ RegExpShared* RegExpObject::getShared(JSContext* cx,
   return createShared(cx, regexp);
 }
 
-/* static */
-bool RegExpObject::isOriginalFlagGetter(JSNative native, RegExpFlags* mask) {
-  if (native == regexp_hasIndices) {
-    *mask = RegExpFlag::HasIndices;
-    return true;
-  }
-  if (native == regexp_global) {
-    *mask = RegExpFlag::Global;
-    return true;
-  }
-  if (native == regexp_ignoreCase) {
-    *mask = RegExpFlag::IgnoreCase;
-    return true;
-  }
-  if (native == regexp_multiline) {
-    *mask = RegExpFlag::Multiline;
-    return true;
-  }
-  if (native == regexp_dotAll) {
-    *mask = RegExpFlag::DotAll;
-    return true;
-  }
-  if (native == regexp_sticky) {
-    *mask = RegExpFlag::Sticky;
-    return true;
-  }
-  if (native == regexp_unicode) {
-    *mask = RegExpFlag::Unicode;
-    return true;
-  }
-  if (native == regexp_unicodeSets) {
-    *mask = RegExpFlag::UnicodeSets;
-    return true;
-  }
-
-  return false;
-}
-
 static const ClassSpec RegExpObjectClassSpec = {
     GenericCreateConstructor<js::regexp_construct, 2, gc::AllocKind::FUNCTION>,
     GenericCreatePrototype<RegExpObject>,

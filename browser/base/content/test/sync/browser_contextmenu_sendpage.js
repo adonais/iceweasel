@@ -120,6 +120,7 @@ add_task(async function test_link_contextmenu() {
       : []),
     "context-openlink",
     "context-openlinkprivate",
+    "context-previewlink",
     "context-sep-open",
     "context-bookmarklink",
     "context-savelink",

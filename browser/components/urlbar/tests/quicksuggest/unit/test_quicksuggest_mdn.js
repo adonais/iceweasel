@@ -45,7 +45,7 @@ add_setup(async function init() {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     remoteSettingsRecords: REMOTE_SETTINGS_DATA,
     prefs: [
-      ["suggest.quicksuggest.nonsponsored", true],
+      ["suggest.quicksuggest.all", true],
       ["suggest.quicksuggest.sponsored", false],
     ],
   });
@@ -89,8 +89,9 @@ add_task(async function disableByLocalPref() {
 
   const prefs = [
     "suggest.mdn",
+    "mdn.featureGate",
     "quicksuggest.enabled",
-    "suggest.quicksuggest.nonsponsored",
+    "suggest.quicksuggest.all",
   ];
 
   for (const pref of prefs) {

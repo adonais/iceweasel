@@ -221,6 +221,7 @@ class nsHttpChannel final : public HttpBaseChannel,
 
  public: /* internal necko use only */
   uint32_t GetRequestTime() const { return mRequestTime; }
+  const nsACString& GetLNAPromptAction() const { return mLNAPromptAction; }
 
   void AsyncOpenFinal(TimeStamp aTimeStamp);
 
@@ -357,6 +358,7 @@ class nsHttpChannel final : public HttpBaseChannel,
       const nsACString& aPermissionType);
   void MaybeUpdateDocumentIPAddressSpaceFromCache();
   nsresult ProcessLNAActions();
+  void UpdateCurrentIpAddressSpace();
 
  public:
   void UpdateCacheDisposition(bool aSuccessfulReval, bool aPartialContentUsed);
@@ -764,14 +766,14 @@ class nsHttpChannel final : public HttpBaseChannel,
   void PopRedirectAsyncFunc(nsContinueRedirectionFunc func);
 
   // If this resource is eligible for tailing based on class-of-service flags
-  // and load flags.  We don't tail Leaders/Unblocked/UrgentStart and top-level
-  // loads.
+  // and load flags.  We don't tail Leaders/Unblocked/UrgentStart and
+  // top-level loads.
   bool EligibleForTailing();
 
   // Called exclusively only from AsyncOpen or after all classification
   // callbacks. If this channel is 1) Tail, 2) assigned a request context, 3)
-  // the context is still in the tail-blocked phase, then the method will queue
-  // this channel. OnTailUnblock will be called after the context is
+  // the context is still in the tail-blocked phase, then the method will
+  // queue this channel. OnTailUnblock will be called after the context is
   // tail-unblocked or canceled.
   bool WaitingForTailUnblock();
 
@@ -829,12 +831,13 @@ class nsHttpChannel final : public HttpBaseChannel,
   void MaybeRaceCacheWithNetwork();
 
   // Creates a new cache entry when network wins the race to ensure we have
-  // the latest version of the resource in the cache. Otherwise we might return
-  // an old content when navigating back in history.
+  // the latest version of the resource in the cache. Otherwise we might
+  // return an old content when navigating back in history.
   void MaybeCreateCacheEntryWhenRCWN();
 
   nsresult TriggerNetworkWithDelay(uint32_t aDelay);
   nsresult TriggerNetwork();
+  nsresult OnSuspendTimeout();
   void CancelNetworkRequest(nsresult aStatus);
 
   nsresult LogConsoleError(const char* aTag);
@@ -848,6 +851,12 @@ class nsHttpChannel final : public HttpBaseChannel,
   nsCOMPtr<nsITimer> mNetworkTriggerTimer;
   // Is true if the network request has been triggered.
   bool mNetworkTriggered = false;
+
+  // Timer to detect if channel has been suspended too long while writing to
+  // cache. When the timer fires we'll notify the cache entry to make
+  // all other listeners continue.
+  nsCOMPtr<nsITimer> mSuspendTimer;
+  bool mWritingToCache = false;
   bool mWaitingForProxy = false;
   bool mStaleRevalidation = false;
   // Will be true if the onCacheEntryAvailable callback is not called by the
@@ -863,11 +872,16 @@ class nsHttpChannel final : public HttpBaseChannel,
   // OnCacheEntryCheck being called at the same time.
   mozilla::Mutex mRCWNLock MOZ_UNANNOTATED{"nsHttpChannel.mRCWNLock"};
 
+  // Set to true when OnSuspendTimeout calls SetBypassWriterLock(true)
+  // for the cache entry. Gets reset back to false when Resume calls
+  // SetBypassWriterLock(false)
+  bool mBypassCacheWriterSet{false};
+
   TimeStamp mNavigationStartTimeStamp;
 
-  // Promise that blocks connection creation when we want to resolve the origin
-  // host name to be able to give the configured proxy only the resolved IP
-  // to not leak names.
+  // Promise that blocks connection creation when we want to resolve the
+  // origin host name to be able to give the configured proxy only the
+  // resolved IP to not leak names.
   MozPromiseHolder<DNSPromise> mDNSBlockingPromise;
   // When we hit DoConnect before the resolution is done, Then() will be set
   // here to resume DoConnect.
@@ -924,6 +938,9 @@ class nsHttpChannel final : public HttpBaseChannel,
   Maybe<nsCString> mOpenerCallingScriptLocation;
   RefPtr<WebTransportSessionEventListener> mWebTransportSessionEventListener;
   nsMainThreadPtrHandle<nsIReplacedHttpResponse> mOverrideResponse;
+  // LNA telemetry: stores the user's action on the permission prompt
+  // Values: "allow", "deny", or empty string (no prompt shown)
+  nsCString mLNAPromptAction;
 };
 
 }  // namespace net

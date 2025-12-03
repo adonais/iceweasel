@@ -581,7 +581,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPFileCreatorConstructor(
   // We allow the creation of File via this IPC call only for the 'file' process
   // or for testing.
   if (!isFileRemoteType && !StaticPrefs::dom_file_createInChild()) {
-    Unused << dom::FileCreatorParent::Send__delete__(
+    (void)dom::FileCreatorParent::Send__delete__(
         actor, dom::FileCreationErrorResult(NS_ERROR_DOM_INVALID_STATE_ERR));
     return IPC_OK();
   }

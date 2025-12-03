@@ -10,7 +10,6 @@
 
 #include "HTMLDataListElement.h"
 #include "HTMLFormSubmissionConstants.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
@@ -32,7 +31,6 @@
 #include "mozilla/TextUtils.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/Try.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/AutocompleteInfoBinding.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/CustomEvent.h"
@@ -67,6 +65,7 @@
 #include "nsIEditor.h"
 #include "nsIFilePicker.h"
 #include "nsIFormControl.h"
+#include "nsIFormFillController.h"
 #include "nsIFrame.h"
 #include "nsIMutationObserver.h"
 #include "nsIPromptCollection.h"
@@ -107,7 +106,6 @@
 #include "imgRequestProxy.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/LookAndFeel.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/DirectionalityUtils.h"
 #include "nsContentCreatorFunctions.h"
@@ -238,7 +236,7 @@ class DispatchChangeEventCallback final : public GetFilesCallback {
     }
 
     mInputElement->SetFilesOrDirectories(array, true);
-    Unused << NS_WARN_IF(NS_FAILED(DispatchEvents()));
+    (void)NS_WARN_IF(NS_FAILED(DispatchEvents()));
   }
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
@@ -343,7 +341,7 @@ UploadLastDir::ContentPrefCallback::HandleCompletion(uint16_t aReason) {
 
   if (!prefStr.IsEmpty()) {
     nsresult rv = NS_NewLocalFile(prefStr, getter_AddRefs(localFile));
-    Unused << NS_WARN_IF(NS_FAILED(rv));
+    (void)NS_WARN_IF(NS_FAILED(rv));
   }
 
   if (localFile) {
@@ -2212,13 +2210,13 @@ void HTMLInputElement::MozSetFileNameArray(const Sequence<nsString>& aFileNames,
                          nsASCIICaseInsensitiveStringComparator)) {
       // Converts the URL string into the corresponding nsIFile if possible
       // A local file will be created if the URL string begins with file://
-      Unused << NS_GetFileFromURLSpec(NS_ConvertUTF16toUTF8(aFileNames[i]),
-                                      getter_AddRefs(file));
+      (void)NS_GetFileFromURLSpec(NS_ConvertUTF16toUTF8(aFileNames[i]),
+                                  getter_AddRefs(file));
     }
 
     if (!file) {
       // this is no "file://", try as local file
-      Unused << NS_NewLocalFile(aFileNames[i], getter_AddRefs(file));
+      (void)NS_NewLocalFile(aFileNames[i], getter_AddRefs(file));
     }
 
     if (!file) {
@@ -5901,7 +5899,7 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
   // InitFilePicker() and InitColorPicker() consume it themselves,
   // so only consume in this function if not those.
 
-  // Step 4. If element's type attribute is in the File Upload state, then run
+  // Step 5. If element's type attribute is in the File Upload state, then run
   // these steps in parallel:
   if (mType == FormControlType::InputFile) {
     FilePickerType type = FILE_PICKER_FILE;
@@ -5913,9 +5911,11 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
     return;
   }
 
-  // Step 5. Otherwise, the user agent should show any relevant user interface
+  // Step 6. Otherwise, the user agent should show any relevant user interface
   // for selecting a value for element, in the way it normally would when the
   // user interacts with the control
+
+  // Step 6 for color
   if (mType == FormControlType::InputColor) {
     InitColorPicker();
     return;
@@ -5928,6 +5928,7 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
     return;
   }
 
+  // Step 6 for date and time types
   if (IsDateTimeTypeSupported(mType)) {
     if (CreatesDateTimeWidget()) {
       if (RefPtr<Element> dateTimeBoxElement = GetDateTimeBoxElement()) {
@@ -5941,6 +5942,19 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
       DateTimeValue value;
       GetDateTimeInputBoxValue(value);
       OpenDateTimePicker(value);
+    }
+    return;
+  }
+
+  // Step 6 for input elements with a suggestions source element.
+  // I.e. show the autocomplete dropdown based on the list attribute.
+  // XXX Form-fill support on android is bug 1535985.
+  if (StaticPrefs::dom_input_showPicker_datalist_enabled() &&
+      IsSingleLineTextControl(true) && GetList()) {
+    if (nsCOMPtr<nsIFormFillController> controller =
+            do_GetService("@mozilla.org/satchel/form-fill-controller;1")) {
+      controller->SetControlledElement(this);
+      controller->ShowPopup();
     }
   }
 }

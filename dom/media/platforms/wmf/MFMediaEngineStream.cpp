@@ -147,7 +147,7 @@ HRESULT MFMediaEngineStream::RuntimeClassInitialize(
   auto errorExit = MakeScopeExit([&] {
     SLOG("Failed to initialize media stream (id=%" PRIu64 ")", aStreamId);
     mIsShutdown = true;
-    Unused << mMediaEventQueue->Shutdown();
+    (void)mMediaEventQueue->Shutdown();
   });
 
   RETURN_IF_FAILED(wmf::MFCreateEventQueue(&mMediaEventQueue));
@@ -188,7 +188,7 @@ HRESULT MFMediaEngineStream::Start(const PROPVARIANT* aPosition) {
   const bool isFromCurrentPosition = aPosition->vt == VT_EMPTY;
   RETURN_IF_FAILED(QueueEvent(MEStreamStarted, GUID_NULL, S_OK, aPosition));
   MOZ_ASSERT(mTaskQueue);
-  Unused << mTaskQueue->Dispatch(NS_NewRunnableFunction(
+  (void)mTaskQueue->Dispatch(NS_NewRunnableFunction(
       "MFMediaEngineStream::Start",
       [self = RefPtr{this}, isFromCurrentPosition, this]() {
         if (!isFromCurrentPosition && IsEnded()) {
@@ -248,7 +248,7 @@ void MFMediaEngineStream::Shutdown() {
   RETURN_VOID_IF_FAILED(mMediaEventQueue->Shutdown());
   ComPtr<MFMediaEngineStream> self = this;
   MOZ_ASSERT(mTaskQueue);
-  Unused << mTaskQueue->Dispatch(
+  (void)mTaskQueue->Dispatch(
       NS_NewRunnableFunction("MFMediaEngineStream::Shutdown", [self]() {
         self->mParentSource = nullptr;
         self->mRawDataQueueForFeedingEngine.Reset();
@@ -291,7 +291,7 @@ IFACEMETHODIMP MFMediaEngineStream::RequestSample(IUnknown* aToken) {
   ComPtr<IUnknown> token = aToken;
   ComPtr<MFMediaEngineStream> self = this;
   MOZ_ASSERT(mTaskQueue);
-  Unused << mTaskQueue->Dispatch(NS_NewRunnableFunction(
+  (void)mTaskQueue->Dispatch(NS_NewRunnableFunction(
       "MFMediaEngineStream::RequestSample", [token, self, this]() {
         AssertOnTaskQueue();
         mSampleRequestTokens.push(token);

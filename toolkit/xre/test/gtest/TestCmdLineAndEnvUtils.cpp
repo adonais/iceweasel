@@ -418,7 +418,7 @@ TEST(CmdLineAndEnvUtils, ensureSafe)
     TestCommandLine(result, cl, NoOptionalArgs);
   }
   for (auto const& [_unused, data] : kCommandLinesOpt) {
-    MOZ_UNUSED(_unused);  // silence gcc
+    (void)_unused;  // silence gcc
     CommandLine const cl(data);
     TestCommandLine(FAIL, cl, NoOptionalArgs);
   }

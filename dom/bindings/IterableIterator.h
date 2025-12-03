@@ -31,7 +31,6 @@
 #include "js/TypeDecls.h"
 #include "js/Value.h"
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/IterableIteratorBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RootedDictionary.h"

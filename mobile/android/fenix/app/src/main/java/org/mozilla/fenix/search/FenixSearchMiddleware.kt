@@ -17,7 +17,6 @@ import mozilla.components.browser.state.search.DefaultSearchEngineProvider
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction
-import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.PrivateModeUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.concept.awesomebar.AwesomeBar
@@ -119,12 +118,6 @@ class FenixSearchMiddleware(
             }
 
             is SearchStarted -> {
-                toolbarStore.dispatch(
-                    PrivateModeUpdated(
-                        environment?.browsingModeManager?.mode?.isPrivate == true,
-                    ),
-                )
-
                 next(action)
 
                 engine.speculativeCreateSession(action.inPrivateMode)
@@ -263,7 +256,7 @@ class FenixSearchMiddleware(
         query: String,
     ) {
         val shouldShowTrendingSearches = context.state.run {
-            (showTrendingSearches || showRecentSearches || showShortcutsSuggestions) &&
+            (showTrendingSearches || showRecentSearches) &&
                 (searchStartedForCurrentUrl || FxNimbus.features.searchSuggestionsOnHomepage.value().enabled)
         }
         val shouldShowSearchSuggestions = with(context.state) {

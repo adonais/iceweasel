@@ -5,6 +5,7 @@ package org.mozilla.fenix.ui.robots
 
 import android.net.Uri
 import android.util.Log
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -387,6 +388,18 @@ class CustomTabRobot {
 
             BrowserRobot().interact()
             return BrowserRobot.Transition()
+        }
+
+        fun openUnifiedTrustPanel(interact: UnifiedTrustPanelRobot.() -> Unit): UnifiedTrustPanelRobot.Transition {
+            Log.i(TAG, "openUnifiedTrustPanel: Waiting for $waitingTime ms for site security button to exist")
+            itemWithResId("$packageName:id/mozac_browser_toolbar_site_info_indicator").waitForExists(waitingTime)
+            Log.i(TAG, "openUnifiedTrustPanel: Waited for $waitingTime ms for site security button to exist")
+            Log.i(TAG, "openUnifiedTrustPanel: Trying to click site security button")
+            itemWithResId("$packageName:id/mozac_browser_toolbar_site_info_indicator").click()
+            Log.i(TAG, "openUnifiedTrustPanel: Clicked site security button")
+
+            UnifiedTrustPanelRobot().interact()
+            return UnifiedTrustPanelRobot.Transition()
         }
     }
 }

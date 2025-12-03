@@ -12,7 +12,6 @@
 #include "nsIThread.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
-#include "mozilla/Attributes.h"
 
 class nsIFile;
 

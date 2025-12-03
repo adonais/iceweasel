@@ -14,7 +14,7 @@ import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
-import org.mozilla.fenix.helpers.TestAssetHelper.getEnhancedTrackingProtectionAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.enhancedTrackingProtectionAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper.appContext
@@ -93,7 +93,7 @@ class EnhancedTrackingProtectionTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1514599
     @Test
     fun verifyETPStateIsReflectedInTPSheetTest() {
-        val genericPage = getGenericAsset(mockWebServer, 1)
+        val genericPage = mockWebServer.getGenericAsset(1)
 
         homeScreen {
         }.openThreeDotMenu {
@@ -130,7 +130,7 @@ class EnhancedTrackingProtectionTest : TestSetup() {
     @SmokeTest
     @Test
     fun disablingETPOnAWebsiteAddsItToExceptionListTest() {
-        val firstPage = getGenericAsset(mockWebServer, 1)
+        val firstPage = mockWebServer.getGenericAsset(1)
         val secondPage = "https://mozilla-mobile.github.io/testapp"
 
         navigationToolbar {
@@ -160,7 +160,7 @@ class EnhancedTrackingProtectionTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/339714
     @Test
     fun enablingETPOnAWebsiteRemovesItFromTheExceptionListTest() {
-        val trackingPage = getEnhancedTrackingProtectionAsset(mockWebServer)
+        val trackingPage = mockWebServer.enhancedTrackingProtectionAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(trackingPage.url) {
@@ -195,7 +195,7 @@ class EnhancedTrackingProtectionTest : TestSetup() {
     // Tests removing TP exceptions individually or all at once
     @Test
     fun clearWebsitesFromTPExceptionListTest() {
-        val firstPage = getGenericAsset(mockWebServer, 1)
+        val firstPage = mockWebServer.getGenericAsset(1)
         val secondPage = "https://mozilla-mobile.github.io/testapp"
 
         navigationToolbar {
@@ -232,8 +232,8 @@ class EnhancedTrackingProtectionTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/417444
     @Test
     fun verifyTrackersBlockedWithStandardTPTest() {
-        val genericPage = getGenericAsset(mockWebServer, 1)
-        val trackingProtectionTest = getEnhancedTrackingProtectionAsset(mockWebServer).url
+        val genericPage = mockWebServer.getGenericAsset(1)
+        val trackingProtectionTest = mockWebServer.enhancedTrackingProtectionAsset.url
 
         homeScreen {
         }.openThreeDotMenu {
@@ -278,8 +278,8 @@ class EnhancedTrackingProtectionTest : TestSetup() {
     @Test
     fun verifyTrackersBlockedWithStrictTPTest() {
         appContext.settings().setStrictETP()
-        val genericPage = getGenericAsset(mockWebServer, 1)
-        val trackingProtectionTest = getEnhancedTrackingProtectionAsset(mockWebServer).url
+        val genericPage = mockWebServer.getGenericAsset(1)
+        val trackingProtectionTest = mockWebServer.enhancedTrackingProtectionAsset.url
 
         homeScreen {
         }.openThreeDotMenu {
@@ -323,8 +323,8 @@ class EnhancedTrackingProtectionTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyTrackersBlockedWithCustomTPTest() {
-        val genericWebPage = getGenericAsset(mockWebServer, 1)
-        val trackingPage = getEnhancedTrackingProtectionAsset(mockWebServer)
+        val genericWebPage = mockWebServer.getGenericAsset(1)
+        val trackingPage = mockWebServer.enhancedTrackingProtectionAsset
 
         homeScreen {
         }.openThreeDotMenu {
@@ -367,8 +367,8 @@ class EnhancedTrackingProtectionTest : TestSetup() {
     // - Fingerprinters, cryptominers and redirect trackers checked
     @Test
     fun customizedTrackingProtectionOptionsTest() {
-        val genericWebPage = getGenericAsset(mockWebServer, 1)
-        val trackingPage = getEnhancedTrackingProtectionAsset(mockWebServer)
+        val genericWebPage = mockWebServer.getGenericAsset(1)
+        val trackingPage = mockWebServer.enhancedTrackingProtectionAsset
 
         homeScreen {
         }.openThreeDotMenu {
@@ -407,8 +407,8 @@ class EnhancedTrackingProtectionTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/562709
     @Test
     fun verifyTrackersBlockedWithCustomTPOptionsDisabledTest() {
-        val genericWebPage = getGenericAsset(mockWebServer, 1)
-        val trackingPage = getEnhancedTrackingProtectionAsset(mockWebServer)
+        val genericWebPage = mockWebServer.getGenericAsset(1)
+        val trackingPage = mockWebServer.enhancedTrackingProtectionAsset
 
         homeScreen {
         }.openThreeDotMenu {
@@ -441,8 +441,8 @@ class EnhancedTrackingProtectionTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2106997
     @Test
     fun verifyTrackingContentBlockedOnlyInPrivateTabsTest() {
-        val genericWebPage = getGenericAsset(mockWebServer, 1)
-        val trackingPage = getEnhancedTrackingProtectionAsset(mockWebServer)
+        val genericWebPage = mockWebServer.getGenericAsset(1)
+        val trackingPage = mockWebServer.enhancedTrackingProtectionAsset
 
         homeScreen {
         }.openThreeDotMenu {
@@ -500,7 +500,7 @@ class EnhancedTrackingProtectionTest : TestSetup() {
     @Test
     fun blockCookiesStorageAccessTest() {
         // With Standard TrackingProtection settings
-        val genericWebPage = getGenericAsset(mockWebServer, 1)
+        val genericWebPage = mockWebServer.getGenericAsset(1)
         val testPage = mockWebServer.url("pages/cross-site-cookies.html").toString().toUri()
         val originHost = "mozilla-mobile.github.io"
         val currentHost = "localhost"
@@ -523,7 +523,7 @@ class EnhancedTrackingProtectionTest : TestSetup() {
     @Test
     fun allowCookiesStorageAccessTest() {
         // With Standard TrackingProtection settings
-        val genericWebPage = getGenericAsset(mockWebServer, 1)
+        val genericWebPage = mockWebServer.getGenericAsset(1)
         val testPage = mockWebServer.url("pages/cross-site-cookies.html").toString().toUri()
         val originHost = "mozilla-mobile.github.io"
         val currentHost = "localhost"

@@ -99,7 +99,6 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/EndianUtils.h"
-#include "mozilla/Likely.h"
 #include "mozilla/UniquePtrExtensions.h"
 
 #include "RasterImage.h"

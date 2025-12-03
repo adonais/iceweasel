@@ -8,7 +8,6 @@
 
 #include <string.h>
 
-#include "mozilla/Attributes.h"
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"

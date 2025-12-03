@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     Home Fragment
 
@@ -427,8 +434,6 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d scheda seƚesionà</string>
-  <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Scheda salvà.</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Sara su</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -494,8 +499,6 @@
   <string name="snackbar_private_tab_closed">Scheda anonima sarà</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">ANUȽA</string>
-  <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">Sito cavà</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -556,14 +559,6 @@
     text to display in the snackbar once account is signed-in
   -->
   <string name="onboarding_firefox_account_sync_is_on">Ƚa sincronixasion ƚa xe ativa</string>
-  <!--
-    Onboarding theme
-
-    Text shown in snackbar when multiple tabs have been sent to device
-  -->
-  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Schede mandà.</string>
-  <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Scheda mandà.</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Asion no riusìa</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->

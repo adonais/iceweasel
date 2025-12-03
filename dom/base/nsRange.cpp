@@ -20,7 +20,6 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/RangeUtils.h"
 #include "mozilla/ToString.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/CharacterData.h"
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/DOMRect.h"

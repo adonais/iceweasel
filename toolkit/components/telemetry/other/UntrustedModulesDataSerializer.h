@@ -9,7 +9,6 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/UntrustedModulesData.h"
-#include "mozilla/Vector.h"
 #include "nsTHashMap.h"
 #include "UntrustedModulesBackupService.h"
 

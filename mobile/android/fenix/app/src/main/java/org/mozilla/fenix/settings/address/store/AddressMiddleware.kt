@@ -4,8 +4,10 @@
 
 package org.mozilla.fenix.settings.address.store
 
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.Middleware
@@ -17,10 +19,12 @@ import org.mozilla.fenix.GleanMetrics.Addresses
  *
  * @param environment used to hold the dependencies.
  * @param scope a [CoroutineScope] used to launch coroutines.
+ * @param ioDispatcher the dispatcher to run background code on.
  */
 class AddressMiddleware(
     private var environment: AddressEnvironment? = null,
     private val scope: CoroutineScope = MainScope(),
+    private val ioDispatcher: CoroutineDispatcher = IO,
 ) : Middleware<AddressState, AddressAction> {
     override fun invoke(
         context: MiddlewareContext<AddressState, AddressAction>,
@@ -50,7 +54,7 @@ class AddressMiddleware(
         }
     }
 
-    private fun runAndNavigateBack(action: suspend () -> Unit) = scope.launch {
+    private fun runAndNavigateBack(action: suspend () -> Unit) = scope.launch(ioDispatcher) {
         action()
 
         scope.launch(Dispatchers.Main) {

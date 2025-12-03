@@ -10,7 +10,7 @@ from taskgraph.util import path as mozpath
 from taskgraph.util.vcs import get_repository
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def hash_path(path):
     """Hash a single file.
 
@@ -43,7 +43,7 @@ def hash_paths(base_path, patterns):
     return h.hexdigest()
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _find_matching_files(base_path, pattern):
     repo = get_repository(os.getcwd())
     files = _get_all_files(base_path, repo)
@@ -54,6 +54,6 @@ def _find_matching_files(base_path, pattern):
     ]
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _get_all_files(base_path, repo):
     return repo.get_tracked_files(base_path)

@@ -113,8 +113,7 @@ class TestHandleWatcher : public testing::Test {
 /* static */
 bool TestHandleWatcher::sIsLive = false;
 /* static */
-MOZ_RUNINIT RefPtr<mozilla::SharedThreadPool> TestHandleWatcher::sPool =
-    nullptr;
+MOZ_CONSTINIT RefPtr<mozilla::SharedThreadPool> TestHandleWatcher::sPool;
 
 ///////////////////////////////////////////////////////////////////////
 // WindowsEventObject

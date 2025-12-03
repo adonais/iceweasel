@@ -145,6 +145,13 @@ export class UrlbarResult {
     this.#testForceNewContent = testForceNewContent;
   }
 
+  /**
+   * @type {number}
+   *   The index of the row where this result is in the suggestions. This is
+   *   updated by UrlbarView when new result sets are displayed.
+   */
+  rowIndex = undefined;
+
   get type() {
     return this.#type;
   }

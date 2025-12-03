@@ -6,15 +6,14 @@
 #ifndef NSFONTMETRICS__H__
 #define NSFONTMETRICS__H__
 
-#include <stdint.h>              // for uint32_t
-#include <sys/types.h>           // for int32_t
-#include "mozilla/Assertions.h"  // for MOZ_ASSERT_HELPER2
-#include "mozilla/RefPtr.h"      // for RefPtr
-#include "nsCOMPtr.h"            // for nsCOMPtr
-#include "nsCoord.h"             // for nscoord
-#include "nsError.h"             // for nsresult
-#include "nsFont.h"              // for nsFont
-#include "nsISupports.h"         // for NS_INLINE_DECL_REFCOUNTING
+#include <stdint.h>          // for uint32_t
+#include <sys/types.h>       // for int32_t
+#include "mozilla/RefPtr.h"  // for RefPtr
+#include "nsCOMPtr.h"        // for nsCOMPtr
+#include "nsCoord.h"         // for nscoord
+#include "nsError.h"         // for nsresult
+#include "nsFont.h"          // for nsFont
+#include "nsISupports.h"     // for NS_INLINE_DECL_REFCOUNTING
 #include "nsStyleConsts.h"
 #include "nscore.h"  // for char16_t
 

@@ -13,8 +13,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/GetUserMediaRequest.h"
 #include "mozilla/dom/MediaStreamBinding.h"
 #include "mozilla/dom/MediaStreamError.h"

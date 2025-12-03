@@ -65,6 +65,8 @@ interface nsIWebAuthnRegisterArgs : nsISupports {
     // consent popup.
     [must_use] readonly attribute AString attestationConveyancePreference;
 
+    readonly attribute Array<AString> hints;
+
     readonly attribute boolean privateBrowsing;
 };
 
@@ -110,6 +112,8 @@ interface nsIWebAuthnSignArgs : nsISupports {
     // Arguably we don't need to pass it through since WebAuthnController can
     // cancel transactions.
     readonly attribute unsigned long timeoutMS;
+
+    readonly attribute Array<AString> hints;
 
     readonly attribute boolean conditionallyMediated;
 

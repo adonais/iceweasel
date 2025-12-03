@@ -7,10 +7,9 @@
 
 :host {
   --margin-inline-start-checkbox-content: calc(var(--checkbox-margin-inline) + var(--checkbox-size));
-  --font-weight-heading: var(--font-weight-bold, 600);
   --font-size-heading: 17px;
   --font-size-sub-heading: 15px;
-  --font-weight-label: var(--font-weight, normal);
+  --font-weight-label: normal;
   --font-size-label: 14px;
   --padding-block-wrapper: 20px;
   --margin-block-start-file-picker: 18px;
@@ -131,13 +130,14 @@
     width: 500px;
     margin-inline: auto;
     padding-block: var(--padding-block-wrapper);
+    overflow: hidden;
 
     #backup-location-controls #backup-location-filepicker {
       margin-block-start: var(--margin-block-start-file-picker);
     }
 
     #backup-turn-on-scheduled-header {
-      font-weight: var(--font-weight-heading);
+      font-weight: var(--heading-font-weight);
       font-size: var(--font-size-heading);
       text-align: start;
     }

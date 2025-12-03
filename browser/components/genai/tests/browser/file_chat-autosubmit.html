@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body>
+<form id="f">
+  <div id="ta" contenteditable="true"></div>
+  <button id="send" data-testid="send-button" type="submit">Send</button>
+</form>
+<script>
+  const url = new URL(location.href);
+  const prompt = url.searchParams.get("q") || "";
+  const ta = document.getElementById("ta");
+  const form = document.getElementById("f");
+  window.submitCount = 0;
+
+  setTimeout(() => {
+    ta.textContent = prompt;
+    ta.dispatchEvent(new InputEvent("input", { bubbles: true }));
+  }, 50);
+
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    window.submitCount++;
+  })
+</script>
+</body>
+</html>

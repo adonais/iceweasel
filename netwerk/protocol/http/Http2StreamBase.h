@@ -9,7 +9,6 @@
 // HTTP/2 - RFC7540
 // https://www.rfc-editor.org/rfc/rfc7540.txt
 
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "nsAHttpTransaction.h"

@@ -90,6 +90,11 @@ bool JSScript::createJitScript(JSContext* cx) {
     if (!profileString) {
       return false;
     }
+
+    if (!cx->runtime()->geckoProfiler().insertScriptSource(scriptSource())) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
   }
 
   static_assert(sizeof(JitScript) % sizeof(uintptr_t) == 0,
@@ -346,6 +351,10 @@ void JitScript::ensureProfileString(JSContext* cx, JSScript* script) {
   profileString_ = cx->runtime()->geckoProfiler().profileString(cx, script);
   if (!profileString_) {
     oomUnsafe.crash("Failed to allocate profile string");
+  }
+  if (!cx->runtime()->geckoProfiler().insertScriptSource(
+          script->scriptSource())) {
+    oomUnsafe.crash("Failed to insert profiled script source");
   }
 }
 

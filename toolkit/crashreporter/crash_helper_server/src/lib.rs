@@ -13,13 +13,13 @@ mod phc;
 
 #[cfg(not(target_os = "android"))]
 use crash_helper_common::Pid;
+#[cfg(target_os = "android")]
+use crash_helper_common::RawAncillaryData;
 use crash_helper_common::{BreakpadData, BreakpadRawData, IPCConnector, IPCListener};
 use std::ffi::{c_char, CStr, OsString};
 
 use crash_generation::CrashGenerator;
 use ipc_server::{IPCServer, IPCServerState};
-#[cfg(target_os = "android")]
-use std::os::fd::{FromRawFd, OwnedFd, RawFd};
 
 /// Runs the crash generator process logic, this includes the IPC used by
 /// processes to signal that they crashed, the IPC used to retrieve crash
@@ -92,7 +92,7 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
 pub unsafe extern "C" fn crash_generator_logic_android(
     breakpad_data: BreakpadRawData,
     minidump_path: *const c_char,
-    pipe: RawFd,
+    pipe: RawAncillaryData,
 ) {
     logging::init();
 
@@ -110,8 +110,9 @@ pub unsafe extern "C" fn crash_generator_logic_android(
         .unwrap();
 
     let listener = IPCListener::new(0).unwrap();
-    let pipe = unsafe { OwnedFd::from_raw_fd(pipe) };
-    let connector = IPCConnector::from_fd(pipe)
+    // SAFETY: The `pipe` file descriptor passed in from the caller is
+    // guaranteed to be valid.
+    let connector = unsafe { IPCConnector::from_raw_ancillary(pipe) }
         .map_err(|error| {
             log::error!("Could not use the pipe (error: {error})");
         })

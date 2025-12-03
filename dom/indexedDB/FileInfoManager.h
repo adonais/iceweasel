@@ -9,7 +9,6 @@
 
 #include "FileInfo.h"
 #include "FlippedOnce.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticMutex.h"
 #include "nsHashKeys.h"

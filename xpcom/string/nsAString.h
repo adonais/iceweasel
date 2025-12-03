@@ -10,7 +10,6 @@
 
 #include "nsStringFwd.h"
 #include "nsStringIterator.h"
-#include "mozilla/TypedEnumBits.h"
 
 #include <string.h>
 #include <stdarg.h>

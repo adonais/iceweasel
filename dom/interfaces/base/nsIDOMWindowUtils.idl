@@ -1647,6 +1647,11 @@ cenum AsyncEnabledOption : 8 {
   void disableApzForElement(in Element aElement);
 
   /**
+   * Returns whether APZ is being disabled on the given |aElement|.
+   */
+  boolean isApzDisabledForElement(in Element aElement);
+
+  /**
    * Ask APZ to pan and zoom to the focused input element.
    */
   [can_run_script] void zoomToFocusedInput();

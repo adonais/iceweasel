@@ -261,7 +261,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
       @include limit-visible-lines(3, $header-line-height, $header-font-size);
 
       margin-block: 0;
-      font-weight: var(--font-weight-bold);
+      font-weight: var(--heading-font-weight);
     }
 
     .excerpt {
@@ -365,7 +365,13 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
       border: none;
       padding: var(--space-xsmall) var(--space-large);
       font-size: var(--font-size-small);
-      font-weight: var(--font-weight-bold);
+
+      /**
+       * @backward-compat { version 146 }
+       *
+       * Replace this with `--font-weight-semibold` once 146 hits release.
+       */
+      font-weight: var(--heading-font-weight);
       min-height: var(--size-item-large);
       min-width: 97px;
       color: var(--newtab-text-primary-color);
@@ -379,7 +385,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     .cta-header {
       background: var(--button-background-color);
       font-size: var(--font-size-root);
-      font-weight: var(--font-weight-bold);
+      font-weight: var(--heading-font-weight);
       text-align: end;
       padding: var(--space-xsmall) var(--space-large);
       color: var(--newtab-text-primary-color);
@@ -409,7 +415,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
   }
 
   .ds-card-grid & {
-    background: var(--newtab-background-card);
+    @include newtab-card-style;
 
     &:not(.placeholder) {
       box-shadow: 0 1px 2px 0 rgba(58, 57, 68, 20%);
@@ -419,10 +425,39 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
       &:focus-within,
       &:hover {
         box-shadow: 0 2px 14px 0 var(--newtab-section-card-box-shadow-color);
+        z-index: 1;
+      }
+
+      // This is higher to keep the context menu (when open) above any other cards
+      &.active {
+        z-index: 2;
       }
 
       .img-wrapper > .ds-image.img > img {
         border-radius: var(--border-radius-large) var(--border-radius-large) 0 0;
+      }
+    }
+
+    @media (forced-colors: active) {
+      &:not(.placeholder) {
+        border: var(--border-width) solid var(--border-color-card);
+      }
+
+      &:not(.placeholder):hover {
+        --newtab-background-color-secondary: SelectedItemText;
+        --newtab-text-secondary-color: SelectedItem;
+
+        color: SelectedItem;
+        border-color: var(--border-color-interactive-hover);
+
+        .meta .title {
+          color: var(--link-color-hover);
+        }
+      }
+
+      .meta .title {
+        text-decoration: underline;
+        color: var(--link-color);
       }
     }
 
@@ -434,7 +469,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
         -webkit-line-clamp: 3;
         font-size: var(--font-size-root);
         margin-block-end: var(--space-small);
-        font-weight: var(--font-weight-bold);
+        font-weight: var(--heading-font-weight);
       }
 
       .excerpt {
@@ -546,7 +581,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     }
 
     &.refined-cards {
-      background: var(--newtab-background-card);
+      @include newtab-card-style;
 
       .img-wrapper .ds-image img {
         border-bottom-left-radius: 0;
@@ -656,6 +691,10 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
 
   .context-menu-button {
     background-color: var(--button-background-color-ghost);
+
+    @media (forced-colors: active) {
+      border: var(--border-width) solid var(--button-border-color-ghost);
+    }
   }
 
   &:hover,
@@ -666,6 +705,11 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
 
     .context-menu-button:hover {
       background-color: var(--button-background-color-ghost-hover);
+
+      @media (forced-colors: active) {
+        border-color: var(--button-border-color-ghost-hover);
+        fill: var(--button-text-color-ghost-hover);
+      }
 
       &:active {
         background-color: var(--button-background-color-ghost-active);

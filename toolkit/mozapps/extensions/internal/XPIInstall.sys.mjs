@@ -82,7 +82,7 @@ const ZipReader = Components.Constructor(
 );
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
-  gCertDB: ["@mozilla.org/security/x509certdb;1", "nsIX509CertDB"],
+  gCertDB: ["@mozilla.org/security/x509certdb;1", Ci.nsIX509CertDB],
 });
 
 const PREF_INSTALL_REQUIRESECUREORIGIN =
@@ -2533,7 +2533,7 @@ var DownloadAddonInstall = class extends AddonInstall {
     }
   }
 
-  /*
+  /**
    * Update the crypto hasher with the new data and call the progress listeners.
    *
    * @see nsIStreamListener
@@ -2546,7 +2546,7 @@ var DownloadAddonInstall = class extends AddonInstall {
     }
   }
 
-  /*
+  /**
    * Check the redirect response for a hash of the target XPI and verify that
    * we don't end up on an insecure channel.
    *
@@ -2584,7 +2584,7 @@ var DownloadAddonInstall = class extends AddonInstall {
     this.channel = aNewChannel;
   }
 
-  /*
+  /**
    * This is the first chance to get at real headers on the channel.
    *
    * @see nsIStreamListener
@@ -2628,7 +2628,7 @@ var DownloadAddonInstall = class extends AddonInstall {
     }
   }
 
-  /*
+  /**
    * The download is complete.
    *
    * @see nsIStreamListener

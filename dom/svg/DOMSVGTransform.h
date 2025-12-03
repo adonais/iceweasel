@@ -10,7 +10,6 @@
 #include "DOMSVGTransformList.h"
 #include "SVGTransform.h"
 #include "gfxMatrix.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"

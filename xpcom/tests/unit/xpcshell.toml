@@ -57,6 +57,8 @@ fail-if = ["os == 'android'"]
 
 ["test_iniParser.js"]
 
+["test_invalidGrayBits.js"]
+
 ["test_ioutil.js"]
 
 ["test_localfile.js"]

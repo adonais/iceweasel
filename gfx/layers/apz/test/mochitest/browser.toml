@@ -52,6 +52,12 @@ support-files = [
   "helper_popup_menu_in_parent_process-2.html"
 ]
 
+["browser_test_popup_menu_in_parent_process_content.js"]
+support-files = [
+  "helper_popup_menu_in_parent_process_content.html"
+]
+run-if = ["os != 'mac'"] # On Mac popup windows having no remote content doesn't have the compositor
+
 ["browser_test_popup_menu_in_position_fixed.js"]
 support-files = ["helper_popup_menu_in_parent_process-1.html"]
 run-if = ["os != 'mac'"] # On Mac popup windows having no remote content doesn't have the compositor

@@ -15,7 +15,6 @@
 #include "mozilla/RangedPtr.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/Utf8.h"
 #include "mozilla/Variant.h"
 
 #include <stdarg.h>

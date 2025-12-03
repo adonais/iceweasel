@@ -87,7 +87,7 @@ class GtkCompositorWidget : public CompositorWidget,
   Window XWindow() const { return mProvider.GetXWindow(); }
 #endif
 #if defined(MOZ_WAYLAND)
-  RefPtr<mozilla::layers::NativeLayerRoot> GetNativeLayerRoot() override;
+  mozilla::layers::NativeLayerRoot* GetNativeLayerRoot() override;
 #endif
 
   // PlatformCompositorWidgetDelegate Overrides

@@ -178,7 +178,7 @@ PerformanceTiming* PerformanceMainThread::Timing() {
   return mTiming;
 }
 
-void PerformanceMainThread::DispatchBufferFullEvent() {
+void PerformanceMainThread::DispatchResourceTimingBufferFullEvent() {
   RefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
   // it bubbles, and it isn't cancelable
   event->InitEvent(u"resourcetimingbufferfull"_ns, true, false);
@@ -326,7 +326,7 @@ void PerformanceMainThread::DispatchPendingEventTimingEntries() {
       if (StaticPrefs::dom_performance_event_timing_enable_interactionid()) {
         if (!mHasDispatchedInputEvent && entry->InteractionId() != 0) {
           mFirstInputEvent = entry->Clone();
-          mFirstInputEvent->SetEntryType(u"first-input"_ns);
+          mFirstInputEvent->SetEntryType(nsGkAtoms::firstInput);
           QueueEntry(mFirstInputEvent);
           SetHasDispatchedInputEvent();
         }
@@ -335,7 +335,7 @@ void PerformanceMainThread::DispatchPendingEventTimingEntries() {
           switch (entry->GetMessage()) {
             case ePointerDown: {
               mPendingPointerDown = entry->Clone();
-              mPendingPointerDown->SetEntryType(u"first-input"_ns);
+              mPendingPointerDown->SetEntryType(nsGkAtoms::firstInput);
               break;
             }
             case ePointerUp: {
@@ -351,7 +351,7 @@ void PerformanceMainThread::DispatchPendingEventTimingEntries() {
             case eKeyDown:
             case eMouseDown: {
               mFirstInputEvent = entry->Clone();
-              mFirstInputEvent->SetEntryType(u"first-input"_ns);
+              mFirstInputEvent->SetEntryType(nsGkAtoms::firstInput);
               QueueEntry(mFirstInputEvent);
               SetHasDispatchedInputEvent();
               break;

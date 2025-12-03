@@ -406,7 +406,7 @@ newtab-wallpaper-abstract-purple-green = Fargeovergang med lilla og grønt lys
 newtab-wallpaper-abstract-blue-purple-waves = Blå og lilla bølgete former
 newtab-wallpaper-abstract-black-waves = Svarte bølgeformer
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotografier
 newtab-wallpaper-beach-at-sunrise = Strand ved soloppgang
@@ -435,6 +435,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -675,10 +679,6 @@ newtab-widget-timer-mode-focus =
     .label = Fokus
 newtab-widget-timer-mode-break =
     .label = Pause
-newtab-widget-timer-play =
-    .title = Spill av
-newtab-widget-timer-pause =
-    .title = Pause
 newtab-widget-timer-label-play =
     .label = Spill av
 newtab-widget-timer-label-pause =

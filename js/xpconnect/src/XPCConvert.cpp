@@ -6,7 +6,6 @@
 
 /* Data conversion between native and JavaScript types. */
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Range.h"
 #include "mozilla/Sprintf.h"
 

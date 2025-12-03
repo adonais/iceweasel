@@ -19,9 +19,10 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
+    run-on-repo-type: [hg]
     shipping-phase: promote
     shipping-product: firefox
-    run-on-releases: [release, release-rc, beta]
+    run-on-releases: [release, release-rc, beta, esr140]
     treeherder:
         kind: other
         tier: 2
@@ -42,18 +43,25 @@ task-defaults:
         using: run-task
         command: >-
             ./mach update-test
+    worker-type:
+        by-test-platform:
+            windows11-64-24h2-shippable: win11-64-24h2-source
+            windows10-64-2009-shippable-qr: win10-64-2009-source
+            macosx1500-aarch64-shippable: t-osx-1500-m4
+            macosx1470-64-shippable: t-osx-1400-r8
+            macosx1015-64-shippable-qr: t-osx-1015-r8
+            linux.*: t-linux-docker-amd
 
 tasks:
     update-test-locale-fx:
-        os:
-            - win11-64-24h2-source
-            - win10-64-2009-source
-            - t-osx-1500-m4
-            - t-osx-1400-r8
-            - t-osx-1015-r8
+        test-platforms:
+            - windows11-64-24h2-shippable
+            - windows10-64-2009-shippable-qr
+            - macosx1500-aarch64-shippable
+            - macosx1470-64-shippable
+            - macosx1015-64-shippable-qr
 
     update-test-linux-docker-locale-fx:
-        worker-type: t-linux-docker-amd
         worker:
             artifacts:
                 - type: directory
@@ -65,19 +73,18 @@ tasks:
         run:
             command: >-
                 . $HOME/scripts/xvfb.sh && start_xvfb '1600x1200x24' 0 && ./mach update-test
-        os:
-            - ubuntu2404-test
+        test-platforms:
+            - linux2404-64-shippable
 
     update-test-source-version-fx:
-        os:
-            - win11-64-24h2-source
-            - win10-64-2009
-            - t-osx-1500-m4
-            - t-osx-1400-r8
-            - t-osx-1015-r8
+        test-platforms:
+            - windows11-64-24h2-shippable
+            - windows10-64-2009-shippable-qr
+            - macosx1500-aarch64-shippable
+            - macosx1470-64-shippable
+            - macosx1015-64-shippable-qr
 
     update-test-linux-docker-source-version-fx:
-        worker-type: t-linux-docker
         worker:
             artifacts:
                 - type: directory
@@ -89,22 +96,21 @@ tasks:
         run:
             command: >-
                 . $HOME/scripts/xvfb.sh && start_xvfb '1600x1200x24' 0 && ./mach update-test
-        os:
-            - ubuntu2404-test
+        test-platforms:
+            - linux2404-64-shippable
 
     update-test-fx-bkg:
         run:
             command: >-
                 ./mach update-test --test-type Background
-        os:
-            - win11-64-24h2-source
-            - win10-64-2009
-            - t-osx-1500-m4
-            - t-osx-1400-r8
-            - t-osx-1015-r8
+        test-platforms:
+            - windows11-64-24h2-shippable
+            - windows10-64-2009-shippable-qr
+            - macosx1500-aarch64-shippable
+            - macosx1470-64-shippable
+            - macosx1015-64-shippable-qr
 
     update-test-linux-docker-fx-bkg:
-        worker-type: t-linux-docker
         worker:
             artifacts:
                 - type: directory
@@ -116,5 +122,5 @@ tasks:
         run:
             command: >-
                 . $HOME/scripts/xvfb.sh && start_xvfb '1600x1200x24' 0 && ./mach update-test --test-type Background
-        os:
-            - ubuntu2404-test
+        test-platforms:
+            - linux2404-64-shippable

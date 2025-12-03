@@ -26,6 +26,7 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/LoadURIOptionsBinding.h"
+#include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/NavigationUtils.h"
 #include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/StaticPrefs_browser.h"
@@ -51,7 +52,6 @@ nsDocShellLoadState::nsDocShellLoadState(
     const DocShellLoadStateInit& aLoadState, mozilla::ipc::IProtocol* aActor,
     bool* aReadSuccess)
     : mNotifiedBeforeUnloadListeners(false),
-      mShouldNotForceReplaceInOnLoad(false),
       mLoadIdentifier(aLoadState.LoadIdentifier()) {
   // If we return early, we failed to read in the data.
   *aReadSuccess = false;
@@ -66,11 +66,14 @@ nsDocShellLoadState::nsDocShellLoadState(
   mLoadReplace = aLoadState.LoadReplace();
   mInheritPrincipal = aLoadState.InheritPrincipal();
   mPrincipalIsExplicit = aLoadState.PrincipalIsExplicit();
+  mNotifiedBeforeUnloadListeners = aLoadState.NotifiedBeforeUnloadListeners();
   mForceAllowDataURI = aLoadState.ForceAllowDataURI();
   mIsExemptFromHTTPSFirstMode = aLoadState.IsExemptFromHTTPSFirstMode();
   mOriginalFrameSrc = aLoadState.OriginalFrameSrc();
   mShouldCheckForRecursion = aLoadState.ShouldCheckForRecursion();
   mIsFormSubmission = aLoadState.IsFormSubmission();
+  mNeedsCompletelyLoadedDocument = aLoadState.NeedsCompletelyLoadedDocument();
+  mHistoryBehavior = aLoadState.HistoryBehavior();
   mLoadType = aLoadState.LoadType();
   mTarget = aLoadState.Target();
   mTargetBrowsingContext = aLoadState.TargetBrowsingContext();
@@ -114,7 +117,13 @@ nsDocShellLoadState::nsDocShellLoadState(
   }
   mUnstrippedURI = aLoadState.UnstrippedURI();
   mRemoteTypeOverride = aLoadState.RemoteTypeOverride();
+  mIsCaptivePortalTab = aLoadState.IsCaptivePortalTab();
 
+  if (aLoadState.NavigationAPIState()) {
+    mNavigationAPIState = MakeRefPtr<nsStructuredCloneContainer>();
+    mNavigationAPIState->CopyFromClonedMessageData(
+        *aLoadState.NavigationAPIState());
+  }
   // We know this was created remotely, as we just received it over IPC.
   mWasCreatedRemotely = true;
 
@@ -172,7 +181,6 @@ nsDocShellLoadState::nsDocShellLoadState(const nsDocShellLoadState& aOther)
       mInheritPrincipal(aOther.mInheritPrincipal),
       mPrincipalIsExplicit(aOther.mPrincipalIsExplicit),
       mNotifiedBeforeUnloadListeners(aOther.mNotifiedBeforeUnloadListeners),
-      mShouldNotForceReplaceInOnLoad(aOther.mShouldNotForceReplaceInOnLoad),
       mPrincipalToInherit(aOther.mPrincipalToInherit),
       mPartitionedPrincipalToInherit(aOther.mPartitionedPrincipalToInherit),
       mForceAllowDataURI(aOther.mForceAllowDataURI),
@@ -181,6 +189,8 @@ nsDocShellLoadState::nsDocShellLoadState(const nsDocShellLoadState& aOther)
       mOriginalFrameSrc(aOther.mOriginalFrameSrc),
       mShouldCheckForRecursion(aOther.mShouldCheckForRecursion),
       mIsFormSubmission(aOther.mIsFormSubmission),
+      mNeedsCompletelyLoadedDocument(aOther.mNeedsCompletelyLoadedDocument),
+      mHistoryBehavior(aOther.mHistoryBehavior),
       mLoadType(aOther.mLoadType),
       mSHEntry(aOther.mSHEntry),
       mTarget(aOther.mTarget),
@@ -211,7 +221,8 @@ nsDocShellLoadState::nsDocShellLoadState(const nsDocShellLoadState& aOther)
       mTriggeringRemoteType(aOther.mTriggeringRemoteType),
       mSchemelessInput(aOther.mSchemelessInput),
       mForceMediaDocument(aOther.mForceMediaDocument),
-      mHttpsUpgradeTelemetry(aOther.mHttpsUpgradeTelemetry) {
+      mHttpsUpgradeTelemetry(aOther.mHttpsUpgradeTelemetry),
+      mNavigationAPIState(aOther.mNavigationAPIState) {
   MOZ_DIAGNOSTIC_ASSERT(
       XRE_IsParentProcess(),
       "Cloning a nsDocShellLoadState with the same load identifier is only "
@@ -235,12 +246,13 @@ nsDocShellLoadState::nsDocShellLoadState(nsIURI* aURI, uint64_t aLoadIdentifier)
       mInheritPrincipal(false),
       mPrincipalIsExplicit(false),
       mNotifiedBeforeUnloadListeners(false),
-      mShouldNotForceReplaceInOnLoad(false),
       mForceAllowDataURI(false),
       mIsExemptFromHTTPSFirstMode(false),
       mOriginalFrameSrc(false),
       mShouldCheckForRecursion(false),
       mIsFormSubmission(false),
+      mNeedsCompletelyLoadedDocument(false),
+      mHistoryBehavior(Nothing()),
       mLoadType(LOAD_NORMAL),
       mSrcdocData(VoidString()),
       mLoadFlags(0),
@@ -523,6 +535,7 @@ nsresult nsDocShellLoadState::CreateFromLoadURIOptions(
 
   loadState->SetForceMediaDocument(aLoadURIOptions.mForceMediaDocument);
   loadState->SetAppLinkLaunchType(aLoadURIOptions.mAppLinkLaunchType);
+  loadState->SetIsCaptivePortalTab(aLoadURIOptions.mIsCaptivePortalTab);
 
   loadState.forget(aResult);
   return NS_OK;
@@ -670,15 +683,6 @@ void nsDocShellLoadState::SetNotifiedBeforeUnloadListeners(
   mNotifiedBeforeUnloadListeners = aNotifiedBeforeUnloadListeners;
 }
 
-bool nsDocShellLoadState::ShouldNotForceReplaceInOnLoad() const {
-  return mShouldNotForceReplaceInOnLoad;
-}
-
-void nsDocShellLoadState::SetShouldNotForceReplaceInOnLoad(
-    bool aShouldNotForceReplaceInOnLoad) {
-  mShouldNotForceReplaceInOnLoad = aShouldNotForceReplaceInOnLoad;
-}
-
 bool nsDocShellLoadState::ForceAllowDataURI() const {
   return mForceAllowDataURI;
 }
@@ -725,6 +729,29 @@ bool nsDocShellLoadState::IsFormSubmission() const { return mIsFormSubmission; }
 
 void nsDocShellLoadState::SetIsFormSubmission(bool aIsFormSubmission) {
   mIsFormSubmission = aIsFormSubmission;
+}
+
+bool nsDocShellLoadState::NeedsCompletelyLoadedDocument() const {
+  return mNeedsCompletelyLoadedDocument;
+}
+
+void nsDocShellLoadState::SetNeedsCompletelyLoadedDocument(
+    bool aNeedsCompletelyLoadedDocument) {
+  mNeedsCompletelyLoadedDocument = aNeedsCompletelyLoadedDocument;
+}
+
+Maybe<mozilla::dom::NavigationHistoryBehavior>
+nsDocShellLoadState::HistoryBehavior() const {
+  return mHistoryBehavior;
+}
+
+void nsDocShellLoadState::SetHistoryBehavior(
+    mozilla::dom::NavigationHistoryBehavior aHistoryBehavior) {
+  mHistoryBehavior = Some(aHistoryBehavior);
+}
+
+void nsDocShellLoadState::ResetHistoryBehavior() {
+  mHistoryBehavior = Nothing();
 }
 
 uint32_t nsDocShellLoadState::LoadType() const { return mLoadType; }
@@ -862,11 +889,10 @@ void nsDocShellLoadState::MaybeStripTrackerQueryStrings(
   // string could be different.
   if (mUnstrippedURI) {
     nsCOMPtr<nsIURI> uri;
-    Unused << queryStripper->Strip(mUnstrippedURI,
-                                   aContext->UsePrivateBrowsing(),
-                                   getter_AddRefs(uri), &numStripped);
+    (void)queryStripper->Strip(mUnstrippedURI, aContext->UsePrivateBrowsing(),
+                               getter_AddRefs(uri), &numStripped);
     bool equals = false;
-    Unused << URI()->Equals(uri, &equals);
+    (void)URI()->Equals(uri, &equals);
     MOZ_ASSERT(equals);
   }
 #endif
@@ -1372,11 +1398,14 @@ DocShellLoadStateInit nsDocShellLoadState::Serialize(
   loadState.LoadReplace() = mLoadReplace;
   loadState.InheritPrincipal() = mInheritPrincipal;
   loadState.PrincipalIsExplicit() = mPrincipalIsExplicit;
+  loadState.NotifiedBeforeUnloadListeners() = mNotifiedBeforeUnloadListeners;
   loadState.ForceAllowDataURI() = mForceAllowDataURI;
   loadState.IsExemptFromHTTPSFirstMode() = mIsExemptFromHTTPSFirstMode;
   loadState.OriginalFrameSrc() = mOriginalFrameSrc;
   loadState.ShouldCheckForRecursion() = mShouldCheckForRecursion;
   loadState.IsFormSubmission() = mIsFormSubmission;
+  loadState.NeedsCompletelyLoadedDocument() = mNeedsCompletelyLoadedDocument;
+  loadState.HistoryBehavior() = mHistoryBehavior;
   loadState.LoadType() = mLoadType;
   loadState.userNavigationInvolvement() = mUserNavigationInvolvement;
   loadState.Target() = mTarget;
@@ -1422,6 +1451,14 @@ DocShellLoadStateInit nsDocShellLoadState::Serialize(
   }
   loadState.UnstrippedURI() = mUnstrippedURI;
   loadState.RemoteTypeOverride() = mRemoteTypeOverride;
+  loadState.IsCaptivePortalTab() = mIsCaptivePortalTab;
+
+  if (mNavigationAPIState) {
+    loadState.NavigationAPIState().emplace();
+    DebugOnly<bool> success = mNavigationAPIState->BuildClonedMessageData(
+        *loadState.NavigationAPIState());
+    MOZ_ASSERT(success);
+  }
 
   if (XRE_IsParentProcess()) {
     mozilla::ipc::IToplevelProtocol* top = aActor->ToplevelProtocol();
@@ -1458,7 +1495,18 @@ nsIStructuredCloneContainer* nsDocShellLoadState::GetNavigationAPIState()
 
 void nsDocShellLoadState::SetNavigationAPIState(
     nsIStructuredCloneContainer* aNavigationAPIState) {
-  mNavigationAPIState = aNavigationAPIState;
+  mNavigationAPIState =
+      static_cast<nsStructuredCloneContainer*>(aNavigationAPIState);
+}
+
+NavigationAPIMethodTracker* nsDocShellLoadState::GetNavigationAPIMethodTracker()
+    const {
+  return mNavigationAPIMethodTracker;
+}
+
+void nsDocShellLoadState::SetNavigationAPIMethodTracker(
+    NavigationAPIMethodTracker* aTracker) {
+  mNavigationAPIMethodTracker = aTracker;
 }
 
 NavigationType nsDocShellLoadState::GetNavigationType() const {
@@ -1481,4 +1529,12 @@ uint32_t nsDocShellLoadState::GetAppLinkLaunchType() const {
 
 void nsDocShellLoadState::SetAppLinkLaunchType(uint32_t aAppLinkLaunchType) {
   mAppLinkLaunchType = aAppLinkLaunchType;
+}
+
+bool nsDocShellLoadState::GetIsCaptivePortalTab() const {
+  return mIsCaptivePortalTab;
+}
+
+void nsDocShellLoadState::SetIsCaptivePortalTab(bool aIsCaptivePortalTab) {
+  mIsCaptivePortalTab = aIsCaptivePortalTab;
 }

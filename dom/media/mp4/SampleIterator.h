@@ -28,7 +28,14 @@ class SampleIterator {
   bool HasNext();
   already_AddRefed<mozilla::MediaRawData> GetNextHeader();
   Result<already_AddRefed<mozilla::MediaRawData>, MediaResult> GetNext();
-  void Seek(const media::TimeUnit& aTime);
+
+  // The default seek mode finds the closest sync sample at or before the target
+  // time. Setting the mode to `First` allows seeking to the earliest sync
+  // sample instead, which is only used in a specific case.
+  enum class SyncSampleMode { Closest, First };
+  void Seek(const media::TimeUnit& aTime,
+            SyncSampleMode aMode = SyncSampleMode::Closest);
+
   media::TimeUnit GetNextKeyframeTime();
 
  private:

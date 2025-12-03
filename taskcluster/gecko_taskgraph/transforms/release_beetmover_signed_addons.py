@@ -51,6 +51,7 @@ beetmover_description_schema = Schema(
         Optional("shipping-phase"): task_description_schema["shipping-phase"],
         Optional("task-from"): task_description_schema["task-from"],
         Optional("dependencies"): task_description_schema["dependencies"],
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
     }
 )
 

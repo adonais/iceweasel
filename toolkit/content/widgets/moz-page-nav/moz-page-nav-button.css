@@ -87,7 +87,7 @@ button {
   &[selected] {
     color: var(--color-accent-primary);
     background-color: var(--page-nav-button-background-color-selected);
-    font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-semibold);
 
     @media (prefers-contrast) {
       border-color: var(--color-accent-primary);

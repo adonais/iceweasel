@@ -2,17 +2,22 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
+import logging
 import os
+import re
 import shlex
+import shutil
 import subprocess
 import sys
 import tarfile
 import tempfile
+from collections.abc import Generator
 from io import BytesIO
 from pathlib import Path
 from textwrap import dedent
-from typing import Dict, Generator, List, Mapping, Optional, Union
+from typing import Any, Optional, Union
+
+from taskcluster.exceptions import TaskclusterRestFailure
 
 try:
     import zstandard as zstd
@@ -20,6 +25,8 @@ except ImportError as e:
     zstd = e
 
 from taskgraph.config import GraphConfig
+from taskgraph.generator import load_tasks_for_kind
+from taskgraph.transforms import docker_image
 from taskgraph.util import docker, json
 from taskgraph.util.taskcluster import (
     find_task_id,
@@ -27,23 +34,10 @@ from taskgraph.util.taskcluster import (
     get_root_url,
     get_session,
     get_task_definition,
+    status_task,
 )
 
-DEPLOY_WARNING = """
-*****************************************************************
-WARNING: Image is not suitable for deploying/pushing.
-
-To automatically tag the image the following files are required:
-- {image_dir}/REGISTRY
-- {image_dir}/VERSION
-
-The REGISTRY file contains the Docker registry hosting the image.
-A default REGISTRY file may also be defined in the parent docker
-directory.
-
-The VERSION file contains the version of the image.
-*****************************************************************
-"""
+logger = logging.getLogger(__name__)
 
 
 def get_image_digest(image_name: str) -> str:
@@ -97,14 +91,12 @@ def load_image_by_name(image_name: str, tag: Optional[str] = None) -> Optional[s
     task_id = IndexSearch().should_replace_task(task, {}, None, indexes)
 
     if task_id in (True, False):
-        print(
+        logger.error(
             "Could not find artifacts for a docker image "
-            "named `{image_name}`. Local commits and other changes "
+            f"named `{image_name}`. Local commits and other changes "
             "in your checkout may cause this error. Try "
-            "updating to a fresh checkout of {project} "
-            "to download image.".format(
-                image_name=image_name, project=params["project"]
-            )
+            f"updating to a fresh checkout of {params['project']} "
+            "to download image."
         )
         return None
 
@@ -127,70 +119,42 @@ def load_image_by_task_id(task_id: str, tag: Optional[str] = None) -> str:
     """
     artifact_url = get_artifact_url(task_id, "public/image.tar.zst")
     result = load_image(artifact_url, tag)
-    print("Found docker image: {}:{}".format(result["image"], result["tag"]))
+    logger.info(f"Found docker image: {result['image']}:{result['tag']}")
     if tag:
-        print(f"Re-tagged as: {tag}")
+        logger.info(f"Re-tagged as: {tag}")
     else:
-        tag = "{}:{}".format(result["image"], result["tag"])
-    print(f"Try: docker run -ti --rm {tag} bash")
+        tag = f"{result['image']}:{result['tag']}"
+    logger.info(f"Try: docker run -ti --rm {tag} bash")
     return tag
 
 
-def build_context(
-    name: str,
-    outputFile: str,
-    graph_config: GraphConfig,
-    args: Optional[Mapping[str, str]] = None,
-) -> None:
-    """Build a context.tar for image with specified name.
-
-    Creates a Docker build context tar file for the specified image,
-    which can be used to build the Docker image.
-
-    Args:
-        name: The name of the Docker image to build context for.
-        outputFile: Path to the output tar file to create.
-        graph_config: The graph configuration object.
-        args: Optional mapping of arguments to pass to context creation.
-
-    Raises:
-        ValueError: If name or outputFile is not provided.
-        Exception: If the image directory does not exist.
-    """
-    if not name:
-        raise ValueError("must provide a Docker image name")
-    if not outputFile:
-        raise ValueError("must provide a outputFile")
-
-    image_dir = docker.image_path(name, graph_config)
-    if not os.path.isdir(image_dir):
-        raise Exception(f"image directory does not exist: {image_dir}")
-
-    docker.create_context_tar(".", image_dir, outputFile, args)
-
-
 def build_image(
-    name: str,
-    tag: Optional[str],
     graph_config: GraphConfig,
-    args: Optional[Mapping[str, str]] = None,
-) -> None:
+    name: str,
+    context_file: Optional[str] = None,
+    save_image: Optional[str] = None,
+) -> str:
     """Build a Docker image of specified name.
 
-    Builds a Docker image from the specified image directory and optionally
-    tags it. Output from image building process will be printed to stdout.
+    Builds a Docker image from the specified image directory.
 
     Args:
-        name: The name of the Docker image to build.
-        tag: Optional tag for the built image. If not provided, uses
-            the default tag from docker_image().
         graph_config: The graph configuration.
-        args: Optional mapping of arguments to pass to the build process.
+        name: The name of the Docker image to build.
+        context_file: Path to save the docker context to. If specified,
+            only the context is generated and the image isn't built.
+        save_image: If specified, the resulting `image.tar` will be saved to
+            the specified path. Otherwise, the image is loaded into docker.
+
+    Returns:
+        str: The tag of the loaded image, or absolute path to the image
+            if save_image is specified.
 
     Raises:
         ValueError: If name is not provided.
         Exception: If the image directory does not exist.
     """
+    logger.info(f"Building {name} image")
     if not name:
         raise ValueError("must provide a Docker image name")
 
@@ -198,27 +162,92 @@ def build_image(
     if not os.path.isdir(image_dir):
         raise Exception(f"image directory does not exist: {image_dir}")
 
-    tag = tag or docker.docker_image(name, by_tag=True)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir = Path(temp_dir)
 
-    buf = BytesIO()
-    docker.stream_context_tar(".", image_dir, buf, args)
-    cmdargs = ["docker", "image", "build", "--no-cache", "-"]
-    if tag:
-        cmdargs.insert(-1, f"-t={tag}")
-    subprocess.run(cmdargs, input=buf.getvalue(), check=True)
+        # Ensure the docker-image transforms save the docker-contexts to our
+        # temp_dir
+        label = f"docker-image-{name}"
+        contexts_dir = temp_dir / "docker-contexts"
+        old_contexts_dir = docker_image.CONTEXTS_DIR
+        try:
+            docker_image.CONTEXTS_DIR = str(contexts_dir)
+            image_tasks = load_tasks_for_kind(
+                {"do_not_optimize": [label]},
+                "docker-image",
+                graph_attr="morphed_task_graph",
+                write_artifacts=True,
+            )
+        finally:
+            docker_image.CONTEXTS_DIR = old_contexts_dir
 
-    msg = f"Successfully built {name}"
-    if tag:
-        msg += f" and tagged with {tag}"
-    print(msg)
+        image_context = contexts_dir.joinpath(f"{name}.tar.gz").resolve()
+        if context_file:
+            shutil.move(image_context, context_file)
+            return ""
 
-    if not tag or tag.endswith(":latest"):
-        print(DEPLOY_WARNING.format(image_dir=os.path.relpath(image_dir), image=name))
+        output_dir = temp_dir / "out"
+        output_dir.mkdir()
+        volumes = {
+            # TODO write artifacts to tmpdir
+            str(output_dir): "/workspace/out",
+            str(image_context): "/workspace/context.tar.gz",
+        }
+
+        assert label in image_tasks
+        task = image_tasks[label]
+        task_def = task.task
+
+        # If the image we're building has a parent image, it may need to be
+        # rebuilt as well if it's cached_task hash changed.
+        if parent_id := task_def["payload"].get("env", {}).get("PARENT_TASK_ID"):
+            try:
+                status_task(parent_id)
+            except TaskclusterRestFailure as e:
+                if e.status_code != 404:
+                    raise
+
+                # Parent id doesn't exist, needs to be re-built as well.
+                parent = task.dependencies["parent"][len("docker-image-") :]
+                parent_tar = temp_dir / "parent.tar"
+                build_image(graph_config, parent, save_image=str(parent_tar))
+                volumes[str(parent_tar)] = "/workspace/parent.tar"
+
+        task_def["payload"]["env"]["CHOWN_OUTPUT"] = f"{os.getuid()}:{os.getgid()}"
+        load_task(
+            graph_config,
+            task_def,
+            custom_image=docker_image.IMAGE_BUILDER_IMAGE,
+            interactive=False,
+            volumes=volumes,
+        )
+        logger.info(f"Successfully built {name} image")
+
+        image_tar = output_dir / "image.tar"
+        if save_image:
+            result = Path(save_image).resolve()
+            shutil.copy(image_tar, result)
+        else:
+            proc = subprocess.run(
+                ["docker", "load", "-i", str(image_tar)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            logger.info(proc.stdout)
+
+            m = re.match(r"^Loaded image: (\S+)$", proc.stdout)
+            if m:
+                result = m.group(1)
+            else:
+                result = f"{name}:latest"
+
+    return str(result)
 
 
 def load_image(
     url: str, imageName: Optional[str] = None, imageTag: Optional[str] = None
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Load docker image from URL as imageName:tag.
 
     Downloads a zstd-compressed docker image tarball from the given URL and
@@ -258,12 +287,12 @@ def load_image(
         else:
             imageTag = "latest"
 
-    info: Dict[str, str] = {}
+    info: dict[str, str] = {}
 
     def download_and_modify_image() -> Generator[bytes, None, None]:
         # This function downloads and edits the downloaded tar file on the fly.
         # It emits chunked buffers of the edited tar file, as a generator.
-        print(f"Downloading from {url}")
+        logger.info(f"Downloading from {url}")
         # get_session() gets us a requests.Session set to retry several times.
         req = get_session().get(url, stream=True)
         req.raise_for_status()
@@ -349,14 +378,14 @@ def load_image(
     return info
 
 
-def _index(l: List, s: str) -> Optional[int]:
+def _index(l: list, s: str) -> Optional[int]:
     try:
         return l.index(s)
     except ValueError:
         pass
 
 
-def _resolve_image(image: Union[str, Dict[str, str]], graph_config: GraphConfig) -> str:
+def _resolve_image(image: Union[str, dict[str, str]], graph_config: GraphConfig) -> str:
     image_task_id = None
 
     # Standard case, image comes from the task definition.
@@ -374,9 +403,7 @@ def _resolve_image(image: Union[str, Dict[str, str]], graph_config: GraphConfig)
         # if so build it.
         image_dir = docker.image_path(image, graph_config)
         if Path(image_dir).is_dir():
-            tag = f"taskcluster/{image}:latest"
-            build_image(image, tag, graph_config, os.environ)
-            return tag
+            return build_image(graph_config, image)
 
         # Check if we're referencing a task or index.
         if image.startswith("task-id="):
@@ -393,10 +420,12 @@ def _resolve_image(image: Union[str, Dict[str, str]], graph_config: GraphConfig)
 
 def load_task(
     graph_config: GraphConfig,
-    task_id: str,
+    task: Union[str, dict[str, Any]],
     remove: bool = True,
     user: Optional[str] = None,
     custom_image: Optional[str] = None,
+    interactive: Optional[bool] = False,
+    volumes: Optional[dict[str, str]] = None,
 ) -> int:
     """Load and run a task interactively in a Docker container.
 
@@ -407,75 +436,91 @@ def load_task(
 
     Args:
         graph_config: The graph configuration object.
-        task_id: The ID of the task to load.
+        task: The ID of the task, or task definition to load.
         remove: Whether to remove the container after exit (default True).
         user: The user to switch to in the container (default 'worker').
         custom_image: A custom image to use instead of the task's image.
+        interactive: If True, execution of the task will be paused and user
+          will be dropped into a shell. They can run `exec-task` to resume
+          it (default: False).
 
     Returns:
         int: The exit code from the Docker container.
-
-    Note:
-        Only supports tasks that use 'run-task' and have a payload.image.
-        The task's actual command is made available via an 'exec-task' function
-        in the interactive shell.
     """
     user = user or "worker"
-    task_def = get_task_definition(task_id)
+    if isinstance(task, str):
+        task_id = task
+        task_def = get_task_definition(task)
+        source = f"task {task_id}"
+    else:
+        # We're running a locally generated definition and don't have a proper id.
+        task_id = "fake"
+        task_def = task
+        source = "provided definition"
+
+    logger.info(f"Loading '{task_def['metadata']['name']}' from {source}")
 
     if "payload" not in task_def or not (image := task_def["payload"].get("image")):
-        print("Tasks without a `payload.image` are not supported!")
+        logger.error("Tasks without a `payload.image` are not supported!")
+
         return 1
 
-    command = task_def["payload"].get("command")
-    if not command or not command[0].endswith("run-task"):
-        print("Only tasks using `run-task` are supported!")
+    task_command = task_def["payload"].get("command")  # type: ignore
+    if interactive and (not task_command or not task_command[0].endswith("run-task")):
+        logger.error("Only tasks using `run-task` are supported with interactive!")
         return 1
 
     try:
         image = custom_image or image
         image_tag = _resolve_image(image, graph_config)
     except Exception as e:
-        print(e, file=sys.stderr)
+        logger.exception(e)
         return 1
 
-    # Remove the payload section of the task's command. This way run-task will
-    # set up the task (clone repos, download fetches, etc) but won't actually
-    # start the core of the task. Instead we'll drop the user into an interactive
-    # shell and provide the ability to resume the task command.
-    task_command = None
-    if index := _index(command, "--"):
-        task_command = shlex.join(command[index + 1 :])
-        # I attempted to run the interactive bash shell here, but for some
-        # reason when executed through `run-task`, the interactive shell
-        # doesn't work well. There's no shell prompt on newlines and tab
-        # completion doesn't work. That's why it is executed outside of
-        # `run-task` below, and why we need to parse `--task-cwd`.
-        command[index + 1 :] = [
-            "echo",
-            "Task setup complete!\nRun `exec-task` to execute the task's command.",
-        ]
+    exec_command = task_cwd = None
+    if interactive:
+        # Remove the payload section of the task's command. This way run-task will
+        # set up the task (clone repos, download fetches, etc) but won't actually
+        # start the core of the task. Instead we'll drop the user into an interactive
+        # shell and provide the ability to resume the task command.
+        if index := _index(task_command, "--"):
+            exec_command = shlex.join(task_command[index + 1 :])
+            # I attempted to run the interactive bash shell here, but for some
+            # reason when executed through `run-task`, the interactive shell
+            # doesn't work well. There's no shell prompt on newlines and tab
+            # completion doesn't work. That's why it is executed outside of
+            # `run-task` below, and why we need to parse `--task-cwd`.
+            task_command[index + 1 :] = [
+                "echo",
+                "Task setup complete!\nRun `exec-task` to execute the task's command.",
+            ]
 
-    # Parse `--task-cwd` so we know where to execute the task's command later.
-    if index := _index(command, "--task-cwd"):
-        task_cwd = command[index + 1]
-    else:
-        for arg in command:
-            if arg.startswith("--task-cwd="):
-                task_cwd = arg.split("=", 1)[1]
-                break
+        # Parse `--task-cwd` so we know where to execute the task's command later.
+        if index := _index(task_command, "--task-cwd"):
+            task_cwd = task_command[index + 1]
         else:
-            task_cwd = "$TASK_WORKDIR"
+            for arg in task_command:
+                if arg.startswith("--task-cwd="):
+                    task_cwd = arg.split("=", 1)[1]
+                    break
+            else:
+                task_cwd = "$TASK_WORKDIR"
+
+        task_command = [
+            "bash",
+            "-c",
+            f"{shlex.join(task_command)} && cd $TASK_WORKDIR && su -p {user}",
+        ]
 
     # Set some env vars the worker would normally set.
     env = {
         "RUN_ID": "0",
-        "TASK_GROUP_ID": task_def.get("taskGroupId", ""),
+        "TASK_GROUP_ID": task_def.get("taskGroupId", ""),  # type: ignore
         "TASK_ID": task_id,
-        "TASKCLUSTER_ROOT_URL": get_root_url(False),
+        "TASKCLUSTER_ROOT_URL": get_root_url(),
     }
     # Add the task's environment variables.
-    env.update(task_def["payload"].get("env", {}))
+    env.update(task_def["payload"].get("env", {}))  # type: ignore
 
     # run-task expects the worker to mount a volume for each path defined in
     # TASKCLUSTER_CACHES, delete them to avoid needing to do the same.
@@ -484,37 +529,37 @@ def load_task(
 
     envfile = None
     initfile = None
+    isatty = os.isatty(sys.stdin.fileno())
     try:
         command = [
             "docker",
             "run",
-            "-it",
-            image_tag,
-            "bash",
-            "-c",
-            f"{shlex.join(command)} && cd $TASK_WORKDIR && su -p {user}",
+            "-i",
         ]
 
+        if isatty:
+            command.append("-t")
+
         if remove:
-            command.insert(2, "--rm")
+            command.append("--rm")
 
         if env:
             envfile = tempfile.NamedTemporaryFile("w+", delete=False)
             envfile.write("\n".join([f"{k}={v}" for k, v in env.items()]))
             envfile.close()
 
-            command.insert(2, f"--env-file={envfile.name}")
+            command.append(f"--env-file={envfile.name}")
 
-        if task_command:
+        if exec_command:
             initfile = tempfile.NamedTemporaryFile("w+", delete=False)
             os.fchmod(initfile.fileno(), 0o644)
             initfile.write(
                 dedent(
                     f"""
             function exec-task() {{
-                echo Starting task: {shlex.quote(task_command)}
+                echo Starting task: {shlex.quote(exec_command)}
                 pushd {task_cwd}
-                {task_command}
+                {exec_command}
                 popd
             }}
             """
@@ -522,8 +567,18 @@ def load_task(
             )
             initfile.close()
 
-            command[2:2] = ["-v", f"{initfile.name}:/builds/worker/.bashrc"]
+            command.extend(["-v", f"{initfile.name}:/builds/worker/.bashrc"])
 
+        if volumes:
+            for k, v in volumes.items():
+                command.extend(["-v", f"{k}:{v}"])
+
+        command.append(image_tag)
+
+        if task_command:
+            command.extend(task_command)
+
+        logger.info(f"Running: {' '.join(command)}")
         proc = subprocess.run(command)
     finally:
         if envfile:

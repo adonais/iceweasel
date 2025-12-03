@@ -74,7 +74,7 @@
       <description flex="1">
         <html:span id="locationBarSuggestionLabel"
                    class="description-deemphasized"
-                   data-l10n-id="addressbar-suggest"
+                   data-l10n-id="addressbar-suggest-1"
         />
         <html:a hidden="true"
                 is="moz-support-link"
@@ -95,7 +95,7 @@
       <checkbox id="topSitesSuggestion"
                 data-l10n-id="addressbar-locbar-shortcuts-option"
                 preference="browser.urlbar.suggest.topsites"/>
-      <checkbox id="enginesSuggestion" data-l10n-id="addressbar-locbar-engines-option"
+      <checkbox id="enginesSuggestion" data-l10n-id="addressbar-locbar-engines-option-1"
                 preference="browser.urlbar.suggest.engines"/>
       <hbox id="quickActionsBox" align="center" hidden="true">
         <checkbox id="enableQuickActions"
@@ -109,26 +109,33 @@
         />
       </hbox>
       <vbox id="firefoxSuggestContainer" hidden="true">
-        <checkbox id="firefoxSuggestNonsponsored"
-                  data-l10n-id="addressbar-locbar-suggest-nonsponsored-option"
-                  preference="browser.urlbar.suggest.quicksuggest.nonsponsored"
+        <checkbox id="firefoxSuggestAll"
+                  data-l10n-id="addressbar-locbar-suggest-all-option"
+                  preference="browser.urlbar.suggest.quicksuggest.all"
         />
         <description class="indent tip-caption"
-                      data-l10n-id="addressbar-locbar-suggest-nonsponsored-desc"
+                      data-l10n-id="addressbar-locbar-suggest-all-option-desc"
         />
-        <checkbox id="firefoxSuggestSponsored"
-                  data-l10n-id="addressbar-locbar-suggest-sponsored-option"
-                  preference="browser.urlbar.suggest.quicksuggest.sponsored"
-        />
-        <description class="indent tip-caption"
-                      data-l10n-id="addressbar-locbar-suggest-sponsored-desc"
-        />
-        <html:moz-toggle id="firefoxSuggestDataCollectionSearchToggle"
-                         preference="browser.urlbar.quicksuggest.dataCollection.enabled"
-                         data-l10n-id="addressbar-firefox-suggest-data-collection"
-                         data-l10n-attrs="label, description"
-                         support-page="firefox-suggest#w_what-setting-is-opt-in"
-        />
+        <vbox class="indent">
+          <checkbox id="firefoxSuggestSponsored"
+                    data-l10n-id="addressbar-locbar-suggest-sponsored-option"
+                    preference="browser.urlbar.suggest.quicksuggest.sponsored"
+          />
+          <description class="indent tip-caption"
+                        data-l10n-id="addressbar-locbar-suggest-sponsored-desc"
+          />
+          <hbox id="firefoxSuggestOnlineBox" align="center">
+            <checkbox id="firefoxSuggestOnlineEnabledToggle"
+                      class="tail-with-learn-more"
+                      data-l10n-id="addressbar-firefox-suggest-online"
+                      preference="browser.urlbar.quicksuggest.online.enabled" />
+            <html:a id="firefoxSuggestOnlineEnabledLearnMore"
+                    is="moz-support-link"
+                    data-l10n-id="addressbar-quickactions-learn-more"
+                    support-page="firefox-suggest#w_what-is-firefox-suggest"
+            />
+          </hbox>
+        </vbox>
         <hbox id="dismissedSuggestions" align="center">
           <vbox flex="1">
             <label data-l10n-id="addressbar-dismissed-suggestions-label"/>
@@ -169,7 +176,6 @@
         <button id="addEngineButton"
                 is="highlightable-button"
                 class="searchEngineAction"
-                hidden="true"
                 data-l10n-id="search-add-engine"
                 search-l10n-ids="
                   add-engine-button,
@@ -182,7 +188,6 @@
         <button id="editEngineButton"
                 is="highlightable-button"
                 class="searchEngineAction"
-                hidden="true"
                 disabled="true"
                 data-l10n-id="search-edit-engine"
                 />

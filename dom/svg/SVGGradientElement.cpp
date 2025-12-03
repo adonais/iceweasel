@@ -8,7 +8,6 @@
 
 #include "DOMSVGAnimatedTransformList.h"
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/SVGElement.h"
 #include "mozilla/dom/SVGGradientElementBinding.h"
 #include "mozilla/dom/SVGLengthBinding.h"

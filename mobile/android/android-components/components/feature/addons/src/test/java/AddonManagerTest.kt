@@ -170,8 +170,8 @@ class AddonManagerTest {
         assertEquals("ext1", addon1.installedState!!.id)
         assertTrue(addon1.isEnabled())
         assertFalse(addon1.isDisabledAsUnsupported())
-        assertNull(addon1.installedState!!.optionsPageUrl)
-        assertFalse(addon1.installedState!!.openOptionsPageInTab)
+        assertNull(addon1.installedState.optionsPageUrl)
+        assertFalse(addon1.installedState.openOptionsPageInTab)
 
         // ext2 should not be installed.
         val addon2 = addons.find { it.id == "ext2" }!!
@@ -186,8 +186,8 @@ class AddonManagerTest {
         assertTrue(addon3.isSupported())
         assertFalse(addon3.isEnabled())
         assertTrue(addon3.isDisabledAsUnsupported())
-        assertEquals("http://options-page.moz", addon3.installedState!!.optionsPageUrl)
-        assertTrue(addon3.installedState!!.openOptionsPageInTab)
+        assertEquals("http://options-page.moz", addon3.installedState.optionsPageUrl)
+        assertTrue(addon3.installedState.openOptionsPageInTab)
 
         // ext4 should be installed.
         val addon4 = addons.find { it.id == "ext4" }!!
@@ -196,8 +196,8 @@ class AddonManagerTest {
         assertEquals("ext4", addon4.installedState!!.id)
         assertTrue(addon4.isEnabled())
         assertFalse(addon4.isDisabledAsUnsupported())
-        assertNull(addon4.installedState!!.optionsPageUrl)
-        assertFalse(addon4.installedState!!.openOptionsPageInTab)
+        assertNull(addon4.installedState.optionsPageUrl)
+        assertFalse(addon4.installedState.openOptionsPageInTab)
 
         // ext5 should be installed.
         val addon5 = addons.find { it.id == "ext5" }!!
@@ -206,8 +206,8 @@ class AddonManagerTest {
         assertEquals("ext5", addon5.installedState!!.id)
         assertTrue(addon5.isEnabled())
         assertFalse(addon5.isDisabledAsUnsupported())
-        assertNull(addon5.installedState!!.optionsPageUrl)
-        assertFalse(addon5.installedState!!.openOptionsPageInTab)
+        assertNull(addon5.installedState.optionsPageUrl)
+        assertFalse(addon5.installedState.openOptionsPageInTab)
 
         // ext6 should be installed.
         val addon6 = addons.find { it.id == "ext6" }!!
@@ -216,8 +216,8 @@ class AddonManagerTest {
         assertEquals("ext6", addon6.installedState!!.id)
         assertTrue(addon6.isEnabled())
         assertFalse(addon6.isDisabledAsUnsupported())
-        assertNull(addon6.installedState!!.optionsPageUrl)
-        assertFalse(addon6.installedState!!.openOptionsPageInTab)
+        assertNull(addon6.installedState.optionsPageUrl)
+        assertFalse(addon6.installedState.openOptionsPageInTab)
     }
 
     @Test
@@ -595,7 +595,7 @@ class AddonManagerTest {
         onSuccessCaptor.value.invoke(extension)
         assertNotNull(installedAddon)
         assertEquals(addon.id, installedAddon!!.id)
-        assertEquals("nameFromMetadata", installedAddon!!.translateName(testContext))
+        assertEquals("nameFromMetadata", installedAddon.translateName(testContext))
         assertTrue(manager.pendingAddonActions.isEmpty())
     }
 
@@ -673,7 +673,7 @@ class AddonManagerTest {
         manager.uninstallAddon(addon, onError = errorCallback)
         verify(engine, never()).uninstallWebExtension(any(), any(), onErrorCaptor.capture())
         assertNotNull(throwable!!)
-        assertEquals("Addon is not installed", throwable!!.localizedMessage)
+        assertEquals("Addon is not installed", throwable.localizedMessage)
 
         // Install extension and try again
         val extension: WebExtension = mock()
@@ -687,8 +687,8 @@ class AddonManagerTest {
         manager.uninstallAddon(installedAddon, onError = errorCallback)
         verify(engine).uninstallWebExtension(eq(extension), any(), onErrorCaptor.capture())
         onErrorCaptor.value.invoke(addon.id, IllegalStateException("test"))
-        assertNotNull(throwable!!)
-        assertEquals("test", throwable!!.localizedMessage)
+        assertNotNull(throwable)
+        assertEquals("test", throwable.localizedMessage)
         assertEquals(msg, addon.id)
         assertTrue(manager.pendingAddonActions.isEmpty())
     }
@@ -729,10 +729,10 @@ class AddonManagerTest {
         onSuccessCaptor.value.invoke(extension)
         assertNotNull(updateAddon)
         assertEquals(addon.id, updateAddon!!.id)
-        assertEquals("permission1", updateAddon!!.optionalPermissions.first().name)
-        assertEquals(true, updateAddon!!.optionalPermissions.first().granted)
-        assertEquals("origin", updateAddon!!.optionalOrigins.first().name)
-        assertEquals(true, updateAddon!!.optionalOrigins.first().granted)
+        assertEquals("permission1", updateAddon.optionalPermissions.first().name)
+        assertEquals(true, updateAddon.optionalPermissions.first().granted)
+        assertEquals("origin", updateAddon.optionalOrigins.first().name)
+        assertEquals(true, updateAddon.optionalOrigins.first().granted)
         assertTrue(manager.pendingAddonActions.isEmpty())
     }
 
@@ -849,7 +849,7 @@ class AddonManagerTest {
         manager.enableAddon(addon, onError = errorCallback)
         verify(engine, never()).enableWebExtension(any(), any(), any(), onErrorCaptor.capture())
         assertNotNull(throwable!!)
-        assertEquals("Addon is not installed", throwable!!.localizedMessage)
+        assertEquals("Addon is not installed", throwable.localizedMessage)
 
         // Install extension and try again
         val extension: WebExtension = mock()
@@ -863,8 +863,8 @@ class AddonManagerTest {
         manager.enableAddon(installedAddon, source = EnableSource.APP_SUPPORT, onError = errorCallback)
         verify(engine).enableWebExtension(eq(extension), eq(EnableSource.APP_SUPPORT), any(), onErrorCaptor.capture())
         onErrorCaptor.value.invoke(IllegalStateException("test"))
-        assertNotNull(throwable!!)
-        assertEquals("test", throwable!!.localizedMessage)
+        assertNotNull(throwable)
+        assertEquals("test", throwable.localizedMessage)
         assertTrue(manager.pendingAddonActions.isEmpty())
     }
 
@@ -914,7 +914,7 @@ class AddonManagerTest {
         manager.disableAddon(addon, onError = errorCallback)
         verify(engine, never()).disableWebExtension(any(), any(), any(), onErrorCaptor.capture())
         assertNotNull(throwable!!)
-        assertEquals("Addon is not installed", throwable!!.localizedMessage)
+        assertEquals("Addon is not installed", throwable.localizedMessage)
 
         // Install extension and try again
         val extension: WebExtension = mock()
@@ -928,8 +928,8 @@ class AddonManagerTest {
         manager.disableAddon(installedAddon, onError = errorCallback)
         verify(engine).disableWebExtension(eq(extension), any(), any(), onErrorCaptor.capture())
         onErrorCaptor.value.invoke(IllegalStateException("test"))
-        assertNotNull(throwable!!)
-        assertEquals("test", throwable!!.localizedMessage)
+        assertNotNull(throwable)
+        assertEquals("test", throwable.localizedMessage)
         assertTrue(manager.pendingAddonActions.isEmpty())
     }
 

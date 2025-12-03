@@ -66,5 +66,5 @@ a:not(:link) {
 }
 
 .sitename {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }

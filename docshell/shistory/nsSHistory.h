@@ -27,8 +27,9 @@ class nsISHEntry;
 
 namespace mozilla {
 namespace dom {
+class EntryList;
 class LoadSHEntryResult;
-}
+}  // namespace dom
 }  // namespace mozilla
 
 class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
@@ -219,6 +220,13 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
 
   mozilla::dom::SessionHistoryEntry* FindAdjacentContiguousEntryFor(
       mozilla::dom::SessionHistoryEntry* aEntry, int32_t aSearchDirection);
+  void ReconstructContiguousEntryListFrom(
+      mozilla::dom::SessionHistoryEntry* aEntry);
+  void ReconstructContiguousEntryList();
+  already_AddRefed<mozilla::dom::EntryList> EntryListFor(const nsID& aID);
+  void RemoveEntryList(const nsID& aID);
+
+  bool ContainsEntry(nsISHEntry* aEntry);
 
  protected:
   virtual ~nsSHistory();
@@ -314,6 +322,11 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   // update the epoch via a runnable on each ::Go (including AsyncGo).
   uint64_t mEpoch = 0;
   mozilla::Maybe<mozilla::dom::ContentParentId> mEpochParentId;
+
+  // Session history entries grouped by DocshellID, which are deduplicated by
+  // SessionHistoryEntry ID.
+  nsTHashMap<nsIDHashKey, mozilla::WeakPtr<mozilla::dom::EntryList>>
+      mEntryLists;
 };
 
 // CallerWillNotifyHistoryIndexAndLengthChanges is used to prevent

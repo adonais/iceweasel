@@ -317,7 +317,7 @@ networking:
       - necko@mozilla.com
       - edgul@mozilla.com
       - baku@mozilla.com
-    expires: 147
+    expires: 157
     labels:
       - eOK
       - eRejectedEmptyNameAndValue
@@ -363,75 +363,6 @@ networking:
       - necko@mozilla.com
     expires: never
     telemetry_mirror: MOZ_SQLITE_COOKIES_TIME_TO_BLOCK_MAIN_THREAD_MS
-
-  set_cookie:
-    type: counter
-    description: >
-      This counts the number of times we set a cookie. Introduced
-      as a denomenator for measuring CHIPS adoption.
-    bugs:
-      - https://bugzilla.mozilla.org/1865199
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1949776
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1865199#c3
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184#c7
-    notification_emails:
-      - bvandersloot@mozilla.com
-    expires: 147
-
-  set_cookie_foreign:
-    type: rate
-    description: >
-      This counts the number of times we set a cookie from a foreign (not
-      same-site) context. Introduced as a denomenator for measuring CHIPS
-      adoption.
-    bugs:
-      - https://bugzilla.mozilla.org/1865199
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1949776
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1865199#c3
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184#c7
-    notification_emails:
-      - bvandersloot@mozilla.com
-    expires: 147
-    denominator_metric: networking.set_cookie
-
-  set_cookie_partitioned:
-    type: rate
-    description: >
-      This counts the number of times we set a cookie that has the Partitioned
-      attribute. This tracks the adoption of CHIPS.
-    bugs:
-      - https://bugzilla.mozilla.org/1865199
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1949776
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1865199#c3
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184#c7
-    notification_emails:
-      - bvandersloot@mozilla.com
-    expires: 147
-    denominator_metric: networking.set_cookie
-
-  set_cookie_foreign_partitioned:
-    type: rate
-    description: >
-      This counts the number of times we set a cookie that has the Partitioned
-      attribute in a foreign (not same-site) context. This tracks the adoption
-      of CHIPS.
-    bugs:
-      - https://bugzilla.mozilla.org/1865199
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1949776
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1865199#c3
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1912184#c7
-    notification_emails:
-      - bvandersloot@mozilla.com
-    expires: 147
-    denominator_metric: networking.set_cookie
 
   dns_lookup_time:
     type: timing_distribution
@@ -1680,7 +1611,7 @@ networking:
       monitor:
         alert: True
         bugzilla_notification_emails:
-          - gmierz2@outlook.com
+          - gmierzwinski@mozilla.com
 
   http_channel_sub_open_to_first_sent:
     type: timing_distribution

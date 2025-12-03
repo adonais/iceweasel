@@ -8,6 +8,16 @@ package org.mozilla.fenix.ui.robots
 
 import android.os.Build
 import android.util.Log
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnySibling
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.test.swipeUp
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.ViewInteraction
 import androidx.test.espresso.action.ViewActions.click
@@ -24,9 +34,13 @@ import org.hamcrest.Matchers.endsWith
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
+import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.helpers.TestHelper.hasCousin
 import org.mozilla.fenix.helpers.TestHelper.mDevice
+import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.TestHelper.scrollToElementByText
+import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.click
 
 /**
@@ -134,6 +148,97 @@ class SettingsSubMenuCustomizeRobot {
                 ),
             )
         Log.i(TAG, "verifyPullToRefreshGesturePrefState: Verified that the \"Pull to refresh\" toggle is checked: $isEnabled")
+    }
+
+    fun verifyAppIconOption(composeTestRule: ComposeTestRule, appIconOptionName: String) {
+        Log.i(TAG, "verifyAppIconOption: Trying to verify that the \"App icon\" option is set to: $appIconOptionName")
+        composeTestRule.onNodeWithText(getStringResource(R.string.preference_select_app_icon_title), useUnmergedTree = true)
+            .assert(hasAnySibling(hasText(appIconOptionName)))
+        Log.i(TAG, "verifyAppIconOption: Verified that the \"App icon\" option is set to: $appIconOptionName")
+    }
+
+    fun clickTheAppIconOption(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "clickTheAppIconOption: Trying to click that the \"App icon\" option")
+        composeTestRule.onNodeWithText(getStringResource(R.string.preference_select_app_icon_title), useUnmergedTree = true).performClick()
+        Log.i(TAG, "clickTheAppIconOption: Clicked that the \"App icon\" option")
+    }
+
+    fun verifyAppIconOptionIsDisplayed(composeTestRule: ComposeTestRule, vararg stringResIds: Int) {
+        for (stringResId in stringResIds) {
+            Log.i(TAG, "verifyAppIconOptionIsDisplayed: Trying to verify that the: ${getStringResource(stringResId)} app icon option is displayed")
+            composeTestRule.onNodeWithText(getStringResource(stringResId), useUnmergedTree = true).assertIsDisplayed()
+            Log.i(TAG, "verifyAppIconSettingItems: Verified that the: ${getStringResource(stringResId)} app icon option is displayed")
+        }
+    }
+
+    fun verifyAppIconSettingItems(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "verifyAppIconSettingItems: Trying to verify that the \"App icon\" setting items are displayed")
+        verifyAppIconOptionIsDisplayed(
+            composeTestRule,
+            // Other section
+            R.string.alternative_app_icon_group_featured,
+            R.string.alternative_app_icon_option_retro_2004,
+            R.string.alternative_app_icon_option_pixelated,
+            R.string.alternative_app_icon_option_cuddling,
+            R.string.alternative_app_icon_option_pride,
+            R.string.alternative_app_icon_option_flaming,
+            R.string.alternative_app_icon_option_minimal,
+            R.string.alternative_app_icon_option_momo,
+            R.string.alternative_app_icon_option_momo_subtitle,
+            R.string.alternative_app_icon_option_cool,
+            // Solid colors section
+            R.string.alternative_app_icon_group_solid_colors,
+            R.string.alternative_app_icon_option_default,
+            R.string.alternative_app_icon_option_light,
+            R.string.alternative_app_icon_option_dark,
+        )
+        scrollToElementByText(getStringResource(R.string.alternative_app_icon_option_gradient_northern_lights))
+        verifyAppIconOptionIsDisplayed(
+            composeTestRule,
+            R.string.alternative_app_icon_option_red,
+            R.string.alternative_app_icon_option_green,
+            R.string.alternative_app_icon_option_blue,
+            R.string.alternative_app_icon_option_purple,
+            R.string.alternative_app_icon_option_purple_dark,
+            // Gradients section
+            R.string.alternative_app_icon_option_gradient_sunrise,
+            R.string.alternative_app_icon_option_gradient_golden_hour,
+            R.string.alternative_app_icon_option_gradient_sunset,
+            R.string.alternative_app_icon_option_gradient_blue_hour,
+            R.string.alternative_app_icon_option_gradient_twilight,
+            R.string.alternative_app_icon_group_gradients,
+            R.string.alternative_app_icon_option_gradient_midnight,
+            R.string.alternative_app_icon_option_gradient_northern_lights,
+        )
+        Log.i(TAG, "verifyAppIconSettingItems: Verified that the \"App icon\" setting items are displayed")
+    }
+
+    fun clickAppIconOption(composeTestRule: ComposeTestRule, appIconOptionName: String) {
+        Log.i(TAG, "clickAppIconOption: Trying to click that the: $appIconOptionName \"App icon\" option")
+        composeTestRule.onNodeWithText(appIconOptionName, useUnmergedTree = true)
+            .performClick()
+        Log.i(TAG, "clickAppIconOption: Clicked that the: $appIconOptionName \"App icon\" option")
+    }
+
+    fun verifyChangeAppIconDialog(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "verifyChangeAppIconDialog: Trying to verify that the dialog title is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.restart_warning_dialog_title), useUnmergedTree = true).assertIsDisplayed()
+        Log.i(TAG, "verifyChangeAppIconDialog: Verified that the  dialog title is displayed")
+        Log.i(TAG, "verifyChangeAppIconDialog: Trying to verify that the dialog message is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.restart_warning_dialog_body_2, argument = appName), useUnmergedTree = true).assertIsDisplayed()
+        Log.i(TAG, "verifyChangeAppIconDialog: Verified that the dialog message is displayed")
+        Log.i(TAG, "verifyChangeAppIconDialog: Trying to verify that the \"Cancel\" dialog button is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.restart_warning_dialog_button_negative), useUnmergedTree = true).assertIsDisplayed()
+        Log.i(TAG, "verifyChangeAppIconDialog: Verified that the \"Cancel\" dialog button is displayed")
+        Log.i(TAG, "verifyChangeAppIconDialog: Trying to verify that the \"Change icon\" dialog button is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.restart_warning_dialog_button_positive_2), useUnmergedTree = true).assertIsDisplayed()
+        Log.i(TAG, "verifyChangeAppIconDialog: Verified that the \"Change icon\" dialog button is displayed")
+    }
+
+    fun clickTheChangeIconDialogButton(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "clickTheChangeIconDialogButton: Trying to click the \"Change icon\" dialog button")
+        composeTestRule.onNodeWithText(getStringResource(R.string.restart_warning_dialog_button_positive_2), useUnmergedTree = true).performClick()
+        Log.i(TAG, "clickTheChangeIconDialogButton: Clicked the \"Change icon\" dialog button")
     }
 
     class Transition {

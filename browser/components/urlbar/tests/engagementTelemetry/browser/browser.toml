@@ -41,6 +41,7 @@ prefs = ["browser.bookmarks.testing.skipDefaultBookmarksImport=true"]
 ["browser_glean_telemetry_bounce.js"]
 
 ["browser_glean_telemetry_disable.js"]
+skip-if = ["os == 'win' && os_version == '11.26100' && debug && verify-standalone"]
 
 ["browser_glean_telemetry_engagement_available_semantic.js"]
 
@@ -75,6 +76,8 @@ skip-if = ["verify"] # Bug 1852375 - MerinoTestUtils.initWeather() doesn't play 
 ["browser_glean_telemetry_exposure_edge_cases.js"]
 
 ["browser_glean_telemetry_keyword_exposure.js"]
+
+["browser_glean_telemetry_realtime_flight_status_engagement.js"]
 
 ["browser_glean_telemetry_realtime_market_engagement.js"]
 

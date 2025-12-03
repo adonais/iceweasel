@@ -1,0 +1,30 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/**
+ * godotfest.com - Blur effects are disabled on Android
+ * Bug #1992923 - https://bugzilla.mozilla.org/show_bug.cgi?id=1992923
+ * WebCompat issue #41822 - https://webcompat.com/issues/41822
+ *
+ * The site appears to be intentionally disabling blur effects on Firefox for
+ * an unknown reason, with broken-looking fallbacks. Let's enable blur again.
+ */
+@supports (-moz-appearance: none) {
+  @media (hover: none) and (pointer: coarse) {
+    #background-blur,
+    #menu-blur {
+      display: revert !important;
+    }
+    .backdrop-blur,
+    .backdrop-blur-sm,
+    .backdrop-blur-2xl {
+      --tw-backdrop-blur: blur(var(--blur-2xl));
+      backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,)
+        var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,) !important;
+    }
+  }
+  .talk-card__bg {
+    filter: var(--talk-bg-filter) !important;
+  }
+}

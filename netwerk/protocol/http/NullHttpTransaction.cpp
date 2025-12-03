@@ -115,7 +115,7 @@ void NullHttpTransaction::OnTransportStatus(nsITransport* transport,
   }
 
   if (mActivityDistributor) {
-    Unused << mActivityDistributor->ObserveActivityWithArgs(
+    (void)mActivityDistributor->ObserveActivityWithArgs(
         HttpActivity(mConnectionInfo->GetOrigin(),
                      mConnectionInfo->OriginPort(),
                      mConnectionInfo->EndToEndSSL()),
@@ -165,7 +165,7 @@ nsHttpRequestHead* NullHttpTransaction::RequestHead() {
         // Report request headers.
         nsCString reqHeaderBuf;
         mRequestHead->Flatten(reqHeaderBuf, false);
-        Unused << mActivityDistributor->ObserveActivityWithArgs(
+        (void)mActivityDistributor->ObserveActivityWithArgs(
             HttpActivity(mConnectionInfo->GetOrigin(),
                          mConnectionInfo->OriginPort(),
                          mConnectionInfo->EndToEndSSL()),
@@ -196,7 +196,7 @@ void NullHttpTransaction::Close(nsresult reason) {
   mIsDone = true;
   if (mActivityDistributor) {
     // Report that this transaction is closing.
-    Unused << mActivityDistributor->ObserveActivityWithArgs(
+    (void)mActivityDistributor->ObserveActivityWithArgs(
         HttpActivity(mConnectionInfo->GetOrigin(),
                      mConnectionInfo->OriginPort(),
                      mConnectionInfo->EndToEndSSL()),

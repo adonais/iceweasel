@@ -158,6 +158,14 @@ add_task(async function testInlinePreviews() {
     ],
   });
 
+  await invokeFunctionAndAssertInlinePreview({
+    dbg,
+    fnName: "innerBlockHoistedFuncDecl",
+    expectedInlinePreviews: [
+      { previews: [{ identifier: "foo:", value: "function foo()" }], line: 90 },
+    ],
+  });
+
   // Check inline previews for values within a module script
   await invokeFunctionAndAssertInlinePreview({
     dbg,
@@ -246,6 +254,15 @@ add_task(async function testInlinePreviewsWithExplicitResourceManagement() {
           },
         ],
         line: 3,
+      },
+      {
+        previews: [
+          {
+            identifier: "erm.foo:",
+            value: "42",
+          },
+        ],
+        line: 7,
       },
     ],
   });

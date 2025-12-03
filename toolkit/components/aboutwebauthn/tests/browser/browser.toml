@@ -19,3 +19,4 @@ prefs = [
 ["browser_aboutwebauthn_no_token.js"]
 
 ["browser_aboutwebauthn_pin.js"]
+skip-if = ["os == 'linux' && os_version == '24.04' && arch == 'x86_64' && opt && a11y_checks && swgl && verify-standalone"]

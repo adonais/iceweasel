@@ -9,8 +9,8 @@
 
 #include "gfxRect.h"
 #include "gfxUtils.h"
+#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/BezierUtils.h"
 #include "mozilla/gfx/PathHelpers.h"

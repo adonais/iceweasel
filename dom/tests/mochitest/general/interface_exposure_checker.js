@@ -13,6 +13,7 @@ function entryDisabled(
     isInsecureContext,
     isFennec,
     isCrossOriginIsolated,
+    isSessionHistoryInParent,
   }
 ) {
   return (
@@ -35,6 +36,7 @@ function entryDisabled(
     (isInsecureContext && !entry.insecureContext) ||
     entry.earlyBetaOrEarlier === !isEarlyBetaOrEarlier ||
     entry.crossOriginIsolated === !isCrossOriginIsolated ||
+    entry.sessionHistoryInParent === !isSessionHistoryInParent ||
     entry.disabled
   );
 }
@@ -133,6 +135,7 @@ if (typeof window !== "undefined") {
       "resource://gre/modules/AppConstants.sys.mjs"
     );
     const sysinfo = SpecialPowers.Services.sysinfo;
+    const appinfo = SpecialPowers.Services.appinfo;
 
     return {
       isNightly: AppConstants.NIGHTLY_BUILD,
@@ -152,6 +155,7 @@ if (typeof window !== "undefined") {
           SpecialPowers.Ci.nsIGeckoViewBridge
         ).isFennec,
       isCrossOriginIsolated: window.crossOriginIsolated,
+      isSessionHistoryInParent: appinfo.sessionHistoryInParent,
     };
   };
 }

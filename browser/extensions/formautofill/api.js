@@ -19,7 +19,7 @@ XPCOMUtils.defineLazyServiceGetter(
   this,
   "resProto",
   "@mozilla.org/network/protocol;1?name=resource",
-  "nsISubstitutingProtocolHandler"
+  Ci.nsISubstitutingProtocolHandler
 );
 
 const RESOURCE_HOST = "formautofill";

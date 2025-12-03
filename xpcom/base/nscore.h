@@ -18,7 +18,6 @@
 #include <stddef.h>  // IWYU pragma: export
 #include <stdint.h>  // IWYU pragma: export
 
-#include "mozilla/HelperMacros.h"  // IWYU pragma: export
 #include "mozilla/RefCountType.h"
 
 /* Core XPCOM declarations. */

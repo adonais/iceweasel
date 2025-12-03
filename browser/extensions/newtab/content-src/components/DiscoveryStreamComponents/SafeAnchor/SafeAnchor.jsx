@@ -54,7 +54,7 @@ export class SafeAnchor extends React.PureComponent {
   }
 
   render() {
-    const { url, className, title, isSponsored } = this.props;
+    const { url, className, title, isSponsored, onFocus } = this.props;
 
     let anchor = (
       <a
@@ -69,6 +69,7 @@ export class SafeAnchor extends React.PureComponent {
               tabIndex: this.props.tabIndex,
             }
           : {})}
+        {...(onFocus ? { onFocus } : {})}
       >
         {this.props.children}
       </a>

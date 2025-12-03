@@ -73,7 +73,6 @@
 #include "js/ShadowRealmCallbacks.h"
 #include "js/SliceBudget.h"
 #include "jsfriendapi.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DebuggerOnGCRunnable.h"
@@ -84,7 +83,6 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/glean/XpcomMetrics.h"
-#include "mozilla/Unused.h"
 #include "mozilla/UseCounter.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/DOMJSClass.h"
@@ -406,9 +404,9 @@ struct TraversalTracer : public JS::CallbackTracer {
 };
 
 void TraversalTracer::onChild(JS::GCCellPtr aThing, const char* name) {
-  // Checking strings and symbols for being gray is rather slow, and we don't
-  // need either of them for the cycle collector.
-  if (aThing.is<JSString>() || aThing.is<JS::Symbol>()) {
+  // Checking strings for being gray is rather slow, and we don't need them for
+  // the cycle collector.
+  if (aThing.is<JSString>()) {
     return;
   }
 
@@ -1285,7 +1283,7 @@ void CycleCollectedJSRuntime::GCSliceCallback(JSContext* aContext,
   if (aProgress == JS::GC_CYCLE_END &&
       JS::dbg::FireOnGarbageCollectionHookRequired(aContext)) {
     JS::GCReason reason = aDesc.reason_;
-    Unused << NS_WARN_IF(
+    (void)NS_WARN_IF(
         NS_FAILED(DebuggerOnGCRunnable::Enqueue(aContext, aDesc)) &&
         reason != JS::GCReason::SHUTDOWN_CC &&
         reason != JS::GCReason::DESTROY_RUNTIME &&
@@ -1630,7 +1628,7 @@ bool CycleCollectedJSRuntime::TraceJSHolders(JSTracer* aTracer, IterT& aIter,
       CheckHolderIsSingleZone(holder, tracer, aIter.Zone());
     }
 #else
-    Unused << checkSingleZoneHolders;
+    (void)checkSingleZoneHolders;
 #endif
 
     aIter.Next();
@@ -1765,6 +1763,8 @@ bool CycleCollectedJSRuntime::UsefulToMergeZones() const { return false; }
 void CycleCollectedJSRuntime::FixWeakMappingGrayBits() const {
   MOZ_ASSERT(!JS::IsIncrementalGCInProgress(mJSRuntime),
              "Don't call FixWeakMappingGrayBits during a GC.");
+  MOZ_ASSERT(AreGCGrayBitsValid());
+
   FixWeakMappingGrayBitsTracer fixer(mJSRuntime);
   fixer.FixAll();
 }

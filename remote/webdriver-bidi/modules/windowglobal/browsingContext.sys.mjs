@@ -151,6 +151,23 @@ class BrowsingContextModule extends WindowGlobalBiDiModule {
   }
 
   /**
+   * Locate the container element of a provided context id.
+   *
+   * @see https://w3c.github.io/webdriver-bidi/#locate-the-container-element
+   */
+
+  #locateContainer(contextId) {
+    const returnedNodes = [];
+    const context = BrowsingContext.get(contextId);
+    const container = context.embedderElement;
+    if (container) {
+      returnedNodes.push(container);
+    }
+
+    return returnedNodes;
+  }
+
+  /**
    * Locate nodes using accessibility attributes.
    *
    * @see https://w3c.github.io/webdriver-bidi/#locate-nodes-using-accessibility-attributes
@@ -567,6 +584,10 @@ class BrowsingContextModule extends WindowGlobalBiDiModule {
           locator.value,
           maxNodeCount
         );
+        break;
+      }
+      case lazy.LocatorType.context: {
+        returnedNodes = this.#locateContainer(locator.value.context);
         break;
       }
       case lazy.LocatorType.css: {

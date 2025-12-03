@@ -10,7 +10,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "ProxyService",
   "@mozilla.org/network/protocol-proxy-service;1",
-  "nsIProtocolProxyService"
+  Ci.nsIProtocolProxyService
 );
 
 ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {

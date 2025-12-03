@@ -427,7 +427,7 @@ function addSVGElement(target, tag, attrs) {
   return element;
 }
 
-/*
+/**
  * Get Animation distance between two specified values for a specific property.
  *
  * @param target The target element.

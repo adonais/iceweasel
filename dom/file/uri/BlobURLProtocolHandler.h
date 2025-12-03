@@ -9,7 +9,6 @@
 
 #include <functional>
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "nsCOMPtr.h"
 #include "nsIProtocolHandler.h"

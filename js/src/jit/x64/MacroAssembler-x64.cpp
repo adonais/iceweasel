@@ -298,9 +298,24 @@ void MacroAssemblerX64::vmulpdSimd128(const SimdConstant& v, FloatRegister lhs,
   vpRiprOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX64::vmulpd_ripr);
 }
 
+void MacroAssemblerX64::vandpsSimd128(const SimdConstant& v, FloatRegister lhs,
+                                      FloatRegister dest) {
+  vpRiprOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX64::vandps_ripr);
+}
+
 void MacroAssemblerX64::vandpdSimd128(const SimdConstant& v, FloatRegister lhs,
                                       FloatRegister dest) {
   vpRiprOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX64::vandpd_ripr);
+}
+
+void MacroAssemblerX64::vxorpsSimd128(const SimdConstant& v, FloatRegister lhs,
+                                      FloatRegister dest) {
+  vpRiprOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX64::vxorps_ripr);
+}
+
+void MacroAssemblerX64::vxorpdSimd128(const SimdConstant& v, FloatRegister lhs,
+                                      FloatRegister dest) {
+  vpRiprOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX64::vxorpd_ripr);
 }
 
 void MacroAssemblerX64::vminpdSimd128(const SimdConstant& v, FloatRegister lhs,
@@ -858,9 +873,10 @@ void MacroAssemblerX64::convertDoubleToPtr(FloatRegister src, Register dest,
 }
 
 // This operation really consists of five phases, in order to enforce the
-// restriction that on x64, srcDest must be rax and rdx will be clobbered.
+// restriction that on x64, the dividend must be rax and both rax and rdx will
+// be clobbered.
 //
-//     Input: { rhs, lhsOutput }
+//     Input: { lhs, rhs }
 //
 //  [PUSH] Preserve registers
 //  [MOVE] Generate moves to specific registers
@@ -868,16 +884,17 @@ void MacroAssemblerX64::convertDoubleToPtr(FloatRegister src, Register dest,
 //  [DIV] Input: { regForRhs, RAX }
 //  [DIV] extend RAX into RDX
 //  [DIV] x64 Division operator
-//  [DIV] Ouptut: { RAX, RDX }
+//  [DIV] Output: { RAX, RDX }
 //
 //  [MOVE] Move specific registers to outputs
 //  [POP] Restore registers
 //
-//    Output: { lhsOutput, remainderOutput }
-void MacroAssemblerX64::flexibleDivMod64(Register rhs, Register lhsOutput,
-                                         bool isUnsigned, bool isDiv) {
-  if (lhsOutput == rhs) {
-    movq(ImmWord(isDiv ? 1 : 0), lhsOutput);
+//    Output: { output }
+void MacroAssemblerX64::flexibleDivMod64(Register lhs, Register rhs,
+                                         Register output, bool isUnsigned,
+                                         bool isDiv) {
+  if (lhs == rhs) {
+    movq(ImmWord(isDiv ? 1 : 0), output);
     return;
   }
 
@@ -890,14 +907,16 @@ void MacroAssemblerX64::flexibleDivMod64(Register rhs, Register lhsOutput,
   LiveGeneralRegisterSet preserve;
   preserve.add(rdx);
   preserve.add(rax);
-  preserve.add(regForRhs);
+  if (rhs != regForRhs) {
+    preserve.add(regForRhs);
+  }
 
-  preserve.takeUnchecked(lhsOutput);
+  preserve.takeUnchecked(output);
 
   asMasm().PushRegsInMask(preserve);
 
   // Shuffle input into place.
-  asMasm().moveRegPair(lhsOutput, rhs, rax, regForRhs);
+  asMasm().moveRegPair(lhs, rhs, rax, regForRhs);
   if (oom()) {
     return;
   }
@@ -912,8 +931,8 @@ void MacroAssemblerX64::flexibleDivMod64(Register rhs, Register lhsOutput,
   }
 
   Register result = isDiv ? rax : rdx;
-  if (result != lhsOutput) {
-    movq(result, lhsOutput);
+  if (result != output) {
+    movq(result, output);
   }
 
   asMasm().PopRegsInMask(preserve);
@@ -1048,15 +1067,15 @@ void MacroAssembler::moveValue(const Value& src, const ValueOperand& dest) {
 // Arithmetic functions
 
 void MacroAssembler::flexibleQuotientPtr(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
-  flexibleDivMod64(rhs, srcDest, isUnsigned, /* isDiv= */ true);
+  flexibleDivMod64(lhs, rhs, dest, isUnsigned, /* isDiv= */ true);
 }
 
 void MacroAssembler::flexibleRemainderPtr(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
-  flexibleDivMod64(rhs, srcDest, isUnsigned, /* isDiv= */ false);
+  flexibleDivMod64(lhs, rhs, dest, isUnsigned, /* isDiv= */ false);
 }
 
 // ===============================================================

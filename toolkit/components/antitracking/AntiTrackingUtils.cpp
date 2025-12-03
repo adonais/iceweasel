@@ -493,8 +493,8 @@ AntiTrackingUtils::GetStoragePermissionStateInParent(nsIChannel* aChannel) {
       if (NS_SUCCEEDED(rv) && isDocument) {
         nsIScriptSecurityManager* ssm =
             nsScriptSecurityManager::GetScriptSecurityManager();
-        Unused << ssm->GetChannelResultPrincipal(
-            aChannel, getter_AddRefs(targetPrincipal));
+        (void)ssm->GetChannelResultPrincipal(aChannel,
+                                             getter_AddRefs(targetPrincipal));
       }
     }
   }
@@ -699,17 +699,6 @@ nsresult AntiTrackingUtils::ActivateStoragePermissionStateInParent(
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<BrowsingContext> bc;
-  nsresult rv = loadInfo->GetTargetBrowsingContext(getter_AddRefs(bc));
-  if (NS_WARN_IF(NS_FAILED(rv)) || !bc) {
-    return NS_ERROR_FAILURE;
-  }
-
-  WindowContext* wc = bc->GetCurrentWindowContext();
-  if (NS_WARN_IF(!wc)) {
-    return NS_ERROR_FAILURE;
-  }
-
 #ifdef DEBUG
   // We are only allowed to transition from "Inactive" to "Has". Parent function
   // should check this condition, but check here again to make extra sure.
@@ -720,8 +709,6 @@ nsresult AntiTrackingUtils::ActivateStoragePermissionStateInParent(
 
   // Allow accessing unpartitioned cookies
   MOZ_TRY(loadInfo->SetStoragePermission(nsILoadInfo::HasStoragePermission));
-  MOZ_TRY(wc->SetUsingStorageAccess(true));
-
   return NS_OK;
 }
 
@@ -1031,7 +1018,7 @@ void AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(nsIChannel* aChannel) {
   }
 
   nsCOMPtr<nsIURI> uri;
-  Unused << aChannel->GetURI(getter_AddRefs(uri));
+  (void)aChannel->GetURI(getter_AddRefs(uri));
 
   // In some cases we don't have a browsingContext. For example, in xpcshell
   // tests, channels that are used to download images and channels for loading
@@ -1175,8 +1162,8 @@ bool AntiTrackingUtils::IsThirdPartyWindow(nsPIDOMWindowInner* aWindow,
     // to use IsThirdPartyWindow check that examine the whole hierarchy.
     nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
         components::ThirdPartyUtil::Service();
-    Unused << thirdPartyUtil->IsThirdPartyWindow(aWindow->GetOuterWindow(),
-                                                 nullptr, &thirdParty);
+    (void)thirdPartyUtil->IsThirdPartyWindow(aWindow->GetOuterWindow(), nullptr,
+                                             &thirdParty);
     return thirdParty;
   }
 
@@ -1311,7 +1298,7 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
 
-  Unused << loadInfo->SetStoragePermission(
+  (void)loadInfo->SetStoragePermission(
       AntiTrackingUtils::GetStoragePermissionStateInParent(aChannel));
 
   // Note that we need to put this after computing the IsThirdPartyToTopWindow
@@ -1330,7 +1317,7 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
 #endif
 
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-  Unused << loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
+  (void)loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
   // Subresources (including subdocuments) may have a different partition key,
   // particularly one without or with the same-site bit. We have to update that
   // here.
@@ -1361,7 +1348,7 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
   // We only need to set FPD for top-level loads. FPD will automatically be
   // propagated to non-top level loads via CookieJarSetting.
   nsCOMPtr<nsIURI> uri;
-  Unused << aChannel->GetURI(getter_AddRefs(uri));
+  (void)aChannel->GetURI(getter_AddRefs(uri));
   net::CookieJarSettings::Cast(cookieJarSettings)->SetPartitionKey(uri, false);
 
   // Generate the fingerprinting randomization key for top-level loads. The key

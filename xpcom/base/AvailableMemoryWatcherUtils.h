@@ -7,7 +7,6 @@
 #ifndef mozilla_AvailableMemoryWatcherUtils_h
 #define mozilla_AvailableMemoryWatcherUtils_h
 
-#include "mozilla/Attributes.h"
 #include "nsISupportsUtils.h"  // For nsresult
 
 namespace mozilla {

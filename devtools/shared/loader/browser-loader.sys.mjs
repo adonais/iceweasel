@@ -68,7 +68,7 @@ const REACT_ESM_MODULES = new Set([
 const browserBasedDirsRegExp =
   /^resource\:\/\/devtools\/client\/\S*\/components\//;
 
-/*
+/**
  * Create a loader to be used in a browser environment. This evaluates
  * modules in their own environment, but sets window (the normal
  * global object) as the sandbox prototype, so when a variable is not

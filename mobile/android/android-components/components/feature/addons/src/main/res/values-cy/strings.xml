@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this file,
+  You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
   <string name="mozac_feature_addons_permissions_one_site_description">Cael mynediad i’ch data o %1$s</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
@@ -25,7 +32,16 @@
   -->
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Cael mynediad at eich data ar barthau eraill</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
-  <string name="mozac_feature_addons_permissions_all_domain_count_description" tools:ignore="PluralsCandidate">Cael mynediad i\'ch data ar gyfer gwefannau mewn %1$d parth</string>
+  <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">Cael mynediad i\'ch data ar gyfer gwefannau mewn %1$d parth</string>
+  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2" tools:ignore="MissingQuantity">
+    <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
+    <item quantity="zero">Mynediad i\'ch data ar gyfer gwefannau mewn %1$d parth</item>
+    <item quantity="one">Mynediad i\'ch data ar gyfer gwefannau mewn %1$d parth</item>
+    <item quantity="two">Mynediad i\'ch data ar gyfer gwefannau mewn %1$d parth</item>
+    <item quantity="few">Mynediad i\'ch data ar gyfer gwefannau mewn %1$d parth</item>
+    <item quantity="many">Mynediad i\'ch data ar gyfer gwefannau mewn %1$d parth</item>
+    <item quantity="other">Mynediad i\'ch data ar gyfer gwefannau mewn %1$d parth</item>
+  </plurals>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d o %3$d</string>
   <!-- Description for the "privacy" WebExtensions API permission. -->
@@ -367,7 +383,9 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">Nid oedd modd gosod %1$s oherwydd dim ond sefydliad sy\'n defnyddio polisïau menter sy\'n gallu ei osod, nad yw\'n cael ei gefnogi ar y platfform hwn.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1">Mae %1$s yn groes i bolisïau Mozilla ac nid oes modd ei osod ar %2$s.</string>
+  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Mae %1$s yn groes i bolisïau Mozilla ac nid oes modd ei osod ar %2$s.</string>
+  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
+  <string name="mozac_feature_addons_soft_blocked_2">Mae %1$s wedi\'i gyfyngu ac nid oes modd ei osod ar %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Wedi methu galluogi %1$s</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -413,9 +431,13 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">Mae\'r estyniad hwn wedi\'i rwystro am fynd yn groes i bolisïau Mozilla ac mae wedi\'i analluogi.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1">Mae\'r estyniad hwn wedi\'i gyfyngu am fynd yn groes i bolisïau Mozilla ac mae wedi\'i analluogi. Gallwch ei alluogi, ond gall hyn fod yn beryglus.</string>
+  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Mae\'r estyniad hwn wedi\'i gyfyngu am fynd yn groes i bolisïau Mozilla ac mae wedi\'i analluogi. Gallwch ei alluogi, ond gall hyn fod yn beryglus.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
+  <string name="mozac_feature_addons_status_softblocked_2">Mae\'r estyniad hwn wedi\'i gyfyngu ac mae wedi\'i analluogi. Gallwch ei alluogi, ond gall hyn fod yn beryglus.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled">Mae\'r estyniad hwn yn groes i bolisïau Mozilla. Gall fod yn beryglus ei ddefnyddio.</string>
+  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Mae\'r estyniad hwn yn groes i bolisïau Mozilla. Gall fod yn beryglus ei ddefnyddio.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
+  <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Mae\'r estyniad hwn wedi\'i gyfyngu. Gall fod yn beryglus ei ddefnyddio.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">Nid oedd modd gwirio %1$s yn ddiogel ac mae wedi ei analluogi.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

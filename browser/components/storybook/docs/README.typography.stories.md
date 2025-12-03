@@ -282,13 +282,24 @@ Type setting relies on design tokens for font size and font weight.
     </tr>
     <tr>
       <th>
-        <code>--font-weight-bold</code>
+        <code>--font-weight-semibold</code>
       </th>
       <td>
         <code>600</code>
       </td>
       <td>
         <code>600</code>
+      </td>
+    </tr>
+    <tr>
+      <th>
+        <code>--font-weight-bold</code>
+      </th>
+      <td>
+        <code>700</code>
+      </td>
+      <td>
+        <code>700</code>
       </td>
     </tr>
   </tbody>
@@ -326,8 +337,8 @@ This file is imported into `common-shared.css` and `global-shared.css` so that b
 ```css story
 h1,
 .heading-xlarge {
-  font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-xxlarge);
+  font-weight: var(--heading-font-weight);
+  font-size: var(--heading-font-size-xlarge);
 }
 ```
 
@@ -341,8 +352,8 @@ h1,
 ```css story
 h2,
 .heading-large {
-  font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-xlarge);
+  font-weight: var(--heading-font-weight);
+  font-size: var(--heading-font-size-large);
 }
 ```
 
@@ -354,8 +365,8 @@ h2,
 ```css story
 h3,
 .heading-medium {
-  font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-large);
+  font-weight: var(--heading-font-weight);
+  font-size: var(--heading-font-size-medium);
 }
 ```
 

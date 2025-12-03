@@ -11,7 +11,6 @@
 #include "mozilla/CheckedArithmetic.h"
 #include "mozilla/MemoryChecking.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/PodOperations.h"
 
 #include <algorithm>
 #include <new>
@@ -979,10 +978,8 @@ class LifoAlloc {
 
   void release(Mark mark);
 
- private:
   void cancelMark(Mark mark) { markCount--; }
 
- public:
   void releaseAll() {
     MOZ_ASSERT(!markCount);
 

@@ -9,16 +9,16 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 const lazy = {};
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
-  gCertDB: ["@mozilla.org/security/x509certdb;1", "nsIX509CertDB"],
+  gCertDB: ["@mozilla.org/security/x509certdb;1", Ci.nsIX509CertDB],
   gExternalProtocolService: [
     "@mozilla.org/uriloader/external-protocol-service;1",
-    "nsIExternalProtocolService",
+    Ci.nsIExternalProtocolService,
   ],
   gHandlerService: [
     "@mozilla.org/uriloader/handler-service;1",
-    "nsIHandlerService",
+    Ci.nsIHandlerService,
   ],
-  gMIMEService: ["@mozilla.org/mime;1", "nsIMIMEService"],
+  gMIMEService: ["@mozilla.org/mime;1", Ci.nsIMIMEService],
 });
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -1629,7 +1629,7 @@ export var Policies = {
         await lazy.QuickSuggest.initPromise;
         if ("WebSuggestions" in param) {
           PoliciesUtils.setDefaultPref(
-            "browser.urlbar.suggest.quicksuggest.nonsponsored",
+            "browser.urlbar.suggest.quicksuggest.all",
             param.WebSuggestions,
             param.Locked
           );
@@ -1641,10 +1641,11 @@ export var Policies = {
             param.Locked
           );
         }
-        if ("ImproveSuggest" in param) {
+        // `ImproveSuggest` is deprecated and replaced with `OnlineEnabled`.
+        if ("OnlineEnabled" in param || "ImproveSuggest" in param) {
           PoliciesUtils.setDefaultPref(
-            "browser.urlbar.quicksuggest.dataCollection.enabled",
-            param.ImproveSuggest,
+            "browser.urlbar.quicksuggest.online.enabled",
+            param.OnlineEnabled ?? param.ImproveSuggest,
             param.Locked
           );
         }
@@ -1917,6 +1918,16 @@ export var Policies = {
             param.Locked
           );
         }
+      }
+
+      // Handle SkipDomains separately (can be set independently of Enabled)
+      if ("SkipDomains" in param && Array.isArray(param.SkipDomains)) {
+        let skipDomainsValue = param.SkipDomains.join(",");
+        PoliciesUtils.setDefaultPref(
+          "network.lna.skip-domains",
+          skipDomainsValue,
+          param.Locked
+        );
       }
     },
   },
@@ -2881,9 +2892,9 @@ export var Policies = {
         // translations panel intro. Setting a language value simulates a
         // first translation, which skips the intro panel for users with
         // FeatureRecommendations disabled.
-        const topWebPreferredLanguage = Services.prefs
-          .getComplexValue("intl.accept_languages", Ci.nsIPrefLocalizedString)
-          .data.split(/\s*,\s*/g)[0];
+        const topWebPreferredLanguage = Services.locale.acceptLanguages
+          .split(",")[0]
+          .trim();
 
         const preferredLanguage = topWebPreferredLanguage.length
           ? topWebPreferredLanguage
@@ -2912,12 +2923,8 @@ export var Policies = {
           param.Locked
         );
       }
-      if ("FirefoxLabs" in param) {
-        PoliciesUtils.setDefaultPref(
-          "browser.preferences.experimental",
-          param.FirefoxLabs,
-          param.Locked
-        );
+      if ("FirefoxLabs" in param && !param.FirefoxLabs) {
+        manager.disallowFeature("FirefoxLabs");
       }
     },
   },
@@ -3170,6 +3177,8 @@ export function runOnce(actionName, callback) {
  *        A promise that will resolve once the callback finishes running.
  */
 async function runOncePerModification(actionName, policyValue, callback) {
+  // Stringify the value so that it matches what we'd get from getStringPref.
+  policyValue = policyValue + "";
   let prefName = `browser.policies.runOncePerModification.${actionName}`;
   let oldPolicyValue = Services.prefs.getStringPref(prefName, undefined);
   if (policyValue === oldPolicyValue) {

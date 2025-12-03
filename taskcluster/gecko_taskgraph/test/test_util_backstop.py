@@ -147,14 +147,25 @@ def params():
         ),
     ),
 )
-def test_is_backstop(responses, params, response_args, extra_params, expected):
+def test_is_backstop(
+    monkeypatch,
+    responses,
+    params,
+    response_args,
+    extra_params,
+    expected,
+):
+    root_url = "https://taskcluster.example.com"
+    monkeypatch.delenv("TASKCLUSTER_PROXY_URL", raising=False)
+    monkeypatch.setenv("TASKCLUSTER_ROOT_URL", root_url)
+
     urls = {
         "index": get_index_url(
             BACKSTOP_INDEX.format(
                 **{"trust-domain": "gecko", "project": params["project"]}
             )
         ),
-        "artifact": get_artifact_url(LAST_BACKSTOP_PUSHID, "public/parameters.yml"),
+        "artifact": get_artifact_url(LAST_BACKSTOP_PUSHID, "public%2Fparameters.yml"),
         "status": get_task_url(LAST_BACKSTOP_PUSHID) + "/status",
     }
 

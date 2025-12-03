@@ -1737,7 +1737,7 @@ struct IntentionallyLeakedObject {
 NS_IMETHODIMP
 nsXPCComponents_Utils::IntentionallyLeak() {
 #ifdef NS_FREE_PERMANENT_DATA
-  Unused << new IntentionallyLeakedObject();
+  (void)new IntentionallyLeakedObject();
   return NS_OK;
 #else
   return NS_ERROR_NOT_IMPLEMENTED;
@@ -2348,7 +2348,7 @@ NS_IMETHODIMP
 nsXPCComponents_Utils::ReadUTF8File(nsIFile* aFile, nsACString& aResult) {
   NS_ENSURE_TRUE(aFile, NS_ERROR_INVALID_ARG);
 
-  MOZ_TRY_VAR(aResult, URLPreloader::ReadFile(aFile));
+  aResult = MOZ_TRY(URLPreloader::ReadFile(aFile));
   return NS_OK;
 }
 
@@ -2356,7 +2356,7 @@ NS_IMETHODIMP
 nsXPCComponents_Utils::ReadUTF8URI(nsIURI* aURI, nsACString& aResult) {
   NS_ENSURE_TRUE(aURI, NS_ERROR_INVALID_ARG);
 
-  MOZ_TRY_VAR(aResult, URLPreloader::ReadURI(aURI));
+  aResult = MOZ_TRY(URLPreloader::ReadURI(aURI));
   return NS_OK;
 }
 

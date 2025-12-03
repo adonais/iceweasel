@@ -9,7 +9,6 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/SchedulerGroup.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/InternalRequest.h"

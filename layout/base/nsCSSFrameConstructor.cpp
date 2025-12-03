@@ -17,6 +17,7 @@
 #include "RubyUtils.h"
 #include "StickyScrollContainer.h"
 #include "mozilla/AbsoluteContainingBlock.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/DebugOnly.h"
@@ -24,7 +25,6 @@
 #include "mozilla/Likely.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/ManualNAC.h"
-#include "mozilla/MemoryReporting.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/PrintedSheetFrame.h"
@@ -39,7 +39,6 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_mathml.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CharacterData.h"
@@ -53,6 +52,7 @@
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/HTMLSharedListElement.h"
 #include "mozilla/dom/HTMLSummaryElement.h"
+#include "mozilla/intl/LocaleService.h"
 #include "nsAtom.h"
 #include "nsAutoLayoutPhase.h"
 #include "nsBackdropFrame.h"
@@ -490,11 +490,8 @@ static bool InsertSeparatorBeforeAccessKey() {
   static bool sValue = false;
   if (!sInitialized) {
     sInitialized = true;
-
-    const char* prefName = "intl.menuitems.insertseparatorbeforeaccesskeys";
-    nsAutoString val;
-    Preferences::GetLocalizedString(prefName, val);
-    sValue = val.EqualsLiteral("true");
+    sValue =
+        intl::LocaleService::GetInstance()->InsertSeparatorBeforeAccesskeys();
   }
   return sValue;
 }
@@ -504,10 +501,7 @@ static bool AlwaysAppendAccessKey() {
   static bool sValue = false;
   if (!sInitialized) {
     sInitialized = true;
-    const char* prefName = "intl.menuitems.alwaysappendaccesskeys";
-    nsAutoString val;
-    Preferences::GetLocalizedString(prefName, val);
-    sValue = val.EqualsLiteral("true");
+    sValue = intl::LocaleService::GetInstance()->AlwaysAppendAccesskeys();
   }
   return sValue;
 }
@@ -2002,6 +1996,19 @@ static bool IsWrapperPseudo(nsIFrame* aFrame) {
     return false;
   }
   return PseudoStyle::IsWrapperAnonBox(pseudoType) || IsTablePseudo(aFrame);
+}
+
+static bool IsInAnonymousTable(nsIFrame* aFrame) {
+  for (nsIFrame* f = aFrame; f; f = f->GetParent()) {
+    if (!IsWrapperPseudo(f)) {
+      return false;
+    }
+    if (f->IsTableWrapperFrame()) {
+      return true;
+    }
+  }
+  MOZ_ASSERT_UNREACHABLE("Expected to be called inside tables");
+  return false;
 }
 
 /* static */
@@ -4606,9 +4613,6 @@ nsCSSFrameConstructor::FindMathMLData(const Element& aElement,
                                        std::size(sMathMLData))) {
     return data;
   }
-  if (!StaticPrefs::mathml_unknown_mrow_enabled()) {
-    return nullptr;
-  }
   // Unknown MathML elements render as an mrow, see:
   // https://w3c.github.io/mathml-core/#ref-for-dfn-unknown-mathml-element-2
   static constexpr FrameConstructionData sMrowData =
@@ -6344,9 +6348,6 @@ static bool ParentIsWrapperAnonBox(nsIFrame* aParent) {
 
 void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
                                             InsertionKind aInsertionKind) {
-  MOZ_ASSERT(aInsertionKind == InsertionKind::Sync ||
-             !RestyleManager()->IsInStyleRefresh());
-
   AUTO_PROFILER_LABEL_HOT("nsCSSFrameConstructor::ContentAppended",
                           LAYOUT_FrameConstruction);
   AUTO_LAYOUT_PHASE_ENTRY_POINT(mPresShell->GetPresContext(), FrameC);
@@ -6658,9 +6659,6 @@ void nsCSSFrameConstructor::ContentInserted(nsIContent* aChild,
 void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
                                                  nsIContent* aEndChild,
                                                  InsertionKind aInsertionKind) {
-  MOZ_ASSERT(aInsertionKind == InsertionKind::Sync ||
-             !RestyleManager()->IsInStyleRefresh());
-
   AUTO_PROFILER_LABEL_HOT("nsCSSFrameConstructor::ContentRangeInserted",
                           LAYOUT_FrameConstruction);
   AUTO_LAYOUT_PHASE_ENTRY_POINT(mPresShell->GetPresContext(), FrameC);
@@ -7274,7 +7272,7 @@ static bool CanRemoveWrapperPseudoForChildRemoval(nsIFrame* aFrame,
 }
 
 bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
-                                                 RemoveFlags aFlags) {
+                                                 RemovalKind aKind) {
   MOZ_ASSERT(aChild);
   MOZ_ASSERT(
       !aChild->IsRootOfNativeAnonymousSubtree() || !aChild->GetNextSibling(),
@@ -7314,7 +7312,7 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
     // We don't handle the fullscreen case here, because it doesn't change the
     // scrollbar styles override element stored on the prescontext.)
     const Element* removingElement =
-        aFlags == REMOVE_CONTENT ? aChild->AsElement() : nullptr;
+        aKind == RemovalKind::Dom ? aChild->AsElement() : nullptr;
     Element* newOverrideElement =
         presContext->UpdateViewportScrollStylesOverride(removingElement);
 
@@ -7395,212 +7393,252 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
   // FIXME(emilio, bug 1450366): We can make this faster without adding much
   // complexity for the display: none -> other case, which right now
   // unnecessarily walks the content tree down.
-  auto CouldHaveBeenDisplayContents = [aFlags](nsIContent* aContent) -> bool {
-    return aFlags == REMOVE_FOR_RECONSTRUCTION || IsDisplayContents(aContent);
+  auto CouldHaveBeenDisplayContents = [aKind](nsIContent* aContent) -> bool {
+    return aContent->IsElement() && (aKind != RemovalKind::Dom ||
+                                     IsDisplayContents(aContent->AsElement()));
   };
 
-  if (!childFrame && CouldHaveBeenDisplayContents(aChild)) {
-    // NOTE(emilio): We may iterate through ::before and ::after here and they
-    // may be gone after the respective ContentWillBeRemoved call. Right now
-    // StyleChildrenIterator handles that properly, so it's not an issue.
-    StyleChildrenIterator iter(aChild);
-    for (nsIContent* c = iter.GetNextChild(); c; c = iter.GetNextChild()) {
-      if (c->GetPrimaryFrame() || CouldHaveBeenDisplayContents(c)) {
-        LAYOUT_PHASE_TEMP_EXIT();
-        bool didReconstruct = ContentWillBeRemoved(c, aFlags);
-        LAYOUT_PHASE_TEMP_REENTER();
-        if (didReconstruct) {
-          return true;
+  if (!childFrame) {
+    if (CouldHaveBeenDisplayContents(aChild)) {
+      // NOTE(emilio): We may iterate through ::before and ::after here and they
+      // may be gone after the respective ContentWillBeRemoved call. Right now
+      // StyleChildrenIterator handles that properly, so it's not an issue.
+      StyleChildrenIterator iter(aChild);
+      for (nsIContent* c = iter.GetNextChild(); c; c = iter.GetNextChild()) {
+        if (c->GetPrimaryFrame() || CouldHaveBeenDisplayContents(c)) {
+          LAYOUT_PHASE_TEMP_EXIT();
+          bool didReconstruct = ContentWillBeRemoved(c, aKind);
+          LAYOUT_PHASE_TEMP_REENTER();
+          if (didReconstruct) {
+            return true;
+          }
         }
       }
     }
     return false;
   }
 
-  if (childFrame) {
-    if (aFlags == REMOVE_FOR_RECONSTRUCTION) {
-      // Before removing the frames associated with the content object,
-      // ask them to save their state onto our state object.
-      CaptureStateForFramesOf(aChild, mFrameTreeState);
-    }
+  if (aKind != RemovalKind::Dom) {
+    // Before removing the frames associated with the content object,
+    // ask them to save their state onto our state object.
+    CaptureStateForFramesOf(aChild, mFrameTreeState);
+  }
 
-    InvalidateCanvasIfNeeded(mPresShell, aChild);
+  InvalidateCanvasIfNeeded(mPresShell, aChild);
 
-    // See whether we need to remove more than just childFrame
-    LAYOUT_PHASE_TEMP_EXIT();
-    if (MaybeRecreateContainerForFrameRemoval(childFrame)) {
-      LAYOUT_PHASE_TEMP_REENTER();
-      return true;
-    }
+  // See whether we need to remove more than just childFrame
+  LAYOUT_PHASE_TEMP_EXIT();
+  if (MaybeRecreateContainerForFrameRemoval(childFrame)) {
     LAYOUT_PHASE_TEMP_REENTER();
+    return true;
+  }
+  LAYOUT_PHASE_TEMP_REENTER();
 
-    // Get the childFrame's parent frame
-    nsIFrame* parentFrame = childFrame->GetParent();
-    LayoutFrameType parentType = parentFrame->Type();
+  // Get the childFrame's parent frame
+  nsIFrame* parentFrame = childFrame->GetParent();
+  LayoutFrameType parentType = parentFrame->Type();
 
-    if (parentType == LayoutFrameType::FrameSet &&
-        IsSpecialFramesetChild(aChild)) {
-      // Just reframe the parent, since framesets are weird like that.
-      LAYOUT_PHASE_TEMP_EXIT();
-      RecreateFramesForContent(parentFrame->GetContent(), InsertionKind::Async);
-      LAYOUT_PHASE_TEMP_REENTER();
-      return true;
-    }
+  if (parentType == LayoutFrameType::FrameSet &&
+      IsSpecialFramesetChild(aChild)) {
+    // Just reframe the parent, since framesets are weird like that.
+    LAYOUT_PHASE_TEMP_EXIT();
+    RecreateFramesForContent(parentFrame->GetContent(), InsertionKind::Async);
+    LAYOUT_PHASE_TEMP_REENTER();
+    return true;
+  }
 
-    // If we're a child of MathML, then we should reframe the MathML content.
-    // If we're non-MathML, then we would be wrapped in a block so we need to
-    // check our grandparent in that case.
-    nsIFrame* possibleMathMLAncestor = parentType == LayoutFrameType::Block
-                                           ? parentFrame->GetParent()
-                                           : parentFrame;
-    if (possibleMathMLAncestor->IsMathMLFrame()) {
-      LAYOUT_PHASE_TEMP_EXIT();
-      RecreateFramesForContent(parentFrame->GetContent(), InsertionKind::Async);
-      LAYOUT_PHASE_TEMP_REENTER();
-      return true;
-    }
+  // If we're a child of MathML, then we should reframe the MathML content.
+  // If we're non-MathML, then we would be wrapped in a block so we need to
+  // check our grandparent in that case.
+  nsIFrame* possibleMathMLAncestor = parentType == LayoutFrameType::Block
+                                         ? parentFrame->GetParent()
+                                         : parentFrame;
+  if (possibleMathMLAncestor->IsMathMLFrame()) {
+    LAYOUT_PHASE_TEMP_EXIT();
+    RecreateFramesForContent(parentFrame->GetContent(), InsertionKind::Async);
+    LAYOUT_PHASE_TEMP_REENTER();
+    return true;
+  }
 
 #ifdef ACCESSIBILITY
-    if (aFlags != REMOVE_FOR_RECONSTRUCTION) {
-      if (nsAccessibilityService* accService = GetAccService()) {
-        accService->ContentRemoved(mPresShell, aChild);
-      }
+  if (aKind != RemovalKind::ForReconstruction) {
+    if (nsAccessibilityService* accService = GetAccService()) {
+      accService->ContentRemoved(mPresShell, aChild);
     }
+  }
 #endif
 
-    // Examine the containing-block for the removed content and see if
-    // :first-letter style applies.
-    nsIFrame* inflowChild = childFrame;
-    if (childFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
-      inflowChild = childFrame->GetPlaceholderFrame();
-      NS_ASSERTION(inflowChild, "No placeholder for out-of-flow?");
-    }
-    nsContainerFrame* containingBlock =
-        GetFloatContainingBlock(inflowChild->GetParent());
-    bool haveFLS = containingBlock && HasFirstLetterStyle(containingBlock);
-    if (haveFLS) {
-      // Trap out to special routine that handles adjusting a blocks
-      // frame tree when first-letter style is present.
+  // Examine the containing-block for the removed content and see if
+  // :first-letter style applies.
+  nsIFrame* inflowChild = childFrame;
+  if (childFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+    inflowChild = childFrame->GetPlaceholderFrame();
+    NS_ASSERTION(inflowChild, "No placeholder for out-of-flow?");
+  }
+  nsContainerFrame* containingBlock =
+      GetFloatContainingBlock(inflowChild->GetParent());
+  bool haveFLS = containingBlock && HasFirstLetterStyle(containingBlock);
+  if (haveFLS) {
+    // Trap out to special routine that handles adjusting a blocks
+    // frame tree when first-letter style is present.
 #ifdef NOISY_FIRST_LETTER
-      printf("ContentWillBeRemoved: containingBlock=");
-      containingBlock->ListTag(stdout);
-      printf(" parentFrame=");
-      parentFrame->ListTag(stdout);
-      printf(" childFrame=");
-      childFrame->ListTag(stdout);
-      printf("\n");
+    printf("ContentWillBeRemoved: containingBlock=");
+    containingBlock->ListTag(stdout);
+    printf(" parentFrame=");
+    parentFrame->ListTag(stdout);
+    printf(" childFrame=");
+    childFrame->ListTag(stdout);
+    printf("\n");
 #endif
 
-      // First update the containing blocks structure by removing the
-      // existing letter frames. This makes the subsequent logic
-      // simpler.
-      RemoveLetterFrames(mPresShell, containingBlock);
+    // First update the containing blocks structure by removing the
+    // existing letter frames. This makes the subsequent logic
+    // simpler.
+    RemoveLetterFrames(mPresShell, containingBlock);
 
-      // Recover childFrame and parentFrame
-      childFrame = aChild->GetPrimaryFrame();
-      if (!childFrame || childFrame->GetContent() != aChild) {
-        // XXXbz the GetContent() != aChild check is needed due to bug 135040.
-        // Remove it once that's fixed.
-        return false;
-      }
-      parentFrame = childFrame->GetParent();
-      parentType = parentFrame->Type();
+    // Recover childFrame and parentFrame
+    childFrame = aChild->GetPrimaryFrame();
+    if (!childFrame || childFrame->GetContent() != aChild) {
+      // XXXbz the GetContent() != aChild check is needed due to bug 135040.
+      // Remove it once that's fixed.
+      return false;
+    }
+    parentFrame = childFrame->GetParent();
+    parentType = parentFrame->Type();
 
 #ifdef NOISY_FIRST_LETTER
-      printf("  ==> revised parentFrame=");
-      parentFrame->ListTag(stdout);
-      printf(" childFrame=");
-      childFrame->ListTag(stdout);
-      printf("\n");
-#endif
-    }
-
-#ifdef DEBUG
-    if (gReallyNoisyContentUpdates) {
-      printf("nsCSSFrameConstructor::ContentWillBeRemoved: childFrame=");
-      childFrame->ListTag(stdout);
-      putchar('\n');
-      parentFrame->List(stdout);
-    }
-#endif
-
-    // Notify the parent frame that it should delete the frame
-    if (childFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
-      childFrame = childFrame->GetPlaceholderFrame();
-      NS_ASSERTION(childFrame, "Missing placeholder frame for out of flow.");
-      parentFrame = childFrame->GetParent();
-    }
-
-    // Take care of wrapper anonymous boxes that we might need to remove while
-    // at it. Note that MaybeRecreateContainerForFrameRemoval takes care of
-    // harder cases (merging sibling anonymous boxes etc).
-    while (IsWrapperPseudo(parentFrame) &&
-           CanRemoveWrapperPseudoForChildRemoval(childFrame, parentFrame)) {
-      childFrame = parentFrame;
-      parentFrame = childFrame->GetParent();
-    }
-
-    DestroyContext context(mPresShell);
-    RemoveFrame(context, nsLayoutUtils::GetChildListNameFor(childFrame),
-                childFrame);
-
-    // NOTE(emilio): aChild could be dead here already if it is a ::before or
-    // ::after pseudo-element (since in that case it was owned by childFrame,
-    // which we just destroyed).
-
-    if (isRoot) {
-      mRootElementFrame = nullptr;
-      mRootElementStyleFrame = nullptr;
-      mDocElementContainingBlock = nullptr;
-      mCanvasFrame = nullptr;
-      mPageSequenceFrame = nullptr;
-    }
-
-    if (haveFLS && mRootElementFrame) {
-      RecoverLetterFrames(containingBlock);
-    }
-
-    // If we're just reconstructing frames for the element, then the
-    // following ContentInserted notification on the element will
-    // take care of fixing up any adjacent text nodes.
-    if (aFlags == REMOVE_CONTENT) {
-      MOZ_ASSERT(aChild->GetParentNode(),
-                 "How did we have a sibling without a parent?");
-      // Adjacent whitespace-only text nodes might have been suppressed if
-      // this node does not have inline ends. Create frames for them now
-      // if necessary.
-      // Reframe any text node just before the node being removed, if there is
-      // one, and if it's not the last child or the first child. If a whitespace
-      // textframe was being suppressed and it's now the last child or first
-      // child then it can stay suppressed since the parent must be a block
-      // and hence it's adjacent to a block end.
-      // If aOldNextSibling is null, then the text node before the node being
-      // removed is the last node, and we don't need to worry about it.
-      nsIContent* prevSibling = aChild->GetPreviousSibling();
-      if (prevSibling && prevSibling->GetPreviousSibling()) {
-        LAYOUT_PHASE_TEMP_EXIT();
-        ReframeTextIfNeeded(prevSibling);
-        LAYOUT_PHASE_TEMP_REENTER();
-      }
-      // Reframe any text node just after the node being removed, if there is
-      // one, and if it's not the last child or the first child.
-      nsIContent* nextSibling = aChild->GetNextSibling();
-      if (nextSibling && prevSibling && nextSibling->GetNextSibling()) {
-        LAYOUT_PHASE_TEMP_EXIT();
-        ReframeTextIfNeeded(nextSibling);
-        LAYOUT_PHASE_TEMP_REENTER();
-      }
-    }
-
-#ifdef DEBUG
-    if (gReallyNoisyContentUpdates && parentFrame) {
-      printf(
-          "nsCSSFrameConstructor::ContentWillBeRemoved: resulting frame "
-          "model:\n");
-      parentFrame->List(stdout);
-    }
+    printf("  ==> revised parentFrame=");
+    parentFrame->ListTag(stdout);
+    printf(" childFrame=");
+    childFrame->ListTag(stdout);
+    printf("\n");
 #endif
   }
+
+#ifdef DEBUG
+  if (gReallyNoisyContentUpdates) {
+    printf("nsCSSFrameConstructor::ContentWillBeRemoved: childFrame=");
+    childFrame->ListTag(stdout);
+    putchar('\n');
+    parentFrame->List(stdout);
+  }
+#endif
+
+  // Notify the parent frame that it should delete the frame
+  if (childFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+    childFrame = childFrame->GetPlaceholderFrame();
+    NS_ASSERTION(childFrame, "Missing placeholder frame for out of flow.");
+    parentFrame = childFrame->GetParent();
+  }
+
+  // Take care of wrapper anonymous boxes that we might need to remove while
+  // at it. Note that MaybeRecreateContainerForFrameRemoval takes care of
+  // harder cases (merging sibling anonymous boxes etc).
+  while (IsWrapperPseudo(parentFrame) &&
+         CanRemoveWrapperPseudoForChildRemoval(childFrame, parentFrame)) {
+    childFrame = parentFrame;
+    parentFrame = childFrame->GetParent();
+  }
+
+  const bool canSkipWhitespaceFixup = [&] {
+    if (aKind == RemovalKind::ForReconstruction) {
+      // If we're just reconstructing frames for the element, then the
+      // following ContentInserted notification on the element will
+      // take care of fixing up any adjacent white-space text nodes.
+      return true;
+    }
+    switch (parentFrame->Type()) {
+      case LayoutFrameType::Table:
+      case LayoutFrameType::TableRow:
+      case LayoutFrameType::TableRowGroup:
+      case LayoutFrameType::TableCol:
+      case LayoutFrameType::TableColGroup:
+      case LayoutFrameType::TableWrapper: {
+        // Tables ignore all whitespace within their wrappers, so we can avoid
+        // reconstructing adjacent whitespace if the table is not anonymous.
+        if (!IsInAnonymousTable(parentFrame)) {
+          return true;
+        }
+        // If the table is anonymous and the child is at the edges, we might
+        // need to create whitespace at the edges of the table that wasn't
+        // there before, so we can only skip the check if childFrame has frames
+        // around. Captions are extra-special here, because they're siblings
+        // with the main table frame, so we can't count that as a relevant
+        // sibling for our purposes.
+        auto* prevSibling = childFrame->GetPrevSibling();
+        return prevSibling && !prevSibling->IsTableFrame() &&
+               childFrame->GetNextSibling();
+      }
+      case LayoutFrameType::GridContainer:
+      case LayoutFrameType::FlexContainer:
+        // Flex and grid containers similarly skip whitespace and wrap
+        // non-whitespace in anonymous flex items, so any change to
+        // white-space that could matter would have triggered the
+        // reconstruction of the container itself due to merging anonymous
+        // grid / flex items.
+        return true;
+      default:
+        break;
+    }
+    return false;
+  }();
+  DestroyContext context(mPresShell);
+  RemoveFrame(context, nsLayoutUtils::GetChildListNameFor(childFrame),
+              childFrame);
+
+  // NOTE(emilio): aChild could be dead here already if it is a ::before or
+  // ::after pseudo-element (since in that case it was owned by childFrame,
+  // which we just destroyed).
+
+  if (isRoot) {
+    mRootElementFrame = nullptr;
+    mRootElementStyleFrame = nullptr;
+    mDocElementContainingBlock = nullptr;
+    mCanvasFrame = nullptr;
+    mPageSequenceFrame = nullptr;
+  }
+
+  if (haveFLS && mRootElementFrame) {
+    RecoverLetterFrames(containingBlock);
+  }
+
+  if (!canSkipWhitespaceFixup) {
+    MOZ_ASSERT(aChild->GetParentNode(),
+               "How did we have a sibling without a parent?");
+    // Adjacent whitespace-only text nodes might have been suppressed if
+    // this node does not have inline ends. Create frames for them now
+    // if necessary.
+    // Reframe any text node just before the node being removed, if there is
+    // one, and if it's not the last child or the first child. If a whitespace
+    // textframe was being suppressed and it's now the last child or first
+    // child then it can stay suppressed since the parent must be a block
+    // and hence it's adjacent to a block end.
+    // If aOldNextSibling is null, then the text node before the node being
+    // removed is the last node, and we don't need to worry about it.
+    nsIContent* prevSibling = aChild->GetPreviousSibling();
+    if (prevSibling && prevSibling->GetPreviousSibling()) {
+      LAYOUT_PHASE_TEMP_EXIT();
+      ReframeTextIfNeeded(prevSibling);
+      LAYOUT_PHASE_TEMP_REENTER();
+    }
+    // Reframe any text node just after the node being removed, if there is
+    // one, and if it's not the last child or the first child.
+    nsIContent* nextSibling = aChild->GetNextSibling();
+    if (nextSibling && prevSibling && nextSibling->GetNextSibling()) {
+      LAYOUT_PHASE_TEMP_EXIT();
+      ReframeTextIfNeeded(nextSibling);
+      LAYOUT_PHASE_TEMP_REENTER();
+    }
+  }
+
+#ifdef DEBUG
+  if (gReallyNoisyContentUpdates && parentFrame) {
+    printf(
+        "nsCSSFrameConstructor::ContentWillBeRemoved: resulting frame "
+        "model:\n");
+    parentFrame->List(stdout);
+  }
+#endif
 
   return false;
 }
@@ -8464,33 +8502,43 @@ void nsCSSFrameConstructor::RecreateFramesForContent(
   }
 
   MOZ_ASSERT(aContent->GetParentNode());
-  const bool didReconstruct =
-      ContentWillBeRemoved(aContent, REMOVE_FOR_RECONSTRUCTION);
-
-  if (!didReconstruct) {
-    if (aInsertionKind == InsertionKind::Async && aContent->IsElement()) {
-      // FIXME(emilio, bug 1397239): There's nothing removing the frame state
-      // for elements that go away before we come back to the frame
-      // constructor.
-      //
-      // Also, it'd be nice to just use the `ContentRangeInserted` path for
-      // both elements and non-elements, but we need to make lazy frame
-      // construction to apply to all elements first.
-      RestyleManager()->PostRestyleEvent(aContent->AsElement(), RestyleHint{0},
-                                         nsChangeHint_ReconstructFrame);
-    } else {
-      // Now, recreate the frames associated with this content object. If
-      // ContentWillBeRemoved triggered reconstruction, then we don't need to do
-      // this because the frames will already have been built.
-      ContentRangeInserted(aContent, aContent->GetNextSibling(),
-                           aInsertionKind);
+  const auto removalKind = [&] {
+    if (aInsertionKind == InsertionKind::Sync && aContent->IsElement() &&
+        Servo_Element_IsDisplayNone(aContent->AsElement())) {
+      // If we know we're not going to have frames after reconstructing, it's
+      // more efficient to do some of that work (a11y notifications, fixing-up
+      // text nodes) earlier.
+      return RemovalKind::ForDisplayNoneChange;
     }
+    return RemovalKind::ForReconstruction;
+  }();
+  const bool didReconstruct = ContentWillBeRemoved(aContent, removalKind);
+  if (didReconstruct || removalKind == RemovalKind::ForDisplayNoneChange) {
+    // If ContentWillBeRemoved triggered reconstruction, then we don't need to
+    // do anything else because the frames will already have been built.
+    return;
   }
+  if (aInsertionKind == InsertionKind::Async && aContent->IsElement()) {
+    // FIXME(emilio, bug 1397239): There's nothing removing the frame state
+    // for elements that go away before we come back to the frame constructor.
+    //
+    // Also, it'd be nice to just use the `ContentRangeInserted` path for
+    // both elements and non-elements, but we need to make lazy frame
+    // construction to apply to all elements first.
+    //
+    // TODO(emilio): I think lazy frame construction works everywhere now, so
+    // maybe we can remove this altogether?
+    RestyleManager()->PostRestyleEvent(aContent->AsElement(), RestyleHint{0},
+                                       nsChangeHint_ReconstructFrame);
+    return;
+  }
+  // Now, recreate the frames associated with this content object.
+  ContentRangeInserted(aContent, aContent->GetNextSibling(), aInsertionKind);
 }
 
 bool nsCSSFrameConstructor::DestroyFramesFor(nsIContent* aContent) {
   MOZ_ASSERT(aContent && aContent->GetParentNode());
-  return ContentWillBeRemoved(aContent, REMOVE_FOR_RECONSTRUCTION);
+  return ContentWillBeRemoved(aContent, RemovalKind::ForReconstruction);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -9711,8 +9759,7 @@ void nsCSSFrameConstructor::ProcessChildren(
       for (auto* childFrame : aFrameList) {
         if (markerFrame == childFrame) {
           if (isOutsideMarker) {
-            // SetMarkerFrameForListItem will add childFrame to the
-            // FrameChildListID::Bullet
+            // SetMarkerFrameForListItem will add childFrame to the marker list.
             aFrameList.RemoveFrame(childFrame);
             auto* grandParent = listItem->GetParent()->GetParent();
             if (listItem->Style()->GetPseudoType() ==

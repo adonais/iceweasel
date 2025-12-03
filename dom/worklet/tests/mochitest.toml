@@ -48,6 +48,7 @@ support-files = ["specifier_with_user.mjs"]
 
 ["test_import_with_cache.html"]
 support-files = ["server_import_with_cache.sjs"]
+skip-if = ["verify-standalone"]
 
 ["test_paintWorklet.html"]
 skip-if = ["release_or_beta"]

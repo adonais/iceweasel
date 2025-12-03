@@ -85,6 +85,8 @@ You can now use the ``./mach run`` command to run your locally built Firefox!
 
 If your build fails, please reference the steps in the `Troubleshooting section <#troubleshooting>`_.
 
+To customize your build with different options (like optimization levels, debug builds, or project selection), see :ref:`Configuring Build Options`.
+
 Now the fun starts
 ------------------
 

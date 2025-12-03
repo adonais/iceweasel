@@ -48,8 +48,7 @@ class PDFViewerTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyPDFFileIsOpenedInTheSameTabTest() {
-        val genericURL =
-            getGenericAsset(mockWebServer, 3)
+        val genericURL = mockWebServer.getGenericAsset(3)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(genericURL.url) {
@@ -64,7 +63,7 @@ class PDFViewerTest : TestSetup() {
     // Download PDF file using the download toolbar button
     @Test
     fun verifyPDFViewerDownloadButtonTest() {
-        val genericURL = getGenericAsset(mockWebServer, 3)
+        val genericURL = mockWebServer.getGenericAsset(3)
         val downloadFile = "pdfForm.pdf"
 
         navigationToolbar {
@@ -81,7 +80,7 @@ class PDFViewerTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2283305
     @Test
     fun pdfFindInPageTest() {
-        val genericURL = getGenericAsset(mockWebServer, 3)
+        val genericURL = mockWebServer.getGenericAsset(3)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(genericURL.url) {
@@ -134,7 +133,7 @@ class PDFViewerTest : TestSetup() {
     // Download PDF file using the download toolbar button
     @Test
     fun verifyDownloadedPDFIsOpenedInFirefoxTest() {
-        val genericURL = getGenericAsset(mockWebServer, 3)
+        val genericURL = mockWebServer.getGenericAsset(3)
         val downloadFile = "pdfForm.pdf"
 
         navigationToolbar {

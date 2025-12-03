@@ -137,7 +137,7 @@
 
 .address-update-text-diff-added,
 .address-update-text-diff-removed {
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
   color: light-dark(rgba(2, 80, 187, 1), rgba(128, 235, 255, 1));
   background: light-dark(rgba(0, 96, 223, 0.08), rgba(0, 221, 255, 0.14));
 }

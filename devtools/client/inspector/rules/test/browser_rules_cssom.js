@@ -46,4 +46,42 @@ add_task(async function () {
 
   const newProp = getTextProperty(view, 1, { color: "red" });
   ok(!!newProp, "Rule is still visible after updating it");
+
+  info("Check that updating cssom declaration in shadow DOM works");
+  // Testing Bug 1986702
+  const shadowDomH2NodeFront = await getNodeFrontInShadowDom(
+    "h2",
+    "#host",
+    inspector
+  );
+  await selectNode(shadowDomH2NodeFront, inspector);
+
+  const shadowDomH2ColorProp = getTextProperty(view, 1, { color: "tomato" });
+  await setProperty(view, shadowDomH2ColorProp, "blue");
+
+  const shadowDomH2Color = await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [],
+    () => {
+      return content
+        .getComputedStyle(
+          content.document.getElementById("host").shadowRoot.querySelector("h2")
+        )
+        .getPropertyValue("color");
+    }
+  );
+  is(
+    shadowDomH2Color,
+    "rgb(0, 0, 255)",
+    "shadow DOM h2 element color was properly updated"
+  );
+
+  info(
+    "Select another node and re-select shadow DOM h2 node to update the rule view"
+  );
+  await selectNode("body", inspector);
+  await selectNode(shadowDomH2NodeFront, inspector);
+
+  const updatedShadowDomH2Prop = getTextProperty(view, 1, { color: "blue" });
+  ok(!!updatedShadowDomH2Prop, "Rule is still visible after updating it");
 });

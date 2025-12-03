@@ -25,7 +25,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/Variant.h"
 #include "mozilla/dom/PBackgroundSDBConnection.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/quota/PrincipalUtils.h"

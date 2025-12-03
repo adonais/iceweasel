@@ -20,10 +20,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/58f47eacaf10d12e2
  11 files changed, 27 insertions(+), 27 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 7859461b97..71788ddbc2 100644
+index 7131daa82c..8ad64af5c8 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -443,12 +443,12 @@ config("common_config") {
+@@ -440,12 +440,12 @@ config("common_config") {
      }
    }
  
@@ -38,7 +38,7 @@ index 7859461b97..71788ddbc2 100644
      defines += [ "WEBRTC_ARCH_ARM" ]
      if (arm_version >= 7) {
        defines += [ "WEBRTC_ARCH_ARM_V7" ]
-@@ -458,7 +458,7 @@ config("common_config") {
+@@ -455,7 +455,7 @@ config("common_config") {
      }
    }
  
@@ -48,10 +48,10 @@ index 7859461b97..71788ddbc2 100644
      if (mips_float_abi == "hard") {
        defines += [ "MIPS_FPU_LE" ]
 diff --git a/common_audio/BUILD.gn b/common_audio/BUILD.gn
-index 4dde7fe7f6..16ad9c11e9 100644
+index 7eb2aca444..1e17368bf8 100644
 --- a/common_audio/BUILD.gn
 +++ b/common_audio/BUILD.gn
-@@ -66,7 +66,7 @@ rtc_library("common_audio") {
+@@ -67,7 +67,7 @@ rtc_library("common_audio") {
      deps += [ ":common_audio_neon" ]
    }
  
@@ -60,7 +60,7 @@ index 4dde7fe7f6..16ad9c11e9 100644
      deps += [ ":common_audio_sse2" ]
      deps += [ ":common_audio_avx2" ]
    }
-@@ -88,7 +88,7 @@ rtc_source_set("mock_common_audio") {
+@@ -89,7 +89,7 @@ rtc_source_set("mock_common_audio") {
  rtc_source_set("common_audio_c_arm_asm") {
    sources = []
    deps = []
@@ -69,7 +69,7 @@ index 4dde7fe7f6..16ad9c11e9 100644
      sources += [ "signal_processing/complex_bit_reverse_arm.S" ]
  
      if (arm_version >= 7) {
-@@ -152,7 +152,7 @@ rtc_library("common_audio_c") {
+@@ -153,7 +153,7 @@ rtc_library("common_audio_c") {
      "vad/webrtc_vad.c",
    ]
  
@@ -78,7 +78,7 @@ index 4dde7fe7f6..16ad9c11e9 100644
      sources += [
        "signal_processing/complex_bit_reverse_mips.c",
        "signal_processing/complex_fft_mips.c",
-@@ -170,7 +170,7 @@ rtc_library("common_audio_c") {
+@@ -171,7 +171,7 @@ rtc_library("common_audio_c") {
      sources += [ "signal_processing/complex_fft.c" ]
    }
  
@@ -87,7 +87,7 @@ index 4dde7fe7f6..16ad9c11e9 100644
      sources += [
        "signal_processing/complex_bit_reverse.c",
        "signal_processing/filter_ar_fast_q12.c",
-@@ -228,7 +228,7 @@ rtc_library("fir_filter_factory") {
+@@ -229,7 +229,7 @@ rtc_library("fir_filter_factory") {
      "../rtc_base:cpu_info",
      "../rtc_base/system:arch",
    ]
@@ -96,7 +96,7 @@ index 4dde7fe7f6..16ad9c11e9 100644
      deps += [ ":common_audio_sse2" ]
      deps += [ ":common_audio_avx2" ]
    }
-@@ -237,7 +237,7 @@ rtc_library("fir_filter_factory") {
+@@ -238,7 +238,7 @@ rtc_library("fir_filter_factory") {
    }
  }
  
@@ -105,7 +105,7 @@ index 4dde7fe7f6..16ad9c11e9 100644
    rtc_library("common_audio_sse2") {
      sources = [
        "fir_filter_sse.cc",
-@@ -286,7 +286,7 @@ if (rtc_build_with_neon) {
+@@ -287,7 +287,7 @@ if (rtc_build_with_neon) {
        "resampler/sinc_resampler_neon.cc",
      ]
  
@@ -114,7 +114,7 @@ index 4dde7fe7f6..16ad9c11e9 100644
        # Enable compilation for the NEON instruction set.
        suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
        cflags = [ "-mfpu=neon" ]
-@@ -309,7 +309,7 @@ if (rtc_build_with_neon) {
+@@ -310,7 +310,7 @@ if (rtc_build_with_neon) {
        "signal_processing/min_max_operations_neon.c",
      ]
  
@@ -172,7 +172,7 @@ index ac862c65a8..e66ed2796e 100644
    } else {
      sources += [ "spl_sqrt_floor.c" ]
 diff --git a/modules/audio_processing/aec3/BUILD.gn b/modules/audio_processing/aec3/BUILD.gn
-index 8605e38a1e..6d942b7883 100644
+index 4d7dc5d9cb..847e5ccbea 100644
 --- a/modules/audio_processing/aec3/BUILD.gn
 +++ b/modules/audio_processing/aec3/BUILD.gn
 @@ -123,7 +123,7 @@ rtc_library("aec3") {
@@ -224,7 +224,7 @@ index a945d0c58d..f01637f2da 100644
    } else {
      sources += [ "aecm_core_c.cc" ]
 diff --git a/modules/audio_processing/agc/BUILD.gn b/modules/audio_processing/agc/BUILD.gn
-index f0824fea75..de7a61b909 100644
+index 090fbd4604..45d08ad066 100644
 --- a/modules/audio_processing/agc/BUILD.gn
 +++ b/modules/audio_processing/agc/BUILD.gn
 @@ -84,7 +84,7 @@ rtc_library("legacy_agc") {
@@ -276,7 +276,7 @@ index ff3f4d5b93..b95f1aa2d0 100644
  config("x11_config") {
    if (rtc_use_x11_extensions) {
 diff --git a/webrtc.gni b/webrtc.gni
-index ec55e54b9d..a11f4b9ab9 100644
+index 1c85298081..b48581b93e 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -169,13 +169,13 @@ declare_args() {

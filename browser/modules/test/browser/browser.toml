@@ -67,6 +67,7 @@ https_first_disabled = true
 
 ["browser_UsageTelemetry_interaction.js"]
 https_first_disabled = true
+skip-if = ["os == 'win' && os_version == '11.26100' && opt && verify-standalone"]
 
 ["browser_UsageTelemetry_private_and_restore.js"]
 https_first_disabled = true
@@ -76,10 +77,15 @@ https_first_disabled = true
 ["browser_UsageTelemetry_uniqueOriginsVisitedInPast24Hours.js"]
 https_first_disabled = true
 
+["browser_aboutnewtab_init_gate.js"]
+
 ["browser_preloading_tab_moving.js"]
 
 ["browser_taskbar_preview.js"]
 run-if = ["os == 'win'"]
 
 ["browser_urlBar_zoom.js"]
-skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && swgl"] # Bug 1775794
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64'", # Bug 1775794
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && debug", # Bug 1775794
+]

@@ -6,7 +6,6 @@
 
 #include "mozilla/dom/SVGMPathElement.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/SVGAnimateMotionElement.h"

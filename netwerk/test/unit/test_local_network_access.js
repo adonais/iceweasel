@@ -7,6 +7,10 @@ const { NodeHTTP2Server } = ChromeUtils.importESModule(
   "resource://testing-common/NodeServer.sys.mjs"
 );
 
+const override = Cc["@mozilla.org/network/native-dns-override;1"].getService(
+  Ci.nsINativeDNSResolverOverride
+);
+
 function makeChannel(url) {
   let uri2 = NetUtil.newURI(url);
   // by default system principal is used, which cannot be used for permission based tests
@@ -50,6 +54,22 @@ ChromeUtils.defineLazyGetter(this, "H2_URL", function () {
   return "https://localhost:" + server.port();
 });
 
+ChromeUtils.defineLazyGetter(this, "H1_EXAMPLE_URL", function () {
+  return "http://example.com:" + httpServer.identity.primaryPort;
+});
+
+ChromeUtils.defineLazyGetter(this, "H1_TEST_EXAMPLE_URL", function () {
+  return "http://test.example.com:" + httpServer.identity.primaryPort;
+});
+
+ChromeUtils.defineLazyGetter(this, "H1_SERVER_LOCAL_URL", function () {
+  return "http://server.local:" + httpServer.identity.primaryPort;
+});
+
+ChromeUtils.defineLazyGetter(this, "H1_API_DEV_LOCAL_URL", function () {
+  return "http://api.dev.local:" + httpServer.identity.primaryPort;
+});
+
 let httpServer = null;
 let server = new NodeHTTP2Server();
 function pathHandler(metadata, response) {
@@ -69,10 +89,22 @@ add_setup(async () => {
   Services.prefs.setBoolPref("network.localhost.prompt.testing", true);
   Services.prefs.setBoolPref("network.localnetwork.prompt.testing", true);
 
+  Services.prefs.setBoolPref(
+    "network.lna.local-network-to-localhost.skip-checks",
+    false
+  );
+
+  Services.prefs.setBoolPref("network.lna.websocket.enabled", true);
+
   // H1 Server
   httpServer = new HttpServer();
   httpServer.registerPathHandler("/test_lna", pathHandler);
   httpServer.start(-1);
+  // Add domain identities for testing domain skip patterns
+  httpServer.identity.add("http", "example.com", 80);
+  httpServer.identity.add("http", "test.example.com", 80);
+  httpServer.identity.add("http", "server.local", 80);
+  httpServer.identity.add("http", "api.dev.local", 80);
 
   // H2 Server
   let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
@@ -89,6 +121,10 @@ add_setup(async () => {
       Services.prefs.clearUserPref("network.lna.blocking.prompt.testing");
       Services.prefs.clearUserPref("network.localhost.prompt.testing.allow");
       Services.prefs.clearUserPref("network.localnetwork.prompt.testing.allow");
+      Services.prefs.clearUserPref(
+        "network.lna.local-network-to-localhost.skip-checks"
+      );
+      Services.prefs.clearUserPref("network.lna.websocket.enabled");
 
       Services.prefs.clearUserPref(
         "network.lna.address_space.private.override"
@@ -309,4 +345,338 @@ add_task(async function lna_blocking_tests_local_network() {
       Assert.equal(chan.protocolVersion, url === H1_URL ? "http/1.1" : "h2");
     }
   }
+  Services.prefs.clearUserPref("network.lna.address_space.private.override");
+});
+
+// Test the network.lna.skip-domains preference
+add_task(async function lna_domain_skip_tests() {
+  // Add DNS overrides to map test domains to 127.0.0.1
+  override.clearOverrides();
+  Services.dns.clearCache(true);
+
+  override.addIPOverride("example.com", "127.0.0.1");
+  override.addIPOverride("test.example.com", "127.0.0.1");
+  override.addIPOverride("server.local", "127.0.0.1");
+  override.addIPOverride("api.dev.local", "127.0.0.1");
+
+  // Add override such that target servers are considered as local network (and not localhost)
+  // This includes all the domains we're testing with
+  var override_value =
+    "127.0.0.1" +
+    ":" +
+    httpServer.identity.primaryPort +
+    "," +
+    "127.0.0.1" +
+    ":" +
+    server.port();
+
+  Services.prefs.setCharPref(
+    "network.lna.address_space.private.override",
+    override_value
+  );
+
+  const domainSkipTestCases = [
+    // [skipDomains, parentSpace, expectedStatus, baseURL, description]
+    // Exact domain match
+    [
+      "localhost",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_URL,
+      "exact domain match - localhost",
+    ],
+    [
+      "localhost",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H2_URL,
+      "exact domain match - localhost H2",
+    ],
+    [
+      "example.com",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_EXAMPLE_URL,
+      "exact domain match - example.com",
+    ],
+
+    // Wildcard domain match
+    [
+      "*.localhost",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_URL,
+      "wildcard domain match - *.localhost matches localhost",
+    ],
+    [
+      "*.example.com",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_TEST_EXAMPLE_URL,
+      "wildcard domain match - *.example.com matches test.example.com",
+    ],
+    [
+      "*.example.com",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_EXAMPLE_URL,
+      "wildcard domain match - *.example.com matches example.com",
+    ],
+    [
+      "*.test.com",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      H1_EXAMPLE_URL,
+      "wildcard no match - *.test.com doesn't match example.com",
+    ],
+
+    // Multiple domains (comma-separated)
+    [
+      "example.com,localhost,test.org",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_URL,
+      "multiple domains - localhost match",
+    ],
+    [
+      "example.com,localhost,test.org",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_EXAMPLE_URL,
+      "multiple domains - example.com match",
+    ],
+    [
+      "foo.com,test.org",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      H1_EXAMPLE_URL,
+      "multiple domains no match - example.com not in list",
+    ],
+
+    // Empty skip domains (should apply normal LNA rules)
+    [
+      "",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      H1_URL,
+      "empty skip domains - should block",
+    ],
+
+    // .local domain tests
+    [
+      "*.local",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_SERVER_LOCAL_URL,
+      "wildcard .local - *.local matches server.local",
+    ],
+    [
+      "*.local",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_API_DEV_LOCAL_URL,
+      "wildcard .local - *.local matches api.dev.local",
+    ],
+    [
+      "*.dev.local",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_API_DEV_LOCAL_URL,
+      "wildcard subdomain .local - *.dev.local matches api.dev.local",
+    ],
+    [
+      "server.local",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_SERVER_LOCAL_URL,
+      "exact match .local - server.local matches server.local",
+    ],
+    [
+      "*.local",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      H1_URL,
+      "wildcard .local - *.local doesn't match localhost",
+    ],
+
+    // localhost variations
+    [
+      "localhost,*.local,*.internal",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_URL,
+      "combined patterns - localhost matches localhost",
+    ],
+    [
+      "localhost,*.local,*.internal",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_SERVER_LOCAL_URL,
+      "combined patterns - *.local matches server.local",
+    ],
+
+    // Plain "*" wildcard matches all domains
+    [
+      "*",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_URL,
+      "wildcard all - * matches localhost",
+    ],
+    [
+      "*",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_EXAMPLE_URL,
+      "wildcard all - * matches example.com",
+    ],
+    [
+      "*",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_SERVER_LOCAL_URL,
+      "wildcard all - * matches server.local",
+    ],
+    [
+      "*",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      H1_TEST_EXAMPLE_URL,
+      "wildcard all - * matches test.example.com",
+    ],
+  ];
+
+  for (let [
+    skipDomains,
+    parentSpace,
+    expectedStatus,
+    url,
+    description,
+  ] of domainSkipTestCases) {
+    info(`Testing domain skip: ${description} - domains: "${skipDomains}"`);
+
+    // Set the domain skip preference
+    Services.prefs.setCharPref("network.lna.skip-domains", skipDomains);
+
+    // Disable prompt simulation for clean testing
+    Services.prefs.setBoolPref("network.localhost.prompt.testing.allow", false);
+
+    let chan = makeChannel(url + "/test_lna");
+    chan.loadInfo.parentIpAddressSpace = parentSpace;
+
+    let expectFailure = expectedStatus !== Cr.NS_OK ? CL_EXPECT_FAILURE : 0;
+
+    await new Promise(resolve => {
+      chan.asyncOpen(new ChannelListener(resolve, null, expectFailure));
+    });
+
+    Assert.equal(
+      chan.status,
+      expectedStatus,
+      `Status should match for: ${description}`
+    );
+    if (expectedStatus === Cr.NS_OK) {
+      Assert.equal(chan.protocolVersion, url === H2_URL ? "h2" : "http/1.1");
+    }
+  }
+
+  // Cleanup
+  Services.prefs.clearUserPref("network.lna.skip-domains");
+  Services.prefs.clearUserPref("network.lna.address_space.private.override");
+  override.clearOverrides();
+  Services.dns.clearCache(true);
+});
+// Test the new network.lna.local-network-to-localhost.skip-checks preference
+add_task(async function lna_local_network_to_localhost_skip_checks() {
+  // Test cases: [skipPref, parentSpace, urlSuffix, expectedStatus, baseURL]
+  const skipTestCases = [
+    // Skip pref disabled (false) - existing behavior should be preserved
+    [
+      false,
+      Ci.nsILoadInfo.Private,
+      "/test_lna",
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      H1_URL,
+    ],
+    [
+      false,
+      Ci.nsILoadInfo.Private,
+      "/test_lna",
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      H2_URL,
+    ],
+    [
+      false,
+      Ci.nsILoadInfo.Public,
+      "/test_lna",
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      H1_URL,
+    ],
+    [
+      false,
+      Ci.nsILoadInfo.Public,
+      "/test_lna",
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      H2_URL,
+    ],
+
+    // Skip pref enabled (true) - new behavior: Private->Local allowed, Public->Local still blocked
+    [true, Ci.nsILoadInfo.Private, "/test_lna", Cr.NS_OK, H1_URL], // Private->Local now allowed
+    [true, Ci.nsILoadInfo.Private, "/test_lna", Cr.NS_OK, H2_URL], // Private->Local now allowed
+    [
+      true,
+      Ci.nsILoadInfo.Public,
+      "/test_lna",
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      H1_URL,
+    ], // Public->Local still blocked
+    [
+      true,
+      Ci.nsILoadInfo.Public,
+      "/test_lna",
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      H2_URL,
+    ], // Public->Local still blocked
+  ];
+
+  for (let [
+    skipPref,
+    parentSpace,
+    suffix,
+    expectedStatus,
+    url,
+  ] of skipTestCases) {
+    info(
+      `Testing skip pref: ${skipPref}, ${parentSpace} -> Local, expect: ${expectedStatus}`
+    );
+
+    // Set the new skip preference
+    Services.prefs.setBoolPref(
+      "network.lna.local-network-to-localhost.skip-checks",
+      skipPref
+    );
+
+    // Disable prompt simulation for clean testing (prompt should not affect skip logic)
+    Services.prefs.setBoolPref("network.localhost.prompt.testing.allow", false);
+
+    let chan = makeChannel(url + suffix);
+    chan.loadInfo.parentIpAddressSpace = parentSpace;
+    // Target is always Local (localhost) since we're testing localhost servers
+
+    let expectFailure = expectedStatus !== Cr.NS_OK ? CL_EXPECT_FAILURE : 0;
+
+    await new Promise(resolve => {
+      chan.asyncOpen(new ChannelListener(resolve, null, expectFailure));
+    });
+
+    Assert.equal(chan.status, expectedStatus);
+    if (expectedStatus === Cr.NS_OK) {
+      Assert.equal(chan.protocolVersion, url === H1_URL ? "http/1.1" : "h2");
+    }
+  }
+
+  // Cleanup
+  Services.prefs.clearUserPref(
+    "network.lna.local-network-to-localhost.skip-checks"
+  );
 });

@@ -6,7 +6,6 @@
 
 #include "mozilla/dom/cache/AutoUtils.h"
 
-#include "mozilla/Unused.h"
 #include "mozilla/dom/InternalHeaders.h"
 #include "mozilla/dom/InternalRequest.h"
 #include "mozilla/dom/cache/CacheParent.h"
@@ -22,7 +21,6 @@
 #include "nsHttp.h"
 
 using mozilla::Maybe;
-using mozilla::Unused;
 using mozilla::dom::cache::CacheReadStream;
 using mozilla::ipc::PBackgroundParent;
 

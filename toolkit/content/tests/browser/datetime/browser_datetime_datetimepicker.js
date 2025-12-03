@@ -56,10 +56,10 @@ add_task(async function test_datetimepicker_time_clicked() {
   let browser = helper.tab.linkedBrowser;
   Assert.equal(helper.panel.state, "open", "Panel should be opened");
 
-  // Click the first item (top-left corner) of the calendar
+  // Click the first item (top-left corner) of the time section
   let promise = BrowserTestUtils.waitForContentEvent(browser, "input");
   helper.click(
-    helper.getElement(TIMEPICKER).querySelector(".spinner-container .up")
+    helper.getElement(TIMEPICKER).querySelector(".spinner-container .prev")
   );
   await promise;
 

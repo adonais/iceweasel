@@ -13,7 +13,6 @@
 #ifndef mozilla_dom_BarProps_h
 #define mozilla_dom_BarProps_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "nsCycleCollectionParticipant.h"

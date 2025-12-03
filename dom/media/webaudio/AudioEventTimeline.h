@@ -15,7 +15,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/DefineEnum.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/PodOperations.h"
 #include "nsTArray.h"
 
 // XXX Avoid including this here by moving function bodies to the cpp file

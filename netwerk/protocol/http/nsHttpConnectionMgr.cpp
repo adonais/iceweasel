@@ -25,7 +25,6 @@
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
-#include "mozilla/Unused.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/net/DNS.h"
 #include "mozilla/net/DashboardTypes.h"
@@ -222,7 +221,7 @@ class ConnEvent : public Runnable {
 
 nsresult nsHttpConnectionMgr::PostEvent(nsConnEventHandler handler,
                                         int32_t iparam, ARefBase* vparam) {
-  Unused << EnsureSocketThreadTarget();
+  (void)EnsureSocketThreadTarget();
 
   nsCOMPtr<nsIEventTarget> target;
   {
@@ -310,11 +309,11 @@ nsHttpConnectionMgr::Observe(nsISupports* subject, const char* topic,
   if (0 == strcmp(topic, NS_TIMER_CALLBACK_TOPIC)) {
     nsCOMPtr<nsITimer> timer = do_QueryInterface(subject);
     if (timer == mTimer) {
-      Unused << PruneDeadConnections();
+      (void)PruneDeadConnections();
     } else if (timer == mTimeoutTick) {
       TimeoutTick();
     } else if (timer == mTrafficTimer) {
-      Unused << PruneNoTraffic();
+      (void)PruneNoTraffic();
     } else if (timer == mThrottleTicker) {
       ThrottlerTick();
     } else if (timer == mDelayedResumeReadTimer) {
@@ -391,7 +390,7 @@ void nsHttpConnectionMgr::UpdateClassOfServiceOnTransaction(
        trans, static_cast<uint32_t>(classOfService.Flags()),
        classOfService.Incremental()));
 
-  Unused << EnsureSocketThreadTarget();
+  (void)EnsureSocketThreadTarget();
 
   nsCOMPtr<nsIEventTarget> target;
   {
@@ -405,7 +404,7 @@ void nsHttpConnectionMgr::UpdateClassOfServiceOnTransaction(
   }
 
   RefPtr<nsHttpConnectionMgr> self(this);
-  Unused << target->Dispatch(NS_NewRunnableFunction(
+  (void)target->Dispatch(NS_NewRunnableFunction(
       "nsHttpConnectionMgr::CallUpdateClassOfServiceOnTransaction",
       [cos{classOfService}, self{std::move(self)}, trans = RefPtr{trans}]() {
         self->OnMsgUpdateClassOfServiceOnTransaction(
@@ -538,7 +537,7 @@ nsresult nsHttpConnectionMgr::SpeculativeConnect(
 }
 
 nsresult nsHttpConnectionMgr::GetSocketThreadTarget(nsIEventTarget** target) {
-  Unused << EnsureSocketThreadTarget();
+  (void)EnsureSocketThreadTarget();
 
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
   nsCOMPtr<nsIEventTarget> temp(mSocketThreadTarget);
@@ -549,7 +548,7 @@ nsresult nsHttpConnectionMgr::GetSocketThreadTarget(nsIEventTarget** target) {
 nsresult nsHttpConnectionMgr::ReclaimConnection(HttpConnectionBase* conn) {
   LOG(("nsHttpConnectionMgr::ReclaimConnection [conn=%p]\n", conn));
 
-  Unused << EnsureSocketThreadTarget();
+  (void)EnsureSocketThreadTarget();
 
   nsCOMPtr<nsIEventTarget> target;
   {
@@ -1985,9 +1984,14 @@ void nsHttpConnectionMgr::DispatchSpdyPendingQ(
     nsresult rv =
         DispatchTransaction(ent, pendingTransInfo->Transaction(), conn);
     if (NS_FAILED(rv)) {
-      // this cannot happen, but if due to some bug it does then
-      // close the transaction
-      MOZ_ASSERT(false, "Dispatch SPDY Transaction");
+      // Dispatching a transaction to an existing HTTP/2 session should not
+      // fail. The only expected failure here is
+      // NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED (e.g., when a
+      // speculative/preconnected HTTP/2 session was created before). Any other
+      // rv indicates a bug.
+      MOZ_ASSERT(rv == NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+                 "Dispatch H2 transaction should only fail with Local Network "
+                 "Access denied");
       LOG(("ProcessSpdyPendingQ Dispatch Transaction failed trans=%p\n",
            pendingTransInfo->Transaction()));
       pendingTransInfo->Transaction()->Close(rv);
@@ -2097,7 +2101,7 @@ HttpConnectionBase* nsHttpConnectionMgr::GetH2orH3ActiveConn(
 
 void nsHttpConnectionMgr::AbortAndCloseAllConnections(int32_t, ARefBase*) {
   if (!OnSocketThread()) {
-    Unused << PostEvent(&nsHttpConnectionMgr::AbortAndCloseAllConnections);
+    (void)PostEvent(&nsHttpConnectionMgr::AbortAndCloseAllConnections);
     return;
   }
 
@@ -2250,7 +2254,7 @@ void nsHttpConnectionMgr::OnMsgUpdateClassOfServiceOnTransaction(
   // incremental change alone will not trigger a reschedule
   if ((previous.Flags() ^ cos.Flags()) &
       (NS_HTTP_LOAD_AS_BLOCKING | NS_HTTP_LOAD_UNBLOCKED)) {
-    Unused << RescheduleTransaction(trans, trans->Priority());
+    (void)RescheduleTransaction(trans, trans->Priority());
   }
 }
 
@@ -2306,7 +2310,7 @@ void nsHttpConnectionMgr::OnMsgProcessPendingQ(int32_t, ARefBase* param) {
     LOG(("nsHttpConnectionMgr::OnMsgProcessPendingQ [ci=nullptr]\n"));
     // Try and dispatch everything
     for (const auto& entry : mCT.Values()) {
-      Unused << ProcessPendingQForEntry(entry.get(), true);
+      (void)ProcessPendingQForEntry(entry.get(), true);
     }
     return;
   }

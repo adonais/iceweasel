@@ -7,6 +7,7 @@
 import { NetErrorCard } from "chrome://global/content/net-error-card.mjs";
 import {
   gIsCertError,
+  isCaptive,
   gErrorCode,
   gHasSts,
   searchParams,
@@ -90,10 +91,6 @@ document.getElementById("favicon").href =
 
 function getDescription() {
   return searchParams.get("d");
-}
-
-function isCaptive() {
-  return searchParams.get("captive") == "true";
 }
 
 /**
@@ -1469,14 +1466,11 @@ function shouldUseFeltPrivacyRefresh() {
     return false;
   }
 
-  let failedCertInfo;
-  try {
-    failedCertInfo = document.getFailedCertSecurityInfo();
-  } catch {
-    return false;
-  }
+  const errorInfo = gIsCertError
+    ? document.getFailedCertSecurityInfo()
+    : document.getNetErrorInfo();
 
-  return NetErrorCard.ERROR_CODES.has(failedCertInfo.errorCodeString);
+  return NetErrorCard.ERROR_CODES.has(errorInfo.errorCodeString);
 }
 
 if (!shouldUseFeltPrivacyRefresh()) {

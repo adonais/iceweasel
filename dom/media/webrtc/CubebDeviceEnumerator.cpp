@@ -46,7 +46,7 @@ CubebDeviceEnumerator* CubebDeviceEnumerator::GetInstance() {
       }
       return true;
     }();
-    Unused << clearOnShutdownSetup;
+    (void)clearOnShutdownSetup;
   }
   return sInstance.get();
 }

@@ -9,7 +9,7 @@ use crate::{
 };
 
 use std::{
-    ffi::{c_void, CStr, CString, OsString},
+    ffi::{CStr, CString, OsString},
     os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle, RawHandle},
     ptr::null_mut,
     str::FromStr,
@@ -34,7 +34,7 @@ pub struct IPCListener {
 }
 
 impl IPCListener {
-    pub fn new(server_addr: CString) -> Result<IPCListener, IPCError> {
+    pub(crate) fn new(server_addr: CString) -> Result<IPCListener, IPCError> {
         let pipe = create_named_pipe(&server_addr, /* first_instance */ true)?;
         let event = create_manual_reset_event()?;
 
@@ -50,11 +50,11 @@ impl IPCListener {
         self.event.as_raw_handle() as HANDLE
     }
 
-    pub fn address(&self) -> &CStr {
+    pub(crate) fn address(&self) -> &CStr {
         &self.server_addr
     }
 
-    pub fn listen(&mut self) -> Result<(), IPCError> {
+    pub(crate) fn listen(&mut self) -> Result<(), IPCError> {
         self.overlapped = Some(OverlappedOperation::listen(
             self.handle
                 .try_clone()
@@ -77,7 +77,7 @@ impl IPCListener {
         // for the next iteration.
         self.listen()?;
 
-        IPCConnector::new(connected_pipe)
+        IPCConnector::from_ancillary(connected_pipe)
     }
 
     /// Serialize this listener into a string that can be passed on the
@@ -94,9 +94,8 @@ impl IPCListener {
         let server_addr = server_addr(pid);
         let string = string.to_str().map_err(|_e| IPCError::ParseError)?;
         let handle = usize::from_str(string).map_err(|_e| IPCError::ParseError)?;
-        let handle = handle as *mut c_void;
         // SAFETY: This is a handle we passed in ourselves.
-        let handle = unsafe { OwnedHandle::from_raw_handle(handle) };
+        let handle = unsafe { OwnedHandle::from_raw_handle(handle as RawHandle) };
         let event = create_manual_reset_event()?;
 
         let mut listener = IPCListener {

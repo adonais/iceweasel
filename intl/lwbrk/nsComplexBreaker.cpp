@@ -12,7 +12,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/UniquePtr.h"
 #include "nsTHashMap.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"

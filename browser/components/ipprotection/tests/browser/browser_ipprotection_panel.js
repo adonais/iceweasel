@@ -14,7 +14,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 /**
  * Tests that clicking toolbar button opens the panel,
- * and the panel contains a `<ipprotection-content>` element.
+ * the panel contains a `<ipprotection-content>` element,
+ * and the browser.ipProtection.panelOpenCount pref is set
  */
 add_task(async function click_toolbar_button() {
   let button = document.getElementById(lazy.IPProtectionWidget.WIDGET_ID);
@@ -23,10 +24,25 @@ add_task(async function click_toolbar_button() {
     lazy.IPProtectionWidget.PANEL_ID
   );
 
+  let panelOpenCount = Services.prefs.getIntPref(
+    "browser.ipProtection.panelOpenCount",
+    0
+  );
+
   let panelShownPromise = waitForPanelEvent(document, "popupshown");
   // Open the panel
   button.click();
   await panelShownPromise;
+
+  let panelOpenCountAfter = Services.prefs.getIntPref(
+    "browser.ipProtection.panelOpenCount",
+    0
+  );
+  Assert.equal(
+    panelOpenCountAfter,
+    panelOpenCount + 1,
+    "panelOpenCount should increase by 1 when the panel is opened"
+  );
 
   let component = panelView.querySelector(
     lazy.IPProtectionPanel.CONTENT_TAGNAME
@@ -37,8 +53,8 @@ add_task(async function click_toolbar_button() {
   );
 
   let header = panelView.querySelector(
-    lazy.IPProtectionPanel.CONTENT_TAGNAME
-  ).headerEl;
+    `#${lazy.IPProtectionPanel.HEADER_AREA_ID}`
+  );
   Assert.ok(
     BrowserTestUtils.isVisible(header),
     "ipprotection-header component should be present"
@@ -48,6 +64,8 @@ add_task(async function click_toolbar_button() {
   let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
   EventUtils.synthesizeKey("KEY_Escape");
   await panelHiddenPromise;
+
+  Services.prefs.clearUserPref("browser.ipProtection.panelOpenCount");
 });
 
 /**
@@ -81,8 +99,8 @@ add_task(async function test_panel_in_new_window() {
   );
 
   let header = panelView.querySelector(
-    lazy.IPProtectionPanel.CONTENT_TAGNAME
-  ).headerEl;
+    `#${lazy.IPProtectionPanel.HEADER_AREA_ID}`
+  );
   Assert.ok(
     BrowserTestUtils.isVisible(header),
     "ipprotection-header component should be present"

@@ -335,11 +335,13 @@ export const ContentTiles = props => {
 
   const renderContentTiles = () => {
     if (Array.isArray(tiles)) {
+      const containerStyle = content?.tiles_container?.style;
+
       return (
         <div
           id="content-tiles-container"
           style={AboutWelcomeUtils.getValidStyle(
-            content?.contentTilesContainer?.style,
+            containerStyle,
             CONTAINER_STYLES
           )}
         >

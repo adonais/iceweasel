@@ -7,7 +7,6 @@
 #ifndef ContentRange_h__
 #define ContentRange_h__
 
-#include "mozilla/Maybe.h"
 #include "nsString.h"
 #include "nsISupportsImpl.h"
 

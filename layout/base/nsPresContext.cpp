@@ -8,7 +8,6 @@
 
 #include "nsPresContext.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "nsPresContextInlines.h"
 #if defined(MOZ_WIDGET_ANDROID)
 #  include "mozilla/AsyncEventDispatcher.h"
@@ -92,6 +91,7 @@
 #include "nsPIDOMWindow.h"
 #include "nsPIWindowRoot.h"
 #include "nsRefreshDriver.h"
+#include "nsSubDocumentFrame.h"
 #include "nsThreadUtils.h"
 #include "nsTransitionManager.h"
 #include "nsViewManager.h"
@@ -539,7 +539,7 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
     // We need to assume the DPI changes, since `mDeviceContext` is shared with
     // other documents, and we'd need to save the return value of the first call
     // for all of them.
-    Unused << mDeviceContext->CheckDPIChange();
+    (void)mDeviceContext->CheckDPIChange();
     OwningNonNull<mozilla::PresShell> presShell(*mPresShell);
     // Re-fetch the view manager's window dimensions in case there's a
     // deferred resize which hasn't affected our mVisibleArea yet
@@ -1135,26 +1135,12 @@ void nsPresContext::UpdateCharSet(NotNull<const Encoding*> aCharSet) {
 }
 
 nsPresContext* nsPresContext::GetParentPresContext() const {
-  mozilla::PresShell* presShell = GetPresShell();
-  if (presShell) {
-    nsViewManager* viewManager = presShell->GetViewManager();
-    if (viewManager) {
-      nsView* view = viewManager->GetRootView();
-      if (view) {
-        view = view->GetParent();  // anonymous inner view
-        if (view) {
-          view = view->GetParent();  // subdocumentframe's view
-          if (view) {
-            nsIFrame* f = view->GetFrame();
-            if (f) {
-              return f->PresContext();
-            }
-          }
-        }
-      }
-    }
+  mozilla::PresShell* ps = GetPresShell();
+  if (!ps) {
+    return nullptr;
   }
-  return nullptr;
+  auto* embedder = ps->GetInProcessEmbedderFrame();
+  return embedder ? embedder->PresContext() : nullptr;
 }
 
 nsPresContext* nsPresContext::GetInProcessRootContentDocumentPresContext() {
@@ -1171,22 +1157,12 @@ nsPresContext* nsPresContext::GetInProcessRootContentDocumentPresContext() {
   }
 }
 
-nsIWidget* nsPresContext::GetNearestWidget(nsPoint* aOffset) {
-  NS_ENSURE_TRUE(mPresShell, nullptr);
-  nsViewManager* vm = mPresShell->GetViewManager();
-  NS_ENSURE_TRUE(vm, nullptr);
-  nsView* rootView = vm->GetRootView();
-  NS_ENSURE_TRUE(rootView, nullptr);
-  return rootView->GetNearestWidget(aOffset);
+nsIWidget* nsPresContext::GetNearestWidget() const {
+  return mPresShell ? mPresShell->GetNearestWidget() : nullptr;
 }
 
 nsIWidget* nsPresContext::GetRootWidget() const {
-  NS_ENSURE_TRUE(mPresShell, nullptr);
-  nsViewManager* vm = mPresShell->GetViewManager();
-  if (!vm) {
-    return nullptr;
-  }
-  return vm->GetRootWidget();
+  return mPresShell ? mPresShell->GetRootWidget() : nullptr;
 }
 
 // We may want to replace this with something faster, maybe caching the root
@@ -1349,7 +1325,7 @@ void nsPresContext::SetImageAnimationMode(uint16_t aMode) {
   if (mPresShell) {
     dom::Document* doc = mPresShell->GetDocument();
     if (doc) {
-      doc->StyleImageLoader()->SetAnimationMode(aMode);
+      doc->EnsureStyleImageLoader().SetAnimationMode(aMode);
 
       Element* rootElement = doc->GetRootElement();
       if (rootElement) {
@@ -1476,7 +1452,7 @@ void nsPresContext::UpdateTopInnerSizeForRFP() {
       break;
   }
 
-  Unused << mDocument->GetBrowsingContext()->SetTopInnerSizeForRFP(
+  (void)mDocument->GetBrowsingContext()->SetTopInnerSizeForRFP(
       CSSIntSize{(int)size.width, (int)size.height});
 }
 
@@ -2667,22 +2643,8 @@ bool nsPresContext::IsRootContentDocumentInProcess() const {
   if (IsChrome()) {
     return false;
   }
-  // We may not have a root frame, so use views.
-  nsView* view = PresShell()->GetViewManager()->GetRootView();
-  if (!view) {
-    return false;
-  }
-  view = view->GetParent();  // anonymous inner view
-  if (!view) {
-    return true;
-  }
-  view = view->GetParent();  // subdocumentframe's view
-  if (!view) {
-    return true;
-  }
-
-  nsIFrame* f = view->GetFrame();
-  return (f && f->PresContext()->IsChrome());
+  auto* embedder = PresShell()->GetInProcessEmbedderFrame();
+  return !embedder || embedder->PresContext()->IsChrome();
 }
 
 bool nsPresContext::IsRootContentDocumentCrossProcess() const {
@@ -2726,27 +2688,30 @@ bool nsPresContext::HasStoppedGeneratingLCP() const {
 
 void nsPresContext::NotifyContentfulPaint() {
   if (mHadFirstContentfulPaint && HasStoppedGeneratingLCP()) {
+    MOZ_ASSERT(mHadNonTickContentfulPaint);
     return;
   }
   nsRootPresContext* rootPresContext = GetRootPresContext();
   if (!rootPresContext) {
     return;
   }
+
   if (!mHadNonTickContentfulPaint) {
 #ifdef MOZ_WIDGET_ANDROID
     (new AsyncEventDispatcher(mDocument, u"MozFirstContentfulPaint"_ns,
                               CanBubble::eYes, ChromeOnlyDispatch::eYes))
         ->PostDOMEvent();
 #endif
+    mHadNonTickContentfulPaint = true;
   }
+
   if (!rootPresContext->RefreshDriver()->IsInRefresh()) {
-    if (!mHadNonTickContentfulPaint) {
-      rootPresContext->RefreshDriver()
-          ->AddForceNotifyContentfulPaintPresContext(this);
-      mHadNonTickContentfulPaint = true;
-    }
+    rootPresContext->RefreshDriver()->AddForceNotifyContentfulPaintPresContext(
+        this);
     return;
   }
+
+  // From here on we know that we are inside a refresh tick.
 
   if (!mHadFirstContentfulPaint) {
     mHadFirstContentfulPaint = true;

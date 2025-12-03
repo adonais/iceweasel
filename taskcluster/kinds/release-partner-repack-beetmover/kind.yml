@@ -14,6 +14,9 @@ transforms:
 kind-dependencies:
     - release-partner-repack-repackage-signing
 
+task-defaults:
+    run-on-repo-type: [hg]
+
 only-for-build-platforms:
     - linux64-shippable/opt
     - macosx64-shippable/opt

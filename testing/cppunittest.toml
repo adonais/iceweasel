@@ -4,6 +4,9 @@
 
 ["TestAlgorithm"]
 
+["TestArm64Disassembler"]
+run-if = ["os == 'win' && processor == 'aarch64'"]
+
 ["TestArray"]
 
 ["TestArrayUtils"]
@@ -47,10 +50,7 @@ run-if = ["os == 'win'"]
 run-if = ["os == 'win'"]
 
 ["TestDllInterceptorCrossProcess"]
-run-if = [
-  "os == 'win' && processor == 'x86'",
-  "os == 'win' && processor == 'x86_64'",
-]
+run-if = ["os == 'win' && processor != 'aarch64'"]
 
 ["TestDoublyLinkedList"]
 
@@ -75,6 +75,7 @@ run-if = [
 ["TestIATPatcher"]
 run-if = ["os == 'win'"]
 skip-if = [
+  "processor == 'aarch64'", # requires administrator permission on aarch64
   "win11_2009 && bits == 32", # fails on windows10x32
   "os == 'win' && os_version == '11.26100' && processor == 'x86'", # fails on win/x86
 ]
@@ -157,6 +158,9 @@ run-if = ["os == 'win'"]
 ["TestScopeExit"]
 
 ["TestSegmentedVector"]
+
+["TestSharedMappingCommit"]
+run-if = ["os == 'win'"]
 
 ["TestSmallPointerArray"]
 

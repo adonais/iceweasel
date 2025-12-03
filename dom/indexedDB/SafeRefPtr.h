@@ -9,7 +9,6 @@
 
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/NotNull.h"
 #include "mozilla/RefCounted.h"
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"

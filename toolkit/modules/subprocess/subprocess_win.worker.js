@@ -220,7 +220,7 @@ class InputPipe extends Pipe {
         false
       );
 
-      if (!ok) {
+      if (!ok && ctypes.winLastError !== win32.ERROR_IO_INCOMPLETE) {
         this.onError();
       }
     }

@@ -25,7 +25,6 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/FetchPriority.h"
 #include "mozilla/dom/GeneratedImageContent.h"
@@ -148,7 +147,7 @@ void nsDisplayGradient::Paint(nsDisplayListBuilder* aBuilder,
         frame->PresContext(), *aCtx, dest, dest, dest.TopLeft(),
         GetPaintRect(aBuilder, aCtx), dest.Size(), /* aOpacity = */ 1.0f);
   }
-  Unused << result;
+  (void)result;
 }
 
 bool nsDisplayGradient::CreateWebRenderCommands(
@@ -266,7 +265,7 @@ BrokenImageIcon::BrokenImageIcon(const nsImageFrame& aFrame) {
                     false, /* aUseUrgentStartForChannel */
                     false, /* aLinkPreload */
                     0, FetchPriority::Auto, getter_AddRefs(mImage));
-  Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 }
 
 void BrokenImageIcon::Shutdown() {
@@ -734,7 +733,7 @@ void nsImageFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                   // make <area> elements focusable.
 
   if (StaticPrefs::layout_image_eager_broken_image_icon()) {
-    Unused << BrokenImageIcon::GetImage(this);
+    (void)BrokenImageIcon::GetImage(this);
   }
 
   nsPresContext* pc = PresContext();
@@ -1334,8 +1333,8 @@ void nsImageFrame::MaybeSendIntrinsicSizeAndRatioToEmbedder(
   }
 
   if (BrowserChild* browserChild = BrowserChild::GetFrom(docShell)) {
-    Unused << browserChild->SendIntrinsicSizeOrRatioChanged(aIntrinsicSize,
-                                                            aIntrinsicRatio);
+    (void)browserChild->SendIntrinsicSizeOrRatioChanged(aIntrinsicSize,
+                                                        aIntrinsicRatio);
   }
 }
 
@@ -1893,8 +1892,8 @@ class nsDisplayAltFeedback final : public nsPaintedDisplayItem {
     uint32_t flags = imgIContainer::FLAG_SYNC_DECODE;
 
     nsImageFrame* f = static_cast<nsImageFrame*>(mFrame);
-    Unused << f->DisplayAltFeedback(*aCtx, GetPaintRect(aBuilder, aCtx),
-                                    ToReferenceFrame(), flags);
+    (void)f->DisplayAltFeedback(*aCtx, GetPaintRect(aBuilder, aCtx),
+                                ToReferenceFrame(), flags);
   }
 
   bool CreateWebRenderCommands(
@@ -1955,7 +1954,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedback(gfxContext& aRenderingContext,
     // returns.
     MOZ_ASSERT(recessedBorder.mBorderImageSource.IsNone());
 
-    Unused << nsCSSRendering::PaintBorderWithStyleBorder(
+    (void)nsCSSRendering::PaintBorderWithStyleBorder(
         PresContext(), aRenderingContext, this, inner, inner, recessedBorder,
         mComputedStyle, PaintBorderFlags::SyncDecodeImages);
   }
@@ -2132,7 +2131,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
     MOZ_ASSERT(recessedBorder.mBorderImageSource.IsNone());
 
     nsRect rect = nsRect(aPt, GetSize());
-    Unused << nsCSSRendering::CreateWebRenderCommandsForBorderWithStyleBorder(
+    (void)nsCSSRendering::CreateWebRenderCommandsForBorderWithStyleBorder(
         aItem, this, rect, aBuilder, aResources, aSc, aManager,
         aDisplayListBuilder, recessedBorder);
   }

@@ -255,7 +255,12 @@ struct FrameMetrics {
    *
    * @returns The clamped scroll offset delta that was applied
    */
-  CSSPoint ApplyRelativeScrollUpdateFrom(const ScrollPositionUpdate& aUpdate);
+  enum class IsDefaultApzc {
+    No,
+    Yes,
+  };
+  CSSPoint ApplyRelativeScrollUpdateFrom(const ScrollPositionUpdate& aUpdate,
+                                         IsDefaultApzc aIsDefaultApzc);
 
   CSSPoint ApplyPureRelativeScrollUpdateFrom(
       const ScrollPositionUpdate& aUpdate);

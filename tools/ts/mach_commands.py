@@ -74,13 +74,14 @@ def build(ctx, lib):
     if lib == "dom":
         # Same as above, get all *.webidl files for now.
         dir = mozpath.join(ctx.topsrcdir, "dom")
+        objdir_webidl = mozpath.join(ctx.topobjdir, "dom", "bindings")
         files = []
         for subdir in ["webidl", "chrome-webidl"]:
             for file in os.listdir(mozpath.join(dir, subdir)):
                 if file.endswith(".webidl"):
                     files.append(subdir + "/" + file)
 
-        return node(ctx, "build_dom", lib_dts, dir, *files)
+        return node(ctx, "build_dom", lib_dts, dir, objdir_webidl, *files)
 
     raise ValueError(f"Unknown typelib: {lib}")
 

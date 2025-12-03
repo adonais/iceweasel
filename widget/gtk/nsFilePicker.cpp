@@ -9,7 +9,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "mozilla/Types.h"
 #include "AsyncDBus.h"
 #include "nsGtkUtils.h"
 #include "nsIFileURL.h"

@@ -271,7 +271,7 @@ newtab-wallpaper-pink = රෝස
 newtab-wallpaper-light-pink = ලා රෝස
 newtab-wallpaper-red = රතු
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-feature-highlight-button = තේරුණා
 # Tooltip for dismiss button

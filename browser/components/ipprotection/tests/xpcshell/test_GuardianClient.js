@@ -41,6 +41,15 @@ const testGuardianConfig = server => ({
 add_task(async function test_fetchUserInfo() {
   const ok = data => {
     return (request, r) => {
+      // Verify the Authorization header is present and correctly formatted
+      const authHeader = request.getHeader("Authorization");
+      Assert.ok(authHeader, "Authorization header should be present");
+      Assert.equal(
+        authHeader,
+        "Bearer test-token",
+        "Authorization header should have the correct format"
+      );
+
       r.setStatusLine(request.httpVersion, 200, "OK");
       r.write(JSON.stringify(data));
     };
@@ -55,6 +64,10 @@ add_task(async function test_fetchUserInfo() {
         subscribed: true,
         uid: 42,
         created_at: "2023-01-01T12:00:00.000Z",
+        limited_bandwidth: false,
+        location_controls: false,
+        autostart: false,
+        website_inclusion: false,
       }),
       expects: {
         status: 200,
@@ -64,6 +77,118 @@ add_task(async function test_fetchUserInfo() {
           subscribed: true,
           uid: 42,
           created_at: "2023-01-01T12:00:00.000Z",
+          limited_bandwidth: false,
+          location_controls: false,
+          autostart: false,
+          website_inclusion: false,
+        },
+      },
+    },
+    {
+      name: "Alpha experiment",
+      sends: ok({
+        autostart: false,
+        created_at: "2023-09-24T12:00:00.000Z",
+        limited_bandwidth: false,
+        location_controls: false,
+        subscribed: true,
+        uid: 12345,
+        website_inclusion: false,
+        type: "alpha",
+      }),
+      expects: {
+        status: 200,
+        error: null,
+        validEntitlement: true,
+        entitlement: {
+          autostart: false,
+          limited_bandwidth: false,
+          location_controls: false,
+          subscribed: true,
+          uid: 12345,
+          website_inclusion: false,
+          created_at: "2023-09-24T12:00:00.000Z",
+        },
+      },
+    },
+    {
+      name: "Beta experiment",
+      sends: ok({
+        autostart: true,
+        created_at: "2023-09-24T12:30:00.000Z",
+        limited_bandwidth: false,
+        location_controls: false,
+        subscribed: false,
+        uid: 67890,
+        website_inclusion: true,
+        type: "beta",
+      }),
+      expects: {
+        status: 200,
+        error: null,
+        validEntitlement: true,
+        entitlement: {
+          autostart: true,
+          limited_bandwidth: false,
+          location_controls: false,
+          subscribed: false,
+          uid: 67890,
+          website_inclusion: true,
+          created_at: "2023-09-24T12:30:00.000Z",
+        },
+      },
+    },
+    {
+      name: "gamma experiment",
+      sends: ok({
+        autostart: true,
+        created_at: "2023-09-24T13:00:00.000Z",
+        limited_bandwidth: false,
+        location_controls: true,
+        subscribed: true,
+        uid: 54321,
+        website_inclusion: false,
+        type: "gamma",
+      }),
+      expects: {
+        status: 200,
+        error: null,
+        validEntitlement: true,
+        entitlement: {
+          autostart: true,
+          limited_bandwidth: false,
+          location_controls: true,
+          subscribed: true,
+          uid: 54321,
+          website_inclusion: false,
+          created_at: "2023-09-24T13:00:00.000Z",
+        },
+      },
+    },
+    {
+      name: "Delta experiment",
+      sends: ok({
+        autostart: true,
+        created_at: "2023-09-24T13:30:00.000Z",
+        limited_bandwidth: true,
+        location_controls: true,
+        subscribed: true,
+        uid: 13579,
+        website_inclusion: true,
+        type: "delta",
+      }),
+      expects: {
+        status: 200,
+        error: null,
+        validEntitlement: true,
+        entitlement: {
+          autostart: true,
+          limited_bandwidth: true,
+          location_controls: true,
+          subscribed: true,
+          uid: 13579,
+          website_inclusion: true,
+          created_at: "2023-09-24T13:30:00.000Z",
         },
       },
     },
@@ -72,7 +197,7 @@ add_task(async function test_fetchUserInfo() {
       sends: fail(HTTP_404),
       expects: {
         status: 404,
-        error: "invalid_response",
+        error: "parse_error",
         validEntitlement: false,
       },
     },
@@ -91,6 +216,10 @@ add_task(async function test_fetchUserInfo() {
         subscribed: "true", // Incorrect type: should be boolean
         uid: "42", // Incorrect type: should be number
         created_at: 1234567890, // Incorrect type: should be string
+        limited_bandwidth: "false", // Incorrect type: should be boolean
+        location_controls: "true", // Incorrect type: should be boolean
+        autostart: "true", // Incorrect type: should be boolean
+        website_inclusion: "false", // Incorrect type: should be boolean
       }),
       expects: {
         status: 200,
@@ -128,22 +257,24 @@ add_task(async function test_fetchUserInfo() {
             null,
             `${name}: entitlement should not be null`
           );
-          Assert.equal(
-            entitlement.subscribed,
-            expects.entitlement.subscribed,
-            `${name}: entitlement.subscribed should match`
-          );
-          Assert.equal(
-            entitlement.uid,
-            expects.entitlement.uid,
-            `${name}: entitlement.uid should match`
-          );
-          // Compare date objects using getTime() for accurate comparison
-          Assert.equal(
-            new Date(entitlement.created_at).toISOString(),
-            new Date(Date.parse(expects.entitlement.created_at)).toISOString(),
-            `${name}: entitlement.created_at should match`
-          );
+          for (const key of Object.keys(expects.entitlement)) {
+            // Special case the date case, all others can check equality directly
+            if (key === "created_at") {
+              Assert.equal(
+                new Date(entitlement.created_at).toISOString(),
+                new Date(
+                  Date.parse(expects.entitlement.created_at)
+                ).toISOString(),
+                `${name}: entitlement.created_at should match`
+              );
+            } else {
+              Assert.equal(
+                entitlement[key],
+                expects.entitlement[key],
+                `${name}: entitlement.${key} should match`
+              );
+            }
+          }
         } else {
           Assert.equal(
             entitlement,

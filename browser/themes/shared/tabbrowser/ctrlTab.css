@@ -12,7 +12,7 @@
   --panel-padding: 20px 10px 10px;
   -moz-window-shadow: none;
   @media not (-moz-platform: macos) {
-    font-weight: bold;
+    font-weight: var(--font-weight-bold);
   }
 }
 

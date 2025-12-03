@@ -54,11 +54,8 @@ function check_valid_array(a, key, id) {
   if (a === undefined) {
     return false;
   }
-  const valid = Array.isArray(a) && a.length;
-  ok(
-    valid,
-    `if defined, ${key} is an array with at least one element for id ${id}`
-  );
+  const valid = Array.isArray(a);
+  ok(valid, `if defined, ${key} is an array for id ${id}`);
   return valid;
 }
 

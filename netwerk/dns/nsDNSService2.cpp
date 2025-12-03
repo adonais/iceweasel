@@ -36,7 +36,6 @@
 #include "DNSAdditionalInfo.h"
 #include "TRRService.h"
 
-#include "mozilla/Attributes.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/ChildDNSService.h"
@@ -46,7 +45,6 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/TextUtils.h"
-#include "mozilla/Utf8.h"
 
 using namespace mozilla;
 using namespace mozilla::net;

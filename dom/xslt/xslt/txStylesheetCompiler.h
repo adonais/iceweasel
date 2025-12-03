@@ -6,7 +6,6 @@
 #ifndef TRANSFRMX_TXSTYLESHEETCOMPILER_H
 #define TRANSFRMX_TXSTYLESHEETCOMPILER_H
 
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "nsTArray.h"
 #include "txExpr.h"

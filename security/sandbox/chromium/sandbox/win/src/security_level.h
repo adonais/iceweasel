@@ -43,6 +43,8 @@ enum IntegrityLevel {
 // ----------------------------|--------------|----------------|----------|
 // USER_LOCKDOWN               | Null Sid     | All            | None     |
 // ----------------------------|--------------|----------------|----------|
+// USER_LOCKDOWN_WITH_TRAVERSE | Null Sid     | All            | Traverse |
+// ----------------------------|--------------|----------------|----------|
 // USER_RESTRICTED             | RESTRICTED   | All            | Traverse |
 // ----------------------------|--------------|----------------|----------|
 // USER_LIMITED                | Users        | All except:    | Traverse |
@@ -82,6 +84,7 @@ enum IntegrityLevel {
 // started by a user that belongs to the Admins or power users groups.
 enum TokenLevel {
   USER_LOCKDOWN = 0,
+  USER_LOCKDOWN_WITH_TRAVERSE,
   USER_RESTRICTED,
   USER_LIMITED,
   USER_INTERACTIVE,

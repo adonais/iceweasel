@@ -17,9 +17,10 @@ skip-if = ["os == 'android'"] #TIMED_OUT
 skip-if = ["os == 'android'"] #android: bug 1267092
 
 ["test_subresources_prompts.html"]
-skip-if = [
-  "os == 'android'",
-  "http3",
-  "http2",
-]
 fail-if = ["xorigin"]
+skip-if = [
+  "http2",
+  "http3",
+  "os == 'android'",
+  "verify-standalone",
+]

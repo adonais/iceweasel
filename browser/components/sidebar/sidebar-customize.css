@@ -62,7 +62,7 @@
 
 .customize-extensions-heading {
   margin: 0;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--heading-font-weight);
 }
 
 moz-fieldset {

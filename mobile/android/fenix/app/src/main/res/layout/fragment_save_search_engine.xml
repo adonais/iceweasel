@@ -43,7 +43,8 @@
                 android:layout_height="wrap_content"
                 android:minHeight="@dimen/accessibility_min_height"
                 android:hint="@string/search_add_custom_engine_name_hint_2"
-                android:inputType="text" />
+                android:inputType="text"
+                android:textColorHint="?attr/colorOnSurfaceVariant"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
@@ -71,7 +72,8 @@
                 android:layout_height="wrap_content"
                 android:minHeight="@dimen/accessibility_min_height"
                 android:hint="@string/search_add_custom_engine_search_string_hint_2"
-                android:inputType="text"/>
+                android:inputType="text"
+                android:textColorHint="?attr/colorOnSurfaceVariant" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <LinearLayout
@@ -123,7 +125,8 @@
                 android:layout_height="wrap_content"
                 android:minHeight="@dimen/accessibility_min_height"
                 android:hint="@string/search_add_custom_engine_suggest_string_hint"
-                android:inputType="text"/>
+                android:inputType="text"
+                android:textColorHint="?attr/colorOnSurfaceVariant"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <LinearLayout

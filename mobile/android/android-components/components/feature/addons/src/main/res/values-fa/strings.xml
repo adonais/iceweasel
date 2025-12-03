@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this file,
+  You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
   <string name="mozac_feature_addons_permissions_one_site_description">دسترسی به اطلاعات شما برای %1$s</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
@@ -25,7 +32,7 @@
   -->
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">دسترسی به داده‌های شما در دامنه‌های دیگر</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
-  <string name="mozac_feature_addons_permissions_all_domain_count_description" tools:ignore="PluralsCandidate">دسترسی به داده‌های شما برای وبگاه‌های موجود در دامنه‌های %1$d</string>
+  <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">دسترسی به داده‌های شما برای وبگاه‌های موجود در دامنه‌های %1$d</string>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s، %2$d از %3$d</string>
   <!-- Description for the "privacy" WebExtensions API permission. -->
@@ -94,6 +101,8 @@
   <string name="mozac_feature_addons_permissions_bookmarks_description_for_update">خواندن و ویرایش نشانک‌ها.</string>
   <!-- Description for the "browserSettings" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_browser_settings_description_for_update">خواندن و ویرایش تنظیمات مرورگر.</string>
+  <!-- Description for the "browsingData" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_browsing_data_description_for_update">پاک کردن تاریخچهٔ مرور اخیر،‌ کلوچک‌ها و اطلاعات مرتبط.</string>
   <!-- Description for the "declarativeNetRequest" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_declarative_net_request_description_for_update">مسدود کردن محتوا در هر صفحه.</string>
   <!-- Description for the "declarativeNetRequestFeedback" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
@@ -307,7 +316,7 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">%1$s نمی‌تواند نصب شود زیرا فقط توسط سازمانی که از سیاست‌های سازمانی استفاده می‌کند قابل نصب است، که در این سکو پشتیبانی نمی‌شود.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1">%1$s خط‌مشی‌های Mozilla را نقض می‌کند و نمی‌تواند بر روی %2$s نصب شود.</string>
+  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s خط‌مشی‌های Mozilla را نقض می‌کند و نمی‌تواند بر روی %2$s نصب شود.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">شکست در فعالسازی %1$s</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -347,9 +356,9 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">این افزونه به دلیل نقض خط‌مشی‌های Mozilla مسدود شده و غیرفعال شده است.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1">این افزونه به دلیل نقض خط‌مشی‌های Mozilla محدود شده و غیرفعال شده است. می‌توانید آن را فعال کنید، اما این ممکن است خطرناک باشد.</string>
+  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">این افزونه به دلیل نقض خط‌مشی‌های Mozilla محدود شده و غیرفعال شده است. می‌توانید آن را فعال کنید، اما این ممکن است خطرناک باشد.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled">این افزونه با سیاست‌های Mozilla مغایرت دارد. استفاده از آن ممکن است خطرناک باشد.</string>
+  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">این افزونه با سیاست‌های Mozilla مغایرت دارد. استفاده از آن ممکن است خطرناک باشد.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">%1$s نمی‌تواند به عنوان امن تأیید شود و غیرفعال شده است.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

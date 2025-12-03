@@ -23,7 +23,6 @@
 #include "mozilla/WidgetUtils.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/LookAndFeel.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/media/MediaUtils.h"
 #include "nsString.h"
 #include "nsGlobalWindowOuter.h"
@@ -1212,7 +1211,35 @@ using GetWindowIdFromWindowType = HRESULT(STDAPICALLTYPE*)(
 static GetWindowIdFromWindowType sGetWindowIdFromWindowProc = nullptr;
 
 // Returns whether initialization succeeded
-bool InitializeWindowsAppSDKStatics() {
+[[nodiscard]] static bool InitializeWindowsAppSDKStatics() {
+  MOZ_ASSERT(NS_IsMainThread());
+  // This function is needed to avoid drawing the titlebar buttons
+  // when the Windows mica backdrop is enabled. (bug 1934040)
+  // If it isn't possible for mica to be enabled, we don't need to do anything.
+  // The Windows App SDK that we use here doesn't support older versions of
+  // Windows 10 that Firefox does.
+  if (!widget::WinUtils::MicaAvailable()) {
+    MOZ_LOG(
+        gWindowsLog, LogLevel::Info,
+        ("Skipping SetIsTitlebarCollapsed() because mica is not available"));
+    return false;
+  }
+  // This pref is only false on certain test runs (most notably
+  // opt-talos-xperf), the Windows App SDK fails calling
+  // DCompositionCreateDevice3() with ERROR_ACCESS_DENIED, and the code assumes
+  // it is going to succeed so it proceeds to crash deferencing null.
+  //
+  // We're not exactly sure why this is happening right now, but I'm pretty sure
+  // it's specific to how we're running Firefox on those test runs, and
+  // I don't think any users will run into this. So those tests pass the
+  // --disable-windowsappsdk command line argument to avoid using
+  // the Windows App SDK.
+  if (!StaticPrefs::widget_windows_windowsappsdk_enabled()) {
+    MOZ_LOG(gWindowsLog, LogLevel::Info,
+            ("Skipping SetIsTitlebarCollapsed() because "
+             "widget.windows.windowsappsdk.enabled is false"));
+    return false;
+  }
   if (!sGetWindowIdFromWindowProc) {
     HMODULE frameworkUdkModule =
         ::LoadLibraryW(L"Microsoft.Internal.FrameworkUdk.dll");
@@ -1304,51 +1331,14 @@ bool InitializeWindowsAppSDKStatics() {
   }
   return true;
 }
-#endif
 
-void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
-#ifndef __MINGW32__
-  // Used to avoid synchronization for loading libraries below
-  MOZ_ASSERT(NS_IsMainThread());
-  // This function is needed to avoid drawing the titlebar buttons
-  // when the Windows mica backdrop is enabled. (bug 1934040)
-  // If it isn't possible for mica to be enabled, we don't need to do anything.
-  // This also helps prevent problems because the Windows App SDK that we use
-  // here doesn't support older versions of Windows 10 that Firefox does.
-  if (!widget::WinUtils::MicaAvailable()) {
-    MOZ_LOG(
-        gWindowsLog, LogLevel::Info,
-        ("Skipping SetIsTitlebarCollapsed() because mica is not available"));
-    return;
-  }
-  // This pref is only false on certain test runs (most notably
-  // opt-talos-xperf), the Windows App SDK fails calling
-  // DCompositionCreateDevice3() with ERROR_ACCESS_DENIED, and the code assumes
-  // it is going to succeed so it proceeds to crash deferencing null.
-  //
-  // We're not exactly sure why this is happening right now, but I'm pretty sure
-  // it's specific to how we're running Firefox on those test runs, and
-  // I don't think any users will run into this. So those tests pass the
-  // --disable-windowsappsdk command line argument to avoid using
-  // the Windows App SDK.
-  if (!StaticPrefs::widget_windows_windowsappsdk_enabled()) {
-    MOZ_LOG(gWindowsLog, LogLevel::Info,
-            ("Skipping SetIsTitlebarCollapsed() because "
-             "widget.windows.windowsappsdk.enabled is false"));
-    return;
-  }
+static RefPtr<winrt::Microsoft::UI::Windowing::IAppWindow>
+GetAppWindowForWindow(HWND aWnd) {
   if (!InitializeWindowsAppSDKStatics()) {
-    return;
+    return nullptr;
   }
-
-  // The Microsoft documentation says that we should be checking
-  // AppWindowTitleBar::IsCustomizationSupported() before calling methods
-  // on the title bar. However, it also says that customization is fully
-  // supported since Windows App SDK v1.2 on Windows 11, and Mica is only
-  // available on Windows 11, so it should be safe to skip this check.
-
   // Retrieve the WindowId that corresponds to hWnd.
-  struct winrt::Microsoft::UI::WindowId windowId;
+  struct winrt::Microsoft::UI::WindowId windowId{0};
   HRESULT hr = sGetWindowIdFromWindowProc(aWnd, &windowId);
   if (FAILED(hr) || windowId.value == 0) {
     MOZ_LOG(gWindowsLog, LogLevel::Error,
@@ -1356,25 +1346,40 @@ void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
              "GetWindowIdFromWindow failed, hr=0x%" PRIX32,
              static_cast<uint32_t>(hr)));
     MOZ_ASSERT_UNREACHABLE("GetWindowIdFromWindow failed");
-    return;
+    return nullptr;
   }
 
   RefPtr<winrt::Microsoft::UI::Windowing::IAppWindow> appWindow;
-  hr = (HRESULT)sAppWindowStatics->GetFromWindowId(windowId,
-                                                   getter_AddRefs(appWindow));
-  if (FAILED(hr) || !appWindow) {
-    // Hedge our bets here and don't assert because it's possible this
-    // is a weird sort of window or something.
+  sAppWindowStatics->GetFromWindowId(windowId, getter_AddRefs(appWindow));
+  return appWindow;
+}
+#endif
+
+void WindowsUIUtils::AssociateWithWinAppSDK(HWND aWnd) {
+#ifndef __MINGW32__
+  RefPtr win = GetAppWindowForWindow(aWnd);
+  (void)win;
+#endif
+}
+
+void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
+#ifndef __MINGW32__
+  // The Microsoft documentation says that we should be checking
+  // AppWindowTitleBar::IsCustomizationSupported() before calling methods
+  // on the title bar. However, it also says that customization is fully
+  // supported since Windows App SDK v1.2 on Windows 11, and Mica is only
+  // available on Windows 11, so it should be safe to skip this check.
+  RefPtr appWindow = GetAppWindowForWindow(aWnd);
+  if (!appWindow) {
     MOZ_LOG(gWindowsLog, LogLevel::Warning,
             ("Skipping SetIsTitlebarCollapsed() because "
-             "IAppWindow could not be acquired from window id, hr=%" PRIX32,
-             static_cast<uint32_t>(hr)));
+             "IAppWindow could not be acquired from window id"));
     return;
   }
 
-  RefPtr<IInspectable> inspectableTitleBar;
-  hr = appWindow->get_TitleBar(getter_AddRefs(inspectableTitleBar));
-  if (FAILED(hr) || !inspectableTitleBar) {
+  RefPtr<winrt::Microsoft::UI::Windowing::IAppWindowTitleBar> titleBar;
+  HRESULT hr = appWindow->get_TitleBar(getter_AddRefs(titleBar));
+  if (FAILED(hr) || !titleBar) {
     // Hedge our bets here and don't assert because it's possible this
     // is a weird sort of window or something.
     MOZ_LOG(gWindowsLog, LogLevel::Warning,
@@ -1383,19 +1388,11 @@ void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
              static_cast<uint32_t>(hr)));
     return;
   }
-  RefPtr<winrt::Microsoft::UI::Windowing::IAppWindowTitleBar> titleBar;
-  hr = inspectableTitleBar->QueryInterface(
-      __uuidof(winrt::Microsoft::UI::Windowing::IAppWindowTitleBar),
-      (void**)getter_AddRefs(titleBar));
-  if (FAILED(hr) || !titleBar) {
-    MOZ_LOG(gWindowsLog, LogLevel::Error,
-            ("Skipping SetIsTitlebarCollapsed() because "
-             "IAppWindowTitleBar could not be acquired, hr=%" PRIX32,
-             static_cast<uint32_t>(hr)));
-    MOZ_ASSERT_UNREACHABLE("IAppWindowTitleBar could not be acquired");
-    return;
+  if (aIsCollapsed) {
+    hr = titleBar->put_ExtendsContentIntoTitleBar(aIsCollapsed);
+  } else {
+    hr = titleBar->ResetToDefault();
   }
-  hr = titleBar->put_ExtendsContentIntoTitleBar(aIsCollapsed);
   if (FAILED(hr)) {
     MOZ_LOG(gWindowsLog, LogLevel::Error,
             ("Skipping SetIsTitlebarCollapsed() because "
@@ -1407,7 +1404,7 @@ void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
   if (aIsCollapsed) {
     // PreferredHeightOption is only valid if ExtendsContentIntoTitleBar is true
     RefPtr<winrt::Microsoft::UI::Windowing::IAppWindowTitleBar2> titleBar2;
-    hr = inspectableTitleBar->QueryInterface(
+    hr = titleBar->QueryInterface(
         __uuidof(winrt::Microsoft::UI::Windowing::IAppWindowTitleBar2),
         (void**)getter_AddRefs(titleBar2));
     if (FAILED(hr) || !titleBar2) {

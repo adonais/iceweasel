@@ -342,7 +342,7 @@ check_and_add_linker_flag("-Wl,-z,relro", when=building_with_gnu_compatible_cc)
 check_and_add_linker_flag("-Wl,-z,now", when=building_with_gnu_compatible_cc)
 check_and_add_linker_flag("-Wl,-z,nocopyreloc", when=building_with_gnu_compatible_cc)
 
-check_and_add_linker_optimize_flag("-Wl,-dead_strip", when=target_is_darwin & ~dtrace)
+check_and_add_linker_optimize_flag("-Wl,-dead_strip", when=target_is_darwin)
 
 check_and_add_asm_flag(
     "-fPIC", when=building_with_gnu_compatible_cc & ~target_is_windows

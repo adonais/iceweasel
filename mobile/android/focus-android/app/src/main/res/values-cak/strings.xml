@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -143,7 +150,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s nuya\' ronojel pan aq\'a\'.</p> <p>Tawokisaj achi\'el jun ichinan okik\'amaya\'l: <ul> <li>Tikanöx chuqa\' tokisäx ri chokoy</li> <li>Keq\'at ojqanela\' (o kek\'ex taq cha\'oj richin niya\' q\'ij chi ke ri ojqanela\')</li> <li>Tiyuj richin yeyuj el taq kaxlawey chuqa\' runatab\'al kanoxïk chuqa\' okem pa k\'amaya\'l</li> </ul> </p> <p>%1$s Xsamajin ruma ri Mozilla. Ri taqel qataqanem ja ri niqayäk qak\'u\'x richin jun jaqäl chuqa\' raxinäq k\'amaya\'l.<br/> <a href=\"%2$s\">Tetamäx ch\'aqa\' chik</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s nuya\' ronojel pan aq\'a\'.</p>\n<p>Tawokisaj achi\'el jun ichinan okik\'amaya\'l:\n<ul>\n<li>Tikanöx chuqa\' tokisäx ri chokoy</li>\n<li>Keq\'at ojqanela\' (o kek\'ex taq cha\'oj richin niya\' q\'ij chi ke ri ojqanela\')</li>\n<li>Tiyuj richin yeyuj el taq kaxlawey chuqa\' runatab\'al kanoxïk chuqa\' okem pa k\'amaya\'l</li>\n</ul> </p>\n<p>%1$s Xsamajin ruma ri Mozilla. Ri taqel qataqanem ja ri niqayäk qak\'u\'x richin jun jaqäl chuqa\' raxinäq k\'amaya\'l.<br/>\n<a href=\"%2$s\">Tetamäx ch\'aqa\' chik</a></p>]]></string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">Ichinanem &amp; Jikomal</string>
   <!-- Preference summary for settings related to privacy and security -->

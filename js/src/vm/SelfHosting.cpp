@@ -11,7 +11,6 @@
 #  include "builtin/DisposableStackObject.h"
 #endif
 #include "mozilla/BinarySearch.h"
-#include "mozilla/Casting.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ScopeExit.h"  // mozilla::MakeScopeExit
 #include "mozilla/Utf8.h"       // mozilla::Utf8Unit
@@ -1228,8 +1227,9 @@ bool js::IsCallSelfHostedNonGenericMethod(NativeImpl impl) {
   return impl == CallSelfHostedNonGenericMethod;
 }
 
-bool js::ReportIncompatibleSelfHostedMethod(JSContext* cx,
-                                            Handle<Value> thisValue) {
+bool js::ReportIncompatibleSelfHostedMethod(
+    JSContext* cx, Handle<Value> thisValue,
+    IncompatibleContext incompatibleContext) {
   // The contract for this function is the same as
   // CallSelfHostedNonGenericMethod. The normal ReportIncompatible function
   // doesn't work for selfhosted functions, because they always call the
@@ -1264,9 +1264,15 @@ bool js::ReportIncompatibleSelfHostedMethod(JSContext* cx,
     if (std::all_of(
             std::begin(internalNames), std::end(internalNames),
             [funName](auto* name) { return strcmp(funName, name) != 0; })) {
-      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                               JSMSG_INCOMPATIBLE_METHOD, funName, "method",
-                               InformalValueTypeName(thisValue));
+      if (incompatibleContext == IncompatibleContext::RegExpExec) {
+        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                                 JSMSG_INCOMPATIBLE_REGEXP_METHOD, funName,
+                                 InformalValueTypeName(thisValue));
+      } else {
+        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                                 JSMSG_INCOMPATIBLE_METHOD, funName, "method",
+                                 InformalValueTypeName(thisValue));
+      }
       return false;
     }
     ++iter;
@@ -1946,8 +1952,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("intl_numberingSystem", intl_numberingSystem, 1, 0),
     JS_FN("intl_resolveDateTimeFormatComponents",
           intl_resolveDateTimeFormatComponents, 3, 0),
-    JS_FN("intl_toLocaleLowerCase", intl_toLocaleLowerCase, 2, 0),
-    JS_FN("intl_toLocaleUpperCase", intl_toLocaleUpperCase, 2, 0),
 #endif  // JS_HAS_INTL_API
 
     // Standard builtins used by self-hosting.

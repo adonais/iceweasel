@@ -22,7 +22,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "ClipboardHelper",
   "@mozilla.org/widget/clipboardhelper;1",
-  "nsIClipboardHelper"
+  Ci.nsIClipboardHelper
 );
 
 const kSelectionMaxLen = 150;

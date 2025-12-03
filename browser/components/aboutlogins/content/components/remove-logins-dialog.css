@@ -36,7 +36,7 @@
 }
 
 .message {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   grid-area: 2 / 2 / 3 / 8;
   font-size: 1.25em;
 }

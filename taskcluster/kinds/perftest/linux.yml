@@ -99,6 +99,25 @@ try-browsertime:
             --browsertime-geckodriver ${MOZ_FETCHES_DIR}/geckodriver
             --output $MOZ_FETCHES_DIR/../artifacts
 
+browsertime-sample:
+    description: Run the sample browsertime sample test in CI
+    treeherder:
+        symbol: perftest(bt-sample)
+        tier: 2
+    attributes:
+        cron: false
+    run-on-projects: [mozilla-central]
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --browsertime-binary ${MOZ_FETCHES_DIR}/firefox/firefox-bin
+            --flavor desktop-browser
+            --browsertime-geckodriver ${MOZ_FETCHES_DIR}/geckodriver
+            --output $MOZ_FETCHES_DIR/../artifacts
+            python/mozperftest/mozperftest/tests/data/samples/perftest_example.js
+
 domcount:
     description: Run DOM test
     treeherder:
@@ -761,3 +780,22 @@ perftest-accessibility:
             --flavor mochitest
             --output $MOZ_FETCHES_DIR/../artifacts
             accessible/tests/browser/performance/browser_removeManySpellingErrors.js
+
+perftest-places:
+    description: Run Places related performance tests
+    treeherder:
+        symbol: perftest(places)
+        tier: 2
+    attributes:
+        batch: false
+        cron: false
+    run-on-projects: [mozilla-central]
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --mochitest-binary ${MOZ_FETCHES_DIR}/firefox/firefox-bin
+            --flavor mochitest
+            --output $MOZ_FETCHES_DIR/../artifacts
+            toolkit/components/places/tests/browser/performance/browser_calculate_frecency_speed.js

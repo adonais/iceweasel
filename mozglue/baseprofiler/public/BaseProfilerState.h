@@ -254,7 +254,10 @@ class MOZ_RAII AutoProfilerStats {
                                                                              \
     MACRO(27, "flows", Flows,                                                \
           "Include all flow-related markers. These markers show the program" \
-          "better but can cause more overhead in some places than normal.")
+          "better but can cause more overhead in some places than normal.")  \
+                                                                             \
+    MACRO(28, "jssources", JSSources,                                        \
+          "Collect JavaScript source code information for profiled scripts.")
 
 // *** Synchronize with lists in ProfilerState.h and geckoProfiler.json ***
 

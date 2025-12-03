@@ -12,7 +12,6 @@
 #ifndef mozilla_Bootstrap_h
 #define mozilla_Bootstrap_h
 
-#include "mozilla/Maybe.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"

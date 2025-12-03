@@ -6,7 +6,6 @@
 
 #include "mozilla/dom/LockManager.h"
 
-#include "mozilla/Assertions.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/AutoEntryScript.h"

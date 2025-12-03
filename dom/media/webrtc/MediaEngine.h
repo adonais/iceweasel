@@ -10,7 +10,6 @@
 #include "MediaTrackConstraints.h"
 #include "MediaTrackGraph.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
 #include "mozilla/dom/VideoStreamTrack.h"
 

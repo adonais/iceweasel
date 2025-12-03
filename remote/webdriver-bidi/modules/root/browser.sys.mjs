@@ -125,7 +125,7 @@ class BrowserModule extends RootBiDiModule {
     }
 
     // Close all open top-level browsing contexts by not prompting for beforeunload.
-    for (const tab of lazy.TabManager.tabs) {
+    for (const tab of lazy.TabManager.allTabs) {
       lazy.TabManager.removeTab(tab, { skipPermitUnload: true });
     }
   }

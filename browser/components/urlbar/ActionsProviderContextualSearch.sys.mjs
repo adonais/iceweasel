@@ -282,10 +282,22 @@ class ProviderContextualSearch extends ActionsProvider {
     let { type, engine } = this.#resultEngine;
 
     if (type == OPEN_SEARCH_ENGINE) {
+      let originAttributes;
+      try {
+        let currentURI = Services.io.newURI(queryContext.currentPage);
+        originAttributes = {
+          firstPartyDomain: Services.eTLD.getSchemelessSite(currentURI),
+        };
+      } catch {}
       let openSearchEngineData = await lazy.loadAndParseOpenSearchEngine(
-        Services.io.newURI(engine.uri)
+        Services.io.newURI(engine.uri),
+        null,
+        originAttributes
       );
-      engine = new lazy.OpenSearchEngine({ engineData: openSearchEngineData });
+      engine = new lazy.OpenSearchEngine({
+        engineData: openSearchEngineData,
+        originAttributes,
+      });
     }
 
     this.#performSearch(

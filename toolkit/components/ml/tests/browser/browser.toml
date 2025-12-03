@@ -12,10 +12,15 @@ support-files = [
 
 ["browser_ml_embeddings_generator.js"]
 
-["browser_ml_engine.js"]
-skip-if = [ "verify" ]
+["browser_ml_engine_e2e.js"]
+
+["browser_ml_engine_lifetime.js"]
+
+["browser_ml_engine_pipeline_options.js"]
 
 ["browser_ml_engine_process.js"]
+
+["browser_ml_engine_rs_hub.js"]
 
 ["browser_ml_native.js"]
 skip-if = [
@@ -28,6 +33,8 @@ skip-if = [
 ]
 
 ["browser_ml_nlp_utils.js"]
+
+["browser_ml_openai.js"]
 
 ["browser_ml_opfs.js"]
 

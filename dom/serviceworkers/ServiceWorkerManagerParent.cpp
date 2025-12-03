@@ -7,7 +7,6 @@
 #include "ServiceWorkerManagerParent.h"
 
 #include "ServiceWorkerUtils.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ServiceWorkerRegistrar.h"
 #include "mozilla/ipc/BackgroundParent.h"

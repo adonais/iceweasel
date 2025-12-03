@@ -440,6 +440,11 @@ bool ComputedStyle::HasAnchorPosReference() const {
     return true;
   }
 
+  if (!pos->mPositionArea.IsNone()) {
+    // Position area is relative to an anchor.
+    return true;
+  }
+
   // Now check if any property that can use anchor() or anchor-size()
   // does use any. Note that it's valid to specify e.g. left: anchor(left);
   // but without specifying position-anchor, in which case the function

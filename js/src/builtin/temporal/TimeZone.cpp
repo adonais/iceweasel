@@ -11,7 +11,6 @@
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Range.h"
-#include "mozilla/Result.h"
 #include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
 

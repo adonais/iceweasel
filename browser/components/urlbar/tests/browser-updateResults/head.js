@@ -23,6 +23,10 @@ ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
   return module;
 });
 
+// How long to wait for view-update mutations to settle (i.e., to finish
+// happening) before assuming they're done and moving on with the test.
+const MUTATION_SETTLE_TIME_MS = 500;
+
 const MAX_RESULTS = 10;
 
 add_setup(async function headInit() {
@@ -384,41 +388,37 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   // Don't allow the search to finish until we check the updated rows. We'll
   // accomplish that by adding a mutation observer to observe completion of the
   // update and delaying resolving the provider's finishQueryPromise.
+  //
+  // This promise works like this: We add a mutation observer that observes the
+  // view's entire subtree. Every time we observe a mutation, we set
+  // `lastMutationTime` to the current time. Meanwhile, we run an interval that
+  // compares `now` to `lastMutationTime` every time it fires. When the
+  // difference between `now` and `lastMutationTime` is sufficiently large, we
+  // assume the view update is done, and we resolve the promise.
   let mutationPromise = new Promise(resolve => {
-    let lastRowState = duringUpdate[duringUpdate.length - 1];
-    let observer = new MutationObserver(mutations => {
-      let visibleChildren = Array.from(mutations[0].target.children).filter(
-        child => BrowserTestUtils.isVisible(child)
-      );
-      Assert.lessOrEqual(
-        visibleChildren.length,
-        MAX_RESULTS,
-        `There must be less than ${MAX_RESULTS} visible rows during update`
-      );
-      observer.disconnect();
-      resolve();
+    let lastMutationTime = ChromeUtils.now();
+    let observer = new MutationObserver(() => {
+      info("Observed mutation");
+      lastMutationTime = ChromeUtils.now();
     });
-    if (lastRowState.stale) {
-      // The last row during the update is expected to become stale. Wait for
-      // the stale attribute to be set on it. We'll actually just wait for any
-      // attribute.
-      let { children } = UrlbarTestUtils.getResultsContainer(window);
-      observer.observe(children[children.length - 1], { attributes: true });
-    } else if (search1.viewCount == rowCountDuringUpdate) {
-      // No rows are expected to be added during the view update, so it must be
-      // the case that some rows will be updated for results in the the second
-      // search. Wait for any change to an existing row.
-      observer.observe(UrlbarTestUtils.getResultsContainer(window), {
-        subtree: true,
-        attributes: true,
-        characterData: true,
-      });
-    } else {
-      // Rows are expected to be added during the update. Wait for them.
-      observer.observe(UrlbarTestUtils.getResultsContainer(window), {
-        childList: true,
-      });
-    }
+    observer.observe(UrlbarTestUtils.getResultsContainer(window), {
+      attributes: true,
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
+
+    let interval = setInterval(
+      () => {
+        if (MUTATION_SETTLE_TIME_MS < ChromeUtils.now() - lastMutationTime) {
+          info("No further mutations observed, stopping");
+          clearInterval(interval);
+          observer.disconnect();
+          resolve();
+        }
+      },
+      Math.ceil(MUTATION_SETTLE_TIME_MS / 10)
+    );
   });
 
   // Now do the second search but don't wait for it to finish.
@@ -432,6 +432,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   });
 
   // Wait for the update to finish.
+  info("Waiting for mutations to settle");
   await mutationPromise;
 
   // Check the rows. We can't use UrlbarTestUtils.getDetailsOfResultAt() here

@@ -10,7 +10,6 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/intl/Segmenter.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/SVGContextPaint.h"
@@ -1003,7 +1002,7 @@ gfxFont::gfxFont(const RefPtr<UnscaledFont>& aUnscaledFont,
 
   // Ensure the gfxFontEntry's unitsPerEm and extents fields are initialized,
   // so that GetFontExtents can use them without risk of races.
-  Unused << mFontEntry->UnitsPerEm();
+  (void)mFontEntry->UnitsPerEm();
 }
 
 gfxFont::~gfxFont() {
@@ -2771,7 +2770,7 @@ bool gfxFont::RenderColorGlyph(DrawTarget* aDrawTarget, gfxContext* aContext,
             // Save a snapshot of the rendering in the cache.
             // (We ignore potential failure here, and just paint the snapshot
             // without caching it.)
-            Unused << mColorGlyphCache->mCache.add(cached, aGlyphId, snapshot);
+            (void)mColorGlyphCache->mCache.add(cached, aGlyphId, snapshot);
           }
         }
       }
@@ -2914,16 +2913,16 @@ bool gfxFont::MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart,
                             gfxFloat* aAdvanceMin, gfxFloat* aAdvanceMax) {
   const gfxTextRun::CompressedGlyph* charGlyphs =
       aTextRun->GetCharacterGlyphs();
-  double x = 0;
-  if (aSpacing) {
-    x += aSpacing[0].mBefore;
-  }
   uint32_t spaceGlyph = GetSpaceGlyph();
   bool allGlyphsInvisible = true;
 
   AutoReadLock lock(aExtents->mLock);
 
+  double x = 0;
   for (uint32_t i = aStart; i < aEnd; ++i) {
+    if (aSpacing) {
+      x += aSpacing->mBefore;
+    }
     const gfxTextRun::CompressedGlyph* glyphData = &charGlyphs[i];
     if (glyphData->IsSimpleGlyph()) {
       double advance = glyphData->GetSimpleAdvance();
@@ -3011,11 +3010,8 @@ bool gfxFont::MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart,
       }
     }
     if (aSpacing) {
-      double space = aSpacing[i - aStart].mAfter;
-      if (i + 1 < aEnd) {
-        space += aSpacing[i + 1 - aStart].mBefore;
-      }
-      x += space;
+      x += aSpacing->mAfter;
+      ++aSpacing;
     }
   }
 
@@ -3238,6 +3234,7 @@ bool gfxFont::AgeCachedWords() {
         it.remove();
       }
     }
+    mWordCache->compact();
     return mWordCache->empty();
   }
   return true;

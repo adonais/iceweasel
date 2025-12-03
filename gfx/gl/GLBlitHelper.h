@@ -21,7 +21,6 @@
 #include "nsString.h"
 #include "nsTString.h"
 #include "mozilla/ipc/IPCTypes.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/gfx/MatrixFwd.h"
 #include "mozilla/gfx/Point.h"

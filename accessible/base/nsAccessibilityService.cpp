@@ -60,7 +60,6 @@
 #include "nsTreeBodyFrame.h"
 #include "nsTreeUtils.h"
 #include "mozilla/a11y/AccTypes.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/DOMStringList.h"
 #include "mozilla/dom/EventTarget.h"
@@ -681,7 +680,7 @@ void nsAccessibilityService::NotifyAnchorPositionedRemoved(
     return;
   }
 
-  nsIFrame* anchorFrame =
+  const nsIFrame* anchorFrame =
       nsCoreUtils::GetAnchorForPositionedFrame(aPresShell, aFrame);
   if (!anchorFrame) {
     return;
@@ -713,6 +712,26 @@ void nsAccessibilityService::NotifyAnchorRemoved(mozilla::PresShell* aPresShell,
     // relation. So we need to go one level deeper here and refresh the cache of
     // any potential anchors that remain on the positioned element.
     document->RefreshAnchorRelationCacheForTarget(positionedAcc);
+  }
+}
+
+void nsAccessibilityService::NotifyAnchorPositionedScrollUpdate(
+    mozilla::PresShell* aPresShell, nsIFrame* aFrame) {
+  DocAccessible* document = aPresShell->GetDocAccessible();
+  if (!document) {
+    return;
+  }
+
+  if (LocalAccessible* positionedAcc =
+          document->GetAccessible(aFrame->GetContent())) {
+    // Refresh relations before reflow to notify current anchor.
+    document->RefreshAnchorRelationCacheForTarget(positionedAcc);
+
+    // Refresh relations after next tick when reflow updated to the
+    // new anchor state.
+    document->Controller()->ScheduleNotification<DocAccessible>(
+        document, &DocAccessible::RefreshAnchorRelationCacheForTarget,
+        positionedAcc);
   }
 }
 

@@ -369,7 +369,7 @@ bool StackMapGenerator::createStackMap(
   const uint32_t augmentedMstWords = augmentedMst.length();
   const uint32_t numMappedWords =
       numStackArgPaddingWords + extraWords + augmentedMstWords;
-  StackMap* stackMap = StackMap::create(numMappedWords);
+  StackMap* stackMap = stackMaps_->create(numMappedWords);
   if (!stackMap) {
     return false;
   }
@@ -422,12 +422,6 @@ bool StackMapGenerator::createStackMap(
     stackMap->setHasDebugFrameWithLiveRefs();
   }
 
-  // Add the completed map to the running collection thereof.
-  if (!stackMaps_->add(assemblerOffset, stackMap)) {
-    stackMap->destroy();
-    return false;
-  }
-
 #ifdef DEBUG
   {
     // Crosscheck the map pointer counting.
@@ -442,7 +436,8 @@ bool StackMapGenerator::createStackMap(
   }
 #endif
 
-  return true;
+  // Add the completed map to the running collection thereof.
+  return stackMaps_->finalize(assemblerOffset, stackMap);
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -10,14 +10,12 @@ with Files("docs/**"):
     SCHEDULES.exclusive = ["docs"]
 
 EXPORTS += [
-    "!CrashAnnotations.h",
     "nsExceptionHandler.h",
 ]
 
 JAR_MANIFESTS += ["jar.mn"]
 
 UNIFIED_SOURCES = [
-    "CrashAnnotations.cpp",
     "ExtraFileParser.cpp",
     "nsExceptionHandlerUtils.cpp",
 ]
@@ -29,6 +27,8 @@ PREPROCESSED_IPDL_SOURCES = [
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
+
+DIRS += ["annotations"]
 
 if CONFIG["MOZ_CRASHREPORTER"]:
     if CONFIG["OS_ARCH"] != "WINNT":
@@ -140,13 +140,6 @@ else:
     UNIFIED_SOURCES += [
         "nsDummyExceptionHandler.cpp",
     ]
-
-# Generate CrashAnnotations.h
-GeneratedFile(
-    "CrashAnnotations.h",
-    script="generate_crash_reporter_sources.py",
-    entry_point="emit_header",
-)
 
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Crash Reporting")

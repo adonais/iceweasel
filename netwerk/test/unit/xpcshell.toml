@@ -27,6 +27,7 @@ support-files = [
   "test_http3_prio_helpers.js",
   "http2_test_common.js",
   "http3_proxy_common.js",
+  "http3_common.js",
 ]
 
 # dom.serviceWorkers.enabled is currently set to false in StaticPrefList.yaml
@@ -60,12 +61,8 @@ prefs = [
 ["test_SuperfluousAuth.js"]
 
 ["test_URIs.js"]
-# Intermittent time-outs on Android, bug 1285020
-requesttimeoutfactor = 2
 
 ["test_URIs2.js"]
-# Intermittent time-outs on Android, bug 1285020
-requesttimeoutfactor = 2
 
 ["test_XHR_redirects.js"]
 prefs = ["network.xhr.block_sync_system_requests=false"] # Bug 721336
@@ -120,11 +117,11 @@ run-if = ["os == 'android'"]
 ["test_auth_proxy.js"]
 
 ["test_authentication.js"]
-requesttimeoutfactor = 2
 
 ["test_authpromptwrapper.js"]
 
 ["test_backgroundfilesaver.js"]
+requesttimeoutfactor = 2  # Slow on macOS debug and Android debug
 
 ["test_be_conservative.js"]
 firefox-appdir = "browser"
@@ -528,6 +525,7 @@ skip-if = ["os == 'win' && os_version == '11.26100' && processor == 'x86_64' && 
 ["test_cookiejars_safebrowsing.js"]
 
 ["test_cookies_async_failure.js"]
+requesttimeoutfactor = 2  # Slow on Windows
 run-sequentially = [
   "os == 'mac'", # frequent timeouts in parallel on Mac
   "os == 'linux'", # frequent timeouts in parallel on Linux
@@ -555,6 +553,7 @@ skip-if = [
 ["test_cookies_sync_failure.js"]
 
 ["test_cookies_thirdparty.js"]
+requesttimeoutfactor = 2  # Slow on macOS
 
 ["test_cookies_upgrade_10.js"]
 
@@ -613,6 +612,7 @@ skip-if = [
 ["test_domain_eviction.js"]
 
 ["test_dooh.js"]
+requesttimeoutfactor = 2  # Slow on Windows
 head = "head_channels.js head_cache.js head_cookies.js head_trr.js head_http3.js trr_common.js"
 run-if = ["!socketprocess_networking"]
 run-sequentially = ["true"] # node server exceptions dont replay well
@@ -702,13 +702,27 @@ run-sequentially = ["true"] # node server exceptions dont replay well
 head = "head_channels.js head_cache.js head_cookies.js head_trr.js head_http3.js http2_test_common.js"
 
 ["test_http2_proxy_concurrent_stream.js"]
+requesttimeoutfactor = 4  # Slow on Linux and Windows
 skip-if = ["os == 'android'"]
+
+["test_http2_with_http3_proxy.js"]
+head = "head_channels.js head_cache.js head_cookies.js head_trr.js head_http3.js http2_test_common.js"
+run-sequentially = ["true"] # node server exceptions dont replay well
+skip-if = [
+  "os == 'android' && os_version == '14' && processor == 'x86_64'", # Bug 1982955
+  "os == 'win' && os_version == '10.2009' && processor == 'x86_64'", # Bug 1807931
+  "os == 'win' && os_version == '11.26100' && processor == 'x86'", # Bug 1807931
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && msix", # Bug 1807931
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", # Bug 1998062
+  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1998062
+]
 
 ["test_http2_with_proxy.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
 head = "head_channels.js head_cache.js head_cookies.js head_trr.js head_http3.js http2_test_common.js"
 
 ["test_http3.js"]
+head = "head_cookies.js head_channels.js head_cache.js head_http3.js http3_common.js"
 run-sequentially = ["true"] # http3server
 skip-if = [
   "os == 'android' && os_version == '14' && processor == 'x86_64'", # Bug 1982955
@@ -781,6 +795,7 @@ skip-if = [
 ]
 
 ["test_http3_error_before_connect.js"]
+requesttimeoutfactor = 3  # Slow on Linux and Windows
 run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = ["os == 'win' && os_version == '11.26100' && processor == 'x86_64' && msix"] # Bug 1807931
 
@@ -792,6 +807,7 @@ skip-if = [
 ]
 
 ["test_http3_fast_fallback.js"]
+requesttimeoutfactor = 3  # Slow on Linux
 run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'win' && os_version == '10.2009' && processor == 'x86_64'",
@@ -824,6 +840,7 @@ skip-if = [
 ]
 
 ["test_http3_network_change.js"]
+requesttimeoutfactor = 2  # Slow on Linux
 run-sequentially = ["true"] # node server exceptions dont replay well
 run-if = ["!socketprocess_networking"]
 skip-if = [
@@ -861,6 +878,11 @@ run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'android'",
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && msix'", # Bug 1808049
+  # Setting dontfragment socket option on MacOS 10.15 fails with -5987. Without
+  # dontfragment, PMTUD needs to be disabled. Without PMTUD, the HTTP/3 proxy
+  # outer connection can not carry the UDP datagrams of the HTTP/3 proxied inner
+  # connection. Disable test on MacOS 10.15.
+  "os == 'mac' && os_version == '10.15'",
 ]
 
 ["test_http3_proxy_no_speculative.js"]
@@ -869,6 +891,11 @@ run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'android'",
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && msix'", # Bug 1808049
+  # Setting dontfragment socket option on MacOS 10.15 fails with -5987. Without
+  # dontfragment, PMTUD needs to be disabled. Without PMTUD, the HTTP/3 proxy
+  # outer connection can not carry the UDP datagrams of the HTTP/3 proxied inner
+  # connection. Disable test on MacOS 10.15.
+  "os == 'mac' && os_version == '10.15'",
 ]
 
 ["test_http3_server.js"]
@@ -880,6 +907,7 @@ skip-if = [
 ]
 
 ["test_http3_server_not_existing.js"]
+requesttimeoutfactor = 3  # Slow on Linux
 run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_http3_timings.js"]
@@ -907,6 +935,21 @@ skip-if = [
   "os == 'win' && os_version == '10.2009' && processor == 'x86_64'",
   "os == 'win' && os_version == '11.26100' && processor == 'x86'",
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'",
+]
+
+["test_http3_with_proxy.js"]
+head = "head_cookies.js head_channels.js head_cache.js head_http3.js http3_common.js"
+run-sequentially = ["true"] # http3server
+skip-if = [
+  "os == 'android' && os_version == '14' && processor == 'x86_64'", # Bug 1982955
+  "os == 'win' && os_version == '10.2009' && processor == 'x86_64'", # Bug 1807931
+  "os == 'win' && os_version == '11.26100' && processor == 'x86'", # Bug 1807931
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && msix", # Bug 1807931
+  # Setting dontfragment socket option on MacOS 10.15 fails with -5987. Without
+  # dontfragment, PMTUD needs to be disabled. Without PMTUD, the HTTP/3 proxy
+  # outer connection can not carry the UDP datagrams of the HTTP/3 proxied inner
+  # connection. Disable test on MacOS 10.15.
+  "os == 'mac' && os_version == '10.15'",
 ]
 
 ["test_http3_with_third_party_roots.js"]
@@ -1243,6 +1286,8 @@ skip-if = ["os == 'win' && os_version == '11.26100' && processor == 'x86_64' && 
 
 ["test_schema_15_migration.js"]
 
+["test_schema_17_migration.js"]
+
 ["test_schema_2_migration.js"]
 
 ["test_schema_3_migration.js"]
@@ -1341,6 +1386,7 @@ firefox-appdir = "browser"
 ["test_transparent_redirect.js"]
 
 ["test_trr.js"]
+requesttimeoutfactor = 2  # Slow on Linux and Windows
 head = "head_channels.js head_cache.js head_cookies.js head_trr.js head_http3.js trr_common.js"
 
 ["test_trr_additional_section.js"]
@@ -1382,6 +1428,7 @@ run-sequentially = ["true"] # node server exceptions dont replay well
 ["test_trr_flags.js"]
 
 ["test_trr_https_fallback.js"]
+requesttimeoutfactor = 4  # Slow on Linux
 run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'android' && os_version == '14' && processor == 'x86_64'",

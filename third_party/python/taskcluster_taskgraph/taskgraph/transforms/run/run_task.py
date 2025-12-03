@@ -183,9 +183,8 @@ def script_url(config, script):
     if "MOZ_AUTOMATION" in os.environ and "TASK_ID" not in os.environ:
         raise Exception("TASK_ID must be defined to use run-task on generic-worker")
     task_id = os.environ.get("TASK_ID", "<TASK_ID>")
-    # use_proxy = False to avoid having all generic-workers turn on proxy
     # Assumes the cluster allows anonymous downloads of public artifacts
-    tc_url = taskcluster.get_root_url(False)
+    tc_url = taskcluster.get_root_url(block_proxy=True)
     # TODO: Use util/taskcluster.py:get_artifact_url once hack for Bug 1405889 is removed
     return f"{tc_url}/api/queue/v1/task/{task_id}/artifacts/public/{script}"
 

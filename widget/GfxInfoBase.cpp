@@ -5,8 +5,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/ArrayUtils.h"
-
 #include "GfxInfoBase.h"
 
 #include <mutex>  // std::call_once
@@ -1003,27 +1001,6 @@ int32_t GfxInfoBase::FindBlocklistedDeviceInList(
   }
 
 #if defined(XP_WIN)
-  // As a very special case, we block D2D on machines with an NVidia 310M GPU
-  // as either the primary or secondary adapter.  D2D is also blocked when the
-  // NV 310M is the primary adapter (using the standard blocklisting mechanism).
-  // If the primary GPU already matched something in the blocklist then we
-  // ignore this special rule.  See bug 1008759.
-  if (status == nsIGfxInfo::FEATURE_STATUS_UNKNOWN &&
-      (aFeature == nsIGfxInfo::FEATURE_DIRECT2D)) {
-    if (!adapterInfoFailed[1]) {
-      nsAString& nvVendorID =
-          (nsAString&)GfxDriverInfo::GetDeviceVendor(DeviceVendor::NVIDIA);
-      const nsString nv310mDeviceId = u"0x0A70"_ns;
-      if (nvVendorID.Equals(adapterVendorID[1],
-                            nsCaseInsensitiveStringComparator) &&
-          nv310mDeviceId.Equals(adapterDeviceID[1],
-                                nsCaseInsensitiveStringComparator)) {
-        status = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-        aFailureId = "FEATURE_FAILURE_D2D_NV310M_BLOCK";
-      }
-    }
-  }
-
   // Depends on Windows driver versioning. We don't pass a GfxDriverInfo object
   // back to the Windows handler, so we must handle this here.
   if (status == FEATURE_BLOCKED_DRIVER_VERSION) {
@@ -1353,7 +1330,6 @@ const nsCString& GfxInfoBase::GetApplicationVersion() {
     // The GPU process doesn't need hardware acceleration and can run on
     // devices that we normally block from not being on our whitelist.
     case nsIGfxInfo::FEATURE_GPU_PROCESS:
-      return kIsAndroid;
     // We can mostly assume that ANGLE will work
     case nsIGfxInfo::FEATURE_DIRECT3D_11_ANGLE:
     // Remote WebGL is needed for Win32k Lockdown, so it should be enabled
@@ -1933,10 +1909,6 @@ GfxInfoBase::GetContentBackend(nsAString& aContentBackend) {
   nsString outStr;
 
   switch (backend) {
-    case BackendType::DIRECT2D1_1: {
-      outStr.AppendPrintf("Direct2D 1.1");
-      break;
-    }
     case BackendType::SKIA: {
       outStr.AppendPrintf("Skia");
       break;
@@ -1978,12 +1950,6 @@ GfxInfoBase::GetUsingGPUProcess(bool* aOutValue) {
   }
 
   *aOutValue = !!gpu->GetGPUChild();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-GfxInfoBase::GetUsingRemoteCanvas(bool* aOutValue) {
-  *aOutValue = gfx::gfxVars::RemoteCanvasEnabled();
   return NS_OK;
 }
 

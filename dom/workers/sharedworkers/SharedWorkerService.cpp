@@ -136,7 +136,7 @@ already_AddRefed<SharedWorkerService> SharedWorkerService::GetOrCreate() {
           MOZ_ASSERT(sSharedWorkerService);
           ClearOnShutdown(&sSharedWorkerService);
         }));
-    Unused << NS_WARN_IF(NS_FAILED(rv));
+    (void)NS_WARN_IF(NS_FAILED(rv));
   }
 
   RefPtr<SharedWorkerService> instance = sSharedWorkerService;
@@ -162,7 +162,7 @@ void SharedWorkerService::GetOrCreateWorkerManager(
                                            aPortIdentifier);
 
   nsresult rv = SchedulerGroup::Dispatch(r.forget());
-  Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 }
 
 void SharedWorkerService::GetOrCreateWorkerManagerOnMainThread(

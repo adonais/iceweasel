@@ -1470,7 +1470,7 @@ void Console::MethodInternal(JSContext* aCx, MethodName aMethodName,
   if (StaticPrefs::dom_worker_console_dispatch_events_to_main_thread()) {
     RefPtr<ConsoleCallDataWorkerRunnable> runnable =
         new ConsoleCallDataWorkerRunnable(this, callData);
-    Unused << NS_WARN_IF(!runnable->Dispatch(aCx, aData));
+    (void)NS_WARN_IF(!runnable->Dispatch(aCx, aData));
   }
 }
 

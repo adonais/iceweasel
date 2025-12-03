@@ -150,7 +150,9 @@ function CssRuleView(inspector, document, store) {
   this.cssProperties = inspector.cssProperties;
   this.styleDocument = document;
   this.styleWindow = this.styleDocument.defaultView;
-  this.store = store || {};
+  this.store = store || {
+    expandedUnusedCustomCssPropertiesRuleActorIds: new Set(),
+  };
 
   // Allow tests to override debouncing behavior, as this can cause intermittents.
   this.debounce = debounce;
@@ -1500,8 +1502,18 @@ CssRuleView.prototype = {
 
       // Initialize rule editor
       if (!rule.editor) {
+        const ruleActorID = rule.domRule.actorID;
         rule.editor = new RuleEditor(this, rule, {
           elementsWithPendingClicks: this._elementsWithPendingClicks,
+          onShowUnusedCustomCssProperties: () => {
+            this.store.expandedUnusedCustomCssPropertiesRuleActorIds.add(
+              ruleActorID
+            );
+          },
+          shouldHideUnusedCustomCssProperties:
+            !this.store.expandedUnusedCustomCssPropertiesRuleActorIds.has(
+              ruleActorID
+            ),
         });
         editorReadyPromises.push(rule.editor.once("source-link-updated"));
       }
@@ -1546,10 +1558,7 @@ CssRuleView.prototype = {
           inheritedSectionLabel !== lastinheritedSectionLabel)
       ) {
         const div = this.styleDocument.createElementNS(HTML_NS, "div");
-        div.classList.add(
-          RULE_VIEW_HEADER_CLASSNAME,
-          "ruleview-header-inherited"
-        );
+        div.classList.add(RULE_VIEW_HEADER_CLASSNAME);
         div.setAttribute("role", "heading");
         div.setAttribute("aria-level", "3");
         div.textContent = rule.inheritedSectionLabel;
@@ -1656,7 +1665,7 @@ CssRuleView.prototype = {
 
     // Highlight search matches in the rule properties
     for (const textProp of rule.textProps) {
-      if (!textProp.invisible && this._highlightProperty(textProp.editor)) {
+      if (!textProp.invisible && this._highlightProperty(textProp)) {
         isHighlighted = true;
       }
     }
@@ -1757,23 +1766,23 @@ CssRuleView.prototype = {
    * filter search value and returns a boolean indicating whether or not the
    * property or computed property was highlighted.
    *
-   * @param  {TextPropertyEditor} editor
-   *         The rule property TextPropertyEditor object.
-   * @return {Boolean} true if the property or computed property was
+   * @param  {TextProperty} textProperty
+   *         The rule property.
+   * @returns {boolean} true if the property or computed property was
    *         highlighted, false otherwise.
    */
-  _highlightProperty(editor) {
-    const isPropertyHighlighted = this._highlightRuleProperty(editor);
-    const isComputedHighlighted = this._highlightComputedProperty(editor);
+  _highlightProperty(textProperty) {
+    const isPropertyHighlighted = this._highlightRuleProperty(textProperty);
+    const isComputedHighlighted = this._highlightComputedProperty(textProperty);
 
     // Expand the computed list if a computed property is highlighted and the
     // property rule is not highlighted
     if (
       !isPropertyHighlighted &&
       isComputedHighlighted &&
-      !editor.computed.hasAttribute("user-open")
+      !textProperty.editor.computed.hasAttribute("user-open")
     ) {
-      editor.expandForFilter();
+      textProperty.editor.expandForFilter();
     }
 
     return isPropertyHighlighted || isComputedHighlighted;
@@ -1793,7 +1802,7 @@ CssRuleView.prototype = {
 
     this._clearHighlight(editor.element);
 
-    if (this._highlightProperty(editor)) {
+    if (this._highlightProperty(editor.prop)) {
       this.searchField.classList.remove("devtools-style-searchbox-no-match");
     }
   },
@@ -1803,21 +1812,25 @@ CssRuleView.prototype = {
    * and returns a boolean indicating whether or not the property was
    * highlighted.
    *
-   * @param  {TextPropertyEditor} editor
-   *         The rule property TextPropertyEditor object.
-   * @return {Boolean} true if the rule property was highlighted,
+   * @param  {TextProperty} textProperty
+   *         The rule property object.
+   * @returns {boolean} true if the rule property was highlighted,
    *         false otherwise.
    */
-  _highlightRuleProperty(editor) {
-    // Get the actual property value displayed in the rule view
-    const propertyName = editor.prop.name.toLowerCase();
-    const propertyValue = editor.valueSpan.textContent.toLowerCase();
+  _highlightRuleProperty(textProperty) {
+    const propertyName = textProperty.name.toLowerCase();
+    // Get the actual property value displayed in the rule view if we have an editor for
+    // it (that might not be the case for unused CSS custom properties).
+    const propertyValue = textProperty.editor
+      ? textProperty.editor.valueSpan.textContent.toLowerCase()
+      : textProperty.value.toLowerCase();
 
-    return this._highlightMatches(
-      editor.container,
+    return this._highlightMatches({
+      element: textProperty.editor?.container,
       propertyName,
-      propertyValue
-    );
+      propertyValue,
+      textProperty,
+    });
   },
 
   /**
@@ -1825,27 +1838,32 @@ CssRuleView.prototype = {
    * returns a boolean indicating whether or not the computed property was
    * highlighted.
    *
-   * @param  {TextPropertyEditor} editor
-   *         The rule property TextPropertyEditor object.
-   * @return {Boolean} true if the computed property was highlighted, false
+   * @param  {TextProperty} textProperty
+   *         The rule property object.
+   * @returns {boolean} true if the computed property was highlighted, false
    *         otherwise.
    */
-  _highlightComputedProperty(editor) {
+  _highlightComputedProperty(textProperty) {
+    if (!textProperty.editor) {
+      return false;
+    }
+
     let isComputedHighlighted = false;
 
     // Highlight search matches in the computed list of properties
-    editor.populateComputed();
-    for (const computed of editor.prop.computed) {
+    textProperty.editor.populateComputed();
+    for (const computed of textProperty.computed) {
       if (computed.element) {
         // Get the actual property value displayed in the computed list
         const computedName = computed.name.toLowerCase();
         const computedValue = computed.parsedValue.toLowerCase();
 
-        isComputedHighlighted = this._highlightMatches(
-          computed.element,
-          computedName,
-          computedValue
-        )
+        isComputedHighlighted = this._highlightMatches({
+          element: computed.element,
+          propertyName: computedName,
+          propertyValue: computedValue,
+          textProperty,
+        })
           ? true
           : isComputedHighlighted;
       }
@@ -1859,16 +1877,20 @@ CssRuleView.prototype = {
    * element if the search terms match the property, and returns a boolean
    * indicating whether or not the search terms match.
    *
-   * @param  {DOMNode} element
+   * @param  {Object} options
+   * @param  {DOMNode} options.element
    *         The node to highlight if search terms match
-   * @param  {String} propertyName
+   * @param  {String} options.propertyName
    *         The property name of a rule
-   * @param  {String} propertyValue
+   * @param  {String} options.propertyValue
    *         The property value of a rule
+   * @param  {TextProperty} options.textProperty
+   *         The text property that we may highlight. It's helpful in cases we don't have
+   *         an element yet (e.g. if the property is a hidden unused variable)
    * @return {Boolean} true if the given search terms match the property, false
    *         otherwise.
    */
-  _highlightMatches(element, propertyName, propertyValue) {
+  _highlightMatches({ element, propertyName, propertyValue, textProperty }) {
     const {
       searchPropertyName,
       searchPropertyValue,
@@ -1907,11 +1929,26 @@ CssRuleView.prototype = {
         );
     }
 
-    if (matches) {
-      element.classList.add("ruleview-highlight");
+    if (!matches) {
+      return false;
     }
 
-    return matches;
+    // We might not have an element when the prop is an unused custom css property.
+    if (!element && textProperty?.isUnusedVariable) {
+      const editor =
+        textProperty.rule.editor.showUnusedCssVariable(textProperty);
+
+      // The editor couldn't be created, bail (shouldn't happen)
+      if (!editor) {
+        return false;
+      }
+
+      element = editor.container;
+    }
+
+    element.classList.add("ruleview-highlight");
+
+    return true;
   },
 
   /**
@@ -2198,6 +2235,12 @@ CssRuleView.prototype = {
             this._togglePseudoElementRuleContainer();
           }
 
+          // If we're jumping to an unused CSS variable, it might not be visible, so show
+          // it here.
+          if (!textProp.editor && textProp.isUnusedVariable) {
+            textProp.rule.editor.showUnusedCssVariable(textProp);
+          }
+
           this._highlightElementInRule(
             rule,
             textProp.editor.element,
@@ -2241,30 +2284,47 @@ CssRuleView.prototype = {
     }
     // If the property is a CSS variable and we didn't find its declaration, it might
     // be a registered property
-    if (name.startsWith("--")) {
-      // Get a potential @property section
-      const propertyContainer = this.styleDocument.getElementById(
-        REGISTERED_PROPERTIES_CONTAINER_ID
-      );
-      if (propertyContainer) {
-        const propertyEl = propertyContainer.querySelector(
-          `[data-name="${name}"]`
-        );
-        if (propertyEl) {
-          const toggle = this.styleDocument.querySelector(
-            `[aria-controls="${REGISTERED_PROPERTIES_CONTAINER_ID}"]`
-          );
-          if (toggle.ariaExpanded === "false") {
-            this._toggleContainerVisibility(toggle, propertyContainer);
-          }
-
-          this._highlightElementInRule(null, propertyEl, scrollBehavior);
-        }
-        return true;
-      }
+    if (this._maybeHighlightCssRegisteredProperty(name)) {
+      return true;
     }
 
     return false;
+  },
+
+  /**
+   * If the passed name matches a registered CSS property highlight it
+   *
+   * @param {string} name - The name of the registered property to highlight
+   * @param {string} scrollBehavior
+   * @returns {boolean} Returns true if `name` matched a registered property
+   */
+  _maybeHighlightCssRegisteredProperty(name, scrollBehavior) {
+    if (!name.startsWith("--")) {
+      return false;
+    }
+
+    // Get a potential @property section
+    const propertyContainer = this.styleDocument.getElementById(
+      REGISTERED_PROPERTIES_CONTAINER_ID
+    );
+    if (!propertyContainer) {
+      return false;
+    }
+
+    const propertyEl = propertyContainer.querySelector(`[data-name="${name}"]`);
+    if (!propertyEl) {
+      return false;
+    }
+
+    const toggle = this.styleDocument.querySelector(
+      `[aria-controls="${REGISTERED_PROPERTIES_CONTAINER_ID}"]`
+    );
+    if (toggle.ariaExpanded === "false") {
+      this._toggleContainerVisibility(toggle, propertyContainer);
+    }
+
+    this._highlightElementInRule(null, propertyEl, scrollBehavior);
+    return true;
   },
 
   /**
@@ -2698,6 +2758,7 @@ class RuleViewTool {
       this.document =
       this.inspector =
       this.readyPromise =
+      this.store =
       this.#abortController =
         null;
   }

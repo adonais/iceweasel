@@ -10,7 +10,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.TestAsset
-import org.mozilla.fenix.helpers.TestAssetHelper.getGPCTestAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.gcpTestAsset
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.homeScreen
@@ -37,7 +37,7 @@ class GlobalPrivacyControlTest : TestSetup() {
     @Before
     override fun setUp() {
         super.setUp()
-        gpcPage = getGPCTestAsset(mockWebServer)
+        gpcPage = mockWebServer.gcpTestAsset
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2429327

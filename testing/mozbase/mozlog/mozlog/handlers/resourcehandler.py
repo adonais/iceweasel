@@ -4,8 +4,6 @@
 
 import json
 
-from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
-
 from ..reader import LogHandler
 
 
@@ -14,6 +12,8 @@ class ResourceHandler(LogHandler):
 
     def __init__(self, command_context, **kwargs):
         super(ResourceHandler, self).__init__(**kwargs)
+
+        from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
 
         self.build_resources_profile_path = command_context._get_state_filename(
             "profile_build_resources.json"
@@ -36,31 +36,31 @@ class ResourceHandler(LogHandler):
 
     def suite_start(self, data):
         self.current_suite = data.get("name")
-        SystemResourceMonitor.begin_marker("suite", self.current_suite)
+        self.resources.begin_marker("suite", self.current_suite)
 
     def suite_end(self, data):
-        SystemResourceMonitor.end_marker("suite", self.current_suite)
+        self.resources.end_marker("suite", self.current_suite)
 
     def group_start(self, data):
-        SystemResourceMonitor.begin_marker("test", data["name"])
+        self.resources.begin_marker("test", data["name"])
 
     def group_end(self, data):
-        SystemResourceMonitor.end_marker("test", data["name"])
+        self.resources.end_marker("test", data["name"])
 
     def test_start(self, data):
-        SystemResourceMonitor.begin_test(data)
+        self.resources.begin_test(data)
 
     def test_end(self, data):
-        SystemResourceMonitor.end_test(data)
+        self.resources.end_test(data)
 
     def test_status(self, data):
-        SystemResourceMonitor.test_status(data)
+        self.resources.test_status(data)
 
     def log(self, data):
-        SystemResourceMonitor.test_status(data)
+        self.resources.test_status(data)
 
     def process_output(self, data):
-        SystemResourceMonitor.test_status(data)
+        self.resources.test_status(data)
 
     def crash(self, data):
-        SystemResourceMonitor.crash(data)
+        self.resources.crash(data)

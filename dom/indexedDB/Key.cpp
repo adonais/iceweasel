@@ -27,7 +27,6 @@
 #include "mozilla/EndianUtils.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/ResultExtensions.h"
-#include "mozilla/ReverseIterator.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/indexedDB/IDBResult.h"
 #include "mozilla/dom/indexedDB/Key.h"

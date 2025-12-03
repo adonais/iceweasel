@@ -13,7 +13,7 @@ import org.mozilla.fenix.helpers.AppAndSystemHelper.grantSystemPermission
 import org.mozilla.fenix.helpers.AppAndSystemHelper.verifySystemPhotoAndVideoPickerExists
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
-import org.mozilla.fenix.helpers.TestAssetHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.htmlControlsFormAsset
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.clickPageObject
@@ -41,7 +41,7 @@ class UploadPermissionsTest : TestSetup() {
     @SmokeTest
     @Test
     fun fileUploadPermissionTest() {
-        val testPage = TestAssetHelper.getHTMLControlsFormAsset(mockWebServer)
+        val testPage = mockWebServer.htmlControlsFormAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(testPage.url) {
@@ -59,7 +59,7 @@ class UploadPermissionsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2751914
     @Test
     fun uploadSelectedAudioFilesWhileNoPermissionGrantedTest() {
-        val testPage = TestAssetHelper.getHTMLControlsFormAsset(mockWebServer)
+        val testPage = mockWebServer.htmlControlsFormAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(testPage.url) {
@@ -75,7 +75,7 @@ class UploadPermissionsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2779525
     @Test
     fun uploadSelectedAudioFilesWhenStoragePermissionGrantedTest() {
-        val testPage = TestAssetHelper.getHTMLControlsFormAsset(mockWebServer)
+        val testPage = mockWebServer.htmlControlsFormAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(testPage.url) {
@@ -93,7 +93,7 @@ class UploadPermissionsTest : TestSetup() {
     @SdkSuppress(minSdkVersion = 33)
     @Test
     fun uploadSelectedVideoOrImageFilesWhenStoragePermissionGrantedTest() {
-        val testPage = TestAssetHelper.getHTMLControlsFormAsset(mockWebServer)
+        val testPage = mockWebServer.htmlControlsFormAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(testPage.url) {

@@ -7,8 +7,6 @@
 #ifndef nsSupportsPrimitives_h__
 #define nsSupportsPrimitives_h__
 
-#include "mozilla/Attributes.h"
-
 #include "nsISupportsPrimitives.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"

@@ -25,6 +25,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.experiments.nimbus.internal.EnrolledExperiment
 import org.mozilla.fenix.databinding.SettingsStudiesBinding
+import org.mozilla.fenix.helpers.MockkRetryTestRule
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 
@@ -44,6 +45,9 @@ class StudiesViewTest {
     private lateinit var settings: Settings
 
     private lateinit var view: StudiesView
+
+    @get:Rule
+    val mockkRule = MockkRetryTestRule()
 
     @get:Rule
     val coroutinesTestRule = MainCoroutineRule()

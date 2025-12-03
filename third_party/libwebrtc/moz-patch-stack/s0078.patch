@@ -13,7 +13,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/26c84d214137a1b0d
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/modules/video_capture/video_capture_impl.cc b/modules/video_capture/video_capture_impl.cc
-index 56efa18968..d47e25f271 100644
+index 2f009820d3..62a4b21a5f 100644
 --- a/modules/video_capture/video_capture_impl.cc
 +++ b/modules/video_capture/video_capture_impl.cc
 @@ -145,7 +145,7 @@ int32_t VideoCaptureImpl::DeliverCapturedFrame(VideoFrame& captureFrame) {

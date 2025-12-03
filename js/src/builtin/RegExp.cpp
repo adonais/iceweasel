@@ -15,6 +15,7 @@
 #include "frontend/FrontendContext.h"  // AutoReportFrontendContext
 #include "frontend/TokenStream.h"
 #include "irregexp/RegExpAPI.h"
+#include "jit/InlinableNatives.h"
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_NEWREGEXP_FLAGGED
 #include "js/PropertySpec.h"
 #include "js/RegExpFlags.h"  // JS::RegExpFlag, JS::RegExpFlags
@@ -964,15 +965,15 @@ bool js::regexp_unicodeSets(JSContext* cx, unsigned argc, JS::Value* vp) {
 
 const JSPropertySpec js::regexp_properties[] = {
     JS_SELF_HOSTED_GET("flags", "$RegExpFlagsGetter", 0),
-    JS_PSG("hasIndices", regexp_hasIndices, 0),
-    JS_PSG("global", regexp_global, 0),
-    JS_PSG("ignoreCase", regexp_ignoreCase, 0),
-    JS_PSG("multiline", regexp_multiline, 0),
-    JS_PSG("dotAll", regexp_dotAll, 0),
+    JS_INLINABLE_PSG("hasIndices", regexp_hasIndices, 0, RegExpHasIndices),
+    JS_INLINABLE_PSG("global", regexp_global, 0, RegExpGlobal),
+    JS_INLINABLE_PSG("ignoreCase", regexp_ignoreCase, 0, RegExpIgnoreCase),
+    JS_INLINABLE_PSG("multiline", regexp_multiline, 0, RegExpMultiline),
+    JS_INLINABLE_PSG("dotAll", regexp_dotAll, 0, RegExpDotAll),
     JS_PSG("source", regexp_source, 0),
-    JS_PSG("sticky", regexp_sticky, 0),
-    JS_PSG("unicode", regexp_unicode, 0),
-    JS_PSG("unicodeSets", regexp_unicodeSets, 0),
+    JS_INLINABLE_PSG("sticky", regexp_sticky, 0, RegExpSticky),
+    JS_INLINABLE_PSG("unicode", regexp_unicode, 0, RegExpUnicode),
+    JS_INLINABLE_PSG("unicodeSets", regexp_unicodeSets, 0, RegExpUnicodeSets),
     JS_PS_END,
 };
 
@@ -2211,7 +2212,8 @@ bool js::RegExpExec(JSContext* cx, Handle<JSObject*> regexp,
     // unwrap.
     if (!regexp->canUnwrapAs<RegExpObject>()) {
       Rooted<Value> thisv(cx, ObjectValue(*regexp));
-      return ReportIncompatibleSelfHostedMethod(cx, thisv);
+      return ReportIncompatibleSelfHostedMethod(
+          cx, thisv, IncompatibleContext::RegExpExec);
     }
 
     // Call RegExpBuiltinExec in the regular expression's realm.

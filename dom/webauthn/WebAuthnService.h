@@ -34,7 +34,7 @@ class WebAuthnService final : public nsIWebAuthnService {
 
   WebAuthnService()
       : mTransactionState(Nothing(), "WebAuthnService::mTransactionState") {
-    Unused << authrs_service_constructor(getter_AddRefs(mAuthrsService));
+    (void)authrs_service_constructor(getter_AddRefs(mAuthrsService));
 #if defined(XP_WIN)
     if (WinWebAuthnService::AreWebAuthNApisAvailable()) {
       mPlatformService = new WinWebAuthnService();

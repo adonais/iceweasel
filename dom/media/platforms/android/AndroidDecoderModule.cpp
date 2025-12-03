@@ -203,7 +203,7 @@ void AndroidDecoderModule::SetSupportedMimeTypes(
     if (NS_IsMainThread()) {
       ClearOnShutdown(&sSupportedSwMimeTypes);
     } else {
-      Unused << NS_DispatchToMainThread(NS_NewRunnableFunction(__func__, []() {
+      (void)NS_DispatchToMainThread(NS_NewRunnableFunction(__func__, []() {
         StaticMutexAutoLock lock(sMutex);
         ClearOnShutdown(&sSupportedSwMimeTypes);
       }));
@@ -214,7 +214,7 @@ void AndroidDecoderModule::SetSupportedMimeTypes(
     if (NS_IsMainThread()) {
       ClearOnShutdown(&sSupportedHwMimeTypes);
     } else {
-      Unused << NS_DispatchToMainThread(NS_NewRunnableFunction(__func__, []() {
+      (void)NS_DispatchToMainThread(NS_NewRunnableFunction(__func__, []() {
         StaticMutexAutoLock lock(sMutex);
         ClearOnShutdown(&sSupportedHwMimeTypes);
       }));
@@ -225,7 +225,7 @@ void AndroidDecoderModule::SetSupportedMimeTypes(
     if (NS_IsMainThread()) {
       ClearOnShutdown(&sSupportedCodecs);
     } else {
-      Unused << NS_DispatchToMainThread(NS_NewRunnableFunction(__func__, []() {
+      (void)NS_DispatchToMainThread(NS_NewRunnableFunction(__func__, []() {
         StaticMutexAutoLock lock(sMutex);
         ClearOnShutdown(&sSupportedCodecs);
       }));
@@ -338,6 +338,16 @@ already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateVideoDecoder(
 
   if (AOMDecoder::IsAV1(aParams.mConfig.mMimeType) &&
       !IsAV1MainProfile(aParams.VideoConfig().mExtraData)) {
+    return nullptr;
+  }
+
+  // Don't use SW VPX MediaCodecs. Prefering VPXDecoder over MediaCodec SW
+  // decoder implementation allow us to have more consistent cross-platform VPX
+  // playback experience and be able to get upstream bug fixes/improvements more
+  // frequently.
+  if (VPXDecoder::IsVPX(aParams.VideoConfig().mMimeType) &&
+      !SupportsMimeType(aParams.VideoConfig().mMimeType)
+           .contains(DecodeSupport::HardwareDecode)) {
     return nullptr;
   }
 

@@ -577,8 +577,24 @@ where
 impl<U> PointHelpers<U> for Point2D<f32, U> {
     fn snap(&self) -> Self {
         Point2D::new(
-            (self.x + 0.5).floor(),
-            (self.y + 0.5).floor(),
+            self.x.round(),
+            self.y.round(),
+        )
+    }
+}
+
+pub trait VectorHelpers<U>
+where
+    Self: Sized,
+{
+    fn snap(&self) -> Self;
+}
+
+impl<U> VectorHelpers<U> for Vector2D<f32, U> {
+    fn snap(&self) -> Self {
+        Vector2D::new(
+            self.x.round(),
+            self.y.round(),
         )
     }
 }

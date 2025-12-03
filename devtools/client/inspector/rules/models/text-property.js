@@ -76,6 +76,7 @@ class TextProperty {
 
     this.updateComputed();
     this.updateUsedVariables();
+    this.updateIsUnusedVariable();
   }
 
   get computedProperties() {
@@ -167,6 +168,22 @@ class TextProperty {
     for (const variable of getCSSVariables(this.value)) {
       this.usedVariables.add(variable);
     }
+  }
+
+  /**
+   * Sets this.isUnusedVariable
+   */
+  updateIsUnusedVariable() {
+    this.isUnusedVariable =
+      this.name.startsWith("--") &&
+      // If an editor was created for the declaration, never hide it back
+      !this.editor &&
+      // Don't consider user-added variables, custom properties whose name is the same as
+      // user-added variables, to be unused (we do want to display those to avoid confusion
+      // for the user.
+      !this.userProperties.containsName(this.name) &&
+      this.elementStyle.usedVariables &&
+      !this.elementStyle.usedVariables.has(this.name);
   }
 
   /**
@@ -296,16 +313,6 @@ class TextProperty {
 
     if (!declaration) {
       return undefined;
-    }
-
-    // @backward-compat { version 144 } When 144 reaches release, we can remove this
-    // whole if block.
-    if (!this.elementStyle.pageStyle.traits.newInactiveCssDataShape) {
-      if (!declaration.isUsed || declaration.isUsed?.used) {
-        return undefined;
-      }
-
-      return declaration.isUsed;
     }
 
     return declaration.inactiveCssData;

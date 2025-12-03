@@ -11,7 +11,6 @@
 #include "nsPrinterListBase.h"
 #include "nsIPrintSettings.h"
 #include <windows.h>
-#include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/gfx/PrintPromise.h"
 

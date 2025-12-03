@@ -6,7 +6,6 @@
 #ifndef nsMaybeWeakPtr_h_
 #define nsMaybeWeakPtr_h_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/Try.h"
 #include "nsCOMPtr.h"
 #include "nsIWeakReferenceUtils.h"

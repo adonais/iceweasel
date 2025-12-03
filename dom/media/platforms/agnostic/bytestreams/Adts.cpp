@@ -10,7 +10,6 @@
 #include "MediaDataDemuxer.h"
 #include "PlatformDecoderModule.h"
 #include "mozilla/Array.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Logging.h"
 
 #define LOG(msg, ...) \

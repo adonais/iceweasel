@@ -22,14 +22,14 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "gDbService",
   "@mozilla.org/url-classifier/dbservice;1",
-  "nsIUrlClassifierDBService"
+  Ci.nsIUrlClassifierDBService
 );
 
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "gUrlUtil",
   "@mozilla.org/url-classifier/utils;1",
-  "nsIUrlClassifierUtils"
+  Ci.nsIUrlClassifierUtils
 );
 
 let loggingEnabled = false;

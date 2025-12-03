@@ -10,10 +10,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/2e4867d8cc9813869
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/modules/video_capture/linux/video_capture_v4l2.cc b/modules/video_capture/linux/video_capture_v4l2.cc
-index 882928dcbb..16efad9825 100644
+index 03e3d9c7cc..cc295fd60b 100644
 --- a/modules/video_capture/linux/video_capture_v4l2.cc
 +++ b/modules/video_capture/linux/video_capture_v4l2.cc
-@@ -301,8 +301,8 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
+@@ -305,8 +305,8 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
    if (_captureThread.empty()) {
      quit_ = false;
      _captureThread = PlatformThread::SpawnJoinable(

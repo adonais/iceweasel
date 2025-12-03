@@ -1,0 +1,40 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+@import "chrome://global/skin/global.css";
+
+:host {
+  --border-color: var(--border-color-card);
+}
+
+#ipprotection-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  padding-inline: var(--panel-subview-body-padding-inline);
+  padding-block: var(--panel-subview-body-padding-block);
+}
+
+.vpn-status-group {
+  display: block;
+  position: relative;
+  margin: var(--space-large);
+  overflow: hidden;
+}
+
+.is-enabled {
+  background-color: var(--background-color-success);
+}
+
+#status-card {
+  --box-label-font-weight: var(--font-weight-semibold);
+  -moz-context-properties: fill, stroke;
+}
+
+#connection-toggle {
+  margin-inline-end: var(--space-small);
+}
+
+#site-settings {
+  --box-group-border: none;
+}

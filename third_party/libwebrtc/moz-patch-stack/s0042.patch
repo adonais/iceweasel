@@ -37,10 +37,10 @@ index 5800598b75..17c56bb2b1 100644
      // Timing frame info: all important timestamps for a full lifetime of a
      // single 'timing frame'.
 diff --git a/modules/rtp_rtcp/source/rtcp_receiver.cc b/modules/rtp_rtcp/source/rtcp_receiver.cc
-index 9e4aadde46..41b106ac26 100644
+index db6130971c..2ce0590671 100644
 --- a/modules/rtp_rtcp/source/rtcp_receiver.cc
 +++ b/modules/rtp_rtcp/source/rtcp_receiver.cc
-@@ -389,11 +389,13 @@ RTCPReceiver::ConsumeReceivedXrReferenceTimeInfo() {
+@@ -388,11 +388,13 @@ RTCPReceiver::ConsumeReceivedXrReferenceTimeInfo() {
  
  void RTCPReceiver::RemoteRTCPSenderInfo(uint32_t* packet_count,
                                          uint32_t* octet_count,
@@ -71,10 +71,10 @@ index 9b9ddb4987..05f7024d62 100644
    std::optional<TimeDelta> AverageRtt() const;
    std::optional<TimeDelta> LastRtt() const;
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl.cc b/modules/rtp_rtcp/source/rtp_rtcp_impl.cc
-index 399f0f60ce..552826106e 100644
+index 5999b255b1..a1e04d3882 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl.cc
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl.cc
-@@ -516,11 +516,11 @@ void ModuleRtpRtcpImpl::GetSendStreamDataCounters(
+@@ -515,11 +515,11 @@ void ModuleRtpRtcpImpl::GetSendStreamDataCounters(
  }
  
  // Received RTCP report.
@@ -106,10 +106,10 @@ index b0218aadc0..20f9397e91 100644
    // A snapshot of the most recent Report Block with additional data of
    // interest to statistics. Used to implement RTCRemoteInboundRtpStreamStats.
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-index e391771e49..74d77e3e69 100644
+index 27c22f4c88..c44664b73e 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-@@ -527,11 +527,11 @@ void ModuleRtpRtcpImpl2::GetSendStreamDataCounters(
+@@ -526,11 +526,11 @@ void ModuleRtpRtcpImpl2::GetSendStreamDataCounters(
  }
  
  // Received RTCP report.
@@ -159,10 +159,10 @@ index d2304e87db..bbdb38864e 100644
    // Within this list, the sender-source SSRC pair is unique and per-pair the
    // ReportBlockData represents the latest Report Block that was received for
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index af42c12aa4..beb2c93f82 100644
+index 3d546ae5ea..687ff8cf1c 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
-@@ -1179,9 +1179,10 @@ std::optional<int64_t> RtpVideoStreamReceiver2::LastReceivedKeyframePacketMs()
+@@ -1182,9 +1182,10 @@ std::optional<int64_t> RtpVideoStreamReceiver2::LastReceivedKeyframePacketMs()
  // seem to be any support for these stats right now. So, we hack this in.
  void RtpVideoStreamReceiver2::RemoteRTCPSenderInfo(
      uint32_t* packet_count, uint32_t* octet_count,
@@ -176,10 +176,10 @@ index af42c12aa4..beb2c93f82 100644
  
  std::optional<RtpRtcpInterface::SenderReportStats>
 diff --git a/video/rtp_video_stream_receiver2.h b/video/rtp_video_stream_receiver2.h
-index 7864dfb709..3cf94ec4b2 100644
+index 7e358c3c13..05498bd640 100644
 --- a/video/rtp_video_stream_receiver2.h
 +++ b/video/rtp_video_stream_receiver2.h
-@@ -232,7 +232,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
+@@ -233,7 +233,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
    // stats at all, and even on the most recent libwebrtc code there does not
    // seem to be any support for these stats right now. So, we hack this in.
    void RemoteRTCPSenderInfo(uint32_t* packet_count, uint32_t* octet_count,
@@ -190,7 +190,7 @@ index 7864dfb709..3cf94ec4b2 100644
   private:
    // Implements RtpVideoFrameReceiver.
 diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index 30917c0349..ec9be0a5a2 100644
+index 8e3a3a3a93..293c0f58e0 100644
 --- a/video/video_receive_stream2.cc
 +++ b/video/video_receive_stream2.cc
 @@ -632,7 +632,8 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {

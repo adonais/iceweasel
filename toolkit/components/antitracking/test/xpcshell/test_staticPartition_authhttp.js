@@ -54,7 +54,7 @@ let observer = channel => {
 Services.obs.addObserver(observer, "http-on-modify-request");
 
 add_task(async () => {
-  do_get_profile();
+  do_get_profile(true);
 
   Services.prefs.setBoolPref("network.predictor.enabled", false);
   Services.prefs.setBoolPref("network.predictor.enable-prefetch", false);

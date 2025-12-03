@@ -55,25 +55,17 @@ static uint32_t get_mips_flags() {
   return flags;
 }
 
-static bool check_fpu() { return mips_private::Flags & HWCAP_FPU; }
+void MIPSFlags::Init() {
+  MOZ_ASSERT(!IsInitialized());
 
-static bool check_loongson() { return mips_private::Flags & HWCAP_LOONGSON; }
-
-static bool check_r2() { return mips_private::Flags & HWCAP_R2; }
-
-namespace mips_private {
-// Cache a local copy so we only have to read /proc/cpuinfo once.
-uint32_t Flags = get_mips_flags();
-bool hasFPU = check_fpu();
-;
-bool isLoongson = check_loongson();
-bool hasR2 = check_r2();
-}  // namespace mips_private
-
-bool CPUFlagsHaveBeenComputed() {
-  // Flags were computed above.
-  return true;
+  flags = get_mips_flags();
+  hasFPU = flags & HWCAP_FPU;
+  hasR2 = flags & HWCAP_R2;
+  isLoongson = flags & HWCAP_LOONGSON;
+  initialized = true;
 }
+
+bool CPUFlagsHaveBeenComputed() { return MIPSFlags::IsInitialized(); }
 
 Registers::Code Registers::FromName(const char* name) {
   for (size_t i = 0; i < Total; i++) {

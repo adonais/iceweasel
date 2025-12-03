@@ -13,14 +13,14 @@ XPCOMUtils.defineLazyServiceGetter(
   this,
   "resProto",
   "@mozilla.org/network/protocol;1?name=resource",
-  "nsISubstitutingProtocolHandler"
+  Ci.nsISubstitutingProtocolHandler
 );
 
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "aomStartup",
   "@mozilla.org/addons/addon-manager-startup;1",
-  "amIAddonManagerStartup"
+  Ci.amIAddonManagerStartup
 );
 
 function processTerminated() {

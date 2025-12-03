@@ -77,8 +77,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
-  BrowserHandler: ["@mozilla.org/browser/clh;1", "nsIBrowserHandler"],
-  PushService: ["@mozilla.org/push/Service;1", "nsIPushService"],
+  BrowserHandler: ["@mozilla.org/browser/clh;1", Ci.nsIBrowserHandler],
+  PushService: ["@mozilla.org/push/Service;1", Ci.nsIPushService],
 });
 
 if (AppConstants.ENABLE_WEBDRIVER) {
@@ -86,14 +86,14 @@ if (AppConstants.ENABLE_WEBDRIVER) {
     lazy,
     "Marionette",
     "@mozilla.org/remote/marionette;1",
-    "nsIMarionette"
+    Ci.nsIMarionette
   );
 
   XPCOMUtils.defineLazyServiceGetter(
     lazy,
     "RemoteAgent",
     "@mozilla.org/remote/agent;1",
-    "nsIRemoteAgent"
+    Ci.nsIRemoteAgent
   );
 } else {
   lazy.Marionette = { running: false };
@@ -153,7 +153,7 @@ export function BrowserGlue() {
     this,
     "_userIdleService",
     "@mozilla.org/widget/useridleservice;1",
-    "nsIUserIdleService"
+    Ci.nsIUserIdleService
   );
 
   this._init();
@@ -1590,7 +1590,7 @@ BrowserGlue.prototype = {
     // Use an increasing number to keep track of the current state of the user's
     // profile, so we can move data around as needed as the browser evolves.
     // Completely unrelated to the current Firefox release number.
-    const APP_DATA_VERSION = 161;
+    const APP_DATA_VERSION = 162;
     const PREF = "browser.migration.version";
 
     let profileDataVersion = Services.prefs.getIntPref(PREF, -1);
@@ -1643,7 +1643,7 @@ BrowserGlue.prototype = {
     gBrowser.selectedTab = tab;
   },
 
-  async _showSetToDefaultSpotlight(message, browser) {
+  _showSetToDefaultSpotlight(message, browser) {
     const config = {
       type: "SHOW_SPOTLIGHT",
       data: message,
@@ -1726,11 +1726,13 @@ BrowserGlue.prototype = {
         this._showSetToDefaultSpotlight(message, win.gBrowser.selectedBrowser);
         return;
       }
+
+      // Intentionally don't await the returned user's response promise.
       lazy.DefaultBrowserCheck.prompt(win);
     }
 
     await lazy.ASRouter.waitForInitialized;
-    lazy.ASRouter.sendTriggerMessage({
+    await lazy.ASRouter.sendTriggerMessage({
       browser: lazy.BrowserWindowTracker.getTopWindow({
         allowFromInactiveWorkspace: true,
       })?.gBrowser.selectedBrowser,

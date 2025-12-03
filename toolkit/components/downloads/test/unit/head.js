@@ -62,7 +62,7 @@ XPCOMUtils.defineLazyServiceGetter(
   this,
   "gMIMEService",
   "@mozilla.org/mime;1",
-  "nsIMIMEService"
+  Ci.nsIMIMEService
 );
 
 const ReferrerInfo = Components.Constructor(
@@ -881,7 +881,8 @@ function isValidDate(aDate) {
  * Because the actual download's referrer info's computedReferrer is computed
  * from referrerPolicy and originalReferrer and is non-null, and the expected
  * referrer info was constructed in isolation and therefore the computedReferrer
- * is null, it isn't possible to use equals here. */
+ * is null, it isn't possible to use equals here.
+ */
 function checkEqualReferrerInfos(aActualInfo, aExpectedInfo) {
   Assert.equal(
     !!aExpectedInfo.originalReferrer,

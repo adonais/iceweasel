@@ -10,10 +10,9 @@
 
 #include "modules/congestion_controller/goog_cc/goog_cc_network_control.h"
 
-#include <stdio.h>
-
 #include <algorithm>
 #include <cstdint>
+#include <cstdio>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -114,8 +113,7 @@ GoogCcNetworkController::GoogCcNetworkController(NetworkControllerConfig config,
       bandwidth_estimation_(
           std::make_unique<SendSideBandwidthEstimation>(&env_.field_trials(),
                                                         &env_.event_log())),
-      alr_detector_(std::make_unique<AlrDetector>(&env_.field_trials(),
-                                                  &env_.event_log())),
+      alr_detector_(env_),
       probe_bitrate_estimator_(new ProbeBitrateEstimator(&env_.event_log())),
       network_estimator_(std::move(goog_cc_config.network_state_estimator)),
       network_state_predictor_(
@@ -128,7 +126,6 @@ GoogCcNetworkController::GoogCcNetworkController(NetworkControllerConfig config,
       initial_config_(config),
       last_loss_based_target_rate_(*config.constraints.starting_rate),
       last_pushback_target_rate_(last_loss_based_target_rate_),
-      last_stable_target_rate_(last_loss_based_target_rate_),
       last_loss_base_state_(LossBasedState::kDelayBasedEstimate),
       pacing_factor_(config.stream_based_config.pacing_factor.value_or(
           kDefaultPaceMultiplier)),
@@ -222,9 +219,8 @@ NetworkControlUpdate GoogCcNetworkController::OnProcessInterval(
         msg.pacer_queue->bytes());
   }
   bandwidth_estimation_->UpdateEstimate(msg.at_time);
-  std::optional<int64_t> start_time_ms =
-      alr_detector_->GetApplicationLimitedRegionStartTime();
-  probe_controller_->SetAlrStartTimeMs(start_time_ms);
+  probe_controller_->SetAlrStartTime(
+      alr_detector_.GetApplicationLimitedRegionStartTime());
 
   auto probes = probe_controller_->Process(msg.at_time);
   update.probe_cluster_configs.insert(update.probe_cluster_configs.end(),
@@ -265,10 +261,9 @@ NetworkControlUpdate GoogCcNetworkController::OnRoundTripTimeUpdate(
 
 NetworkControlUpdate GoogCcNetworkController::OnSentPacket(
     SentPacket sent_packet) {
-  alr_detector_->OnBytesSent(sent_packet.size.bytes(),
-                             sent_packet.send_time.ms());
+  alr_detector_.OnBytesSent(sent_packet.size, sent_packet.send_time);
   acknowledged_bitrate_estimator_->SetAlr(
-      alr_detector_->GetApplicationLimitedRegionStartTime().has_value());
+      alr_detector_.GetApplicationLimitedRegionStartTime().has_value());
 
   if (!first_packet_sent_) {
     first_packet_sent_ = true;
@@ -447,12 +442,11 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
                                                 min_propagation_rtt);
   }
 
-  std::optional<int64_t> alr_start_time =
-      alr_detector_->GetApplicationLimitedRegionStartTime();
+  std::optional<Timestamp> alr_start_time =
+      alr_detector_.GetApplicationLimitedRegionStartTime();
   if (previously_in_alr_ && !alr_start_time.has_value()) {
-    int64_t now_ms = report.feedback_time.ms();
     acknowledged_bitrate_estimator_->SetAlrEndedTime(report.feedback_time);
-    probe_controller_->SetAlrEndedTimeMs(now_ms);
+    probe_controller_->SetAlrEndedTime(report.feedback_time);
   }
   previously_in_alr_ = alr_start_time.has_value();
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(
@@ -522,7 +516,7 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   recovered_from_overuse = result.recovered_from_overuse;
 
   if (recovered_from_overuse) {
-    probe_controller_->SetAlrStartTimeMs(alr_start_time);
+    probe_controller_->SetAlrStartTime(alr_start_time);
     auto probes = probe_controller_->RequestProbe(report.feedback_time);
     update.probe_cluster_configs.insert(update.probe_cluster_configs.end(),
                                         probes.begin(), probes.end());
@@ -578,8 +572,6 @@ NetworkControlUpdate GoogCcNetworkController::GetNetworkState(
 
   update.target_rate->at_time = at_time;
   update.target_rate->target_rate = last_pushback_target_rate_;
-  update.target_rate->stable_target_rate =
-      bandwidth_estimation_->GetEstimatedLinkCapacity();
   update.pacer_config = GetPacingRates(at_time);
   update.congestion_window = current_data_window_;
   return update;
@@ -608,24 +600,19 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
                           loss_based_target_rate.bps();
     }
   }
-  DataRate stable_target_rate =
-      bandwidth_estimation_->GetEstimatedLinkCapacity();
-  stable_target_rate = std::min(stable_target_rate, pushback_target_rate);
 
   if ((loss_based_target_rate != last_loss_based_target_rate_) ||
       (loss_based_state != last_loss_base_state_) ||
       (fraction_loss != last_estimated_fraction_loss_) ||
       (round_trip_time != last_estimated_round_trip_time_) ||
-      (pushback_target_rate != last_pushback_target_rate_) ||
-      (stable_target_rate != last_stable_target_rate_)) {
+      (pushback_target_rate != last_pushback_target_rate_)) {
     last_loss_based_target_rate_ = loss_based_target_rate;
     last_pushback_target_rate_ = pushback_target_rate;
     last_estimated_fraction_loss_ = fraction_loss;
     last_estimated_round_trip_time_ = round_trip_time;
-    last_stable_target_rate_ = stable_target_rate;
     last_loss_base_state_ = loss_based_state;
 
-    alr_detector_->SetEstimatedBitrate(loss_based_target_rate.bps());
+    alr_detector_.SetEstimatedBitrate(loss_based_target_rate);
 
     TimeDelta bwe_period = delay_based_bwe_->GetExpectedBwePeriod();
 
@@ -637,7 +624,10 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
     } else {
       target_rate_msg.target_rate = pushback_target_rate;
     }
-    target_rate_msg.stable_target_rate = stable_target_rate;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    target_rate_msg.stable_target_rate = loss_based_target_rate;
+#pragma clang diagnostic pop
     target_rate_msg.network_estimate.at_time = at_time;
     target_rate_msg.network_estimate.round_trip_time = round_trip_time;
     target_rate_msg.network_estimate.loss_rate_ratio = fraction_loss / 255.0f;

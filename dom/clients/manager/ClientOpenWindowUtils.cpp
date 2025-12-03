@@ -9,7 +9,6 @@
 #include "ClientInfo.h"
 #include "ClientManager.h"
 #include "ClientState.h"
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"

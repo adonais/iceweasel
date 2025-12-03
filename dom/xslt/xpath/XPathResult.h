@@ -6,7 +6,6 @@
 #ifndef mozilla_dom_XPathResult_h
 #define mozilla_dom_XPathResult_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"

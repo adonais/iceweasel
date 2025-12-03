@@ -20,6 +20,7 @@ kind-dependencies:
     - shippable-l10n-mac-notarization
 
 task-defaults:
+    run-on-repo-type: [hg]
     name: partner-repack
     description: Release Promotion partner repacks
     run-on-projects: []  # to make sure this never runs as part of CI

@@ -209,7 +209,6 @@ class nsContentSink : public nsICSSLoaderObserver,
   RefPtr<nsParserBase> mParser;
   nsCOMPtr<nsIURI> mDocumentURI;
   nsCOMPtr<nsIDocShell> mDocShell;
-  RefPtr<mozilla::css::Loader> mCSSLoader;
   RefPtr<nsNodeInfoManager> mNodeInfoManager;
   RefPtr<mozilla::dom::ScriptLoader> mScriptLoader;
 

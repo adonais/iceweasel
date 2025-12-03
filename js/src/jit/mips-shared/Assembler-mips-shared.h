@@ -8,7 +8,6 @@
 #define jit_mips_shared_Assembler_mips_shared_h
 
 #include "mozilla/Attributes.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Sprintf.h"
 
 #include "jit/CompactBuffer.h"
@@ -30,18 +29,14 @@ static constexpr Register a0{Registers::a0};
 static constexpr Register a1{Registers::a1};
 static constexpr Register a2{Registers::a2};
 static constexpr Register a3{Registers::a3};
-static constexpr Register a4{Registers::ta0};
-static constexpr Register a5{Registers::ta1};
-static constexpr Register a6{Registers::ta2};
-static constexpr Register a7{Registers::ta3};
-static constexpr Register t0{Registers::t0};
-static constexpr Register t1{Registers::t1};
-static constexpr Register t2{Registers::t2};
-static constexpr Register t3{Registers::t3};
-static constexpr Register t4{Registers::ta0};
-static constexpr Register t5{Registers::ta1};
-static constexpr Register t6{Registers::ta2};
-static constexpr Register t7{Registers::ta3};
+static constexpr Register a4{Registers::a4};
+static constexpr Register a5{Registers::a5};
+static constexpr Register a6{Registers::a6};
+static constexpr Register a7{Registers::a7};
+static constexpr Register t4{Registers::t4};
+static constexpr Register t5{Registers::t5};
+static constexpr Register t6{Registers::t6};
+static constexpr Register t7{Registers::t7};
 static constexpr Register s0{Registers::s0};
 static constexpr Register s1{Registers::s1};
 static constexpr Register s2{Registers::s2};
@@ -88,10 +83,10 @@ class UseScratchRegisterScope {
 
 // Use arg reg from EnterJIT function as OsrFrameReg.
 static constexpr Register OsrFrameReg = a3;
-static constexpr Register CallTempReg0 = t0;
-static constexpr Register CallTempReg1 = t1;
-static constexpr Register CallTempReg2 = t2;
-static constexpr Register CallTempReg3 = t3;
+static constexpr Register CallTempReg0 = t4;
+static constexpr Register CallTempReg1 = t5;
+static constexpr Register CallTempReg2 = t6;
+static constexpr Register CallTempReg3 = t7;
 
 static constexpr Register IntArgReg0 = a0;
 static constexpr Register IntArgReg1 = a1;
@@ -550,7 +545,7 @@ class BOffImm16 {
   bool isInvalid() { return data == INVALID; }
   Instruction* getDest(Instruction* src) const;
 
-  BOffImm16(InstImm inst);
+  explicit BOffImm16(InstImm inst);
 };
 
 // A JOffImm26 is a 26 bit immediate that is used for unconditional jumps.
@@ -592,7 +587,7 @@ class Imm16 {
 
  public:
   Imm16();
-  Imm16(uint32_t imm) : value(imm) {}
+  explicit Imm16(uint32_t imm) : value(imm) {}
   uint32_t encode() { return value; }
   int32_t decodeSigned() { return value; }
   uint32_t decodeUnsigned() { return value; }
@@ -612,7 +607,7 @@ class Imm8 {
 
  public:
   Imm8();
-  Imm8(uint32_t imm) : value(imm) {}
+  explicit Imm8(uint32_t imm) : value(imm) {}
   uint32_t encode(uint32_t shift) { return value << shift; }
   int32_t decodeSigned() { return value; }
   uint32_t decodeUnsigned() { return value; }
@@ -634,7 +629,7 @@ class GSImm13 {
 
  public:
   GSImm13();
-  GSImm13(uint32_t imm) : value(imm & ~0xf) {}
+  explicit GSImm13(uint32_t imm) : value(imm & ~0xf) {}
   uint32_t encode(uint32_t shift) { return ((value >> 4) & 0x1ff) << shift; }
   int32_t decodeSigned() { return value; }
   uint32_t decodeUnsigned() { return value; }
@@ -653,9 +648,9 @@ class Operand {
   int32_t offset;
 
  public:
-  Operand(Register reg_) : tag(REG), reg(reg_.code()) {}
+  explicit Operand(Register reg_) : tag(REG), reg(reg_.code()) {}
 
-  Operand(FloatRegister freg) : tag(FREG), reg(freg.code()) {}
+  explicit Operand(FloatRegister freg) : tag(FREG), reg(freg.code()) {}
 
   Operand(Register base, Imm32 off)
       : tag(MEM), reg(base.code()), offset(off.value) {}
@@ -663,7 +658,7 @@ class Operand {
   Operand(Register base, int32_t off)
       : tag(MEM), reg(base.code()), offset(off) {}
 
-  Operand(const Address& addr)
+  explicit Operand(const Address& addr)
       : tag(MEM), reg(addr.base.code()), offset(addr.offset) {}
 
   Tag getTag() const { return tag; }
@@ -1146,14 +1141,20 @@ class AssemblerMIPSShared : public AssemblerShared {
  public:
   // FP convert instructions
   BufferOffset as_ceilws(FloatRegister fd, FloatRegister fs);
+  BufferOffset as_ceills(FloatRegister fd, FloatRegister fs);
   BufferOffset as_floorws(FloatRegister fd, FloatRegister fs);
+  BufferOffset as_floorls(FloatRegister fd, FloatRegister fs);
   BufferOffset as_roundws(FloatRegister fd, FloatRegister fs);
+  BufferOffset as_roundls(FloatRegister fd, FloatRegister fs);
   BufferOffset as_truncws(FloatRegister fd, FloatRegister fs);
   BufferOffset as_truncls(FloatRegister fd, FloatRegister fs);
 
   BufferOffset as_ceilwd(FloatRegister fd, FloatRegister fs);
+  BufferOffset as_ceilld(FloatRegister fd, FloatRegister fs);
   BufferOffset as_floorwd(FloatRegister fd, FloatRegister fs);
+  BufferOffset as_floorld(FloatRegister fd, FloatRegister fs);
   BufferOffset as_roundwd(FloatRegister fd, FloatRegister fs);
+  BufferOffset as_roundld(FloatRegister fd, FloatRegister fs);
   BufferOffset as_truncwd(FloatRegister fd, FloatRegister fs);
   BufferOffset as_truncld(FloatRegister fd, FloatRegister fs);
 
@@ -1319,7 +1320,7 @@ class Instruction {
   uint32_t data;
 
   // Standard constructor
-  Instruction(uint32_t data_) : data(data_) {}
+  explicit Instruction(uint32_t data_) : data(data_) {}
 
   // You should never create an instruction directly.  You should create a
   // more specific instruction which will eventually call one of these
@@ -1443,7 +1444,7 @@ class InstImm : public Instruction {
       : Instruction(op | rs | cc | off.encode()) {}
   InstImm(OpcodeField op, Register rs, Register rt, Imm16 off)
       : Instruction(op | RS(rs) | RT(rt) | off.encode()) {}
-  InstImm(uint32_t raw) : Instruction(raw) {}
+  MOZ_IMPLICIT InstImm(uint32_t raw) : Instruction(raw) {}
   // For floating-point loads and stores.
   InstImm(OpcodeField op, Register rs, FloatRegister rt, Imm16 off)
       : Instruction(op | RS(rs) | RT(rt) | off.encode()) {}
@@ -1499,7 +1500,7 @@ class InstGS : public Instruction {
   InstGS(OpcodeField op, Register rs, FloatRegister rt, FloatRegister rz,
          GSImm13 off, FunctionField ff)
       : Instruction(op | RS(rs) | RT(rt) | RZ(rz) | off.encode(6) | ff) {}
-  InstGS(uint32_t raw) : Instruction(raw) {}
+  explicit InstGS(uint32_t raw) : Instruction(raw) {}
   // For floating-point unaligned loads and stores.
   InstGS(OpcodeField op, Register rs, FloatRegister rt, Imm8 off,
          FunctionField ff)

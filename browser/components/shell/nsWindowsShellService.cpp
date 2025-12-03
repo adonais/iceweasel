@@ -20,7 +20,6 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/intl/Localization.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/widget/WinTaskbar.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
@@ -1377,7 +1376,7 @@ static nsresult GetMatchingShortcut(int aCSIDL, const nsAString& aAUMID,
   WIN32_FIND_DATAW findData = {};
   HANDLE hFindFile = FindFirstFileW(pattern.get(), &findData);
   if (hFindFile == INVALID_HANDLE_VALUE) {
-    Unused << NS_WARN_IF(GetLastError() != ERROR_FILE_NOT_FOUND);
+    (void)NS_WARN_IF(GetLastError() != ERROR_FILE_NOT_FOUND);
     return NS_ERROR_FILE_NOT_FOUND;
   }
   // Past this point we don't return until the end of the function,
@@ -1642,7 +1641,7 @@ static bool IsCurrentAppPinnedToTaskbarSync(const nsAString& aumid) {
   WIN32_FIND_DATAW findData = {};
   HANDLE hFindFile = FindFirstFileW(pattern.get(), &findData);
   if (hFindFile == INVALID_HANDLE_VALUE) {
-    Unused << NS_WARN_IF(GetLastError() != ERROR_FILE_NOT_FOUND);
+    (void)NS_WARN_IF(GetLastError() != ERROR_FILE_NOT_FOUND);
     return false;
   }
   // Past this point we don't return until the end of the function,

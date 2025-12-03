@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -149,13 +156,13 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s vám dává kontrolu.</p> <p>Používejte ho jako soukromý prohlížeč: <ul> <li>Vyhledávejte a prohlížejte přímo v aplikaci</li> <li>Blokujte sledovací prvky (nebo aktualizujte nastavení pro povolení sledovacích prvků)</li> <li>Tlačítkem smažte cookies a historii vyhledávání a prohlížení</li> </ul> </p> <p>%1$s je vyvíjen Mozillou. Naší misí je podporovat zdravý a otevřený internet.<br/> <a href=\"%2$s\">Zjistěte více</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s vám dává kontrolu.</p>\n<p>Používejte ho jako soukromý prohlížeč:\n<ul>\n<li>Vyhledávejte a prohlížejte přímo v aplikaci</li>\n<li>Blokujte sledovací prvky (nebo aktualizujte nastavení pro povolení sledovacích prvků)</li>\n<li>Tlačítkem smažte cookies a historii vyhledávání a prohlížení</li>\n</ul> </p>\n<p>%1$s je vyvíjen Mozillou. Naší misí je podporovat zdravý a otevřený internet.<br/>\n<a href=\"%2$s\">Zjistěte více</a></p>]]></string>
   <!-- A link to SUMO at the bottom of About Focus screen. -->
   <string name="about_screen_learn_more">Zjistit více</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">Soukromí a zabezpečení</string>
   <!-- Preference summary for settings related to privacy and security -->
-  <string name="preference_privacy_and_security_summary">Sledování, soubory cookie, možnosti hlášení</string>
+  <string name="preference_privacy_and_security_summary">Sledování, cookies, možnosti hlášení</string>
   <!--
     Preference category description for settings related to search, set default
     and autocomplete are settings a user can find and change inside the "search" settings screen
@@ -411,7 +418,7 @@
   <!-- Content description (not visible, for screen readers etc.): Navigate forward (browsing history) -->
   <string name="content_description_forward">Přejít vpřed</string>
   <!-- Content description (not visible, for screen readers etc.): Reload current website -->
-  <string name="content_description_reload">Obnovit stránku</string>
+  <string name="content_description_reload">Znovu načíst stránku</string>
   <!-- Content description (not visible, for screen readers etc.): Navigate back (browsing history) -->
   <string name="content_description_back">Návrat zpět</string>
   <!-- Content description (not visible, for screen readers etc.): Stop loading the current website. This button will turn into the refresh button once loading has been completed (see content_description_reload) -->
@@ -875,7 +882,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Tato chyba může být způsobena chybnou konfigurací serveru nebo někým, kdo se snaží vydávat za server. <br/><br/> Pokud jste se k tomuto serveru už v minulosti úspěšně připojili, je možná chyba jenom dočasná, a můžete to zkusit znovu později.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Někdo se může snažit vydávat za zmiňovaný server a pokračovaní může být riskantní.</label> <br><br> <label>%1$s serveru <b>%2$s</b> nedůvěřuje, protože vydavatel zaslaného certifikátu je neznámý, certifikát je podepsaný sám sebou nebo server neposílá správné mezilehlé certifikáty.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Někdo se může snažit vydávat za zmiňovaný server a pokračovaní může být riskantní.</label> <br><br>\n<label>%1$s serveru <b>%2$s</b> nedůvěřuje, protože vydavatel zaslaného certifikátu je neznámý, certifikát je podepsaný sám sebou nebo server neposílá správné mezilehlé certifikáty.</label>]]></string>
   <!--
     Sessions List
 

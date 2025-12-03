@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/Components.h"
+#include "mozilla/HelperMacros.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PageloadEvent.h"
 #include "mozilla/RandomNum.h"

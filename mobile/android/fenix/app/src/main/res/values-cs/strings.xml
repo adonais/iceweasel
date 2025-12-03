@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Anonymní %s</string>
@@ -82,12 +89,12 @@
     %1$s is the name of the app (for example "Firefox").
     %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
   -->
-  <string name="felt_privacy_info_card_subtitle_2">Když zavřete všechny anonymní panely, %1$s odstraní vaše soubory cookie, historii a data stránek. %2$s</string>
+  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">Když zavřete všechny anonymní panely, %1$s odstraní vaše cookies, historii a data stránek. %2$s</string>
   <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="felt_privacy_info_card_subtitle_3">Když zavřete všechny anonymní panely, %1$s odstraní vaše soubory cookie, historii a data stránek.</string>
+  <string name="felt_privacy_info_card_subtitle_3">Když zavřete všechny anonymní panely, %1$s odstraní vaše cookies, historii a data stránek.</string>
   <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
@@ -204,8 +211,6 @@
   <string name="browser_menu_manage_extensions">Správa rozšíření</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
   <string name="browser_menu_more_settings">Více</string>
-  <!-- Browser menu group that contains additional settings in expanded state -->
-  <string name="browser_menu_less_settings" moz:removedIn="144" tools:ignore="UnusedResources">Méně</string>
   <!--
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
@@ -733,7 +738,6 @@
   <string name="preferences_pbm_lock_screen_title">Používat zámek obrazovky pro skrytí panelů při anonymním prohlížení</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_3">Zobrazte si panely odemčení otiskem prstu, PINem nebo obličejem. Zapnutím této možnosti také zabráníte pořizování snímků obrazovky a jejich sdílení.</string>
-  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">Panely zobrazíte pomocí otisku prstu, PIN kódu nebo odemčením tváří.\u0020</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Blokování lišt cookie</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -761,13 +765,13 @@
   <!-- Title text for a detail explanation indicating cookie banner reducer didn't work for the current site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox"). -->
   <string name="reduce_cookie_banner_details_panel_title_unsupported_site_request_2">%1$s nemůže pro tuto stránku automaticky blokovat lištu s žádostí ohledně souborů cookie. Můžete však poslat žádost o podporu této stránky do budoucna.</string>
   <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is off for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="reduce_cookie_banner_details_panel_description_off_for_site_1">Vypněte a %1$s vymaže soubory cookie a znovu načte tuto stránku. To vás může odhlásit nebo vyprázdnit nákupní košíky.</string>
+  <string name="reduce_cookie_banner_details_panel_description_off_for_site_1">Vypněte ho a %1$s vymaže cookies a znovu načte tuto stránku. To vás může odhlásit z webů nebo vám vyprázdnit nákupní košíky.</string>
   <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is on for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox"). -->
   <string name="reduce_cookie_banner_details_panel_description_on_for_site_3">Zapněte a %1$s se pokusí automaticky odmítnout všechny lišty cookie na této stránce.</string>
   <!-- Title for the cookie banner re-engagement CFR, the placeholder is replaced with app name. %1$s is the name of the app (for example "Firefox"). -->
   <string name="cookie_banner_cfr_title">%1$s za vás odmítl cookies</string>
   <!-- Message for the cookie banner re-engagement CFR -->
-  <string name="cookie_banner_cfr_message">Méně rozptylování, méně souborů cookie, které vás na tomto webu sledují.</string>
+  <string name="cookie_banner_cfr_message">Méně rozptylování, méně cookies, co vás na tomto webu sledují.</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">Pro zvýšení zabezpečení se automaticky pokusí připojit k webům pomocí šifrovacího protokolu HTTPS.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -849,7 +853,7 @@
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Našeptávat ze záložek</string>
   <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts">Zobrazit zkratky</string>
+  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Zobrazit zkratky</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Hledat v synchronizovaných panelech</string>
   <!-- Preference for account settings -->
@@ -975,10 +979,6 @@
     Content description for various wallpapers. %1$s is the name of the wallpaper.
   -->
   <string name="wallpapers_item_name_content_description">Tapeta: %1$s</string>
-  <!-- Snackbar message for when wallpaper is selected -->
-  <string name="wallpaper_updated_snackbar_message" tools:ignore="UnusedResources" moz:removedIn="144">Tapeta nastavena!</string>
-  <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">Zobrazit</string>
   <!-- Snackbar message for when wallpaper couldn't be downloaded -->
   <string name="wallpaper_download_error_snackbar_message">Tapetu se nepodařilo stáhnout</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
@@ -1037,16 +1037,12 @@
   <string name="alternative_app_icon_option_gradient_northern_lights">Polární záře</string>
   <!-- Title for the "Retro 2004" themed alternative app icon variant in the icon picker screen. This app icon uses the classic Firefox logo from 2004. -->
   <string name="alternative_app_icon_option_retro_2004">Retro 2004</string>
-  <!-- Title for the "Retro 2017" themed alternative app icon variant in the icon picker screen. This app icon uses the Firefox logo from 2017, with a more modernized design. -->
-  <string name="alternative_app_icon_option_retro_2017" tools:ignore="UnusedResources" moz:removedIn="144">Retro 2017</string>
   <!-- Title for the "Pixelated" themed alternative app icon variant in the icon picker screen. This app icon features a pixel-art style, resembling retro 8-bit graphics. -->
   <string name="alternative_app_icon_option_pixelated">Pixelová</string>
   <!-- Title for the "Minimal" themed alternative app icon variant in the icon picker screen. The app icon presents a simplified, flat and monochrome version of the Firefox logo. -->
   <string name="alternative_app_icon_option_minimal">Minimalistická</string>
   <!-- Title for the "Pride" themed alternative app icon variant in the icon picker screen. The app icon incorporates a rainbow color scheme in support of the LGBTQ+ community. -->
   <string name="alternative_app_icon_option_pride">Hrdost</string>
-  <!-- Title for the "Cute" themed alternative app icon variant in the icon picker screen. The app icon features a playful design with an adorable aesthetic. -->
-  <string name="alternative_app_icon_option_cute" tools:ignore="UnusedResources" moz:removedIn="144">Roztomilá</string>
   <!-- Title for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
   <string name="alternative_app_icon_option_momo">Momo</string>
   <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
@@ -1062,15 +1058,13 @@
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">Přechody barev</string>
   <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other">Jiné</string>
+  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">Jiné</string>
+  <!-- Title for the "Featured" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
+  <string name="alternative_app_icon_group_featured">Doporučené</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
   <string name="restart_warning_dialog_title">Změnit ikonu aplikace?</string>
-  <!-- Message to warn users that applying an alternative app icon requires an app restart -->
-  <string name="restart_warning_dialog_body" tools:ignore="UnusedResources" moz:removedIn="144">Změna ikony vyžaduje restart aplikace.</string>
   <!-- Message to warn users that applying an alternative app icon may require an app restart. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
   <string name="restart_warning_dialog_body_2">Aplikace může být ukončena. Pro opětovné otevření aplikace %1$s klepněte na svou novou ikonu.</string>
-  <!-- Dialog button text for confirming the app restart to apply the selected icon -->
-  <string name="restart_warning_dialog_button_positive" tools:ignore="UnusedResources" moz:removedIn="144">Restartovat</string>
   <!-- Dialog button text for confirming the possible app restart and new icon selection -->
   <string name="restart_warning_dialog_button_positive_2">Změnit ikonu</string>
   <!-- Dialog button text for cancelling app icon change -->
@@ -1728,25 +1722,25 @@
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
   <string name="webcompat_reporter_label_description">Popis problému (nepovinný)</string>
   <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
-  <string name="webcompat_reporter_send_more_info" moz:removedIn="144" tools:ignore="UnusedResources">Odeslat více informací</string>
-  <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
   <string name="webcompat_reporter_add_more_info">Přidat další informace</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">Zrušit</string>
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Odeslat</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Vaše hlášení bylo odesláno</string>
-  <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
   <string name="webcompat_reporter_success_snackbar_text_2">Hlášení odesláno</string>
-  <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Zavřít</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">Co se stalo? Co se mělo stát?</string>
   <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
   <string name="webcompat_reporter_etp_checkbox_text">Odesílat URL adresy blokované ochranou proti sledování</string>
   <!-- Description text for the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. It informs the user when checked, the report will include the list of URLs that were blocked by Enhanced Tracking Protection on the current page. -->
   <string name="webcompat_reporter_etp_checkbox_description">Rozšířená ochrana proti sledování může blokovat sledovací prvky a skripty, které některé webové stránky potřebují pro správné fungování.</string>
+  <!-- The button text for the preview report button to view a preview of the report. -->
+  <string name="webcompat_reporter_preview_report">Náhled hlášení</string>
+  <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
+  <string name="webcompat_reporter_preview_bottom_sheet_header">Náhled hlášení</string>
+  <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
+  <string name="webcompat_reporter_preview_bottom_sheet_send">Odeslat</string>
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
@@ -2055,11 +2049,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">Vybrán jeden panel</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Sbírka uložena</string>
-  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection_2">Sbírka uložena</string>
-  <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Panel uložen</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
   <string name="create_collection_tab_saved_2">Panel uložen</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
@@ -2198,8 +2188,6 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Zavřené panely: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">Záložky uloženy do “%s”!</string>
-  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
   <string name="snackbar_message_bookmarks_saved_in_2">Záložky uloženy do složky “%s”</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Přidáno do zkratek</string>
@@ -2209,8 +2197,6 @@
   <string name="snackbar_private_data_deleted">Údaje anonymního prohlížení byly vymazány</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">ZPĚT</string>
-  <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">Stránka odebrána</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -2314,11 +2300,7 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Panely odeslány</string>
-  <!-- Text shown in snackbar when multiple tabs have been sent to device -->
   <string name="sync_sent_tabs_snackbar_2">Panely odeslány</string>
-  <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Panel odeslán</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
   <string name="sync_sent_tab_snackbar_2">Panel odeslán</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
@@ -2370,9 +2352,11 @@
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Silnější ochrana, která zlepšuje rychlost načítání stránek. Může ale omezit jejich fungování.</string>
   <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline">Povolit aplikaci %1$s automaticky aplikovat výjimky potřebné k zabránění rozsáhlému rozbití webových stránek.</string>
+  <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">Povolit aplikaci %1$s automaticky aplikovat výjimky potřebné k zabránění rozsáhlému rozbití webových stránek.</string>
   <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience">Automaticky také aplikovat výjimky, které jsou potřeba jen k opravě menších problémů a zpřístupnění komfortních funkcí.</string>
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">Automaticky také aplikovat výjimky, které jsou potřeba jen k opravě menších problémů a zpřístupnění komfortních funkcí.</string>
+  <!-- Learn more text for the enhanced tracking protection options to fix issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_learn_more">Zjistit více</string>
   <!--
     Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
 
@@ -2767,8 +2751,6 @@
   <string name="credit_cards_edit_card">Upravit kartu</string>
   <!-- The header for the card number of a credit card -->
   <string name="credit_cards_card_number">Číslo karty</string>
-  <!-- The header for the expiration date of a credit card -->
-  <string name="credit_cards_expiration_date">Datum platnosti</string>
   <!-- The label for the expiration date month of a credit card to be used by a11y services -->
   <string name="credit_cards_expiration_date_month">Datum platnosti (měsíc)</string>
   <!-- The label for the expiration date year of a credit card to be used by a11y services -->
@@ -3483,8 +3465,6 @@
   <string name="clear_site_data_dialog_positive_button_text">Vymazat</string>
   <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
   <string name="clear_site_data_dialog_negative_button_text">Zrušit</string>
-  <!-- Snackbar title shown when the site data has been cleared. -->
-  <string name="clear_site_data_snackbar" moz:removedIn="144" tools:ignore="UnusedResources">Cookies a uložená data byla odstraněna</string>
   <!-- Text for the connection security panel when the site is secure. -->
   <string name="connection_security_panel_secure">Zabezpečené připojení</string>
   <!-- Text for the connection security panel when the site is not secure. -->
@@ -3610,6 +3590,8 @@
   <string name="microsurvey_close_handle_content_description">Zavře průzkum</string>
   <!-- Content description for "X" button that is closing microsurvey. -->
   <string name="microsurvey_close_button_content_description">Zavřít</string>
+  <!-- The title of the autofill tab in the Debug Drawer. -->
+  <string name="debug_drawer_autofill_title">Nástroje pro automatické vyplňování</string>
   <!--
     Debug drawer logins
 
@@ -3882,6 +3864,24 @@
   <string name="review_prompt_feedback_header">Je nám líto, že nastaly problémy. Dejte nám vědět, jak můžeme aplikaci %1$s vylepšit.</string>
   <!-- Label for a button opening a feedback forum -->
   <string name="review_prompt_feedback_button">Zanechání zpětné vazby</string>
+  <!--
+    Settings Search Strings
+
+    Title of Settings Search. "Search" is a verb here
+  -->
+  <string name="settings_search_title">Nastavení vyhledávání</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to clear the search field for settings search -->
+  <string name="content_description_settings_search_clear_search">Zrušit hledání</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to navigate back to the Settings page from the Settings Search screen. -->
+  <string name="content_description_settings_search_navigate_back">Návrat zpět</string>
+  <!-- Message displayed when the search field in the Settings Search screen is empty -->
+  <string name="settings_search_empty_query_placeholder">Žádná poslední vyhledávání</string>
+  <!-- Message when error happens with Settings Search -->
+  <string name="settings_search_error_message">Vyskytla se chyba</string>
+  <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
+  <string name="settings_search_clear_recent_searches_message">Vymazat vše</string>
+  <!-- Section header for recent search results -->
+  <string name="settings_search_recent_searches_section_header">Nedávné výsledky vyhledávání</string>
   <!--
     Terms of use pop up prompt
 

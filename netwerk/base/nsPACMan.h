@@ -8,7 +8,6 @@
 #define nsPACMan_h__
 
 #include "mozilla/Atomics.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/LinkedList.h"

@@ -48,7 +48,7 @@ MarkupContainer.prototype = {
     return this.markup.undo;
   },
 
-  /*
+  /**
    * Initialize the MarkupContainer.  Should be called while one
    * of the other contain classes is instantiated.
    *

@@ -15,7 +15,7 @@ XPCOMUtils.defineLazyServiceGetter(
   this,
   "PageThumbsStorageService",
   "@mozilla.org/thumbnails/pagethumbs-service;1",
-  "nsIPageThumbsStorageService"
+  Ci.nsIPageThumbsStorageService
 );
 
 var oldEnabledPref = Services.prefs.getBoolPref(

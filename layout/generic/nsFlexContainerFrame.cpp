@@ -1399,7 +1399,7 @@ nsFlexContainerFrame::UsedAlignSelfAndFlagsForItem(
   // Note: we don't need to call nsLayoutUtils::GetStyleFrame(aFlexItem) because
   // the table wrapper frame inherits 'align-self' property from the table
   // frame.
-  StyleAlignSelf usedAlignSelf =
+  StyleSelfAlignment usedAlignSelf =
       aFlexItem->StylePosition()->UsedAlignSelf(Style());
   if (MOZ_LIKELY(usedAlignSelf._0 == StyleAlignFlags::NORMAL)) {
     // For flex items, 'align-self:normal' behaves as 'align-self:stretch'.
@@ -6680,7 +6680,7 @@ Result<nsILineIterator::LineInfo, nsresult> nsFlexContainerFrame::GetLine(
   return lineInfo;
 }
 
-int32_t nsFlexContainerFrame::FindLineContaining(nsIFrame* aFrame,
+int32_t nsFlexContainerFrame::FindLineContaining(const nsIFrame* aFrame,
                                                  int32_t aStartLine) {
   const int32_t index = mFrames.IndexOf(aFrame);
   if (index < 0) {

@@ -30,20 +30,20 @@ macosx64-sdk-13.3:
             - Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk
         toolchain-artifact: project/gecko/mac-sdk/MacOSX13.3.sdk.tar.zst
 
-macosx64-sdk-26.0:
-    description: "macOS 26.0 SDK"
+macosx64-sdk-26.1:
+    description: "macOS 26.1 SDK"
     treeherder:
-        symbol: TM(sdk26.0)
+        symbol: TM(sdk26.1)
     run:
         arguments:
-            - https://swcdn.apple.com/content/downloads/27/62/093-35114-A_AAH24ZZQB5/yn87ru9qe9225m8hwq2ic3hjy5yc5vw7h9/CLTools_macOSNMOS_SDK.pkg
-            - d3286bd6d4dff1b12f1d0dab4816719e605a1bfb76af84575deec37b25fc4462d4fc1258aa43b138a557c4f9304e06740441b101eb367a4b5bd77200b0708c71
-            - Library/Developer/CommandLineTools/SDKs/MacOSX26.0.sdk
-        toolchain-artifact: project/gecko/mac-sdk/MacOSX26.0.sdk.tar.zst
+            - https://swcdn.apple.com/content/downloads/22/09/093-00219-A_WIA1LP39TY/evbam2mb02xqr05ju9ddb95y8qil8kz9tm/CLTools_macOSNMOS_SDK.pkg
+            - f6a5f44b3652f5abdf7ad2602f54ad38774404f45264a4e70cfccc58b8b39aed2a89f74ef22c44bf932d0a55b062ebc3651f73fa06ff755ee5da53b9dcc62fba
+            - Library/Developer/CommandLineTools/SDKs/MacOSX26.1.sdk
+        toolchain-artifact: project/gecko/mac-sdk/MacOSX26.1.sdk.tar.zst
         toolchain-alias:
             - macosx64-sdk
             - macosx64-sdk-toolchain
-            - MacOSX26.0.sdk
+            - MacOSX26.1.sdk
 
 ios-sdk-18.4:
     description: "iPhoneOS18.4 SDK"

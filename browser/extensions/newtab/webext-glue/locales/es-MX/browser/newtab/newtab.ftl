@@ -391,7 +391,7 @@ newtab-wallpaper-abstract-purple-green = Gradiente de luz violeta y verde
 newtab-wallpaper-abstract-blue-purple-waves = Formas onduladas de color azul y morado
 newtab-wallpaper-abstract-black-waves = Formas onduladas negras
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotografías
 newtab-wallpaper-beach-at-sunrise = Playa al amanecer
@@ -420,6 +420,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -462,8 +466,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Cambiar a Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Cambiar a Celsius
 newtab-weather-menu-hide-weather = Ocultar el clima en la nueva pestaña
 newtab-weather-menu-learn-more = Saber más
+newtab-weather-menu-detect-my-location = Detectar mi ubicación
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Los datos meteorológicos no están disponibles de momento.
+newtab-weather-opt-in-see-weather = ¿Quieres ver el clima para tu ubicación?
+newtab-weather-opt-in-not-now =
+    .label = Ahora no
+newtab-weather-opt-in-yes =
+    .label = Sí
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = Ciudad de Nueva York
 
 ## Topic Labels
 
@@ -512,6 +524,9 @@ newtab-topic-selection-button-pick-interests = Elige tus intereses
 newtab-section-follow-button = Seguir
 newtab-section-following-button = Siguiendo
 newtab-section-unfollow-button = Dejar de seguir
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Optimiza tu feed
+newtab-section-follow-highlight-subtitle = Sigue tus intereses para ver más de lo que te gusta.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -539,6 +554,9 @@ newtab-section-mangage-topics-followed-topics = Seguido
 newtab-section-mangage-topics-followed-topics-empty-state = Aún no sigues ningún tema.
 newtab-section-mangage-topics-blocked-topics = Bloqueado
 newtab-section-mangage-topics-blocked-topics-empty-state = Aún no has bloqueado ningún tema.
+newtab-custom-wallpaper-title = Los fondos de pantalla personalizados están aquí
+# 'Make firefox yours" means to customize or personalize
+newtab-custom-wallpaper-subtitle = Sube tu propio fondo de pantalla o elige un color personalizado para hacer tuyo { -brand-product-name }.
 newtab-custom-wallpaper-cta = Intentalo
 
 ## Strings for download mobile highlight
@@ -601,10 +619,6 @@ newtab-widget-timer-mode-focus =
     .label = Focus
 newtab-widget-timer-mode-break =
     .label = Descanso
-newtab-widget-timer-play =
-    .title = Reproducir
-newtab-widget-timer-pause =
-    .title = Pausar
 newtab-widget-timer-label-play =
     .label = Reproducir
 newtab-widget-timer-label-pause =

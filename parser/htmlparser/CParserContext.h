@@ -12,7 +12,6 @@
 #ifndef __CParserContext
 #define __CParserContext
 
-#include "mozilla/UniquePtr.h"
 #include "nsIParser.h"
 #include "nsIDTD.h"
 #include "nsIRequest.h"

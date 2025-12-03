@@ -1225,13 +1225,13 @@ export class NetworkObserver {
       return;
     }
 
-    const sentBody = lazy.NetworkHelper.readPostTextFromRequest(
+    const sentBody = lazy.NetworkHelper.readPostDataFromRequest(
       httpActivity.channel,
       httpActivity.charset
     );
 
     if (sentBody !== null) {
-      httpActivity.sentBody = sentBody;
+      httpActivity.sentBody = sentBody.data;
     }
   }
 

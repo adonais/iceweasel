@@ -8,7 +8,6 @@
 #define nsWindowSizes_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/PodOperations.h"
 #include "mozilla/SizeOfState.h"
 #include "nsStyleStructList.h"
 

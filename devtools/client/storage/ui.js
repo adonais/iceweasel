@@ -69,6 +69,7 @@ const HEADERS_L10N_IDS = {
   },
   cookies: {
     creationTime: "storage-table-headers-cookies-creation-time",
+    updateTime: "storage-table-headers-cookies-update-time",
     expires: "storage-table-headers-cookies-expires",
     lastAccessed: "storage-table-headers-cookies-last-accessed",
     name: "storage-table-headers-cookies-name",
@@ -350,6 +351,7 @@ class StorageUI {
       "storage-table-headers-cookies-size",
       "storage-table-headers-cookies-last-accessed",
       "storage-table-headers-cookies-creation-time",
+      "storage-table-headers-cookies-update-time",
       "storage-table-headers-cache-status",
       "storage-table-headers-extension-storage-area",
       "storage-tree-labels-cookies",
@@ -1387,6 +1389,9 @@ class StorageUI {
       }
       if (item.creationTime != null) {
         item.creationTime = new Date(item.creationTime).toUTCString();
+      }
+      if (item.updateTime != null) {
+        item.updateTime = new Date(item.updateTime).toUTCString();
       }
       if (item.lastAccessed != null) {
         item.lastAccessed = new Date(item.lastAccessed).toUTCString();

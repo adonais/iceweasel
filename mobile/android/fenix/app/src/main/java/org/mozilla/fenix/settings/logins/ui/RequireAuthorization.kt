@@ -17,6 +17,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import mozilla.components.lib.state.ext.observeAsState
+import org.mozilla.fenix.ext.settings
 
 @Composable
 internal fun RequireAuthorization(
@@ -68,7 +69,11 @@ private fun ObserveLifecycle(store: LoginsStore) {
 
             override fun onResume(owner: LifecycleOwner) {
                 super.onResume(owner)
-                activityContext.window?.lock()
+                if (activityContext.settings().allowScreenCaptureInSecureScreens) {
+                    activityContext.window?.unlock()
+                } else {
+                    activityContext.window?.lock()
+                }
                 store.dispatch(LifecycleAction.OnResume)
             }
         }

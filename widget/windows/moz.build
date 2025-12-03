@@ -114,6 +114,7 @@ UNIFIED_SOURCES += [
     "WinCompositorWindowThread.cpp",
     "WindowHook.cpp",
     "WindowsConsole.cpp",
+    "WindowsTestDebug.cpp",
     "WinEventObserver.cpp",
     "WinIMEHandler.cpp",
     "WinMouseScrollHandler.cpp",
@@ -172,6 +173,7 @@ if CONFIG["MOZ_ENABLE_SKIA_PDF"]:
 
 XPIDL_SOURCES += [
     "nsIAlertsServiceRust.idl",
+    "nsIWindowsTestDebug.idl",
 ]
 
 XPIDL_MODULE = "widget_windows"
@@ -215,6 +217,7 @@ USE_LIBS += [
 OS_LIBS += [
     "ktmw32",
     "rpcrt4",
+    "shcore",
     "urlmon",
     "winmm",
 ]

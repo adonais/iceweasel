@@ -89,6 +89,7 @@ skip-if = ["os == 'mac' && os_version == '10.15' && processor == 'x86_64' && deb
 ["test_key_requirements.js"]
 
 ["test_keys.js"]
+requesttimeoutfactor = 2  # Slow on Linux TSan
 
 ["test_locale_aware_index_getAll.js"]
 

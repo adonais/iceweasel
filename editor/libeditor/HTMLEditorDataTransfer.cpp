@@ -37,7 +37,6 @@
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/StaticRange.h"
 #include "mozilla/dom/WorkerRef.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Base64.h"
 #include "mozilla/BasicEvents.h"
@@ -228,7 +227,7 @@ nsresult HTMLEditor::LoadHTML(const nsAString& aInputString) {
   //     behavior since using only child node to pointing insertion point
   //     changes the behavior when inserted child is moved by mutation
   //     observer.  We need to investigate what we should do here.
-  Unused << pointToInsert.Offset();
+  (void)pointToInsert.Offset();
   EditorDOMPoint pointToPutCaret;
   for (nsCOMPtr<nsIContent> contentToInsert = documentFragment->GetFirstChild();
        contentToInsert; contentToInsert = documentFragment->GetFirstChild()) {
@@ -501,6 +500,8 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
 
   // but don't cross tables
   nsIContent* containerContent = nullptr;
+  // FIXME: GetChild() might be nullptr, but it's referred as non-null in the
+  // block!
   if (!aLastInsertedPoint.GetChild() ||
       !aLastInsertedPoint.GetChild()->IsHTMLElement(nsGkAtoms::table)) {
     containerContent = HTMLEditUtils::GetLastLeafContent(
@@ -541,9 +542,7 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
   // Otherwise, i.e., it's an atomic element, `<table>` element or data node,
   // put caret after it.
   else {
-    pointToPutCaret.Set(containerContent);
-    DebugOnly<bool> advanced = pointToPutCaret.AdvanceOffset();
-    NS_WARNING_ASSERTION(advanced, "Failed to advance offset from found node");
+    pointToPutCaret.SetAfter(containerContent);
   }
 
   // Make sure we don't end up with selection collapsed after an invisible
@@ -552,14 +551,12 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
       WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
           // We want to put caret to an editable point so that we need to scan
           // only editable nodes.
-          WSRunScanner::Scan::EditableNodes, pointToPutCaret,
-          BlockInlineCheck::UseComputedDisplayStyle);
+          {WSRunScanner::Option::OnlyEditableNodes}, pointToPutCaret);
   if (prevVisibleThing.ReachedInvisibleBRElement()) {
     const WSScanResult prevVisibleThingOfBRElement =
         WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::EditableNodes,
-            EditorRawDOMPoint(prevVisibleThing.BRElementPtr()),
-            BlockInlineCheck::UseComputedDisplayStyle);
+            {WSRunScanner::Option::OnlyEditableNodes},
+            EditorRawDOMPoint(prevVisibleThing.BRElementPtr()));
     if (prevVisibleThingOfBRElement.InVisibleOrCollapsibleCharacters()) {
       pointToPutCaret = prevVisibleThingOfBRElement
                             .PointAfterReachedContent<EditorDOMPoint>();
@@ -685,8 +682,8 @@ Result<EditActionResult, nsresult> HTMLEditor::HTMLWithContextInserter::Run(
       streamStartParent ? EditorRawDOMPoint(streamEndParent, streamEndOffset)
                         : EditorRawDOMPoint::AtEndOf(fragmentAsNode);
 
-  Unused << streamStartPoint;
-  Unused << streamEndPoint;
+  (void)streamStartPoint;
+  (void)streamEndPoint;
 
   HTMLWithContextInserter::CollectTopMostChildContentsCompletelyInRange(
       EditorRawDOMPoint(streamStartParent,

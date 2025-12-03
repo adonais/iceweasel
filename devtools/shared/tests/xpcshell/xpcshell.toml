@@ -59,7 +59,9 @@ skip-if = [
 
 ["test_pluralForm-english.js"]
 
-["test_pluralForm-makeGetter.js"]
+["test_pluralForm-irish.js"]
+
+["test_pluralForm-japanese.js"]
 
 ["test_prettifyCSS.js"]
 skip-if = [

@@ -12,7 +12,6 @@
 #include "mozilla/AnimationPerformanceWarning.h"
 #include "mozilla/AnimationPropertySegment.h"
 #include "mozilla/AnimationTarget.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/Keyframe.h"
 #include "mozilla/KeyframeEffectParams.h"

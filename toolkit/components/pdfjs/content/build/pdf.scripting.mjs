@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.4.322
- * pdfjsBuild = 657a18d7a
+ * pdfjsVersion = 5.4.396
+ * pdfjsBuild = 0a2680bca
  */
 var __webpack_exports__ = {};
 

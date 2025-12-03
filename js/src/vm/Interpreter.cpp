@@ -846,12 +846,8 @@ bool js::ExecuteKernel(JSContext* cx, HandleScript script,
     return true;
   }
 
-  probes::StartExecution(script);
   ExecuteState state(cx, script, envChainArg, evalInFrame, result);
-  bool ok = RunScript(cx, state);
-  probes::StopExecution(script);
-
-  return ok;
+  return RunScript(cx, state);
 }
 
 bool js::Execute(JSContext* cx, HandleScript script, HandleObject envChain,

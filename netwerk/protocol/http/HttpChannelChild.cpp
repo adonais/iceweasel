@@ -13,12 +13,12 @@
 #include "nsICacheEntry.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/PerfStats.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/LinkStyle.h"
+#include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/extensions/StreamFilterParent.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/net/NeckoChild.h"
@@ -42,7 +42,6 @@
 #include "nsQueryObject.h"
 #include "nsNetUtil.h"
 #include "nsSerializationHelper.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/dom/PerformanceStorage.h"
 #include "mozilla/glean/NetwerkMetrics.h"
@@ -482,18 +481,18 @@ void HttpChannelChild::OnStartRequest(
     // nsHttpChannel::ReEvaluateReferrerAfterTrackingStatusIsKnown(), except for
     // aRespectBeforeConnect which we pass false here since we're intentionally
     // overriding the referrer after BeginConnect().
-    Unused << SetReferrerInfoInternal(aArgs.overrideReferrerInfo(), false, true,
-                                      false);
+    (void)SetReferrerInfoInternal(aArgs.overrideReferrerInfo(), false, true,
+                                  false);
   }
 
   RefPtr<CookieServiceChild> cookieService = CookieServiceChild::GetSingleton();
 
   for (const CookieChange& cookieChange : aArgs.cookieChanges()) {
     if (cookieChange.added()) {
-      Unused << cookieService->RecvAddCookie(
+      (void)cookieService->RecvAddCookie(
           cookieChange.cookie(), cookieChange.originAttributes(), Nothing());
     } else {
-      Unused << cookieService->RecvRemoveCookie(
+      (void)cookieService->RecvRemoveCookie(
           cookieChange.cookie(), cookieChange.originAttributes(), Nothing());
     }
   }
@@ -621,6 +620,23 @@ void HttpChannelChild::DoOnStartRequest(nsIRequest* aRequest) {
       conv->MaybeRetarget(this);
     }
   }
+
+#if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)
+  if (nsCOMPtr<nsIThreadRetargetableRequest> req =
+          do_QueryInterface(aRequest)) {
+    nsCOMPtr<nsISerialEventTarget> target;
+    rv = req->GetDeliveryTarget(getter_AddRefs(target));
+    if (NS_SUCCEEDED(rv) && target && !target->IsOnCurrentThread()) {
+      if (nsCOMPtr<nsIThreadRetargetableStreamListener> retargetableListener =
+              do_QueryInterface(mListener)) {
+        MOZ_DIAGNOSTIC_ASSERT(
+            NS_SUCCEEDED(retargetableListener->CheckListenerChain()));
+      } else {
+        MOZ_DIAGNOSTIC_ASSERT(false, "Unexpected listener is not retargetable");
+      }
+    }
+  }
+#endif
 }
 
 void HttpChannelChild::ProcessOnTransportAndData(
@@ -721,7 +737,7 @@ void HttpChannelChild::OnTransportAndData(const nsresult& aChannelStatus,
     mUnreportBytesRead += aCount;
     if (mUnreportBytesRead >= gHttpHandler->SendWindowSize() >> 2) {
       if (NS_IsMainThread()) {
-        Unused << SendBytesRead(mUnreportBytesRead);
+        (void)SendBytesRead(mUnreportBytesRead);
       } else {
         // PHttpChannel connects to the main thread
         RefPtr<HttpChannelChild> self = this;
@@ -730,10 +746,9 @@ void HttpChannelChild::OnTransportAndData(const nsresult& aChannelStatus,
         MOZ_ASSERT(neckoTarget);
 
         DebugOnly<nsresult> rv = neckoTarget->Dispatch(
-            NS_NewRunnableFunction("net::HttpChannelChild::SendBytesRead",
-                                   [self, bytesRead]() {
-                                     Unused << self->SendBytesRead(bytesRead);
-                                   }),
+            NS_NewRunnableFunction(
+                "net::HttpChannelChild::SendBytesRead",
+                [self, bytesRead]() { (void)self->SendBytesRead(bytesRead); }),
             NS_DISPATCH_NORMAL);
         MOZ_ASSERT(NS_SUCCEEDED(rv));
       }
@@ -1348,7 +1363,7 @@ void HttpChannelChild::DoNotifyListenerCleanup() {
 }
 
 void HttpChannelChild::DoAsyncAbort(nsresult aStatus) {
-  Unused << AsyncAbort(aStatus);
+  (void)AsyncAbort(aStatus);
 }
 
 mozilla::ipc::IPCResult HttpChannelChild::RecvDeleteSelf() {
@@ -1468,6 +1483,137 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvReportSecurityMessage(
     const nsAString& messageTag, const nsAString& messageCategory) {
   DebugOnly<nsresult> rv = AddSecurityMessage(messageTag, messageCategory);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult HttpChannelChild::RecvReportLNAToConsole(
+    const NetAddr& aPeerAddr, const nsACString& aMessageType,
+    const nsACString& aPromptAction, const nsACString& aTopLevelSite) {
+  nsCOMPtr<nsILoadInfo> loadInfo = LoadInfo();
+  nsCOMPtr<nsIURI> uri;
+  GetURI(getter_AddRefs(uri));
+
+  if (!loadInfo || !uri) {
+    return IPC_OK();
+  }
+
+  // Use top-level site passed from parent process via IPC.
+  // This is necessary because in cross-site scenarios with Fission,
+  // the content process cannot access the top-level document which
+  // exists in a different process.
+  nsAutoCString topLevelSite(aTopLevelSite);
+
+  // Get initiator (triggering principal)
+  nsAutoCString initiator;
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal;
+  loadInfo->GetTriggeringPrincipal(getter_AddRefs(triggeringPrincipal));
+  if (triggeringPrincipal) {
+    nsCOMPtr<nsIURI> triggeringURI = triggeringPrincipal->GetURI();
+    if (triggeringURI) {
+      initiator = triggeringURI->GetSpecOrDefault();
+    }
+  }
+
+  // Get target URL (full spec shown to users for clarity)
+  nsAutoCString targetURL;
+  targetURL = uri->GetSpecOrDefault();
+
+  // Get target IP address from passed NetAddr
+  nsCString targetIp = aPeerAddr.ToString();
+
+  // Get port
+  uint16_t port = 0;
+  (void)aPeerAddr.GetPort(&port);
+
+  // Determine request mechanism from LoadInfo
+  nsAutoCString mechanism;
+  ExtContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
+  switch (contentType) {
+    case ExtContentPolicyType::TYPE_WEBSOCKET:
+      mechanism.AssignLiteral("websocket");
+      break;
+    case ExtContentPolicyType::TYPE_WEB_TRANSPORT:
+      mechanism.AssignLiteral("webtransport");
+      break;
+    case ExtContentPolicyType::TYPE_FETCH:
+      mechanism.AssignLiteral("fetch");
+      break;
+    case ExtContentPolicyType::TYPE_XMLHTTPREQUEST:
+      mechanism.AssignLiteral("xhr");
+      break;
+    default:
+      if (uri->SchemeIs("https")) {
+        mechanism.AssignLiteral("https");
+      } else {
+        mechanism.AssignLiteral("http");
+      }
+      break;
+  }
+
+  // Check if the originating context is secure (required by LNA spec)
+  bool isSecureContext = false;
+  if (triggeringPrincipal) {
+    isSecureContext = triggeringPrincipal->GetIsOriginPotentiallyTrustworthy();
+  }
+
+  // Build console parameters
+  AutoTArray<nsString, 8> consoleParams;
+  CopyUTF8toUTF16(
+      topLevelSite.IsEmpty() ? nsAutoCString("(empty)") : topLevelSite,
+      *consoleParams.AppendElement());
+  CopyUTF8toUTF16(initiator.IsEmpty() ? nsAutoCString("(empty)") : initiator,
+                  *consoleParams.AppendElement());
+  CopyUTF8toUTF16(targetURL.IsEmpty() ? nsAutoCString("(empty)") : targetURL,
+                  *consoleParams.AppendElement());
+  CopyUTF8toUTF16(targetIp, *consoleParams.AppendElement());
+  consoleParams.AppendElement()->AppendInt(port);
+  CopyUTF8toUTF16(mechanism, *consoleParams.AppendElement());
+  CopyUTF8toUTF16(
+      isSecureContext ? nsAutoCString("True") : nsAutoCString("False"),
+      *consoleParams.AppendElement());
+
+  // Add prompt action if provided (for LocalNetworkAccessDetected message)
+  if (!aPromptAction.IsEmpty()) {
+    CopyUTF8toUTF16(aPromptAction, *consoleParams.AppendElement());
+  }
+
+  // Build the formatted message with stack trace
+  nsAutoString formattedMsg;
+  nsContentUtils::FormatLocalizedString(nsContentUtils::eNECKO_PROPERTIES,
+                                        PromiseFlatCString(aMessageType).get(),
+                                        consoleParams, formattedMsg);
+
+  // Append stack trace to the message if available
+  const char* callStack = GetCallStack();
+  if (callStack && callStack[0] != '\0') {
+    formattedMsg.AppendLiteral("\n");
+    formattedMsg.Append(NS_ConvertUTF8toUTF16(callStack));
+  }
+
+  uint64_t innerWindowID = 0;
+  loadInfo->GetInnerWindowID(&innerWindowID);
+
+  nsCOMPtr<nsIURI> sourceURI = uri;  // fallback to target
+  if (triggeringPrincipal) {
+    nsCOMPtr<nsIURI> principalURI = triggeringPrincipal->GetURI();
+    if (principalURI) {
+      sourceURI = principalURI;
+    }
+  }
+
+  // Report to web console
+  if (innerWindowID) {
+    nsContentUtils::ReportToConsoleByWindowID(
+        formattedMsg, nsIScriptError::infoFlag, "Security"_ns, innerWindowID,
+        mozilla::SourceLocation(sourceURI.get()));
+  } else {
+    RefPtr<dom::Document> doc;
+    loadInfo->GetLoadingDocument(getter_AddRefs(doc));
+    nsContentUtils::ReportToConsoleNonLocalized(
+        formattedMsg, nsIScriptError::infoFlag, "Security"_ns, doc,
+        mozilla::SourceLocation(sourceURI.get()));
+  }
+
   return IPC_OK();
 }
 
@@ -1611,7 +1757,7 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvRedirect3Complete() {
   mEventQ->RunOrEnqueue(new NeckoTargetChannelFunctionEvent(
       this, [self = UnsafePtr<HttpChannelChild>(this), redirectChannel]() {
         nsresult rv = NS_OK;
-        Unused << self->GetStatus(&rv);
+        (void)self->GetStatus(&rv);
         if (NS_FAILED(rv)) {
           // Pre-redirect channel was canceled. Call |HandleAsyncAbort|, so
           // mListener's OnStart/StopRequest can be called. Nothing else will
@@ -1628,7 +1774,7 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvRedirect3Complete() {
           if (httpChannelChild) {
             // For sending an IPC message to parent channel so that the loading
             // can be cancelled.
-            Unused << httpChannelChild->CancelWithReason(
+            (void)httpChannelChild->CancelWithReason(
                 rv, "HttpChannelChild Redirect3 failed"_ns);
 
             // The post-redirect channel could still get OnStart/StopRequest IPC
@@ -1661,7 +1807,7 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvRedirectFailed(
                 do_QueryObject(self->mRedirectChannelChild)) {
           // For sending an IPC message to parent channel so that the loading
           // can be cancelled.
-          Unused << httpChannelChild->CancelWithReason(
+          (void)httpChannelChild->CancelWithReason(
               status, "HttpChannelChild RecvRedirectFailed"_ns);
 
           // The post-redirect channel could still get OnStart/StopRequest IPC
@@ -1965,7 +2111,7 @@ HttpChannelChild::OnRedirectVerifyCallback(nsresult aResult) {
     nsCOMPtr<nsIHttpChannelInternal> newHttpChannelInternal =
         do_QueryInterface(mRedirectChannelChild);
     if (newHttpChannelInternal) {
-      Unused << newHttpChannelInternal->GetApiRedirectToURI(
+      (void)newHttpChannelInternal->GetApiRedirectToURI(
           getter_AddRefs(redirectURI));
     }
 
@@ -2047,7 +2193,7 @@ HttpChannelChild::Cancel(nsresult aStatus) {
                  mCanceledReason, logOnParent);
     } else if (MOZ_UNLIKELY(!LoadOnStartRequestCalled() ||
                             !LoadOnStopRequestCalled())) {
-      Unused << AsyncAbort(mStatus);
+      (void)AsyncAbort(mStatus);
     }
   }
   return NS_OK;
@@ -2126,6 +2272,25 @@ HttpChannelChild::GetSecurityInfo(nsITransportSecurityInfo** aSecurityInfo) {
 
 NS_IMETHODIMP
 HttpChannelChild::AsyncOpen(nsIStreamListener* aListener) {
+  // Capture JavaScript stack for LNA console logging only if:
+  // 1. LNA blocking is enabled
+  // 2. This is a cross-origin request (LNA only applies to cross-origin)
+  if (StaticPrefs::network_lna_blocking() &&
+      ReferrerInfo::IsCrossOriginRequest(this)) {
+    JSContext* cx = nsContentUtils::GetCurrentJSContext();
+    if (cx) {
+      JS::UniqueChars chars = xpc_PrintJSStack(cx,
+                                               /*showArgs=*/false,
+                                               /*showLocals=*/false,
+                                               /*showThisProps=*/false);
+      if (chars) {
+        size_t len = strlen(chars.get());
+        mCallStack = mozilla::MakeUnique<char[]>(len + 1);
+        memcpy(mCallStack.get(), chars.get(), len + 1);
+      }
+    }
+  }
+
   AUTO_PROFILER_LABEL("HttpChannelChild::AsyncOpen", NETWORK);
   LOG(("HttpChannelChild::AsyncOpen [this=%p uri=%s]\n", this, mSpec.get()));
 
@@ -2758,7 +2923,7 @@ HttpChannelChild::GetOriginalInputStream(nsIInputStreamReceiver* aReceiver) {
   }
 
   mOriginalInputStreamReceiver = aReceiver;
-  Unused << SendOpenOriginalCacheInputStream();
+  (void)SendOpenOriginalCacheInputStream();
 
   return NS_OK;
 }
@@ -3072,7 +3237,7 @@ void HttpChannelChild::TrySendDeletingChannel() {
     return;
   }
 
-  Unused << PHttpChannelChild::SendDeletingChannel();
+  (void)PHttpChannelChild::SendDeletingChannel();
 }
 
 nsresult HttpChannelChild::AsyncCallImpl(
@@ -3227,7 +3392,7 @@ void HttpChannelChild::ActorDestroy(ActorDestroyReason aWhy) {
 mozilla::ipc::IPCResult HttpChannelChild::RecvLogBlockedCORSRequest(
     const nsAString& aMessage, const nsACString& aCategory,
     const bool& aIsWarning) {
-  Unused << LogBlockedCORSRequest(aMessage, aCategory, aIsWarning);
+  (void)LogBlockedCORSRequest(aMessage, aCategory, aIsWarning);
   return IPC_OK();
 }
 
@@ -3248,7 +3413,7 @@ HttpChannelChild::LogBlockedCORSRequest(const nsAString& aMessage,
 mozilla::ipc::IPCResult HttpChannelChild::RecvLogMimeTypeMismatch(
     const nsACString& aMessageName, const bool& aWarning, const nsAString& aURL,
     const nsAString& aContentType) {
-  Unused << LogMimeTypeMismatch(aMessageName, aWarning, aURL, aContentType);
+  (void)LogMimeTypeMismatch(aMessageName, aWarning, aURL, aContentType);
   return IPC_OK();
 }
 

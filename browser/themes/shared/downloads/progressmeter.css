@@ -12,7 +12,7 @@
 
 @media (prefers-color-scheme: dark) {
   #contentAreaDownloadsView {
-    --download-progress-fill-color: var(--in-content-item-selected);
+    --download-progress-fill-color: var(--color-accent-primary-selected);
   }
 }
 

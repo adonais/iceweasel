@@ -11,7 +11,6 @@
 #include "HelpersCairo.h"
 #include "BorrowedContext.h"
 #include "FilterNodeSoftware.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_print.h"

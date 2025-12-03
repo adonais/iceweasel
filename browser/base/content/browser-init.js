@@ -167,7 +167,7 @@ var gBrowserInit = {
     if (Services.prefs.getBoolPref("browser.search.widget.new", false)) {
       new UrlbarInput({
         textbox: document.getElementById("searchbar-new"),
-        eventTelemetryCategory: "searchbar",
+        sapName: "searchbar",
       });
     }
 

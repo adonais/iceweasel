@@ -7,7 +7,6 @@
 #ifndef LAYOUT_SVG_SVGOUTERSVGFRAME_H_
 #define LAYOUT_SVG_SVGOUTERSVGFRAME_H_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/ISVGSVGFrame.h"
 #include "mozilla/SVGContainerFrame.h"
 

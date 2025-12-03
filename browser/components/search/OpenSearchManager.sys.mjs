@@ -23,12 +23,12 @@ class _OpenSearchManager {
    */
 
   /**
-   * @type {WeakMap<XULBrowserElement, OpenSearchData[]>}
+   * @type {WeakMap<MozBrowser, OpenSearchData[]>}
    */
   #offeredEngines = new WeakMap();
 
   /**
-   * @type {WeakMap<XULBrowserElement, OpenSearchData[]>}
+   * @type {WeakMap<MozBrowser, OpenSearchData[]>}
    */
   #hiddenEngines = new WeakMap();
 
@@ -72,7 +72,7 @@ class _OpenSearchManager {
    * If an engine with that name is already installed, adds it to the list
    * of hidden engines instead.
    *
-   * @param {XULBrowserElement} browser
+   * @param {MozBrowser} browser
    *   The browser offering the engine.
    * @param {{title: string, href: string}} engine
    *   The title of the engine and the url to the opensearch XML.
@@ -103,7 +103,6 @@ class _OpenSearchManager {
       uri: engine.href,
       title: engine.title,
       get icon() {
-        // @ts-expect-error - Bug 1957641
         return browser.mIconURL;
       },
     });
@@ -197,7 +196,7 @@ class _OpenSearchManager {
   /**
    * Get the open search engines offered by a certain browser.
    *
-   * @param {XULBrowserElement} browser
+   * @param {MozBrowser} browser
    *   The browser for which to get the engines.
    * @returns {OpenSearchData[]}
    *   The open search engines.

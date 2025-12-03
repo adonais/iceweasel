@@ -83,17 +83,19 @@
     <string name="pref_key_show_first_time_translation" translatable="false">pref_key_show_first_time_translation</string>
     <string name="pref_key_translations_offer" translatable="false">pref_key_translations_offer</string>
     <string name="pref_key_terms_accepted" translatable="false">pref_key_terms_accepted</string>
+    <string name="pref_key_terms_accepted_date" translatable="false">pref_key_terms_accepted_date</string>
+    <string name="pref_key_terms_accepted_version" translatable="false">pref_key_terms_accepted_version</string>
     <string name="pref_key_terms_prompt_enabled" translatable="false">pref_key_terms_prompt_enabled</string>
+    <string name="pref_key_terms_prompt_drag_handle_enabled" translatable="false">pref_key_terms_prompt_drag_handle_enabled</string>
     <string name="pref_key_terms_prompt_displayed_count" translatable="false">pref_key_terms_prompt_displayed_count</string>
     <string name="pref_key_terms_last_prompt_time" translatable="false">pref_key_terms_last_prompt_time</string>
     <string name="pref_key_terms_postponed" translatable="false">pref_key_terms_postponed</string>
     <string name="pref_key_debug_terms_trigger_time" translatable="false">pref_key_debug_terms_trigger_time</string>
-    <string name="pref_key_terms_clicked_link" translatable="false">pref_key_terms_clicked_link</string>
-    <string name="pref_key_terms_clicked_remind_me_later" translatable="false">pref_key_terms_clicked_remind_me_later</string>
     <string name="pref_key_should_show_marketing_onboarding" translatable="false">pref_key_should_show_marketing_onboarding</string>
     <string name="pref_key_use_onboarding_redesign" translatable="false">pref_key_use_onboarding_redesign</string>
     <string name="pref_key_crash_pull_never_show_again" translatable="false">pref_key_crash_pull_never_show_again</string>
     <string name="pref_key_crash_pull_dont_show_before" translatable="false">pref_key_crash_pull_dont_show_before</string>
+    <string name="pref_key_enable_relay_email_masks" translatable="false">pref_key_enable_relay_email_masks</string>
 
     <!-- Data Choices -->
     <string name="pref_key_telemetry" translatable="false">pref_key_telemetry</string>
@@ -131,7 +133,6 @@
     <string name="pref_key_show_clipboard_suggestions" translatable="false">pref_key_show_clipboard_suggestions</string>
     <string name="pref_key_search_browsing_history" translatable="false">pref_key_search_browsing_history</string>
     <string name="pref_key_search_bookmarks" translatable="false">pref_key_search_bookmarks</string>
-    <string name="pref_key_show_shortcuts_suggestions" translatable="false">pref_key_show_shortcuts_suggestions</string>
     <string name="pref_key_search_synced_tabs" translatable="false">pref_key_search_synced_tabs</string>
     <string name="pref_key_show_search_suggestions_in_private" translatable="false">pref_key_show_search_suggestions_in_private</string>
     <string name="pref_key_show_search_suggestions_in_private_onboarding" translatable="false">pref_key_show_search_suggestions_in_privateonboarding</string>
@@ -203,6 +204,8 @@
     <string name="pref_key_customization_category_toolbar" translatable="false">pref_key_customization_category_toolbar</string>
     <string name="pref_key_customization_category_toolbar_layout" translatable="false">pref_key_customization_category_toolbar_layout</string>
     <string name="pref_key_customization_category_app_icon" translatable="false">pref_key_customization_category_app_icon</string>
+    <string name="pref_key_customization_category_toolbar_shortcut" translatable="false">pref_key_customization_category_toolbar_shortcut</string>
+    <string name="pref_key_toolbar_shortcut" translatable="false">pref_key_toolbar_shortcut</string>
 
     <!-- HTTPS Only Settings -->
     <string name="pref_key_https_only_settings" translatable="false">pref_key_https_only_settings</string>
@@ -279,6 +282,7 @@
     <string name="pref_key_open_links_in_apps_ask" translatable="false">pref_key_open_links_in_apps_ask</string>
     <string name="pref_key_open_links_in_apps_never" translatable="false">pref_key_open_links_in_apps_never</string>
     <string name="pref_key_allow_screenshots_in_private_mode" translatable="false">pref_key_allow_screenshots_in_private_mode</string>
+    <string name="pref_key_dev_debug_allow_capture_of_secure_screens" translatable="false">pref_key_dev_debug_allow_capture_of_secure_screens</string>
     <!-- This preference controls behaviour that corresponds to the private browsing mode lock feature being enabled. -->
     <string name="pref_key_private_browsing_locked_enabled" translatable="false">pref_key_private_browsing_locked_enabled</string>
     <string name="pref_key_private_browsing_locked" translatable="false">pref_key_private_browsing_locked</string>
@@ -430,16 +434,13 @@
     <string name="pref_key_enable_discover_more_stories" translatable="false">pref_key_enable_discover_more_stories</string>
     <string name="pref_key_enable_private_browsing_mode_redesign" translatable="false">pref_key_enable_private_browsing_mode_redesign</string>
     <string name="pref_key_enable_unified_trust_panel" translatable="false">pref_key_enable_unified_trust_panel</string>
-    <string name="pref_key_enable_trending_searches" translatable="false">pref_key_enable_trending_searches</string>
-    <string name="pref_key_enable_recent_searches" translatable="false">pref_key_enable_recent_searches</string>
-    <string name="pref_key_enable_shortcuts_suggestions" translatable="false">pref_key_enable_shortcuts_suggestions</string>
     <string name="pref_key_enable_composable_toolbar" translatable="false">pref_key_enable_composable_toolbar</string>"
     <string name="pref_key_enable_toolbar_redesign" translatable="false">pref_key_enable_toolbar_redesign</string>"
     <string name="pref_key_enable_address_sync" translatable="false">pref_key_enable_address_sync</string>"
-    <string name="pref_key_enable_simple_toolbar_customization">pref_key_enable_simple_toolbar_customization</string>
-    <string name="pref_key_enable_expanded_toolbar_customization">pref_key_enable_expanded_toolbar_customization</string>
+    <string name="pref_key_enable_toolbar_customization">pref_key_enable_toolbar_customization</string>
     <string name="pref_key_enable_lna_blocking_enabled" translatable="false">pref_key_enable_lna_blocking_enabled</string>
     <string name="pref_key_enable_isolated_process" translatable="false">pref_key_enable_isolated_process</string>
+    <string name="pref_key_enable_app_zygote_process" translatable="false">pref_key_enable_app_zygote_process</string>
 
     <!-- Logins -->
     <string name="pref_key_enable_compose_logins" translatable="false">pref_key_enable_compose_logins</string>
@@ -504,4 +505,5 @@
 
     <!-- Tab Manager-->
     <string name="pref_key_tab_manager_enhancements" translatable="false">pref_key_tab_manager_enhancements</string>
+    <string name="pref_key_tab_manager_opening_animation" translatable="false">pref_key_tab_manager_opening_animation</string>
 </resources>

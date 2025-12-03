@@ -15,7 +15,9 @@ import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.RetryTestRule
-import org.mozilla.fenix.helpers.TestAssetHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.externalLinksAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.imageAsset
 import org.mozilla.fenix.helpers.TestHelper.clickSnackbarButton
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
@@ -64,10 +66,8 @@ class ContextMenusTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/243837
     @Test
     fun verifyOpenLinkNewTabContextMenuOptionTest() {
-        val pageLinks =
-            TestAssetHelper.getGenericAsset(mockWebServer, 4)
-        val genericURL =
-            TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val pageLinks = mockWebServer.getGenericAsset(4)
+        val genericURL = mockWebServer.getGenericAsset(1)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
@@ -88,10 +88,8 @@ class ContextMenusTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/244655
     @Test
     fun verifyOpenLinkInNewPrivateTabContextMenuOptionTest() {
-        val pageLinks =
-            TestAssetHelper.getGenericAsset(mockWebServer, 4)
-        val genericURL =
-            TestAssetHelper.getGenericAsset(mockWebServer, 2)
+        val pageLinks = mockWebServer.getGenericAsset(4)
+        val genericURL = mockWebServer.getGenericAsset(2)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
@@ -111,10 +109,8 @@ class ContextMenusTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/243832
     @Test
     fun verifyCopyLinkContextMenuOptionTest() {
-        val pageLinks =
-            TestAssetHelper.getGenericAsset(mockWebServer, 4)
-        val genericURL =
-            TestAssetHelper.getGenericAsset(mockWebServer, 3)
+        val pageLinks = mockWebServer.getGenericAsset(4)
+        val genericURL = mockWebServer.getGenericAsset(3)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
@@ -132,10 +128,8 @@ class ContextMenusTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/243838
     @Test
     fun verifyShareLinkContextMenuOptionTest() {
-        val pageLinks =
-            TestAssetHelper.getGenericAsset(mockWebServer, 4)
-        val genericURL =
-            TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val pageLinks = mockWebServer.getGenericAsset(4)
+        val genericURL = mockWebServer.getGenericAsset(1)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
@@ -153,10 +147,8 @@ class ContextMenusTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/243833
     @Test
     fun verifyOpenImageNewTabContextMenuOptionTest() {
-        val pageLinks =
-            TestAssetHelper.getGenericAsset(mockWebServer, 4)
-        val imageResource =
-            TestAssetHelper.getImageAsset(mockWebServer)
+        val pageLinks = mockWebServer.getGenericAsset(4)
+        val imageResource = mockWebServer.imageAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
@@ -173,10 +165,8 @@ class ContextMenusTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/243834
     @Test
     fun verifyCopyImageLocationContextMenuOptionTest() {
-        val pageLinks =
-            TestAssetHelper.getGenericAsset(mockWebServer, 4)
-        val imageResource =
-            TestAssetHelper.getImageAsset(mockWebServer)
+        val pageLinks = mockWebServer.getGenericAsset(4)
+        val imageResource = mockWebServer.imageAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
@@ -194,10 +184,8 @@ class ContextMenusTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/243835
     @Test
     fun verifySaveImageContextMenuOptionTest() {
-        val pageLinks =
-            TestAssetHelper.getGenericAsset(mockWebServer, 4)
-        val imageResource =
-            TestAssetHelper.getImageAsset(mockWebServer)
+        val pageLinks = mockWebServer.getGenericAsset(4)
+        val imageResource = mockWebServer.imageAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
@@ -217,12 +205,9 @@ class ContextMenusTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/352050
     @Test
     fun verifyContextMenuLinkVariationsTest() {
-        val pageLinks =
-            TestAssetHelper.getGenericAsset(mockWebServer, 4)
-        val genericURL =
-            TestAssetHelper.getGenericAsset(mockWebServer, 1)
-        val imageResource =
-            TestAssetHelper.getImageAsset(mockWebServer)
+        val pageLinks = mockWebServer.getGenericAsset(4)
+        val genericURL = mockWebServer.getGenericAsset(1)
+        val imageResource = mockWebServer.imageAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
@@ -241,8 +226,7 @@ class ContextMenusTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2333840
     @Test
     fun verifyPDFContextMenuLinkVariationsTest() {
-        val genericURL =
-            TestAssetHelper.getGenericAsset(mockWebServer, 3)
+        val genericURL = mockWebServer.getGenericAsset(3)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(genericURL.url) {
@@ -263,7 +247,7 @@ class ContextMenusTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/832094
     @Test
     fun verifyOpenLinkInAppContextMenuOptionTest() {
-        val defaultWebPage = TestAssetHelper.getExternalLinksAsset(mockWebServer)
+        val defaultWebPage = mockWebServer.externalLinksAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {

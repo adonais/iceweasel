@@ -15,7 +15,6 @@
 #endif
 
 #include "base/time.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Mutex.h"
 #include "nsCOMPtr.h"
 #include "nsIThreadInternal.h"

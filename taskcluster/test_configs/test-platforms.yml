@@ -81,6 +81,7 @@ linux2404-64/debug:
     test-sets:
         - linux-tests
         - web-platform-tests
+        - web-platform-tests-backlog
 
 linux2404-64-asan/opt:
     build-platform: linux64-asan/opt
@@ -293,6 +294,17 @@ windows11-64-24h2-nightlyasrelease/opt:
     build-platform: win64-nightlyasrelease/opt
     test-sets:
         - browsertime
+
+# windows11-64-aarch64
+windows11-aarch64-24h2/opt:
+    build-platform: win64-aarch64/opt
+    test-sets:
+        - windows-aarch64-tests
+
+windows11-aarch64-24h2/debug:
+    build-platform: win64-aarch64/debug
+    test-sets:
+        - windows-aarch64-tests
 
 ##
 # MacOS X platforms (matching /macosx.*/)

@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -44,7 +43,6 @@ private val defaultCardContentPadding = 8.dp
 private val imageWidth = 345.dp
 private val imageHeight = 180.dp
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun StoryCard(
     story: PocketStory,

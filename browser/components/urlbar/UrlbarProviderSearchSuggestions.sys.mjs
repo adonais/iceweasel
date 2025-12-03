@@ -26,6 +26,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
   UrlbarTokenizer:
     "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
+  UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
 });
 
 /**
@@ -54,7 +55,7 @@ const TRENDING_HELP_URL =
 function looksLikeUrl(str, ignoreAlphanumericHosts = false) {
   // Single word including special chars.
   return (
-    !lazy.UrlbarTokenizer.REGEXP_SPACES.test(str) &&
+    !lazy.UrlUtils.REGEXP_SPACES.test(str) &&
     (["/", "@", ":", "["].some(c => str.includes(c)) ||
       (ignoreAlphanumericHosts
         ? /^([\[\]A-Z0-9-]+\.){3,}[^.]+$/i.test(str)
@@ -83,9 +84,8 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
    * with this provider, to save on resources.
    *
    * @param {UrlbarQueryContext} queryContext The query context object.
-   * @param {UrlbarController} controller The current controller.
    */
-  async isActive(queryContext, controller) {
+  async isActive(queryContext) {
     // If the sources don't include search or the user used a restriction
     // character other than search, don't allow any suggestions.
     if (
@@ -106,7 +106,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
       return false;
     }
 
-    if (!this._allowSuggestions(queryContext, controller)) {
+    if (!this._allowSuggestions(queryContext)) {
       return false;
     }
 
@@ -147,15 +147,14 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
    * history or remote suggestions.
    *
    * @param {UrlbarQueryContext} queryContext The query context object.
-   * @param {UrlbarController} controller The current controller.
    * @returns {boolean} True if suggestions in general are allowed and false if
    *   not.
    */
-  _allowSuggestions(queryContext, controller) {
+  _allowSuggestions(queryContext) {
     if (
       // If the user typed a restriction token or token alias, we ignore the
       // pref to disable suggestions in the Urlbar.
-      (controller.input.isAddressbar &&
+      (queryContext.sapName == "urlbar" &&
         !lazy.UrlbarPrefs.get("suggest.searches") &&
         !this._isTokenOrRestrictionPresent(queryContext)) ||
       !lazy.UrlbarPrefs.get("browser.search.suggest.enabled") ||
@@ -222,10 +221,9 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
   /**
    * Starts querying.
    *
-   * @param {UrlbarQueryContext} queryContext The query context object
-   * @param {Function} addCallback Callback invoked by the provider to add a new
-   *        result.
-   * @returns {Promise} resolved when the query stops.
+   * @param {UrlbarQueryContext} queryContext
+   * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
+   *   Callback invoked by the provider to add a new result.
    */
   async startQuery(queryContext, addCallback) {
     let instance = this.queryInstance;
@@ -590,7 +588,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
 
     // Match an alias only when it has a space after it.  If there's no trailing
     // space, then continue to treat it as part of the search string.
-    if (!lazy.UrlbarTokenizer.REGEXP_SPACES_START.test(query)) {
+    if (!lazy.UrlUtils.REGEXP_SPACES_START.test(query)) {
       return null;
     }
 

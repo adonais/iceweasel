@@ -6,7 +6,6 @@
 #ifndef TRANSFRMX_MOZILLA_XML_OUTPUT_H
 #define TRANSFRMX_MOZILLA_XML_OUTPUT_H
 
-#include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 #include "nsICSSLoaderObserver.h"
 #include "nsIScriptLoaderObserver.h"

@@ -5,7 +5,6 @@
 
 #include <math.h>
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/FloatingPoint.h"
 #include "nsGkAtoms.h"
 #include "nsWhitespaceTokenizer.h"

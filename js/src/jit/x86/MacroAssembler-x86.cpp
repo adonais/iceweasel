@@ -310,9 +310,24 @@ void MacroAssemblerX86::vmulpdSimd128(const SimdConstant& v, FloatRegister lhs,
   vpPatchOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX86::vmulpd_mr);
 }
 
+void MacroAssemblerX86::vandpsSimd128(const SimdConstant& v, FloatRegister lhs,
+                                      FloatRegister dest) {
+  vpPatchOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX86::vandps_mr);
+}
+
 void MacroAssemblerX86::vandpdSimd128(const SimdConstant& v, FloatRegister lhs,
                                       FloatRegister dest) {
   vpPatchOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX86::vandpd_mr);
+}
+
+void MacroAssemblerX86::vxorpsSimd128(const SimdConstant& v, FloatRegister lhs,
+                                      FloatRegister dest) {
+  vpPatchOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX86::vxorps_mr);
+}
+
+void MacroAssemblerX86::vxorpdSimd128(const SimdConstant& v, FloatRegister lhs,
+                                      FloatRegister dest) {
+  vpPatchOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX86::vxorpd_mr);
 }
 
 void MacroAssemblerX86::vminpdSimd128(const SimdConstant& v, FloatRegister lhs,
@@ -959,15 +974,15 @@ void MacroAssembler::moveValue(const Value& src, const ValueOperand& dest) {
 // Arithmetic functions
 
 void MacroAssembler::flexibleQuotientPtr(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
-  flexibleQuotient32(rhs, srcDest, isUnsigned, volatileLiveRegs);
+  flexibleQuotient32(lhs, rhs, dest, isUnsigned, volatileLiveRegs);
 }
 
 void MacroAssembler::flexibleRemainderPtr(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
-  flexibleRemainder32(rhs, srcDest, isUnsigned, volatileLiveRegs);
+  flexibleRemainder32(lhs, rhs, dest, isUnsigned, volatileLiveRegs);
 }
 
 // ===============================================================

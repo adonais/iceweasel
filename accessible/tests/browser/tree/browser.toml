@@ -26,10 +26,13 @@ skip-if = ["true"] # Bug 1445513
 ["browser_general.js"]
 
 ["browser_lazy_tabs.js"]
+skip-if = ["verify-standalone"]
 
 ["browser_link.js"]
 
 ["browser_media.js"]
+
+["browser_root_element.js"]
 
 ["browser_searchbar.js"]
 
@@ -46,5 +49,3 @@ skip-if = ["true"] # Bug 1445513
 ["browser_test_nsIAccessibleDocument_URL.js"]
 
 ["browser_view_transition.js"]
-
-["browser_root_element.js"]

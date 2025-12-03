@@ -338,11 +338,11 @@ export class BaseContent extends React.PureComponent {
     const CSS_VAR_SPACE_XXLARGE = 32.04; // Custom Acorn themed variable (8 * 0.267rem);
 
     let layout = {
-      outerWrapperPaddingTop: 24,
-      searchWrapperPaddingTop: 16,
+      outerWrapperPaddingTop: 32.04,
+      searchWrapperPaddingTop: 16.02,
       searchWrapperPaddingBottom: CSS_VAR_SPACE_XXLARGE,
-      searchWrapperFixedScrollPaddingTop: 27,
-      searchWrapperFixedScrollPaddingBottom: 27,
+      searchWrapperFixedScrollPaddingTop: 24.03,
+      searchWrapperFixedScrollPaddingBottom: 24.03,
       searchInnerWrapperMinHeight: 52,
       logoAndWordmarkWrapperHeight: 0,
       logoAndWordmarkWrapperMarginBottom: 0,
@@ -656,7 +656,8 @@ export class BaseContent extends React.PureComponent {
     const pocketRegion = prefs["feeds.system.topstories"];
     const mayHaveInferredPersonalization =
       prefs[PREF_INFERRED_PERSONALIZATION_SYSTEM];
-    const mayHaveWeather = prefs["system.showWeather"];
+    const mayHaveWeather =
+      prefs["system.showWeather"] || prefs.trainhopConfig?.weather?.enabled;
     const supportUrl = prefs["support.url"];
 
     // Weather can be enabled and not rendered in the top right corner
@@ -779,36 +780,6 @@ export class BaseContent extends React.PureComponent {
 
     return (
       <div className={featureClassName}>
-        {/* Floating menu for customize menu toggle */}
-        <menu className="personalizeButtonWrapper">
-          <CustomizeMenu
-            onClose={this.closeCustomizationMenu}
-            onOpen={this.openCustomizationMenu}
-            openPreferences={this.openPreferences}
-            setPref={this.setPref}
-            enabledSections={enabledSections}
-            enabledWidgets={enabledWidgets}
-            wallpapersEnabled={wallpapersEnabled}
-            activeWallpaper={activeWallpaper}
-            pocketRegion={pocketRegion}
-            mayHaveTopicSections={mayHavePersonalizedTopicSections}
-            mayHaveInferredPersonalization={mayHaveInferredPersonalization}
-            mayHaveWeather={mayHaveWeather}
-            mayHaveTrendingSearch={mayHaveTrendingSearch}
-            mayHaveWidgets={mayHaveWidgets}
-            mayHaveTimerWidget={mayHaveTimerWidget}
-            mayHaveListsWidget={mayHaveListsWidget}
-            showing={customizeMenuVisible}
-          />
-          {this.shouldShowOMCHighlight("CustomWallpaperHighlight") && (
-            <MessageWrapper dispatch={this.props.dispatch}>
-              <WallpaperFeatureHighlight
-                position="inset-block-start inset-inline-start"
-                dispatch={this.props.dispatch}
-              />
-            </MessageWrapper>
-          )}
-        </menu>
         <div className="weatherWrapper">
           {shouldDisplayWeather && (
             <ErrorBoundary>
@@ -887,6 +858,36 @@ export class BaseContent extends React.PureComponent {
             <TopicSelection supportUrl={supportUrl} />
           )}
         </div>
+        {/* Floating menu for customize menu toggle */}
+        <menu className="personalizeButtonWrapper">
+          <CustomizeMenu
+            onClose={this.closeCustomizationMenu}
+            onOpen={this.openCustomizationMenu}
+            openPreferences={this.openPreferences}
+            setPref={this.setPref}
+            enabledSections={enabledSections}
+            enabledWidgets={enabledWidgets}
+            wallpapersEnabled={wallpapersEnabled}
+            activeWallpaper={activeWallpaper}
+            pocketRegion={pocketRegion}
+            mayHaveTopicSections={mayHavePersonalizedTopicSections}
+            mayHaveInferredPersonalization={mayHaveInferredPersonalization}
+            mayHaveWeather={mayHaveWeather}
+            mayHaveTrendingSearch={mayHaveTrendingSearch}
+            mayHaveWidgets={mayHaveWidgets}
+            mayHaveTimerWidget={mayHaveTimerWidget}
+            mayHaveListsWidget={mayHaveListsWidget}
+            showing={customizeMenuVisible}
+          />
+          {this.shouldShowOMCHighlight("CustomWallpaperHighlight") && (
+            <MessageWrapper dispatch={this.props.dispatch}>
+              <WallpaperFeatureHighlight
+                position="inset-block-start inset-inline-start"
+                dispatch={this.props.dispatch}
+              />
+            </MessageWrapper>
+          )}
+        </menu>
       </div>
     );
   }

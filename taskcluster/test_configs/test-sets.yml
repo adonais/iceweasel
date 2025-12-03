@@ -296,6 +296,9 @@ windows32-tests:
     - web-platform-tests
     - web-platform-tests-crashtest
 
+windows-aarch64-tests:
+    - cppunittest
+
 windows10-2009-tests:
     - cppunittest
     - gtest

@@ -3,6 +3,52 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Material3 color variables -->
+    <color name="fx_mobile_primary">@color/photonViolet10</color>
+    <color name="fx_mobile_on_primary">@color/photonDarkGrey90</color>
+    <color name="fx_mobile_primary_container">@color/photonViolet80</color>
+    <color name="fx_mobile_on_primary_container">@color/photonLightGrey05</color>
+    <color name="fx_mobile_primary_inverse">@color/photonViolet70</color>
+    <color name="fx_mobile_secondary">@color/photonLightGrey40</color>
+    <color name="fx_mobile_on_secondary">@color/photonDarkGrey90</color>
+    <color name="fx_mobile_secondary_container">#FF4B3974</color>
+    <color name="fx_mobile_on_secondary_container">@color/photonLightGrey05</color>
+    <color name="fx_mobile_tertiary">@color/photonViolet20</color>
+    <color name="fx_mobile_on_tertiary">@color/photonDarkGrey90</color>
+    <color name="fx_mobile_tertiary_container">@color/photonPink80</color>
+    <color name="fx_mobile_on_tertiary_container">@color/photonLightGrey05</color>
+    <color name="fx_mobile_background">@color/photonDarkGrey60</color>
+    <color name="fx_mobile_on_background">@color/photonLightGrey05</color>
+    <color name="fx_mobile_surface">@color/photonDarkGrey60</color>
+    <color name="fx_mobile_on_surface">@color/photonLightGrey05</color>
+    <color name="fx_mobile_surface_variant">@color/photonDarkGrey40</color>
+    <color name="fx_mobile_on_surface_variant">@color/photonLightGrey40</color>
+    <color name="fx_mobile_surface_inverse">@color/photonLightGrey10</color>
+    <color name="fx_mobile_on_surface_inverse">@color/photonDarkGrey90</color>
+    <color name="fx_mobile_error">@color/photonRed20</color>
+    <color name="fx_mobile_on_error">@color/photonDarkGrey90</color>
+    <color name="fx_mobile_error_container">@color/photonRed80</color>
+    <color name="fx_mobile_on_error_container">@color/photonLightGrey05</color>
+    <color name="fx_mobile_outline">@color/photonLightGrey80</color>
+    <color name="fx_mobile_outline_variant">@color/photonDarkGrey05</color>
+    <color name="fx_mobile_surface_bright">@color/photonDarkGrey40</color>
+    <color name="fx_mobile_surface_dim">@color/photonDarkGrey80</color>
+    <color name="fx_mobile_surface_container">@color/photonDarkGrey60</color>
+    <color name="fx_mobile_surface_container_high">@color/photonDarkGrey50</color>
+    <color name="fx_mobile_surface_container_highest">@color/photonDarkGrey40</color>
+    <color name="fx_mobile_surface_container_low">@color/photonDarkGrey70</color>
+    <color name="fx_mobile_surface_container_lowest">@color/photonDarkGrey80</color>
+    <color name="fx_mobile_primary_fixed_dim">@color/photonViolet80</color>
+    <color name="fx_mobile_on_primary_fixed_variant">@color/photonDarkGrey90</color>
+    <color name="fx_mobile_secondary_fixed">#FF4B3974</color>
+    <color name="fx_mobile_secondary_fixed_dim">#FF4B3974</color>
+    <color name="fx_mobile_on_secondary_fixed">@color/photonLightGrey05</color>
+    <color name="fx_mobile_on_secondary_fixed_variant">@color/photonDarkGrey90</color>
+    <color name="fx_mobile_tertiary_fixed">@color/photonPink80</color>
+    <color name="fx_mobile_tertiary_fixed_dim">@color/photonPink80</color>
+    <color name="fx_mobile_on_tertiary_fixed">@color/photonLightGrey05</color>
+    <color name="fx_mobile_on_tertiary_fixed_variant">@color/photonDarkGrey90</color>
+
     <!-- Design system color variables -->
 
     <!-- Layers -->

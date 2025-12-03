@@ -5,7 +5,6 @@
 #ifndef nsTreeSanitizer_h_
 #define nsTreeSanitizer_h_
 
-#include "mozilla/Maybe.h"
 #include "mozilla/dom/NameSpaceConstants.h"
 #include "mozilla/dom/StaticAtomSet.h"
 #include "nsAtom.h"

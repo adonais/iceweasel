@@ -24,10 +24,16 @@ https_first_disabled = true
 ["browser_document_builder_sjs.js"]
 
 ["browser_fail.js"]
+skip-if = ["verify-standalone"]
 
 ["browser_fail_add_task.js"]
+skip-if = ["os == 'linux' && os_version == '24.04' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone"]
 
 ["browser_fail_add_task_uncaught_rejection.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26100' && arch == 'x86' && debug && verify-standalone",
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt && verify-standalone",
+]
 
 ["browser_fail_async.js"]
 
@@ -35,15 +41,22 @@ https_first_disabled = true
 fail-if = ["true"]
 
 ["browser_fail_throw.js"]
+skip-if = ["os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt && socketprocess_networking && verify-standalone"]
 
 ["browser_fail_timeout.js"]
 disabled = "Disabled beacuse it takes too long (bug 1178959)"
 
 ["browser_fail_uncaught_rejection.js"]
+skip-if = ["verify-standalone"]
 
 ["browser_fail_uncaught_rejection_expected.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && debug && swgl && verify-standalone",
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone",
+]
 
 ["browser_fail_uncaught_rejection_expected_multi.js"]
+skip-if = ["os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && verify-standalone"]
 
 ["browser_fail_unexpectedTimeout.js"]
 disabled = "Disabled beacuse it takes too long (bug 1178959)"

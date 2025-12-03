@@ -114,9 +114,10 @@ class RenderCompositorNative : public RenderCompositor {
   };
 
   struct Surface {
-    explicit Surface(wr::DeviceIntSize aTileSize, bool aIsOpaque)
-        : mTileSize(aTileSize), mIsOpaque(aIsOpaque) {}
-    gfx::IntSize TileSize() {
+    Surface(wr::DeviceIntSize aTileSize, bool aIsOpaque);
+    ~Surface();
+
+    gfx::IntSize TileSize() const {
       return gfx::IntSize(mTileSize.width, mTileSize.height);
     }
 

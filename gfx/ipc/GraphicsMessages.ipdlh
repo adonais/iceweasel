@@ -34,7 +34,6 @@ struct DevicePrefs
   FeatureStatus hwCompositing;
   FeatureStatus d3d11Compositing;
   FeatureStatus oglCompositing;
-  FeatureStatus useD2D1;
   FeatureStatus d3d11HwAngle;
 };
 

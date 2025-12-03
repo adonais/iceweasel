@@ -5,7 +5,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/glue/Debug.h"
-#include "mozilla/Fuzzing.h"
 #include "mozilla/Sprintf.h"
 
 #include <stdarg.h>

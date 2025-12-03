@@ -14,12 +14,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
-  BrowserHandler: ["@mozilla.org/browser/clh;1", "nsIBrowserHandler"],
+  BrowserHandler: ["@mozilla.org/browser/clh;1", Ci.nsIBrowserHandler],
 });
 
 export class ContextMenuParent extends JSWindowActorParent {
   receiveMessage(message) {
     let browser = this.manager.rootFrameLoader.ownerElement;
+    if (browser.hasAttribute("disablecontextmenu")) {
+      return;
+    }
+
     let win = browser.ownerGlobal;
     // It's possible that the <xul:browser> associated with this
     // ContextMenu message doesn't belong to a window that actually
@@ -113,12 +117,6 @@ export class ContextMenuParent extends JSWindowActorParent {
 
   setAsDesktopBackground(targetIdentifier) {
     return this.sendQuery("ContextMenu:SetAsDesktopBackground", {
-      targetIdentifier,
-    });
-  }
-
-  getSearchFieldBookmarkData(targetIdentifier) {
-    return this.sendQuery("ContextMenu:SearchFieldBookmarkData", {
       targetIdentifier,
     });
   }

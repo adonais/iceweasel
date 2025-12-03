@@ -14,12 +14,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.VisibleForTesting
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
 import androidx.preference.Preference
 import androidx.preference.SwitchPreference
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -41,6 +41,7 @@ import org.mozilla.fenix.settings.SharedPreferenceUpdater
 import org.mozilla.fenix.settings.SyncPreferenceView
 import org.mozilla.fenix.settings.biometric.BiometricPromptPreferenceFragment
 import org.mozilla.fenix.settings.requirePreference
+import com.google.android.material.R as materialR
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -234,9 +235,10 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment() {
         } else {
             manageAddressesPreference.setIcon(iconsR.drawable.mozac_ic_plus_24)
             manageAddressesPreference.icon?.setTint(
-                ContextCompat.getColor(
-                    requireContext(),
-                    R.color.fx_mobile_icon_color_primary,
+                MaterialColors.getColor(
+                    requireActivity(),
+                    materialR.attr.colorOnSurface,
+                    "Could not resolve themed color",
                 ),
             )
             manageAddressesPreference.title =
@@ -276,9 +278,10 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment() {
         } else {
             manageSavedCardsPreference.setIcon(iconsR.drawable.mozac_ic_plus_24)
             manageSavedCardsPreference.icon?.setTint(
-                ContextCompat.getColor(
+                MaterialColors.getColor(
                     requireContext(),
-                    R.color.fx_mobile_icon_color_primary,
+                    materialR.attr.colorOnSurface,
+                    "Could not resolve themed color",
                 ),
             )
             manageSavedCardsPreference.title =

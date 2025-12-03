@@ -533,21 +533,64 @@ bool CharacterData::ThreadSafeTextIsOnlyWhitespace() const {
     return HasFlag(NS_TEXT_IS_ONLY_WHITESPACE);
   }
 
-  const char* cp = mBuffer.Get1b();
-  const char* end = cp + mBuffer.GetLength();
+  return CheckTextIsOnlyWhitespace(0, mBuffer.GetLength());
+}
 
-  while (cp < end) {
-    char ch = *cp;
+bool CharacterData::TextStartsWithOnlyWhitespace(uint32_t aOffset) const {
+  MOZ_ASSERT(aOffset <= mBuffer.GetLength());
 
-    // NOTE(emilio): If you ever change the definition of "whitespace" here, you
-    // need to change it too in RestyleManager::CharacterDataChanged.
-    if (!dom::IsSpaceCharacter(ch)) {
-      return false;
-    }
-
-    ++cp;
+  if (HasFlag(NS_CACHED_TEXT_IS_ONLY_WHITESPACE) &&
+      HasFlag(NS_TEXT_IS_ONLY_WHITESPACE)) {
+    return true;
   }
 
+  return CheckTextIsOnlyWhitespace(0, aOffset);
+}
+
+bool CharacterData::TextEndsWithOnlyWhitespace(uint32_t aOffset) const {
+  MOZ_ASSERT(aOffset <= mBuffer.GetLength());
+
+  if (HasFlag(NS_CACHED_TEXT_IS_ONLY_WHITESPACE) &&
+      HasFlag(NS_TEXT_IS_ONLY_WHITESPACE)) {
+    return true;
+  }
+
+  return CheckTextIsOnlyWhitespace(aOffset, mBuffer.GetLength());
+}
+
+bool CharacterData::CheckTextIsOnlyWhitespace(uint32_t aStartOffset,
+                                              uint32_t aEndOffset) const {
+  if (mBuffer.Is2b()) {
+    const char16_t* cp = mBuffer.Get2b() + aStartOffset;
+    const char16_t* end = mBuffer.Get2b() + aEndOffset;
+
+    while (cp < end) {
+      char16_t ch = *cp;
+
+      // NOTE(emilio): If you ever change the definition of "whitespace" here,
+      // you need to change it too in RestyleManager::CharacterDataChanged.
+      if (!dom::IsSpaceCharacter(ch)) {
+        return false;
+      }
+
+      ++cp;
+    }
+  } else {
+    const char* cp = mBuffer.Get1b() + aStartOffset;
+    const char* end = mBuffer.Get1b() + aEndOffset;
+
+    while (cp < end) {
+      char ch = *cp;
+
+      // NOTE(emilio): If you ever change the definition of "whitespace" here,
+      // you need to change it too in RestyleManager::CharacterDataChanged.
+      if (!dom::IsSpaceCharacter(ch)) {
+        return false;
+      }
+
+      ++cp;
+    }
+  }
   return true;
 }
 

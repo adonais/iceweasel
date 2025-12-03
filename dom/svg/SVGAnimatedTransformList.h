@@ -7,7 +7,6 @@
 #ifndef DOM_SVG_SVGANIMATEDTRANSFORMLIST_H_
 #define DOM_SVG_SVGANIMATEDTRANSFORMLIST_H_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/SVGTransformList.h"

@@ -27,6 +27,9 @@ class PsutilStub:
                 "write_time",
             ],
         )
+        self.snetio = namedtuple(
+            "snetio", ["bytes_sent", "bytes_recv", "packets_sent", "packets_recv"]
+        )
         self.pcputimes = namedtuple("pcputimes", ["user", "system"])
         self.svmem = namedtuple(
             "svmem",
@@ -57,6 +60,9 @@ class PsutilStub:
 
     def disk_io_counters(self):
         return self.sdiskio(0, 0, 0, 0, 0, 0)
+
+    def net_io_counters(self):
+        return self.snetio(0, 0, 0, 0)
 
     def swap_memory(self):
         return self.sswap(0, 0, 0, 0, 0, 0)
@@ -90,6 +96,18 @@ def get_disk_io_counters():
         io_counters = PsutilStub().disk_io_counters()
 
     return io_counters
+
+
+def get_network_io_counters():
+    try:
+        net_counters = psutil.net_io_counters()
+
+        if net_counters is None:
+            return PsutilStub().net_io_counters()
+    except (RuntimeError, AttributeError):
+        net_counters = PsutilStub().net_io_counters()
+
+    return net_counters
 
 
 def _poll(pipe, poll_interval=0.1):
@@ -127,6 +145,7 @@ def _collect(pipe, poll_interval):
         # Establish initial values.
 
         io_last = get_disk_io_counters()
+        net_io_last = get_network_io_counters()
         swap_last = psutil.swap_memory()
         psutil.cpu_percent(None, True)
         cpu_last = psutil.cpu_times(True)
@@ -175,6 +194,7 @@ def _collect(pipe, poll_interval):
 
         while not _poll(pipe, poll_interval=sleep_interval):
             io = get_disk_io_counters()
+            net_io = get_network_io_counters()
             virt_mem = psutil.virtual_memory()
             swap_mem = psutil.swap_memory()
             cpu_percent = psutil.cpu_percent(None, True)
@@ -189,6 +209,11 @@ def _collect(pipe, poll_interval):
             # TODO Consider patching "delta" API to upstream.
             io_diff = [v - io_last[i] for i, v in enumerate(io)]
             io_last = io
+
+            net_io_diff = [
+                v - net_io_last[i] for i, v in enumerate(net_io[:4])
+            ]  # Only use first 4 fields
+            net_io_last = net_io
 
             cpu_diff = []
             for core, values in enumerate(cpu_times):
@@ -206,6 +231,7 @@ def _collect(pipe, poll_interval):
                     last_time,
                     measured_end_time,
                     io_diff,
+                    net_io_diff,
                     cpu_diff,
                     cpu_percent,
                     list(virt_mem),
@@ -239,9 +265,11 @@ def _collect(pipe, poll_interval):
                     and not arg.startswith("-L")
                 ]
             )
-            pipe.send(("process", pid, create_time, end_time, cmdline, ppid, None))
+            pipe.send(
+                ("process", pid, create_time, end_time, cmdline, ppid, None, None)
+            )
 
-        pipe.send(("done", None, None, None, None, None, None))
+        pipe.send(("done", None, None, None, None, None, None, None))
         pipe.close()
 
     sys.exit(0)
@@ -249,7 +277,7 @@ def _collect(pipe, poll_interval):
 
 SystemResourceUsage = namedtuple(
     "SystemResourceUsage",
-    ["start", "end", "cpu_times", "cpu_percent", "io", "virt", "swap"],
+    ["start", "end", "cpu_times", "cpu_percent", "io", "net_io", "virt", "swap"],
 )
 
 
@@ -355,6 +383,7 @@ class SystemResourceMonitor:
             cpu_percent = psutil.cpu_percent(0.0, True)
             cpu_times = psutil.cpu_times(False)
             io = get_disk_io_counters()
+            net_io = get_network_io_counters()
             virt = psutil.virtual_memory()
             swap = psutil.swap_memory()
         except Exception as e:
@@ -366,6 +395,8 @@ class SystemResourceMonitor:
         self._cpu_times_len = len(cpu_times)
         self._io_type = type(io)
         self._io_len = len(io)
+        # Only use first 4 fields of net_io (bytes_sent, bytes_recv, packets_sent, packets_recv)
+        self._net_io_type = namedtuple("net_io", list(net_io._fields[:4]))
         self._virt_type = type(virt)
         self._virt_len = len(virt)
         self._swap_type = type(swap)
@@ -388,6 +419,18 @@ class SystemResourceMonitor:
 
     def convert_to_monotonic_time(self, timestamp):
         return timestamp - self.start_timestamp + self.start_time
+
+    def get_monotonic_time_from_data(self, data):
+        """Convert structured logging timestamp to monotonic time.
+
+        Args:
+            data: Dictionary with "time" field in milliseconds
+
+        Returns:
+            Monotonic timestamp
+        """
+        time_sec = data["time"] / 1000
+        return self.convert_to_monotonic_time(time_sec)
 
     # Methods to control monitoring.
 
@@ -441,6 +484,7 @@ class SystemResourceMonitor:
                     start_time,
                     end_time,
                     io_diff,
+                    net_io_diff,
                     cpu_diff,
                     cpu_percent,
                     virt_mem,
@@ -454,9 +498,9 @@ class SystemResourceMonitor:
             if start_time == "process":
                 pid = end_time
                 start = self.convert_to_monotonic_time(io_diff)
-                end = self.convert_to_monotonic_time(cpu_diff)
-                cmd = cpu_percent
-                ppid = virt_mem
+                end = self.convert_to_monotonic_time(net_io_diff)
+                cmd = cpu_diff
+                ppid = cpu_percent
                 self.processes.append((pid, start, end, cmd, ppid))
                 continue
 
@@ -467,13 +511,21 @@ class SystemResourceMonitor:
 
             try:
                 io = self._io_type(*io_diff)
+                net_io = self._net_io_type(*net_io_diff)
                 virt = self._virt_type(*virt_mem)
                 swap = self._swap_type(*swap_mem)
                 cpu_times = [self._cpu_times_type(*v) for v in cpu_diff]
 
                 self.measurements.append(
                     SystemResourceUsage(
-                        start_time, end_time, cpu_times, cpu_percent, io, virt, swap
+                        start_time,
+                        end_time,
+                        cpu_times,
+                        cpu_percent,
+                        io,
+                        net_io,
+                        virt,
+                        swap,
                     )
                 )
             except Exception:
@@ -525,8 +577,137 @@ class SystemResourceMonitor:
                             "size": stat.st_size,
                         }
                         self.events.append((timestamp, "artifact", marker_data))
+
+                        # Parse sccache.log if found
+                        if filename == "sccache.log":
+                            self._parse_sccache_log(filepath)
             except Exception as e:
                 warnings.warn(f"Failed to scan upload directory: {e}")
+
+    def _parse_sccache_log(self, filepath):
+        """Parse sccache.log and add profiler markers for cache hits and misses."""
+        import re
+        from datetime import datetime
+
+        parse_start = time.monotonic()
+
+        try:
+            # Track compilation entries: file -> {hash_time, lookup_time, write_time, hit}
+            compilations = {}
+
+            # Compile regex pattern outside the loop
+            # Matches: [timestamp DEBUG ...] [filename]: message ([\d.]+) s[,$]
+            # Examples:
+            #   [timestamp] [file.o]: generate_hash_key took 0.123 s
+            #   [timestamp] [file.o]: Cache hit in 0.456 s
+            #   [timestamp] [file.o]: Compiled in 2.580 s, storing in cache
+            pattern = re.compile(
+                r"\[(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z) .*\] \[([^\]]+)\]: (.+) ([\d.]+) s(?:,|$)"
+            )
+
+            with open(filepath) as f:
+                for line in f:
+                    match = pattern.match(line)
+                    if not match:
+                        continue
+
+                    timestamp_str = match.group(1)
+                    filename = match.group(2)
+                    message = match.group(3)
+                    duration = float(match.group(4)) * 1000  # Convert to milliseconds
+
+                    # Parse ISO 8601 timestamp and convert to monotonic time
+                    dt = datetime.strptime(timestamp_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+                    timestamp = self.convert_to_monotonic_time(dt.timestamp())
+
+                    # Get or create compilation entry
+                    entry = compilations.setdefault(filename, {})
+
+                    # Track hash generation time
+                    if message == "generate_hash_key took":
+                        entry["hash_time"] = duration
+                        # timestamp is in seconds, duration in milliseconds
+                        entry["start_time"] = timestamp - (duration / 1000)
+
+                    # Track cache hit/miss and lookup time
+                    elif message == "Cache hit in":
+                        entry["lookup_time"] = duration
+                        entry["hit"] = True
+                        entry["end_time"] = timestamp
+
+                    elif message == "Cache miss in":
+                        entry["lookup_time"] = duration
+                        entry["hit"] = False
+
+                    # Track cache write time (only for misses)
+                    elif message == "Cache write finished in":
+                        entry["write_time"] = duration
+                        entry["end_time"] = timestamp
+
+                    # Track compilation time (for misses)
+                    elif message == "Compiled in":
+                        entry["compile_time"] = duration
+
+                    # Track cache artifact creation time (for misses)
+                    elif message == "Created cache artifact in":
+                        entry["artifact_time"] = duration
+
+            # Add markers for each compilation
+            for filename, data in compilations.items():
+                if "start_time" not in data or "end_time" not in data:
+                    continue
+
+                marker_data = {
+                    "type": "sccache",
+                    "file": filename,
+                }
+
+                if "hash_time" in data:
+                    marker_data["hash_time"] = data["hash_time"]
+                if "lookup_time" in data:
+                    marker_data["lookup_time"] = data["lookup_time"]
+
+                if data.get("hit"):
+                    marker_data["status"] = "hit"
+                    marker_data["color"] = "green"
+                else:
+                    marker_data["status"] = "miss"
+                    marker_data["color"] = "yellow"
+                    if "compile_time" in data:
+                        marker_data["compile_time"] = data["compile_time"]
+                    if "artifact_time" in data:
+                        marker_data["artifact_time"] = data["artifact_time"]
+                    if "write_time" in data:
+                        marker_data["write_time"] = data["write_time"]
+
+                self.markers.append(
+                    (
+                        "sccache",
+                        data["start_time"],
+                        data["end_time"],
+                        marker_data,
+                    )
+                )
+
+        except Exception as e:
+            warnings.warn(f"Failed to parse sccache.log: {e}")
+        else:
+            # Add a duration marker showing parsing time
+            parse_end = time.monotonic()
+            num_markers = len(compilations)
+            # Add as a duration marker
+            if num_markers > 0:
+                self.markers.append(
+                    (
+                        "sccache parsing",
+                        parse_start,
+                        parse_end,
+                        {
+                            "type": "Text",
+                            "text": f"Parsed {num_markers} sccache entries from log",
+                        },
+                    )
+                )
 
     # Methods to record events alongside the monitored data.
 
@@ -598,11 +779,13 @@ class SystemResourceMonitor:
         """Begin tracking a test with enhanced metadata support.
 
         Args:
-            data: Dictionary containing test data (e.g., {"test": "test_name"})
+            data: Dictionary containing test data (e.g., {"test": "test_name", "time": timestamp})
         """
         if SystemResourceMonitor.instance and "test" in data:
             test_name = data["test"]
-            SystemResourceMonitor.instance._active_markers[test_name] = time.monotonic()
+            SystemResourceMonitor.instance._active_markers[test_name] = (
+                SystemResourceMonitor.instance.get_monotonic_time_from_data(data)
+            )
 
     @staticmethod
     def end_test(data):
@@ -623,7 +806,7 @@ class SystemResourceMonitor:
             return
 
         start = SystemResourceMonitor.instance._active_markers.pop(test_name)
-        end = time.monotonic()
+        end = SystemResourceMonitor.instance.get_monotonic_time_from_data(data)
 
         # Create marker data with test information
         marker_data = {
@@ -631,6 +814,11 @@ class SystemResourceMonitor:
             "test": test_name,
             "name": test_name.split("/")[-1],
         }
+
+        # Include timeout factor if present in extra data
+        extra = data.get("extra", {})
+        if extra and "timeoutfactor" in extra:
+            marker_data["timeoutfactor"] = extra["timeoutfactor"]
 
         status = data.get("status", "")
         if status:
@@ -674,8 +862,7 @@ class SystemResourceMonitor:
         if not SystemResourceMonitor.instance:
             return
 
-        time_sec = data["time"] / 1000
-        timestamp = SystemResourceMonitor.instance.convert_to_monotonic_time(time_sec)
+        timestamp = SystemResourceMonitor.instance.get_monotonic_time_from_data(data)
 
         marker_data = {"type": "TestStatus"}
 
@@ -728,8 +915,7 @@ class SystemResourceMonitor:
         if not SystemResourceMonitor.instance:
             return
 
-        time_sec = data["time"] / 1000
-        timestamp = SystemResourceMonitor.instance.convert_to_monotonic_time(time_sec)
+        timestamp = SystemResourceMonitor.instance.get_monotonic_time_from_data(data)
 
         marker_data = {
             "type": "Crash",
@@ -1196,6 +1382,11 @@ class SystemResourceMonitor:
                                 "format": "string",
                             },
                             {
+                                "key": "timeoutfactor",
+                                "label": "Timeout Factor",
+                                "format": "integer",
+                            },
+                            {
                                 "key": "color",
                                 "hidden": True,
                             },
@@ -1326,6 +1517,37 @@ class SystemResourceMonitor:
                         ],
                     },
                     {
+                        "name": "NetIO",
+                        "tooltipLabel": "{marker.name}",
+                        "display": [],
+                        "data": [
+                            {
+                                "key": "sent_bytes",
+                                "label": "Sent",
+                                "format": "bytes",
+                            },
+                            {
+                                "key": "sent_count",
+                                "label": "Packets sent",
+                                "format": "integer",
+                            },
+                            {
+                                "key": "recv_bytes",
+                                "label": "Received",
+                                "format": "bytes",
+                            },
+                            {
+                                "key": "recv_count",
+                                "label": "Packets received",
+                                "format": "integer",
+                            },
+                        ],
+                        "graphs": [
+                            {"key": "recv_bytes", "color": "blue", "type": "bar"},
+                            {"key": "sent_bytes", "color": "orange", "type": "bar"},
+                        ],
+                    },
+                    {
                         "name": "Process",
                         "chartLabel": "{marker.data.cmd}",
                         "tooltipLabel": "{marker.name}",
@@ -1362,6 +1584,55 @@ class SystemResourceMonitor:
                         ],
                         "graphs": [
                             {"key": "interval", "color": "purple", "type": "line"}
+                        ],
+                    },
+                    {
+                        "name": "sccache",
+                        "tooltipLabel": "{marker.data.status}: {marker.data.file}",
+                        "tableLabel": "{marker.data.status}: {marker.data.file}",
+                        "chartLabel": "{marker.data.file}",
+                        "display": ["marker-chart", "marker-table"],
+                        "colorField": "color",
+                        "data": [
+                            {
+                                "key": "file",
+                                "label": "File",
+                                "format": "string",
+                            },
+                            {
+                                "key": "status",
+                                "label": "Status",
+                                "format": "string",
+                            },
+                            {
+                                "key": "hash_time",
+                                "label": "Hash Time",
+                                "format": "duration",
+                            },
+                            {
+                                "key": "lookup_time",
+                                "label": "Lookup Time",
+                                "format": "duration",
+                            },
+                            {
+                                "key": "compile_time",
+                                "label": "Compile Time",
+                                "format": "duration",
+                            },
+                            {
+                                "key": "artifact_time",
+                                "label": "Artifact Creation Time",
+                                "format": "duration",
+                            },
+                            {
+                                "key": "write_time",
+                                "label": "Cache Write Time",
+                                "format": "duration",
+                            },
+                            {
+                                "key": "color",
+                                "hidden": True,
+                            },
                         ],
                     },
                 ],
@@ -1747,6 +2018,7 @@ class SystemResourceMonitor:
         cpu_string_index = get_string_index("CPU Use")
         memory_string_index = get_string_index("Memory")
         io_string_index = get_string_index("IO")
+        network_string_index = get_string_index("NetIO")
         interval_string_index = get_string_index("Sampling Interval")
         valid_cpu_fields = set()
         for m in self.measurements:
@@ -1812,6 +2084,16 @@ class SystemResourceMonitor:
                 "write_bytes": m.io.write_bytes,
             }
             add_marker(io_string_index, m.start, m.end, markerData)
+
+            # Network IO
+            markerData = {
+                "type": "NetIO",
+                "recv_count": m.net_io.packets_recv,
+                "recv_bytes": m.net_io.bytes_recv,
+                "sent_count": m.net_io.packets_sent,
+                "sent_bytes": m.net_io.bytes_sent,
+            }
+            add_marker(network_string_index, m.start, m.end, markerData)
 
             # Sampling interval marker
             add_marker(

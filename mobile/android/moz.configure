@@ -40,6 +40,25 @@ set_config("MOZ_ANDROID_CONTENT_SERVICE_COUNT", num_content_services)
 set_define("MOZ_ANDROID_CONTENT_SERVICE_COUNT", num_content_services)
 
 option(
+    "--enable-isolated-zygote-process",
+    env="MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE",
+    help="Enable generating content process services with app Zygote preloading and isolated processes",
+    default=False,
+)
+
+isIsolatedAppZygoteProcessEnabled = depends_if(
+    "MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE"
+)(lambda _: True)
+set_config(
+    "MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE",
+    isIsolatedAppZygoteProcessEnabled,
+)
+set_define(
+    "MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE",
+    isIsolatedAppZygoteProcessEnabled,
+)
+
+option(
     "--enable-isolated-process",
     env="MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS",
     help="Enable generating content process services with isolatedProcess=true",

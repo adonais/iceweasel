@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -149,7 +156,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s gir deg kontroll.</p> <p>Bruk den som en privat nettleser: <ul> <li>Søk og surf rett i appen</li> <li>Blokker sporere (eller oppdater innstillingene for å tillate sporere)</li> <li>Slett for å fjerne infokapsler samt søk- og nettleserhistorikk</li> </ul> </p> <p>%1$s er produsert av Mozilla. Vårt oppdrag er å fremme et sunt, åpent Internett.<br/> <a href=\"%2$s\">Les mer</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s gir deg kontroll.</p>\n<p>Bruk den som en privat nettleser:\n<ul>\n<li>Søk og surf rett i appen</li>\n<li>Blokker sporere (eller oppdater innstillingene for å tillate sporere)</li>\n<li>Slett for å fjerne infokapsler samt søk- og nettleserhistorikk</li>\n</ul> </p>\n<p>%1$s er produsert av Mozilla. Vårt oppdrag er å fremme et sunt, åpent Internett.<br/>\n<a href=\"%2$s\">Les mer</a></p>]]></string>
   <!-- A link to SUMO at the bottom of About Focus screen. -->
   <string name="about_screen_learn_more">Les mer</string>
   <!-- Header for the Privacy and Security settings menu -->
@@ -875,7 +882,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Dette kan være på grunn av et problem med serverens konfigurasjon, eller det kan være fordi noen forsøker å forfalske tilkoblingen til serveren. <br/><br/> Dersom du har klart å koble til serveren tidligere kan problemet være midlertidig, og du kan prøve igjen senere.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Noen kan prøve å etterligne nettstedet, og det kan være risikabelt å fortsette.</label> <br><br> <label>%1$s stoler ikke på <b>%2$s</b> fordi sertifikatutstederen er ukjent, sertifikatet er selvsignert, eller serveren sender ikke de riktige mellomsertifikatene.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Noen kan prøve å etterligne nettstedet, og det kan være risikabelt å fortsette.</label> <br><br>\n<label>%1$s stoler ikke på <b>%2$s</b> fordi sertifikatutstederen er ukjent, sertifikatet er selvsignert, eller serveren sender ikke de riktige mellomsertifikatene.</label>]]></string>
   <!--
     Sessions List
 

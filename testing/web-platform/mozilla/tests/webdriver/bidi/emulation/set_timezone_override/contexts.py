@@ -2,7 +2,7 @@ import pytest
 
 pytestmark = pytest.mark.asyncio
 
-pytest_plugins = "tests.bidi.emulation.set_timezone_override.conftest"
+pytest_plugins = "tests.bidi.emulation.conftest"
 
 
 @pytest.mark.capabilities(

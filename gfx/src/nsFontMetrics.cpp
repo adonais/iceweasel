@@ -101,8 +101,9 @@ class StubPropertyProvider final : public gfxTextRun::PropertyProvider {
     NS_ERROR("This shouldn't be called because we never enable hyphens");
     return 60;
   }
-  void GetSpacing(gfxTextRun::Range aRange, Spacing* aSpacing) const override {
+  bool GetSpacing(gfxTextRun::Range aRange, Spacing* aSpacing) const override {
     NS_ERROR("This shouldn't be called because we never enable spacing");
+    return false;
   }
   gfx::ShapedTextFlags GetShapedTextFlags() const override {
     NS_ERROR("This shouldn't be called because we never enable hyphens");

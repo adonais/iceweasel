@@ -210,6 +210,8 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
            !peer_certificate_digest_value_.empty();
   }
 
+  void MaybeSetTimeout();
+
   const std::unique_ptr<StreamInterface> stream_;
   absl::AnyInvocable<void(SSLHandshakeError)> handshake_error_;
 
@@ -277,12 +279,5 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
 
 }  //  namespace webrtc
 
-// Re-export symbols from the webrtc namespace for backwards compatibility.
-// TODO(bugs.webrtc.org/4222596): Remove once all references are updated.
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::OpenSSLStreamAdapter;
-}  // namespace rtc
-#endif  // WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 
 #endif  // RTC_BASE_OPENSSL_STREAM_ADAPTER_H_

@@ -8,6 +8,7 @@
 
 #include "nsISupportsImpl.h"
 #include "mozilla/net/neqo_glue_ffi_generated.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 #include "nsCOMPtr.h"
 #include "nsIAsyncInputStream.h"

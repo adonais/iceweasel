@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Ιδιωτικό %s</string>
@@ -82,7 +89,7 @@
     %1$s is the name of the app (for example "Firefox").
     %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
   -->
-  <string name="felt_privacy_info_card_subtitle_2">Το %1$s διαγράφει τα cookie, το ιστορικό και τα δεδομένα ιστοτόπων σας όταν κλείνετε όλες τις ιδιωτικές σας καρτέλες. %2$s</string>
+  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">Το %1$s διαγράφει τα cookie, το ιστορικό και τα δεδομένα ιστοτόπων σας όταν κλείνετε όλες τις ιδιωτικές σας καρτέλες. %2$s</string>
   <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
@@ -204,8 +211,6 @@
   <string name="browser_menu_manage_extensions">Διαχείριση επεκτάσεων</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
   <string name="browser_menu_more_settings">Περισσότερα</string>
-  <!-- Browser menu group that contains additional settings in expanded state -->
-  <string name="browser_menu_less_settings" moz:removedIn="144" tools:ignore="UnusedResources">Λιγότερα</string>
   <!--
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
@@ -733,7 +738,6 @@
   <string name="preferences_pbm_lock_screen_title">Χρήση κλειδώματος οθόνης για την απόκρυψη καρτελών στην ιδιωτική περιήγηση</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_3">Δείτε τις καρτέλες σας με το δακτυλικό σας αποτύπωμα, ένα PIN ή με αναγνώριση προσώπου. Η ενεργοποίηση αυτής της λειτουργίας εμποδίζει επίσης την καταγραφή και τον διαμοιρασμό οθόνης.</string>
-  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">Εμφανίστε τις καρτέλες με δαχτυλικό αποτύπωμα, αναγνώριση προσώπου ή PIN.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Αποκλεισμός μηνυμάτων για cookie</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -849,7 +853,7 @@
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Αναζήτηση σελιδοδεικτών</string>
   <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts">Εμφάνιση συντομεύσεων</string>
+  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Εμφάνιση συντομεύσεων</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Αναζήτηση συγχρονισμένων καρτελών</string>
   <!-- Preference for account settings -->
@@ -975,10 +979,6 @@
     Content description for various wallpapers. %1$s is the name of the wallpaper.
   -->
   <string name="wallpapers_item_name_content_description">Στοιχείο ταπετσαρίας: %1$s</string>
-  <!-- Snackbar message for when wallpaper is selected -->
-  <string name="wallpaper_updated_snackbar_message" tools:ignore="UnusedResources" moz:removedIn="144">Η ταπετσαρία ενημερώθηκε!</string>
-  <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">Προβολή</string>
   <!-- Snackbar message for when wallpaper couldn't be downloaded -->
   <string name="wallpaper_download_error_snackbar_message">Δεν ήταν δυνατή η λήψη ταπετσαρίας</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
@@ -1037,16 +1037,12 @@
   <string name="alternative_app_icon_option_gradient_northern_lights">Βόρειο σέλας</string>
   <!-- Title for the "Retro 2004" themed alternative app icon variant in the icon picker screen. This app icon uses the classic Firefox logo from 2004. -->
   <string name="alternative_app_icon_option_retro_2004">Ρετρό 2004</string>
-  <!-- Title for the "Retro 2017" themed alternative app icon variant in the icon picker screen. This app icon uses the Firefox logo from 2017, with a more modernized design. -->
-  <string name="alternative_app_icon_option_retro_2017" tools:ignore="UnusedResources" moz:removedIn="144">Ρετρό 2017</string>
   <!-- Title for the "Pixelated" themed alternative app icon variant in the icon picker screen. This app icon features a pixel-art style, resembling retro 8-bit graphics. -->
   <string name="alternative_app_icon_option_pixelated">Εικονοστοιχεία</string>
   <!-- Title for the "Minimal" themed alternative app icon variant in the icon picker screen. The app icon presents a simplified, flat and monochrome version of the Firefox logo. -->
   <string name="alternative_app_icon_option_minimal">Μινιμαλιστικό</string>
   <!-- Title for the "Pride" themed alternative app icon variant in the icon picker screen. The app icon incorporates a rainbow color scheme in support of the LGBTQ+ community. -->
   <string name="alternative_app_icon_option_pride">Υπερηφάνεια</string>
-  <!-- Title for the "Cute" themed alternative app icon variant in the icon picker screen. The app icon features a playful design with an adorable aesthetic. -->
-  <string name="alternative_app_icon_option_cute" tools:ignore="UnusedResources" moz:removedIn="144">Χαριτωμένο</string>
   <!-- Title for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
   <string name="alternative_app_icon_option_momo">Momo</string>
   <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
@@ -1062,19 +1058,19 @@
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">Διαβαθμίσεις</string>
   <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other">Άλλο</string>
+  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">Άλλο</string>
+  <!-- Title for the "Featured" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
+  <string name="alternative_app_icon_group_featured">Προβεβλημένα</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
   <string name="restart_warning_dialog_title">Αλλαγή εικονιδίου εφαρμογής;</string>
-  <!-- Message to warn users that applying an alternative app icon requires an app restart -->
-  <string name="restart_warning_dialog_body" tools:ignore="UnusedResources" moz:removedIn="144">Η αλλαγή του εικονιδίου απαιτεί επανεκκίνηση της εφαρμογής.</string>
   <!-- Message to warn users that applying an alternative app icon may require an app restart. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
   <string name="restart_warning_dialog_body_2">Η εφαρμογή ενδέχεται να κλείσει. Πατήστε το νέο εικονίδιο για να ανοίξετε ξανά το %1$s.</string>
-  <!-- Dialog button text for confirming the app restart to apply the selected icon -->
-  <string name="restart_warning_dialog_button_positive" tools:ignore="UnusedResources" moz:removedIn="144">Επανεκκίνηση τώρα</string>
   <!-- Dialog button text for confirming the possible app restart and new icon selection -->
   <string name="restart_warning_dialog_button_positive_2">Αλλαγή εικονιδίου</string>
   <!-- Dialog button text for cancelling app icon change -->
   <string name="restart_warning_dialog_button_negative">Ακύρωση</string>
+  <!-- Error message snackbar shown after the user tried to apply the new icon but the Android OS threw an error while updating existing app shortcuts (e.g. private mode shortcut) -->
+  <string name="shortcuts_update_error">Αποτυχία ενημέρωσης του εικονιδίου εφαρμογής. Αφαιρέστε τις υπάρχουσες συντομεύσεις και δοκιμάστε ξανά.</string>
   <!--
     Add-ons general availability nimbus message
 
@@ -1728,25 +1724,25 @@
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
   <string name="webcompat_reporter_label_description">Περιγράψτε το πρόβλημα (προαιρετικό)</string>
   <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
-  <string name="webcompat_reporter_send_more_info" moz:removedIn="144" tools:ignore="UnusedResources">Αποστολή περισσότερων πληροφοριών</string>
-  <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
   <string name="webcompat_reporter_add_more_info">Προσθήκη περισσότερων πληροφοριών</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">Ακύρωση</string>
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Αποστολή</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Η αναφορά σας έχει σταλεί</string>
-  <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
   <string name="webcompat_reporter_success_snackbar_text_2">Η αναφορά εστάλη</string>
-  <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Κλείσιμο</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">Τι συνέβη; Τι θα έπρεπε να έχει συμβεί;</string>
   <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
   <string name="webcompat_reporter_etp_checkbox_text">Αποστολή URL αποκλεισμένων από προστασία καταγραφής</string>
   <!-- Description text for the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. It informs the user when checked, the report will include the list of URLs that were blocked by Enhanced Tracking Protection on the current page. -->
   <string name="webcompat_reporter_etp_checkbox_description">Η Ενισχυμένη προστασία από καταγραφή ενδέχεται να αποκλείσει ιχνηλάτες και σενάρια εντολών που χρειάζονται ορισμένοι ιστότοποι για να λειτουργούν σωστά.</string>
+  <!-- The button text for the preview report button to view a preview of the report. -->
+  <string name="webcompat_reporter_preview_report">Προεπισκόπηση αναφοράς</string>
+  <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
+  <string name="webcompat_reporter_preview_bottom_sheet_header">Προεπισκόπηση αναφοράς</string>
+  <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
+  <string name="webcompat_reporter_preview_bottom_sheet_send">Αποστολή</string>
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
@@ -2055,11 +2051,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">Επιλέχθηκε %d καρτέλα</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Η συλλογή αποθηκεύτηκε!</string>
-  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection_2">Η συλλογή αποθηκεύτηκε</string>
-  <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Η καρτέλα αποθηκεύτηκε!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
   <string name="create_collection_tab_saved_2">Η καρτέλα αποθηκεύτηκε</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
@@ -2198,8 +2190,6 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Έκλεισαν %1$s καρτέλες</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">Οι σελιδοδείκτες αποθηκεύτηκαν στο «%s»!</string>
-  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
   <string name="snackbar_message_bookmarks_saved_in_2">Οι σελιδοδείκτες αποθηκεύτηκαν στο «%s»</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Προστέθηκε στις συντομεύσεις!</string>
@@ -2209,8 +2199,6 @@
   <string name="snackbar_private_data_deleted">Τα δεδομένα ιδιωτικής περιήγησης διαγράφηκαν</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">ΑΝΑΙΡΕΣΗ</string>
-  <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">Ο ιστότοπος αφαιρέθηκε</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -2314,11 +2302,7 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Οι καρτέλες απεστάλησαν!</string>
-  <!-- Text shown in snackbar when multiple tabs have been sent to device -->
   <string name="sync_sent_tabs_snackbar_2">Οι καρτέλες απεστάλησαν</string>
-  <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Η καρτέλα απεστάλη!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
   <string name="sync_sent_tab_snackbar_2">Η καρτέλα απεστάλη</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
@@ -2370,9 +2354,19 @@
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Ισχυρότερη προστασία από καταγραφή και καλύτερες επιδόσεις, αλλά ορισμένοι ιστότοποι ενδέχεται να μην λειτουργούν σωστά.</string>
   <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline">Να επιτρέπεται στο %1$s η αυτόματη εφαρμογή των απαιτούμενων εξαιρέσεων για την αποτροπή σημαντικών δυσλειτουργιών στους ιστοτόπους.</string>
+  <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">Να επιτρέπεται στο %1$s η αυτόματη εφαρμογή των απαιτούμενων εξαιρέσεων για την αποτροπή σημαντικών δυσλειτουργιών στους ιστοτόπους.</string>
   <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience">Να εμφαρμόζονται επίσης αυτόματα εξαιρέσεις που απαιτούνται μόνο για τη διόρθωση μικρών ζητημάτων και την ενεργοποίηση βολικών λειτουργιών.</string>
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">Να εμφαρμόζονται επίσης αυτόματα εξαιρέσεις που απαιτούνται μόνο για τη διόρθωση μικρών ζητημάτων και την ενεργοποίηση βολικών λειτουργιών.</string>
+  <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Διόρθωση σημαντικών ζητημάτων ιστοτόπου (προτείνεται)</string>
+  <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience_label">Διόρθωση μικρών ζητημάτων ιστοτόπου</string>
+  <!-- Preference description for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience_description">Πρέπει να χρησιμοποιείται με διορθώσεις για μεγάλα ζητήματα.</string>
+  <!-- Preference sub header for the enhanced tracking protection options to fix issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_subheader">Διόρθωση ζητημάτων ιστοτόπου</string>
+  <!-- Learn more text for the enhanced tracking protection options to fix issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_learn_more">Μάθετε περισσότερα</string>
   <!--
     Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
 
@@ -2761,14 +2755,14 @@
   <string name="preferences_addresses_sync_addresses_across_devices">Συγχρονισμός διευθύνσεων μεταξύ συσκευών</string>
   <!-- Preference option for syncing addresses across devices. This is displayed when the user is signed into sync -->
   <string name="preferences_addresses_sync_addresses">Συγχρονισμός διευθύνσεων</string>
+  <!-- Content description navigating back from autofill settings screen. -->
+  <string name="autofill_settings_navigate_back_button_content_description">Πίσω</string>
   <!-- Title of the "Add card" screen -->
   <string name="credit_cards_add_card">Προσθήκη κάρτας</string>
   <!-- Title of the "Edit card" screen -->
   <string name="credit_cards_edit_card">Επεξεργασία κάρτας</string>
   <!-- The header for the card number of a credit card -->
   <string name="credit_cards_card_number">Αριθμός κάρτας</string>
-  <!-- The header for the expiration date of a credit card -->
-  <string name="credit_cards_expiration_date">Ημερομηνία λήξης</string>
   <!-- The label for the expiration date month of a credit card to be used by a11y services -->
   <string name="credit_cards_expiration_date_month">Μήνας ημερομηνίας λήξης</string>
   <!-- The label for the expiration date year of a credit card to be used by a11y services -->
@@ -3483,8 +3477,6 @@
   <string name="clear_site_data_dialog_positive_button_text">Απαλοιφή</string>
   <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
   <string name="clear_site_data_dialog_negative_button_text">Ακύρωση</string>
-  <!-- Snackbar title shown when the site data has been cleared. -->
-  <string name="clear_site_data_snackbar" moz:removedIn="144" tools:ignore="UnusedResources">Τα cookie και τα δεδομένα ιστοτόπων αφαιρέθηκαν</string>
   <!-- Text for the connection security panel when the site is secure. -->
   <string name="connection_security_panel_secure">Ασφαλής σύνδεση</string>
   <!-- Text for the connection security panel when the site is not secure. -->
@@ -3610,6 +3602,8 @@
   <string name="microsurvey_close_handle_content_description">Κλείσιμο έρευνας</string>
   <!-- Content description for "X" button that is closing microsurvey. -->
   <string name="microsurvey_close_button_content_description">Κλείσιμο</string>
+  <!-- The title of the autofill tab in the Debug Drawer. -->
+  <string name="debug_drawer_autofill_title">Εργαλεία αυτόματης συμπλήρωσης</string>
   <!--
     Debug drawer logins
 
@@ -3882,6 +3876,28 @@
   <string name="review_prompt_feedback_header">Λυπούμαστε που αντιμετωπίζετε προβλήματα. Πείτε μας πώς μπορούμε να βελτιώσουμε το %1$s.</string>
   <!-- Label for a button opening a feedback forum -->
   <string name="review_prompt_feedback_button">Υποβολή σχολίων</string>
+  <!--
+    Settings Search Strings
+
+    Title of Settings Search. "Search" is a verb here
+  -->
+  <string name="settings_search_title">Αναζήτηση ρυθμίσεων</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to clear the search field for settings search -->
+  <string name="content_description_settings_search_clear_search">Απαλοιφή αναζήτησης</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to navigate back to the Settings page from the Settings Search screen. -->
+  <string name="content_description_settings_search_navigate_back">Πλοήγηση προς τα πίσω</string>
+  <!-- Message displayed when the search field in the Settings Search screen is empty -->
+  <string name="settings_search_empty_query_placeholder">Δεν υπάρχουν πρόσφατες αναζητήσεις</string>
+  <!-- Message when error happens with Settings Search -->
+  <string name="settings_search_error_message">Προέκυψε σφάλμα</string>
+  <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
+  <string name="settings_search_clear_recent_searches_message">Απαλοιφή όλων</string>
+  <!-- Section header for recent search results -->
+  <string name="settings_search_recent_searches_section_header">Πρόσφατα αποτελέσματα αναζήτησης</string>
+  <!-- Message displayed when the search field is not empty but search results is empty. -->
+  <string name="settings_search_no_results_title">Δεν βρέθηκε τίποτα</string>
+  <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
+  <string name="settings_search_no_results_message">Μήπως να δοκιμάσετε μια άλλη αναζήτηση;</string>
   <!--
     Terms of use pop up prompt
 

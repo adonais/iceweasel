@@ -109,7 +109,7 @@ add_setup(async () => {
     prefs: [
       ["quicksuggest.impressionCaps.sponsoredEnabled", true],
       ["quicksuggest.impressionCaps.nonSponsoredEnabled", true],
-      ["suggest.quicksuggest.nonsponsored", true],
+      ["suggest.quicksuggest.all", true],
       ["suggest.quicksuggest.sponsored", true],
     ],
   });

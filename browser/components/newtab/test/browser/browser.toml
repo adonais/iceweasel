@@ -14,3 +14,4 @@ prefs = [
 ["browser_sponsor_protection.js"]
 
 ["browser_sponsored_annotation.js"]
+skip-if = ["os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone"]

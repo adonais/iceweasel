@@ -8,7 +8,6 @@
 #define XULFrameElement_h__
 
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "nsCycleCollectionParticipant.h"

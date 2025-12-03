@@ -8,7 +8,6 @@
 #ifndef mozilla_mozalloc_abort_h
 #define mozilla_mozalloc_abort_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/Types.h"
 
 /**

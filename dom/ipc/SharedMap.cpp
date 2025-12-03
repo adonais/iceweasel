@@ -48,7 +48,7 @@ SharedMap::SharedMap(nsIGlobalObject* aGlobal, SharedMemoryHandle&& aMapHandle,
       mHandle(std::move(aMapHandle)) {}
 
 bool SharedMap::Has(const nsACString& aName) {
-  Unused << MaybeRebuild();
+  (void)MaybeRebuild();
   return mEntries.Contains(aName);
 }
 
@@ -116,8 +116,7 @@ void SharedMap::Update(SharedMemoryHandle&& aMapHandle,
     return;
   }
   for (auto& key : aChangedKeys) {
-    Unused << init.mChangedKeys.AppendElement(NS_ConvertUTF8toUTF16(key),
-                                              fallible);
+    (void)init.mChangedKeys.AppendElement(NS_ConvertUTF8toUTF16(key), fallible);
   }
 
   RefPtr<SharedMapChangeEvent> event =
@@ -228,14 +227,14 @@ Result<Ok, nsresult> SharedMap::MaybeRebuild() {
 }
 
 void SharedMap::MaybeRebuild() const {
-  Unused << const_cast<SharedMap*>(this)->MaybeRebuild();
+  (void)const_cast<SharedMap*>(this)->MaybeRebuild();
 }
 
 WritableSharedMap::WritableSharedMap() {
   mWritable = true;
   // Serialize the initial empty contents of the map immediately so that we
   // always have a file descriptor to send.
-  Unused << Serialize();
+  (void)Serialize();
   MOZ_RELEASE_ASSERT(mHandle.IsValid() && mMapping.IsValid());
 }
 
@@ -346,7 +345,7 @@ void WritableSharedMap::SendTo(ContentParent* aParent) const {
     }
   }
 
-  Unused << aParent->SendUpdateSharedData(mHandle.Clone(), blobs, mChangedKeys);
+  (void)aParent->SendUpdateSharedData(mHandle.Clone(), blobs, mChangedKeys);
 }
 
 void WritableSharedMap::BroadcastChanges() {

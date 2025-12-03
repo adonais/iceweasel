@@ -55,7 +55,7 @@ WebTransportSessionProxy::~WebTransportSessionProxy() {
              "because should e an runnable  that holds reference to this"
              "object.");
 
-  Unused << gSocketTransportService->Dispatch(NS_NewRunnableFunction(
+  (void)gSocketTransportService->Dispatch(NS_NewRunnableFunction(
       "WebTransportSessionProxy::ProxyHttp3WebTransportSessionRelease",
       [self{std::move(mWebTransportSession)}]() {}));
 }
@@ -175,7 +175,7 @@ nsresult WebTransportSessionProxy::AsyncConnectWithClient(
     mChannel = nullptr;
     return NS_ERROR_ABORT;
   }
-  Unused << internalChannel->SetWebTransportSessionEventListener(this);
+  (void)internalChannel->SetWebTransportSessionEventListener(this);
 
   rv = mChannel->AsyncOpen(this);
   if (NS_SUCCEEDED(rv)) {
@@ -272,7 +272,7 @@ void WebTransportSessionProxy::CloseSessionInternal() MOZ_REQUIRES(mMutex) {
   if (!OnSocketThread()) {
     mMutex.AssertCurrentThreadOwns();
     RefPtr<WebTransportSessionProxy> self(this);
-    Unused << gSocketTransportService->Dispatch(NS_NewRunnableFunction(
+    (void)gSocketTransportService->Dispatch(NS_NewRunnableFunction(
         "WebTransportSessionProxy::CallCloseWebTransportSession",
         [self{std::move(self)}]() { self->CloseSessionInternalLocked(); }));
     return;
@@ -314,7 +314,7 @@ class WebTransportStreamCallbackWrapper final {
   void CallOnError(nsresult aError) {
     if (!mTarget->IsOnCurrentThread()) {
       RefPtr<WebTransportStreamCallbackWrapper> self(this);
-      Unused << mTarget->Dispatch(NS_NewRunnableFunction(
+      (void)mTarget->Dispatch(NS_NewRunnableFunction(
           "WebTransportStreamCallbackWrapper::CallOnError",
           [self{std::move(self)}, error{aError}]() {
             self->CallOnError(error);
@@ -324,14 +324,14 @@ class WebTransportStreamCallbackWrapper final {
 
     LOG(("WebTransportStreamCallbackWrapper::OnError aError=0x%" PRIx32,
          static_cast<uint32_t>(aError)));
-    Unused << mCallback->OnError(nsIWebTransport::INVALID_STATE_ERROR);
+    (void)mCallback->OnError(nsIWebTransport::INVALID_STATE_ERROR);
   }
 
   void CallOnStreamReady(WebTransportStreamProxy* aStream) {
     if (!mTarget->IsOnCurrentThread()) {
       RefPtr<WebTransportStreamCallbackWrapper> self(this);
       RefPtr<WebTransportStreamProxy> stream = aStream;
-      Unused << mTarget->Dispatch(NS_NewRunnableFunction(
+      (void)mTarget->Dispatch(NS_NewRunnableFunction(
           "WebTransportStreamCallbackWrapper::CallOnStreamReady",
           [self{std::move(self)}, stream{std::move(stream)}]() {
             self->CallOnStreamReady(stream);
@@ -340,11 +340,11 @@ class WebTransportStreamCallbackWrapper final {
     }
 
     if (mBidi) {
-      Unused << mCallback->OnBidirectionalStreamReady(aStream);
+      (void)mCallback->OnBidirectionalStreamReady(aStream);
       return;
     }
 
-    Unused << mCallback->OnUnidirectionalStreamReady(aStream);
+    (void)mCallback->OnUnidirectionalStreamReady(aStream);
   }
 
  private:
@@ -413,7 +413,7 @@ void WebTransportSessionProxy::DoCreateStream(
   if (!OnSocketThread()) {
     RefPtr<WebTransportSessionProxy> self(this);
     RefPtr<WebTransportStreamCallbackWrapper> wrapper(aCallback);
-    Unused << gSocketTransportService->Dispatch(NS_NewRunnableFunction(
+    (void)gSocketTransportService->Dispatch(NS_NewRunnableFunction(
         "WebTransportSessionProxy::DoCreateStream",
         [self{std::move(self)}, wrapper{std::move(wrapper)}, bidi(aBidi)]() {
           self->DoCreateStream(wrapper, nullptr, bidi);
@@ -703,7 +703,7 @@ WebTransportSessionProxy::OnStopRequest(nsIRequest* aRequest,
   }
 
   if (!pendingCreateStreamEvents.IsEmpty()) {
-    Unused << gSocketTransportService->Dispatch(NS_NewRunnableFunction(
+    (void)gSocketTransportService->Dispatch(NS_NewRunnableFunction(
         "WebTransportSessionProxy::DispatchPendingCreateStreamEvents",
         [pendingCreateStreamEvents = std::move(pendingCreateStreamEvents),
          status(aStatus)]() {
@@ -717,7 +717,7 @@ WebTransportSessionProxy::OnStopRequest(nsIRequest* aRequest,
     if (succeeded) {
       listener->OnSessionReady(sessionId);
       if (!pendingEvents.IsEmpty()) {
-        Unused << gSocketTransportService->Dispatch(NS_NewRunnableFunction(
+        (void)gSocketTransportService->Dispatch(NS_NewRunnableFunction(
             "WebTransportSessionProxy::DispatchPendingEvents",
             [pendingEvents = std::move(pendingEvents)]() {
               for (const auto& event : pendingEvents) {
@@ -878,7 +878,7 @@ WebTransportSessionProxy::OnIncomingStreamAvailableInternal(
     if (!mTarget->IsOnCurrentThread()) {
       RefPtr<WebTransportSessionProxy> self(this);
       RefPtr<WebTransportStreamBase> stream = aStream;
-      Unused << mTarget->Dispatch(NS_NewRunnableFunction(
+      (void)mTarget->Dispatch(NS_NewRunnableFunction(
           "WebTransportSessionProxy::OnIncomingStreamAvailableInternal",
           [self{std::move(self)}, stream{std::move(stream)}]() {
             self->OnIncomingStreamAvailableInternal(stream);
@@ -903,9 +903,9 @@ WebTransportSessionProxy::OnIncomingStreamAvailableInternal(
   RefPtr<WebTransportStreamProxy> streamProxy =
       new WebTransportStreamProxy(aStream);
   if (aStream->StreamType() == WebTransportStreamType::BiDi) {
-    Unused << listener->OnIncomingBidirectionalStreamAvailable(streamProxy);
+    (void)listener->OnIncomingBidirectionalStreamAvailable(streamProxy);
   } else {
-    Unused << listener->OnIncomingUnidirectionalStreamAvailable(streamProxy);
+    (void)listener->OnIncomingUnidirectionalStreamAvailable(streamProxy);
   }
   return NS_OK;
 }
@@ -945,7 +945,7 @@ WebTransportSessionProxy::OnSessionClosed(bool aCleanly, uint32_t aStatus,
     mPendingEvents.AppendElement([self = RefPtr{this}, status(aStatus),
                                   closeReason(std::move(closeReason)),
                                   cleanly(aCleanly)]() {
-      Unused << self->OnSessionClosed(cleanly, status, closeReason);
+      (void)self->OnSessionClosed(cleanly, status, closeReason);
     });
     return NS_OK;
   }
@@ -986,7 +986,7 @@ void WebTransportSessionProxy::CallOnSessionClosed() MOZ_REQUIRES(mMutex) {
 
   if (!mTarget->IsOnCurrentThread()) {
     RefPtr<WebTransportSessionProxy> self(this);
-    Unused << mTarget->Dispatch(NS_NewRunnableFunction(
+    (void)mTarget->Dispatch(NS_NewRunnableFunction(
         "WebTransportSessionProxy::CallOnSessionClosed",
         [self{std::move(self)}]() { self->CallOnSessionClosedLocked(); }));
     return;

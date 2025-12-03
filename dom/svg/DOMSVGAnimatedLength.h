@@ -8,7 +8,6 @@
 #define DOM_SVG_DOMSVGANIMATEDLENGTH_H_
 
 #include "SVGElement.h"
-#include "mozilla/Attributes.h"
 
 namespace mozilla {
 

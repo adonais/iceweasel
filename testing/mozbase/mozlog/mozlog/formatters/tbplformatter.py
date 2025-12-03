@@ -108,6 +108,13 @@ class TbplFormatter(BaseFormatter):
         quiet = data.get("quiet", False)
         crash_prefix = "INFO crashed process" if quiet else "PROCESS-CRASH"
 
+        # Add minidump name to crash prefix for treeherder linking
+        if data.get("minidump_path"):
+            import os
+
+            minidump_name = os.path.splitext(os.path.basename(data["minidump_path"]))[0]
+            crash_prefix = crash_prefix + " | " + minidump_name
+
         if data.get("java_stack"):
             # use "<exception> at <top frame>" as a crash signature for java exception
             sig = data["java_stack"].split("\n")

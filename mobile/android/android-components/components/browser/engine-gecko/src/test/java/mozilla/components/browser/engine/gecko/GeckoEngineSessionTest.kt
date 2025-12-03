@@ -1593,7 +1593,7 @@ class GeckoEngineSessionTest {
             TrackingCategory.TEST,
         )
 
-        assertTrue(trackerBlocked!!.trackingCategories.containsAll(expectedBlockedCategories))
+        assertTrue(trackerBlocked.trackingCategories.containsAll(expectedBlockedCategories))
 
         var trackerLoaded: Tracker? = null
         engineSession.register(
@@ -1624,7 +1624,7 @@ class GeckoEngineSessionTest {
         )
 
         assertEquals("tracker1", trackerLoaded!!.url)
-        assertTrue(trackerLoaded!!.cookiePolicies.containsAll(expectedCookieCategories))
+        assertTrue(trackerLoaded.cookiePolicies.containsAll(expectedCookieCategories))
 
         contentBlockingDelegate.value.onContentLoaded(
             geckoSession,
@@ -1632,7 +1632,7 @@ class GeckoEngineSessionTest {
         )
 
         assertTrue(
-            trackerLoaded!!.cookiePolicies.containsAll(
+            trackerLoaded.cookiePolicies.containsAll(
                 listOf(
                     CookiePolicy.ACCEPT_ALL,
                 ),
@@ -4140,9 +4140,9 @@ class GeckoEngineSessionTest {
         assertNull(observedFallbackUrl)
         assertNull(observedAppName)
         assertNotNull(observedTriggeredByRedirect)
-        assertFalse(observedTriggeredByRedirect!!)
+        assertFalse(observedTriggeredByRedirect)
         assertNotNull(observedTriggeredByWebContent)
-        assertFalse(observedTriggeredByWebContent!!)
+        assertFalse(observedTriggeredByWebContent)
         assertEquals("sample:about", observedOnLoadRequestUrl)
     }
 
@@ -4339,7 +4339,7 @@ class GeckoEngineSessionTest {
 
         assertNotNull(receivedWindowRequest)
         assertEquals("mozilla.org", receivedWindowRequest!!.url)
-        assertEquals(WindowRequest.Type.OPEN, receivedWindowRequest!!.type)
+        assertEquals(WindowRequest.Type.OPEN, receivedWindowRequest.type)
     }
 
     @Test
@@ -4362,7 +4362,7 @@ class GeckoEngineSessionTest {
 
         assertNotNull(receivedWindowRequest)
         assertSame(engineSession, receivedWindowRequest!!.prepare())
-        assertEquals(WindowRequest.Type.CLOSE, receivedWindowRequest!!.type)
+        assertEquals(WindowRequest.Type.CLOSE, receivedWindowRequest.type)
     }
 
     class MockSecurityInformation(

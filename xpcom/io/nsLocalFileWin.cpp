@@ -4,7 +4,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
@@ -208,7 +207,22 @@ bool nsLocalFile::CheckForReservedFileName(const nsString& aFileName) {
 bool nsLocalFile::ChildAclMatchesAclInheritedFromParent(
     const NotNull<ACL*> aChildDacl, bool aIsChildDir,
     const AutoFreeSecurityDescriptor& aChildSecDesc, nsIFile* aParentDir) {
-  // If we fail at any point return false.
+  // If the child inherits no ACEs or we fail at any point return false.
+  auto getInheritedAceCount = [](const ACL* aAcl) {
+    AclAceRange aclAceRange(WrapNotNull(aAcl));
+    return std::count_if(
+        aclAceRange.begin(), aclAceRange.end(),
+        [](const auto& hdr) { return hdr.AceFlags & INHERITED_ACE; });
+  };
+
+  auto childInheritedCount = getInheritedAceCount(aChildDacl);
+  if (childInheritedCount == 0) {
+    // This could happen if aParentDir has no inheritable ACEs, but that should
+    // be rare and returning false here ensures that the file will get its ACL
+    // reset to inherit in case the parent gets inheritable ACEs added later.
+    return false;
+  }
+
   ACL* parentDacl = nullptr;
   AutoFreeSecurityDescriptor parentSecDesc;
   nsAutoString parentPath;
@@ -261,14 +275,7 @@ bool nsLocalFile::ChildAclMatchesAclInheritedFromParent(
     return false;
   }
 
-  auto getInheritedAceCount = [](const ACL* aAcl) {
-    AclAceRange aclAceRange(WrapNotNull(aAcl));
-    return std::count_if(
-        aclAceRange.begin(), aclAceRange.end(),
-        [](const auto& hdr) { return hdr.AceFlags & INHERITED_ACE; });
-  };
-
-  return getInheritedAceCount(aChildDacl) == getInheritedAceCount(newDacl);
+  return childInheritedCount == getInheritedAceCount(newDacl);
 }
 
 class nsDriveEnumerator : public nsSimpleEnumerator,

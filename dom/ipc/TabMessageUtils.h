@@ -10,7 +10,6 @@
 #include "TabMessageTypes.h"
 #include "X11UndefineNone.h"
 #include "ipc/EnumSerializer.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/dom/EffectsInfo.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/layers/LayersMessageUtils.h"

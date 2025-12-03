@@ -7,7 +7,6 @@
 #include "mozilla/dom/HTMLOptGroupElement.h"
 
 #include "mozilla/EventDispatcher.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/dom/HTMLOptGroupElementBinding.h"
 #include "mozilla/dom/HTMLSelectElement.h"  // SafeOptionListMutation
 #include "nsGkAtoms.h"

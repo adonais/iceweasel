@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_UniqueContentParentKeepAlive_h
 #define mozilla_dom_UniqueContentParentKeepAlive_h
 
-#include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsIDOMProcessParent.h"
 

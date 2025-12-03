@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_HTMLLegendElement_h
 #define mozilla_dom_HTMLLegendElement_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "nsGenericHTMLElement.h"
 

@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.settings
 
+import android.os.Build
 import android.os.Bundle
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
@@ -82,57 +83,30 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
                             }
                         }
                     }
-                    requirePreference<SwitchPreference>(R.string.pref_key_enable_simple_toolbar_customization).apply {
+                    requirePreference<SwitchPreference>(R.string.pref_key_enable_toolbar_customization).apply {
+                        val newOption = context.settings().toolbarRedesignEnabled
                         isEnabled = newOption
-                        when (newOption) {
-                            true -> {
-                                summary = null
-                            }
-
-                            false -> {
-                                isChecked = false
-                                summary = getString(R.string.preferences_debug_settings_toolbar_redesign_summary)
-                                context.settings().shouldShowSimpleToolbarCustomization = false
-                            }
+                        summary = when (newOption) {
+                            true -> null
+                            false -> getString(R.string.preferences_debug_settings_toolbar_customization_summary)
                         }
-                    }
-                    requirePreference<SwitchPreference>(R.string.pref_key_enable_expanded_toolbar_customization).apply {
-                        isEnabled = newOption
-                        when (newOption) {
-                            true -> {
-                                summary = null
-                            }
-
-                            false -> {
-                                isChecked = false
-                                summary = getString(R.string.preferences_debug_settings_toolbar_redesign_summary)
-                                context.settings().shouldShowExpandedToolbarCustomization = false
-                            }
+                        if (!newOption && isChecked) {
+                            isChecked = false
+                            context.settings().shouldShowToolbarCustomization = false
                         }
                     }
                 }
                 true
             }
         }
-
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_simple_toolbar_customization).apply {
-            isVisible = Config.channel.isDebug
-            isChecked = context.settings().shouldShowSimpleToolbarCustomization
-            isEnabled = context.settings().shouldUseComposableToolbar
-            summary = when (context.settings().shouldUseComposableToolbar) {
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_toolbar_customization).apply {
+            isVisible = Config.channel.isNightlyOrDebug
+            isChecked = context.settings().shouldShowToolbarCustomization
+            val newOption = context.settings().toolbarRedesignEnabled
+            isEnabled = newOption
+            summary = when (newOption) {
                 true -> null
-                false -> getString(R.string.preferences_debug_settings_toolbar_redesign_summary)
-            }
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_expanded_toolbar_customization).apply {
-            isVisible = Config.channel.isDebug
-            isChecked = context.settings().shouldShowExpandedToolbarCustomization
-            isEnabled = context.settings().shouldUseComposableToolbar
-            summary = when (context.settings().shouldUseComposableToolbar) {
-                true -> null
-                false -> getString(R.string.preferences_debug_settings_toolbar_redesign_summary)
+                false -> getString(R.string.preferences_debug_settings_toolbar_customization_summary)
             }
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
@@ -147,8 +121,19 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
                 (newValue as? Boolean)?.let { newOption ->
                     context.settings().toolbarRedesignEnabled = newOption
-                    if (newOption == false) {
+                    if (!newOption) {
                         context.settings().shouldUseExpandedToolbar = false
+                    }
+                    requirePreference<SwitchPreference>(R.string.pref_key_enable_toolbar_customization).apply {
+                        isEnabled = newOption
+                        summary = when (newOption) {
+                            true -> null
+                            false -> getString(R.string.preferences_debug_settings_toolbar_customization_summary)
+                        }
+                        if (!newOption && isChecked) {
+                            isChecked = false
+                            context.settings().shouldShowToolbarCustomization = false
+                        }
                     }
                 }
                 true
@@ -202,12 +187,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_trending_searches).apply {
-            isVisible = true
-            isChecked = context.settings().isTrendingSearchesVisible
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
         requirePreference<SwitchPreference>(R.string.pref_key_enable_lna_blocking_enabled).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().isLnaBlockingEnabled
@@ -218,18 +197,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
                     return super.onPreferenceChange(preference, newValue)
                 }
             }
-        }
-
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_recent_searches).apply {
-            isVisible = true
-            isChecked = context.settings().isRecentSearchesVisible
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_shortcuts_suggestions).apply {
-            isVisible = true
-            isChecked = context.settings().isShortcutSuggestionsVisible
-            onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_allow_settings_search).apply {
@@ -353,8 +320,14 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_tab_manager_enhancements).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().tabManagerEnhancementsEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_tab_manager_opening_animation).apply {
+            isVisible = true
+            isChecked = context.settings().tabManagerOpeningAnimationEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -375,6 +348,18 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             isChecked = context.settings().isIsolatedProcessEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_app_zygote_process).apply {
+            isVisible = Config.channel.isNightlyOrDebug && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+            isChecked = context.settings().isAppZygoteEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_relay_email_masks).apply {
+            isVisible = Config.channel.isDebug
+            isChecked = context.settings().isRelayFeatureEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
     }
 
     override fun onPreferenceTreeClick(preference: Preference): Boolean {
@@ -386,5 +371,13 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
                 )
         }
         return super.onPreferenceTreeClick(preference)
+    }
+
+    override fun onDisplayPreferenceDialog(preference: Preference) {
+        val handled = showCustomEditTextPreferenceDialog(preference)
+
+        if (!handled) {
+            super.onDisplayPreferenceDialog(preference)
+        }
     }
 }

@@ -9,7 +9,6 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BodyUtil.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
@@ -93,7 +92,7 @@ PushNotifier::NotifyError(const nsACString& aScope, nsIPrincipal* aPrincipal,
 nsresult PushNotifier::Dispatch(PushDispatcher& aDispatcher) {
   if (XRE_IsParentProcess()) {
     // Always notify XPCOM observers in the parent process.
-    Unused << NS_WARN_IF(NS_FAILED(aDispatcher.NotifyObservers()));
+    (void)NS_WARN_IF(NS_FAILED(aDispatcher.NotifyObservers()));
 
     // e10s is disabled; notify workers in the parent.
     return aDispatcher.NotifyWorkers();
@@ -108,7 +107,7 @@ nsresult PushNotifier::Dispatch(PushDispatcher& aDispatcher) {
 
   ContentChild* parentActor = ContentChild::GetSingleton();
   if (!NS_WARN_IF(!parentActor)) {
-    Unused << NS_WARN_IF(!aDispatcher.SendToParent(parentActor));
+    (void)NS_WARN_IF(!aDispatcher.SendToParent(parentActor));
   }
 
   return rv;
@@ -211,7 +210,7 @@ PushDispatcher::~PushDispatcher() = default;
 nsresult PushDispatcher::HandleNoChildProcesses() { return NS_OK; }
 
 nsresult PushDispatcher::NotifyObserversAndWorkers() {
-  Unused << NS_WARN_IF(NS_FAILED(NotifyObservers()));
+  (void)NS_WARN_IF(NS_FAILED(NotifyObservers()));
   return NotifyWorkers();
 }
 

@@ -178,7 +178,8 @@ export class ProgressAndStatusCallbackParams {
   }
 }
 
-/** Creates the file URL from the organization, model, and version.
+/**
+ * Creates the file URL from the organization, model, and version.
  *
  * @param {object} config - The configuration object to be updated.
  * @param {string} config.model - model name

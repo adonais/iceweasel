@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_HTMLLinkElement_h
 #define mozilla_dom_HTMLLinkElement_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/HTMLDNSPrefetch.h"
 #include "mozilla/dom/Link.h"

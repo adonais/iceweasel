@@ -350,7 +350,7 @@ export class SmartTabGroupingManager {
       .filter(i => !excludedTabIndices.includes(i));
   }
 
-  /*
+  /**
    * Generates similar tabs a grouped list of tabs
    * @param {array} allTabs all tabs that are part of the window
    * @param {array} groupedIndices indices of tabs that are already part of the group
@@ -990,7 +990,7 @@ export class SmartTabGroupingManager {
     });
   }
 
-  /***
+  /**
    * Utility function that loads all required engines for Smart Tab Grouping and any dependent models
    * @param {(progress: { percentage: number }) => void} progressCallback callback function to call.
    * Callback passes a dict with percentage indicating best effort 0.0-100.0 progress in model download.

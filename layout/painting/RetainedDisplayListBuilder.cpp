@@ -19,7 +19,6 @@
 #include "nsIFrameInlines.h"
 #include "nsPlaceholderFrame.h"
 #include "nsSubDocumentFrame.h"
-#include "nsViewManager.h"
 
 /**
  * Code for doing display list building for a modified subset of the window,

@@ -353,6 +353,7 @@ nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
 
     if (!strcmp(aTopic, "sessionstore-windows-restored")) {
       nsWindow::SetIsRestoringSession(false);
+      WinUtils::InvalidateWindowPreviews();
       // Now that we've handled the observer notification, we can remove it
       obsServ->RemoveObserver(this, "sessionstore-windows-restored");
       return NS_OK;
@@ -599,11 +600,10 @@ nsresult nsAppShell::InitEventWindow() {
 }
 
 nsresult nsAppShell::Init() {
-  LSPAnnotate();
-
   hal::Init();
 
   if (XRE_IsParentProcess()) {
+    LSPAnnotate();
     sTaskbarButtonCreatedMsg = ::RegisterWindowMessageW(kTaskbarButtonEventId);
     NS_ASSERTION(sTaskbarButtonCreatedMsg,
                  "Could not register taskbar button creation message");

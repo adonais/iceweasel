@@ -132,7 +132,7 @@ class PlacesBookmarksStorageTest {
 
         val separatorGuid = bookmarks.addSeparator(folderGuid, 1u).getOrNull()!!
         with(bookmarks.getTree(folderGuid).getOrNull()!!) {
-            assertEquals(2, this!!.children!!.size)
+            assertEquals(2, this.children!!.size)
             assertEquals(BookmarkNodeType.SEPARATOR, this.children!![1].type)
         }
 

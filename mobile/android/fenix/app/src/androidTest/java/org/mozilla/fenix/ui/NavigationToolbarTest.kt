@@ -13,7 +13,7 @@ import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.enableOrDisableBackGestureNavigationOnDevice
 import org.mozilla.fenix.helpers.AppAndSystemHelper.runWithAppLocaleChanged
 import org.mozilla.fenix.helpers.HomeActivityTestRule
-import org.mozilla.fenix.helpers.TestAssetHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestSetup
@@ -48,8 +48,8 @@ class NavigationToolbarTest : TestSetup() {
     @Test
     @SkipLeaks
     fun swipeToSwitchTabTest() {
-        val firstWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
-        val secondWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 2)
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.getGenericAsset(2)
 
         // Disable the back gesture from the edge of the screen on the device.
         enableOrDisableBackGestureNavigationOnDevice(backGestureNavigationEnabled = false)
@@ -70,8 +70,8 @@ class NavigationToolbarTest : TestSetup() {
     @Test
     @SkipLeaks
     fun swipeToSwitchTabInRTLTest() {
-        val firstWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
-        val secondWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 2)
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.getGenericAsset(2)
         val arabicLocale = Locale.Builder().setLanguage("ar").setRegion("AR").build()
 
         // Disable the back gesture from the edge of the screen on the device.
@@ -112,7 +112,7 @@ class NavigationToolbarTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyInsecurePageSecuritySubMenuTest() {
-        val defaultWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
@@ -145,7 +145,7 @@ class NavigationToolbarTest : TestSetup() {
     @SmokeTest
     @Test
     fun goToHomeScreenTest() {
-        val genericURL = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val genericURL = mockWebServer.getGenericAsset(1)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(genericURL.url) {
@@ -159,7 +159,7 @@ class NavigationToolbarTest : TestSetup() {
     @SmokeTest
     @Test
     fun goToHomeScreenInPrivateModeTest() {
-        val genericURL = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val genericURL = mockWebServer.getGenericAsset(1)
 
         homeScreen {
             togglePrivateBrowsingModeOnOff(composeTestRule = composeTestRule)

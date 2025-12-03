@@ -153,7 +153,7 @@ static inline bool StrokeOptionsToPaint(SkPaint& aPaint,
           SkFloatToScalar(aOptions.mDashPattern[i % aOptions.mDashLength]);
     }
 
-    auto dash = SkDashPathEffect::Make(&pattern.front(), dashCount,
+    auto dash = SkDashPathEffect::Make({&pattern.front(), dashCount},
                                        SkFloatToScalar(aOptions.mDashOffset));
     aPaint.setPathEffect(dash);
   }

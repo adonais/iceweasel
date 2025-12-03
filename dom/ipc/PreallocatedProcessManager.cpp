@@ -12,7 +12,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "nsIPropertyBag2.h"

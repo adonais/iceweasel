@@ -14,7 +14,6 @@
 #include "gfxTelemetry.h"
 #include "js/Value.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/gfx/GraphicsMessages.h"
@@ -78,7 +77,6 @@ class GfxInfoBase : public nsIGfxInfo,
   NS_IMETHOD GetAzureCanvasBackend(nsAString& aBackend) override;
   NS_IMETHOD GetAzureContentBackend(nsAString& aBackend) override;
   NS_IMETHOD GetUsingGPUProcess(bool* aOutValue) override;
-  NS_IMETHOD GetUsingRemoteCanvas(bool* aOutValue) override;
   NS_IMETHOD GetUsingAcceleratedCanvas(bool* aOutValue) override;
   NS_IMETHOD GetIsHeadless(bool* aIsHeadless) override;
   NS_IMETHOD GetTargetFrameRate(uint32_t* aTargetFrameRate) override;

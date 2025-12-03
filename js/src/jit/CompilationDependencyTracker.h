@@ -30,6 +30,7 @@ struct CompilationDependency : public TempObject {
     EmulatesUndefined,
     ArrayExceedsInt32Length,
     ObjectFuseProperty,
+    DefaultCaseMapping,
     Limit
   };
 

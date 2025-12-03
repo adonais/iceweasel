@@ -429,6 +429,8 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   virtual bool IsPopover() const override;
 
+  virtual bool IsEditable() const override;
+
   /**
    * Get a pointer to accessibility interface for this node, which is specific
    * to the OS/accessibility toolkit we're running on.

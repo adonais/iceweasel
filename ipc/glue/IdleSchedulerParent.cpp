@@ -6,7 +6,6 @@
 
 #include "mozilla/StaticPrefs_page_load.h"
 #include "mozilla/StaticPrefs_javascript.h"
-#include "mozilla/Unused.h"
 #include "mozilla/ipc/IdleSchedulerParent.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/NeverDestroyed.h"
@@ -354,7 +353,7 @@ void IdleSchedulerParent::SendIdleTime() {
   // the task from it's list this will return false.  Instead check
   // mRequestedIdleBudget.
   MOZ_ASSERT(mRequestedIdleBudget);
-  Unused << SendIdleTime(mCurrentRequestId, mRequestedIdleBudget);
+  (void)SendIdleTime(mCurrentRequestId, mRequestedIdleBudget);
 }
 
 void IdleSchedulerParent::SendMayGC() {

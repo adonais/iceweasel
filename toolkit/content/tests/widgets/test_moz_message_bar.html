@@ -46,6 +46,13 @@
       <moz-message-bar id="messageWithLink" message="Test message">
         <a slot="support-link" href="#learn-less">Learn less</a>
       </moz-message-bar>
+      <moz-message-bar id="slottedMessage">
+        <span slot="message"
+          >Here is a message with a nested
+          <a href="https://example.com" target="_blank">link</a>.</span
+        >
+        <a slot="support-link" href="#learn-less">Learn less</a>
+      </moz-message-bar>
     </div>
     <script class="testbody" type="application/javascript">
       add_task(async function test_component_declaration() {
@@ -188,6 +195,20 @@
         const mozMessageBar2 = document.querySelector("#infoMessage");
         const msgEl2 = mozMessageBar2.messageEl;
         is(msgEl2.className, "message", "Class when link was never assigned");
+      });
+
+      add_task(async function test_message_slot() {
+        const mozMessageBar = document.querySelector("#slottedMessage");
+        const slottedMessageElement = mozMessageBar.querySelector(
+          "span[slot='message']"
+        );
+
+        ok(slottedMessageElement, "renders the message slot");
+        const slottedSupportLinkElement = mozMessageBar.querySelector(
+          "a[slot='support-link']"
+        );
+
+        ok(slottedSupportLinkElement, "still renders a slotted support link");
       });
     </script>
   </body>

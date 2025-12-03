@@ -49,10 +49,10 @@ SessionCacheInfo SessionCacheInfo::Clone() const {
           : Nothing();
   result.mIsBuiltCertChainRootBuiltInRoot = mIsBuiltCertChainRootBuiltInRoot;
   result.mOverridableErrorCategory = mOverridableErrorCategory;
-  result.mFailedCertChainBytes =
-      mFailedCertChainBytes
+  result.mHandshakeCertificatesBytes =
+      mHandshakeCertificatesBytes
           ? Some(TransformIntoNewArray(
-                *mFailedCertChainBytes,
+                *mHandshakeCertificatesBytes,
                 [](const auto& element) { return element.Clone(); }))
           : Nothing();
   return result;
@@ -81,8 +81,9 @@ uint32_t SSLTokensCache::TokenCacheRecord::Size() const {
       size += cert.Length();
     }
   }
-  if (mSessionCacheInfo.mFailedCertChainBytes) {
-    for (const auto& cert : mSessionCacheInfo.mFailedCertChainBytes.ref()) {
+  if (mSessionCacheInfo.mHandshakeCertificatesBytes) {
+    for (const auto& cert :
+         mSessionCacheInfo.mHandshakeCertificatesBytes.ref()) {
       size += cert.Length();
     }
   }
@@ -100,7 +101,7 @@ void SSLTokensCache::TokenCacheRecord::Reset() {
   mSessionCacheInfo.mIsBuiltCertChainRootBuiltInRoot.reset();
   mSessionCacheInfo.mOverridableErrorCategory =
       nsITransportSecurityInfo::OverridableErrorCategory::ERROR_UNSET;
-  mSessionCacheInfo.mFailedCertChainBytes.reset();
+  mSessionCacheInfo.mHandshakeCertificatesBytes.reset();
 }
 
 uint32_t SSLTokensCache::TokenCacheEntry::Size() const {
@@ -291,21 +292,21 @@ nsresult SSLTokensCache::Put(const nsACString& aKey, const uint8_t* aToken,
     return rv;
   }
 
-  Maybe<nsTArray<nsTArray<uint8_t>>> failedCertChainBytes;
-  nsTArray<RefPtr<nsIX509Cert>> failedCertArray;
-  rv = securityInfo->GetFailedCertChain(failedCertArray);
+  Maybe<nsTArray<nsTArray<uint8_t>>> handshakeCertificatesBytes;
+  nsTArray<RefPtr<nsIX509Cert>> handshakeCertificates;
+  rv = securityInfo->GetHandshakeCertificates(handshakeCertificates);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  if (!failedCertArray.IsEmpty()) {
-    failedCertChainBytes.emplace();
-    for (const auto& cert : failedCertArray) {
+  if (!handshakeCertificates.IsEmpty()) {
+    handshakeCertificatesBytes.emplace();
+    for (const auto& cert : handshakeCertificates) {
       nsTArray<uint8_t> rawCert;
       nsresult rv = cert->GetRawDER(rawCert);
       if (NS_FAILED(rv)) {
         return rv;
       }
-      failedCertChainBytes->AppendElement(std::move(rawCert));
+      handshakeCertificatesBytes->AppendElement(std::move(rawCert));
     }
   }
 
@@ -327,8 +328,8 @@ nsresult SSLTokensCache::Put(const nsACString& aKey, const uint8_t* aToken,
     rec->mSessionCacheInfo.mIsBuiltCertChainRootBuiltInRoot =
         std::move(isBuiltCertChainRootBuiltInRoot);
     rec->mSessionCacheInfo.mOverridableErrorCategory = overridableErrorCategory;
-    rec->mSessionCacheInfo.mFailedCertChainBytes =
-        std::move(failedCertChainBytes);
+    rec->mSessionCacheInfo.mHandshakeCertificatesBytes =
+        std::move(handshakeCertificatesBytes);
     return rec;
   };
 

@@ -81,7 +81,7 @@ function KeyShortcuts({ window, target }) {
   this.target.addEventListener("keydown", this);
 }
 
-/*
+/**
  * Parse an electron-like key string and return a normalized object which
  * allow efficient match on DOM key event. The normalized object matches DOM
  * API.
@@ -195,7 +195,7 @@ KeyShortcuts.stringifyShortcut = function (shortcut) {
   return list.join("+");
 };
 
-/*
+/**
  * Converts an Electron accelerator string into
  * a pretty Unicode-based hotkey string
  *

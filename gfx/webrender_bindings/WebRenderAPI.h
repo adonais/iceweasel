@@ -351,7 +351,7 @@ class WebRenderAPI final {
 
   void WaitUntilPresentationFlushed();
 
-  void UpdateDebugFlags(uint32_t aFlags);
+  void UpdateDebugFlags(uint64_t aFlags);
   bool CheckIsRemoteTextureReady(layers::RemoteTextureInfoList* aList,
                                  const TimeStamp& aTimeStamp);
   void WaitRemoteTextureReady(layers::RemoteTextureInfoList* aList);

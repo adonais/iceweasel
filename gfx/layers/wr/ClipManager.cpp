@@ -259,7 +259,7 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
     leafmostASR = ActiveScrolledRoot::PickDescendant(leafmostASR, clip->mASR);
   }
   Maybe<wr::WrSpatialId> leafmostId = DefineScrollLayers(leafmostASR, aItem);
-  Unused << leafmostId;
+  (void)leafmostId;
 
   // Define all the clips in the item's clip chain, and obtain a clip chain id
   // for it.

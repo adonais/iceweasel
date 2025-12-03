@@ -19,6 +19,7 @@ category browser-before-ui-startup moz-src:///browser/components/privatebrowsing
 category browser-before-ui-startup resource:///modules/AboutHomeStartupCache.sys.mjs AboutHomeStartupCache.init
 category browser-before-ui-startup resource:///modules/AccountsGlue.sys.mjs AccountsGlue.init
 category browser-before-ui-startup moz-src:///browser/modules/ObserverForwarder.sys.mjs ObserverForwarder.init
+category browser-before-ui-startup resource:///modules/ipprotection/IPProtectionService.sys.mjs IPProtectionService.maybeEarlyInit
 
 # Browser window lifecycle consumers
 category browser-window-domcontentloaded-before-tabbrowser resource:///modules/BrowserDOMWindow.sys.mjs BrowserDOMWindow.setupInWindow

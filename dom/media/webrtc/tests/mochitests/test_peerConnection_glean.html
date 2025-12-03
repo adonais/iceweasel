@@ -223,8 +223,7 @@
     },
 
     async function checkDtlsKEA() {
-      // "media.webrtc.enable_pq_hybrid_kex" is enabled by default
-      // "send_mlkem_keyshare" enabled in Nightly and Early Beta
+      // "media.webrtc.enable_pq_hybrid_kex" and "send_mlkem_keyshare" are enabled by default
       // By default we send 2 key shares, PQ and X25519
       // PQ Key share (ECDH Hybrid) has a higher preference, so it will be chosen as KEA
           const pc1 = new RTCPeerConnection();
@@ -249,16 +248,8 @@
           is(count1_0, 0, "Expected 0 connections using NULL");
           is(count1_1, 0, "Expected 0 connections using RSA");
           is(count1_2, 0, "Expected 0 connections using DH");
-        if (AppConstants.EARLY_BETA_OR_EARLIER)
-        {
           is(count1_4, 0, "Expected 0 connections using ECDH");
           is(count1_8, 2, "Expected 2 connections using ECDH Hybrid");
-        }
-        else
-        {
-          is(count1_4, 2, "Expected 2 connections using ECDH");
-          is(count1_8, 0, "Expected 0 connections using ECDH Hybrid");
-        }
     },
 
     async function checkDtlsKEA_DTLSBelow13() {

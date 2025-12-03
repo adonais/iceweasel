@@ -10,6 +10,7 @@ transforms:
 
 
 task-defaults:
+    run-on-repo-type: [hg]
     worker:
         env:
             DO_HSTS:

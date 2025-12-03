@@ -75,7 +75,7 @@ export class SearchSettings {
    */
   #searchService = null;
 
-  /*
+  /**
    * The user's settings file read from disk so we can persist metadata for
    * engines that are default or hidden, the user's locale and region, hashes
    * for the loadPath, and hashes for default and private default engines.
@@ -83,37 +83,44 @@ export class SearchSettings {
    * to the settings.
    *
    * Structure of settings:
-   * Object { version: <number>,
-   *          engines: [...],
-   *          metaData: {...},
-   *        }
+   *
+   * ```
+   * Object {
+   *   version: <number>,
+   *   engines: [...],
+   *   metaData: {...},
+   * }
+   * ```
    *
    * Settings metaData is the active metadata for setting and getting attributes.
    * When a new metadata attribute is set, we save it to #settings.metaData and
    * write #settings to disk.
    *
    * #settings.metaData attributes:
-   * @property {string} current
-   *    The current user-set default engine. The associated hash is called
-   *    'hash'.
-   * @property {string} private
-   *    The current user-set private engine. The associated hash is called
-   *    'privateHash'.
-   *    The current and prviate objects have associated hash fields to validate
-   *    the value is set by the application.
-   * @property {string} appDefaultEngine
-   * @property {string} channel
-   *    Configuration is restricted to the specified channel. ESR is an example
-   *    of a channel.
-   * @property {string} distroID
-   *    Specifies which distribution the default engine is included in.
-   * @property {string} experiment
-   *    Specifies if the application is running on an experiment.
-   * @property {string} locale
-   * @property {string} region
-   * @property {boolean} useSavedOrder
-   *    True if the user's order information stored in settings is used.
    *
+   * @property {string} current
+   *   The current user-set default engine. The associated hash is called
+   *   'hash'.
+   * @property {string} private
+   *   The current user-set private engine. The associated hash is called
+   *   'privateHash'.
+   *   The current and prviate objects have associated hash fields to validate
+   *   the value is set by the application.
+   * @property {string} appDefaultEngine
+   *   The identifier of the current application default engine.
+   * @property {string} channel
+   *   Configuration is restricted to the specified channel. ESR is an example
+   *   of a channel.
+   * @property {string} distroID
+   *   Specifies which distribution the default engine is included in.
+   * @property {string} experiment
+   *   Specifies if the application is running on an experiment.
+   * @property {string} locale
+   *   The current locale.
+   * @property {string} region
+   *   The current region.
+   * @property {boolean} useSavedOrder
+   *   True if the user's order information stored in settings is used.
    */
   #settings = null;
 

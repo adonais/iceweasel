@@ -2,15 +2,22 @@
 
 Fenix has a challenging problem: it’s possible for crashes to happen early in startup, especially in native components; and we want to collect crash reports for these startup crashes; but we also need user consent to collect said crash reports, necessitating UX to obtain consent and control the process.
 
-This interacts with the regular startup lifecycle.  To accommodate, Fenix writes a “crash canary” early in startup.  If "early startup" completes successfully, the crash canary is removed.  However, if Fenix crashes during "early startup", the next Fenix launch will witness the crash canary still present from the previous invocation.  That’s our cue to display the StartupCrashActivity UX.
+When an unhandled exception occurs, it's caught by our `ExceptionHandler`. This handler checks if the crash happened during "early startup" by querying **`visualCompletenessQueue.isReady()`**. If this returns `false`, we trigger the startup crash recovery flow.
 
-However, we have a challenge.  We want the StartupCrashActivity to be as minimal as possible so that it has the best chance to not itself crash. To achieve that, we prevent FenixApplication from entering its normal execution path in order to avoid initializing most components (including Gecko and application-services, the largest native-code components).
+The handler's first action is to launch the `StartupCrashActivity` in a new, isolated process (defined in the manifest as **`:StartupCrashActivityProcess`**). This isolation is critical:
+* It ensures the `StartupCrashActivity` has a clean environment, free from any "contaminated" state of the crashing application.
+* It allows the activity to be minimal, improving its own chances of not crashing.
 
-But this is fragile: there exist many execution paths that can initialize these components and systemic protections — for example, a separate Application class that initializes less — are not provided by the Android platform.  Therefore we are left carefully avoiding initialization, including in some surprising places, such as Android platform hooks like onTrimMemory. See current usages of FenixApplication.recoveryState. Generally, any overridden `Application` method carries risk of falling into this trap.
+After launching the new activity, the `ExceptionHandler` allows the original (crashing) process to terminate normally.
 
-In addition, the Android platform launch process runs FenixApplication.onCreate and Fenix’s LAUNCHER intent, currently HomeActivity.  It is not currently easy to avoid launching HomeActivity (deterministically), and HomeActivity can also initialize various native-code components. Therefore we start HomeActivity but then immediately ask the Android platform to relaunch to the StartupCrashActivity, killing our own process (which might be contaminated) immediately.  Note that this death must be dirty, i.e., killing ourselves uncleanly is intentional: we avoid graceful teardown which risks HomeActivity::onDestroy instantiating components.
+In the `StartupCrashActivity` (running in its separate process), the user is prompted to either report the crash or not. Once they make a choice, a button to "Restart App" is provided.
 
-Finally, the StartupCrashActivity runtime environment is unusual: its FenixApplication has neutered its startup process.  For safety and simplicity, launch Fenix from the StartupCrashActivity must again happen in a fresh process, which will proceed (we hope!) through the regular FenixApplication.onCreate code path.
+Clicking this button calls the `restartFenix()` function. This function:
+1.  Gets the standard Fenix launch intent (`packageManager.getLaunchIntentForPackage(packageName)`).
+2.  Starts this intent with `startActivity(restartIntent)`.
+3.  Immediately kills its own (`:StartupCrashActivityProcess`) process via `Process.killProcess(Process.myPid())`.
+
+This ensures that the app relaunches in a third, completely fresh process, proceeding through the regular, clean application startup path.
 
 This diagram may help in visualize these considerations:
 

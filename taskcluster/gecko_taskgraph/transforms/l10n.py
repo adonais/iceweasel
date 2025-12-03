@@ -72,6 +72,7 @@ l10n_description_schema = Schema(
         # Description of the localized task
         Required("description"): _by_platform(str),
         Optional("run-on-projects"): job_description_schema["run-on-projects"],
+        Optional("run-on-repo-type"): job_description_schema["run-on-repo-type"],
         # worker-type to utilize
         Required("worker-type"): _by_platform(str),
         # File which contains the used locales
@@ -374,6 +375,7 @@ def make_job_description(config, jobs):
             "run-on-projects": (
                 job.get("run-on-projects") if job.get("run-on-projects") else []
             ),
+            "run-on-repo-type": job.get("run-on-repo-type", ["git", "hg"]),
         }
         if job.get("extra"):
             job_description["extra"] = job["extra"]

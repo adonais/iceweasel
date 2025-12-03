@@ -12,12 +12,7 @@
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/LayersTypes.h"
 
-#ifdef MOZ_IS_GCC
-#  include "mozilla/layers/NativeLayer.h"
-#endif
-
 class nsIWidget;
-class nsBaseWidget;
 
 namespace mozilla {
 class VsyncObserver;
@@ -122,9 +117,7 @@ class CompositorWidget {
    * When native layers are used, StartRemoteDrawing(InRegion) and
    * EndRemoteDrawing(InRegion) will not be called.
    */
-  virtual RefPtr<layers::NativeLayerRoot> GetNativeLayerRoot() {
-    return nullptr;
-  }
+  virtual layers::NativeLayerRoot* GetNativeLayerRoot() { return nullptr; }
 
   /**
    * Return a DrawTarget for the window which can be composited into.

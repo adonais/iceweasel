@@ -6,7 +6,6 @@
 #include "GMPTimerParent.h"
 
 #include "GMPLog.h"
-#include "mozilla/Unused.h"
 #include "nsComponentManagerUtils.h"
 
 namespace mozilla {
@@ -95,7 +94,7 @@ void GMPTimerParent::TimerExpired(Context* aContext) {
   uint32_t id = aContext->mId;
   mTimers.Remove(aContext);
   if (id) {
-    Unused << SendTimerExpired(id);
+    (void)SendTimerExpired(id);
   }
 }
 

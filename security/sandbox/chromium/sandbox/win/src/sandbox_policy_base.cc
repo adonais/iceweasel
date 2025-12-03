@@ -49,7 +49,7 @@ namespace {
 constexpr size_t kOneMemPage = 4096;
 // The IPC and Policy shared memory sizes.
 constexpr size_t kIPCMemSize = kOneMemPage * 2;
-constexpr size_t kPolMemSize = kOneMemPage * 6;
+constexpr size_t kPolMemSize = kOneMemPage * kPolMemPageCount;
 
 // Offset of pShimData in ntdll!_PEB.
 #if defined(_WIN64)

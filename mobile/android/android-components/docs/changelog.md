@@ -4,7 +4,9 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 145.0 (In Development)
+# 146.0 (In Development)
+
+# 145.0
 * **support-ktx**
   * 🚒 Bug fixed [Bug 1979064](https://bugzilla.mozilla.org/show_bug.cgi?id=1979064). Added back the API checks for `Window.setupPersistentInsets` and `ImeInsetsSynchronizer.setup` as on Android <13 the insets framework is not reliable.
 * **support-appservices**

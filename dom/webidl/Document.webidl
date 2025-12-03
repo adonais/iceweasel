@@ -248,13 +248,17 @@ partial interface Document {
   [ChromeOnly]
   readonly attribute ReferrerPolicy referrerPolicy;
 
-    /**
+  /**
    * Current referrer info, which holds all referrer related information
    * including referrer policy and raw referrer of document.
    */
   [ChromeOnly]
   readonly attribute nsIReferrerInfo referrerInfo;
 
+  // If true, forces the (-moz-native-theme) media query to evaluate to false
+  // on this document. Note this doesn't propagate to subdocuments.
+  [ChromeOnly]
+  attribute boolean forceNonNativeTheme;
 };
 
 // https://html.spec.whatwg.org/multipage/obsolete.html#other-elements%2C-attributes-and-apis
@@ -368,12 +372,6 @@ partial interface Document {
 
 //  Mozilla extensions of various sorts
 partial interface Document {
-  // @deprecated We are going to remove these (bug 1584269).
-  [Pref="dom.events.script_execute.enabled"]
-  attribute EventHandler onbeforescriptexecute;
-  [Pref="dom.events.script_execute.enabled"]
-  attribute EventHandler onafterscriptexecute;
-
   // Creates a new XUL element regardless of the document's default type.
   [ChromeOnly, CEReactions, NewObject, Throws]
   Element createXULElement(DOMString localName, optional (ElementCreationOptions or DOMString) options = {});

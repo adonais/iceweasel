@@ -937,6 +937,7 @@ add_task(async function test_rankTopSites_sql_pipeline_happy_path() {
         positive_prior: 1,
         negative_prior: 1,
         fset: 8,
+        telem: true,
       },
     },
   };
@@ -948,6 +949,14 @@ add_task(async function test_rankTopSites_sql_pipeline_happy_path() {
 
   // assertions
   Assert.ok(Array.isArray(out), "returns an array");
+  Assert.ok(
+    out.every(
+      site =>
+        Object.prototype.hasOwnProperty.call(site, "scores") &&
+        Object.prototype.hasOwnProperty.call(site, "weights")
+    ),
+    "Every shortcut should expose scores and weights (even when null) because telem=true"
+  );
   Assert.equal(
     out[out.length - 1].url,
     "https://no-guid.com",
@@ -1742,4 +1751,48 @@ add_task(async function test_rankTopSites_feature_matrix() {
   Assert.greater(dbStub.callCount, 0, "DB stub used at least once");
   clock.restore();
   sandbox.restore();
+});
+
+add_task(function test_roundNum_precision_and_edge_cases() {
+  const { roundNum } = ChromeUtils.importESModule(
+    "resource://newtab/lib/SmartShortcutsRanker/RankShortcuts.mjs"
+  );
+
+  Assert.equal(
+    roundNum(1.23456789),
+    1.235,
+    "roundNum rounds to four significant digits by default"
+  );
+  Assert.equal(
+    roundNum(987.65, 2),
+    990,
+    "roundNum respects the requested precision"
+  );
+  Assert.equal(
+    roundNum(5e-7),
+    0,
+    "roundNum clamps magnitudes smaller than eps to zero"
+  );
+  Assert.equal(
+    roundNum(-5e-7),
+    0,
+    "roundNum clamps small negative magnitudes to zero"
+  );
+  Assert.equal(
+    roundNum(5e-7, 4, 1e-9),
+    5e-7,
+    "roundNum uses the provided eps override when keeping small values"
+  );
+  Assert.strictEqual(
+    roundNum(Number.POSITIVE_INFINITY),
+    Number.POSITIVE_INFINITY,
+    "roundNum leaves non-finite numbers unchanged"
+  );
+  Assert.ok(Number.isNaN(roundNum(NaN)), "roundNum returns NaN for NaN");
+  const sentinel = { foo: "bar" };
+  Assert.strictEqual(
+    roundNum(sentinel),
+    sentinel,
+    "roundNum returns non-number inputs unchanged"
+  );
 });

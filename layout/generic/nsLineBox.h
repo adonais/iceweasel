@@ -11,7 +11,6 @@
 
 #include <algorithm>
 
-#include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
 #include "nsIFrame.h"
 #include "nsILineIterator.h"
@@ -430,7 +429,7 @@ class nsLineBox final : public nsLineLink {
   int32_t RLIndexOf(const nsIFrame* aFrame,
                     const nsIFrame* aLastFrameInLine) const;
 
-  bool Contains(nsIFrame* aFrame) const {
+  bool Contains(const nsIFrame* aFrame) const {
     return MOZ_UNLIKELY(mFlags.mHasHashedFrames) ? mFrames->Contains(aFrame)
                                                  : IndexOf(aFrame) >= 0;
   }
@@ -1051,7 +1050,8 @@ class nsLineIterator final : public nsILineIterator {
   // Note that this updates the iterator's current position!
   mozilla::Result<LineInfo, nsresult> GetLine(int32_t aLineNumber) final;
 
-  int32_t FindLineContaining(nsIFrame* aFrame, int32_t aStartLine = 0) final;
+  int32_t FindLineContaining(const nsIFrame* aFrame,
+                             int32_t aStartLine = 0) final;
 
   NS_IMETHOD FindFrameAt(int32_t aLineNumber, nsPoint aPos,
                          nsIFrame** aFrameFound, bool* aPosIsBeforeFirstFrame,

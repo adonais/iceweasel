@@ -61,6 +61,22 @@ class SettingsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRul
             to = "SettingsTabsPage",
             steps = listOf(NavigationStep.Click(SettingsSelectors.TABS_BUTTON)),
         )
+        NavigationRegistry.register(
+            from = pageName,
+            to = "GooglePlayPage",
+            steps = listOf(
+                NavigationStep.Swipe(SettingsSelectors.RATE_ON_GOOGLE_PLAY_BUTTON),
+                NavigationStep.Click(SettingsSelectors.RATE_ON_GOOGLE_PLAY_BUTTON),
+            ),
+        )
+        NavigationRegistry.register(
+            from = pageName,
+            to = "SettingsAboutPage",
+            steps = listOf(
+                NavigationStep.Swipe(SettingsSelectors.ABOUT_FIREFOX_BUTTON),
+                NavigationStep.Click(SettingsSelectors.ABOUT_FIREFOX_BUTTON),
+            ),
+        )
     }
 
     override fun mozGetSelectorsByGroup(group: String): List<Selector> {

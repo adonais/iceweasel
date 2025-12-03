@@ -574,7 +574,7 @@ add_task(async function testWithRealDAPSender() {
   const mockServer = new MockServer();
   mockServer.start();
 
-  const privateAttribution = new NewTabAttributionService({});
+  const privateAttribution = new NewTabAttributionService();
 
   const partnerIdentifier = "partner_identifier_real_dap";
   const conversionSettings = {

@@ -7,7 +7,8 @@ import { skipTestCase } from '../../../common/util/util.js';
 import { kCanvasAlphaModes } from '../../capability_info.js';
 import {
   getBaseFormatForRegularTextureFormat,
-  kPossibleValidTextureFormatsForCopyE2T,
+  isTextureFormatPossiblyUsableWithCopyExternalImageToTexture,
+  kRegularTextureFormats,
   RegularTextureFormat,
 } from '../../format_info.js';
 import { TextureUploadingUtils } from '../../util/copy_to_texture.js';
@@ -486,7 +487,8 @@ g.test('copy_contents_from_2d_context_canvas')
   .params(u =>
     u
       .combine('canvasType', kAllCanvasTypes)
-      .combine('dstColorFormat', kPossibleValidTextureFormatsForCopyE2T)
+      .combine('dstColorFormat', kRegularTextureFormats)
+      .filter(t => isTextureFormatPossiblyUsableWithCopyExternalImageToTexture(t.dstColorFormat))
       .combine('dstAlphaMode', kCanvasAlphaModes)
       .combine('srcDoFlipYDuringCopy', [true, false])
       .beginSubcases()
@@ -548,7 +550,8 @@ g.test('copy_contents_from_gl_context_canvas')
     u
       .combine('canvasType', kAllCanvasTypes)
       .combine('contextName', ['webgl', 'webgl2'] as const)
-      .combine('dstColorFormat', kPossibleValidTextureFormatsForCopyE2T)
+      .combine('dstColorFormat', kRegularTextureFormats)
+      .filter(t => isTextureFormatPossiblyUsableWithCopyExternalImageToTexture(t.dstColorFormat))
       .combine('srcPremultiplied', [true, false])
       .combine('dstAlphaMode', kCanvasAlphaModes)
       .combine('srcDoFlipYDuringCopy', [true, false])
@@ -623,7 +626,8 @@ g.test('copy_contents_from_gpu_context_canvas')
     u
       .combine('canvasType', kAllCanvasTypes)
       .combine('srcAndDstInSameGPUDevice', [true, false])
-      .combine('dstColorFormat', kPossibleValidTextureFormatsForCopyE2T)
+      .combine('dstColorFormat', kRegularTextureFormats)
+      .filter(t => isTextureFormatPossiblyUsableWithCopyExternalImageToTexture(t.dstColorFormat))
       // .combine('srcAlphaMode', kCanvasAlphaModes)
       .combine('srcAlphaMode', ['premultiplied'] as const)
       .combine('dstAlphaMode', kCanvasAlphaModes)
@@ -699,7 +703,8 @@ g.test('copy_contents_from_bitmaprenderer_context_canvas')
   .params(u =>
     u
       .combine('canvasType', kAllCanvasTypes)
-      .combine('dstColorFormat', kPossibleValidTextureFormatsForCopyE2T)
+      .combine('dstColorFormat', kRegularTextureFormats)
+      .filter(t => isTextureFormatPossiblyUsableWithCopyExternalImageToTexture(t.dstColorFormat))
       .combine('dstAlphaMode', kCanvasAlphaModes)
       .combine('srcDoFlipYDuringCopy', [true, false])
       .beginSubcases()
@@ -774,7 +779,8 @@ g.test('color_space_conversion')
     u
       .combine('srcColorSpace', ['srgb', 'display-p3'] as const)
       .combine('dstColorSpace', ['srgb', 'display-p3'] as const)
-      .combine('dstColorFormat', kPossibleValidTextureFormatsForCopyE2T)
+      .combine('dstColorFormat', kRegularTextureFormats)
+      .filter(t => isTextureFormatPossiblyUsableWithCopyExternalImageToTexture(t.dstColorFormat))
       .combine('dstPremultiplied', [true, false])
       .combine('srcDoFlipYDuringCopy', [true, false])
       .beginSubcases()
@@ -830,8 +836,15 @@ g.test('color_space_conversion')
       maxDiffULPsForNormFormat: 1,
     };
     if (srcColorSpace !== dstColorSpace) {
-      // Color space conversion seems prone to errors up to about 0.0003 on f32, 0.0007 on f16.
-      texelCompareOptions.maxFractionalDiff = 0.001;
+      if (dstColorFormat.endsWith('32float')) {
+        texelCompareOptions.maxFractionalDiff = 0.0003;
+      } else if (dstColorFormat.endsWith('16float')) {
+        texelCompareOptions.maxFractionalDiff = 0.0007;
+      } else if (dstColorFormat === 'rg11b10ufloat') {
+        texelCompareOptions.maxFractionalDiff = 0.015;
+      } else {
+        texelCompareOptions.maxFractionalDiff = 0.001;
+      }
     } else {
       texelCompareOptions.maxDiffULPsForFloatFormat = 1;
     }

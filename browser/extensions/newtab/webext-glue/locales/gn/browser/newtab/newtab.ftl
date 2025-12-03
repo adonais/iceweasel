@@ -406,7 +406,7 @@ newtab-wallpaper-abstract-purple-green = Sa’ykuéra pytãũ ha hovyũ rehegua
 newtab-wallpaper-abstract-blue-purple-waves = Hovy ha pytãũva rehegua
 newtab-wallpaper-abstract-black-waves = Hũ ikarẽkarẽva
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Ta’ãnga
 newtab-wallpaper-beach-at-sunrise = Jejahuha ko’ẽmbotávo
@@ -435,6 +435,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -675,10 +679,6 @@ newtab-widget-timer-mode-focus =
     .label = Focus
 newtab-widget-timer-mode-break =
     .label = Pytu’u
-newtab-widget-timer-play =
-    .title = Mbopu
-newtab-widget-timer-pause =
-    .title = Mombyta
 newtab-widget-timer-label-play =
     .label = Mbopu
 newtab-widget-timer-label-pause =

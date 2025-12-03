@@ -11,7 +11,6 @@
 
 #include "MediaBlockCacheBase.h"
 #include "mozilla/AbstractThread.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/UniquePtr.h"

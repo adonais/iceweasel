@@ -10,7 +10,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Base64.h"
 #include "mozilla/Likely.h"
-#include "mozilla/Unused.h"
 
 #include "XPCWrapper.h"
 #include "jsfriendapi.h"
@@ -100,7 +99,7 @@ void nsXPConnect::InitJSContext() {
   mozJSModuleLoader::InitStatics();
 
   // Initialize the script preloader cache.
-  Unused << mozilla::ScriptPreloader::GetSingleton();
+  (void)mozilla::ScriptPreloader::GetSingleton();
 
   nsJSContext::EnsureStatics();
 }
@@ -254,7 +253,7 @@ void xpc::ErrorReport::Init(JSContext* aCx, mozilla::dom::Exception* aException,
   }
   mSourceId = aException->SourceId(aCx);
   mLineNumber = aException->LineNumber(aCx);
-  mColumn = aException->ColumnNumber();
+  mColumn = aException->ColumnNumber(aCx);
 }
 
 static LazyLogModule gJSDiagnostics("JSDiagnostics");
@@ -393,7 +392,7 @@ void xpc_TryUnmarkWrappedGrayObject(nsISupports* aWrappedJS) {
   // QIing to nsIXPConnectWrappedJSUnmarkGray may have side effects!
   nsCOMPtr<nsIXPConnectWrappedJSUnmarkGray> wjsug =
       do_QueryInterface(aWrappedJS);
-  Unused << wjsug;
+  (void)wjsug;
   MOZ_ASSERT(!wjsug,
              "One should never be able to QI to "
              "nsIXPConnectWrappedJSUnmarkGray successfully!");

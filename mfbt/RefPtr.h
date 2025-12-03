@@ -109,7 +109,7 @@ class MOZ_IS_REFPTR RefPtr {
     }
   }
 
-  MOZ_IMPLICIT RefPtr(decltype(nullptr)) : mRawPtr(nullptr) {}
+  MOZ_IMPLICIT constexpr RefPtr(std::nullptr_t) : mRawPtr(nullptr) {}
 
   template <typename I,
             typename = std::enable_if_t<std::is_convertible_v<I*, T*>>>

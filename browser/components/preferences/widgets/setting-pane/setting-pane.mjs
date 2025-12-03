@@ -20,18 +20,6 @@ export class SettingPane extends MozLitElement {
     window.gotoPref(this.config.parent);
   }
 
-  backButtonTemplate() {
-    if (!this.isSubPane) {
-      return "";
-    }
-    return html`<moz-button
-      type="icon"
-      title="Go back"
-      iconsrc="chrome://global/skin/icons/arrow-left.svg"
-      @click=${this.goBack}
-    ></moz-button>`;
-  }
-
   connectedCallback() {
     super.connectedCallback();
     this.setAttribute("data-category", this.name);
@@ -68,10 +56,11 @@ export class SettingPane extends MozLitElement {
 
   render() {
     return html`
-      <div class="page-header">
-        ${this.backButtonTemplate()}
-        <h2 data-l10n-id=${this.config.l10nId}></h2>
-      </div>
+      <moz-page-header
+        data-l10n-id=${this.config.l10nId}
+        .backButton=${this.isSubPane}
+        @navigate-back=${this.goBack}
+      ></moz-page-header>
       ${this.config.groupIds.map(groupId => this.groupTemplate(groupId))}
     `;
   }

@@ -9,7 +9,6 @@
 
 #include <stdint.h>                         // for uint8_t, uint32_t
 #include "mozilla/Attributes.h"             // for MOZ_STACK_CLASS
-#include "mozilla/RefPtr.h"                 // for already_AddRefed
 #include "mozilla/gfx/Point.h"              // for IntSize
 #include "mozilla/gfx/Rect.h"               // for IntRect
 #include "mozilla/gfx/Types.h"              // for SurfaceFormat

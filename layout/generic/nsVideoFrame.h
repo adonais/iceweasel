@@ -9,7 +9,6 @@
 #ifndef nsVideoFrame_h___
 #define nsVideoFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "nsContainerFrame.h"
 #include "nsIAnonymousContentCreator.h"
 #include "nsIReflowCallback.h"

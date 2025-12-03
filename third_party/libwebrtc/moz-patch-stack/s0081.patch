@@ -20,10 +20,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/ed31b2acb5fbca3e2
  7 files changed, 15 insertions(+), 7 deletions(-)
 
 diff --git a/modules/video_capture/linux/device_info_pipewire.cc b/modules/video_capture/linux/device_info_pipewire.cc
-index b802fe580c..db2a3c7099 100644
+index 7748fcf08f..009e1408b9 100644
 --- a/modules/video_capture/linux/device_info_pipewire.cc
 +++ b/modules/video_capture/linux/device_info_pipewire.cc
-@@ -50,8 +50,10 @@ int32_t DeviceInfoPipeWire::GetDeviceName(uint32_t deviceNumber,
+@@ -44,8 +44,10 @@ int32_t DeviceInfoPipeWire::GetDeviceName(uint32_t deviceNumber,
                                            uint32_t deviceUniqueIdUTF8Length,
                                            char* productUniqueIdUTF8,
                                            uint32_t productUniqueIdUTF8Length,
@@ -36,10 +36,10 @@ index b802fe580c..db2a3c7099 100644
      return -1;
  
 diff --git a/modules/video_capture/linux/device_info_pipewire.h b/modules/video_capture/linux/device_info_pipewire.h
-index 1e75f35909..eb5d7a8e30 100644
+index b3e6de6fee..354e309ff9 100644
 --- a/modules/video_capture/linux/device_info_pipewire.h
 +++ b/modules/video_capture/linux/device_info_pipewire.h
-@@ -30,7 +30,8 @@ class DeviceInfoPipeWire : public DeviceInfoImpl {
+@@ -32,7 +32,8 @@ class DeviceInfoPipeWire : public DeviceInfoImpl {
                          uint32_t deviceUniqueIdUTF8Length,
                          char* productUniqueIdUTF8 = nullptr,
                          uint32_t productUniqueIdUTF8Length = 0,
@@ -50,7 +50,7 @@ index 1e75f35909..eb5d7a8e30 100644
     * Fills the membervariable _captureCapabilities with capabilites for the
     * given device name.
 diff --git a/modules/video_capture/linux/device_info_v4l2.cc b/modules/video_capture/linux/device_info_v4l2.cc
-index 04caaea592..401c38f9c5 100644
+index 87b39d794d..adb15bf6e0 100644
 --- a/modules/video_capture/linux/device_info_v4l2.cc
 +++ b/modules/video_capture/linux/device_info_v4l2.cc
 @@ -232,7 +232,8 @@ int32_t DeviceInfoV4l2::GetDeviceName(uint32_t deviceNumber,
@@ -64,10 +64,10 @@ index 04caaea592..401c38f9c5 100644
    uint32_t count = 0;
    char device[20];
 diff --git a/modules/video_capture/linux/device_info_v4l2.h b/modules/video_capture/linux/device_info_v4l2.h
-index 0bec3eb765..55415845ad 100644
+index db98a62bcc..0717ea05bd 100644
 --- a/modules/video_capture/linux/device_info_v4l2.h
 +++ b/modules/video_capture/linux/device_info_v4l2.h
-@@ -36,7 +36,8 @@ class DeviceInfoV4l2 : public DeviceInfoImpl {
+@@ -37,7 +37,8 @@ class DeviceInfoV4l2 : public DeviceInfoImpl {
                          uint32_t deviceUniqueIdUTF8Length,
                          char* productUniqueIdUTF8 = 0,
                          uint32_t productUniqueIdUTF8Length = 0,

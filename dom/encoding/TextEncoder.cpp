@@ -7,7 +7,6 @@
 #include "mozilla/dom/TextEncoder.h"
 
 #include "mozilla/ErrorResult.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "nsReadableUtils.h"
 
 namespace mozilla::dom {

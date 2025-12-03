@@ -11,6 +11,7 @@
 #include "mozilla/Maybe.h"      // mozilla::Maybe
 #include "mozilla/Span.h"
 
+#include <cstdint>   // UINT32_MAX
 #include <stddef.h>  // size_t
 #include <stdint.h>  // int32_t, uint32_t
 
@@ -322,25 +323,41 @@ enum class ModuleStatus : int8_t {
   Evaluated_Error
 };
 
-// Special values for CyclicModuleFields' asyncEvaluatingPostOrderSlot field,
-// which is used as part of the implementation of the AsyncEvaluation field of
-// cyclic module records.
+// Special values for CyclicModuleFields' asyncEvaluationOrderSlot field,
+// which represents the AsyncEvaluationOrder field of cyclic module records.
 //
-// The spec requires us to be able to tell the order in which the field was set
-// to true for async evaluating modules.
-//
-// This is arranged by using an integer to record the order. After evaluation is
-// complete the value is set to ASYNC_EVALUATING_POST_ORDER_CLEARED.
+// AsyncEvaluationOrder can have three states:
+//  - a positive integer, represented by values <=
+//    ASYNC_EVALUATING_POST_ORDER_MAX_VALUE
+//  - ~unset~, represented by ASYNC_EVALUATING_POST_ORDER_UNSET
+//  - ~done~, represented by ASYNC_EVALUATING_POST_ORDER_DONE
 //
 // See https://tc39.es/ecma262/#sec-cyclic-module-records for field defintion.
 // See https://tc39.es/ecma262/#sec-async-module-execution-fulfilled for sort
 // requirement.
 
-// Initial value for the runtime's counter used to generate these values.
-constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_INIT = 1;
+// Value that the field is initially set to.
+constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_UNSET = UINT32_MAX;
 
 // Value that the field is set to after being cleared.
-constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_CLEARED = 0;
+constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_DONE = UINT32_MAX - 1;
+
+constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_MAX_VALUE = UINT32_MAX - 2;
+
+class AsyncEvaluationOrder {
+ private:
+  uint32_t value = ASYNC_EVALUATING_POST_ORDER_UNSET;
+
+ public:
+  bool isUnset() const;
+  bool isInteger() const;
+  bool isDone() const;
+
+  uint32_t get() const;
+
+  void set(JSRuntime* rt);
+  void setDone(JSRuntime* rt);
+};
 
 // The map used by [[LoadedModules]] in Realm Record Fields, Script Record
 // Fields, and additional fields of Cyclic Module Records.
@@ -409,8 +426,6 @@ class ModuleObject : public NativeObject {
   ModuleEnvironmentObject* environment() const;
   ModuleNamespaceObject* namespace_();
   ModuleStatus status() const;
-  mozilla::Maybe<uint32_t> maybeDfsIndex() const;
-  uint32_t dfsIndex() const;
   mozilla::Maybe<uint32_t> maybeDfsAncestorIndex() const;
   uint32_t dfsAncestorIndex() const;
   bool hadEvaluationError() const;
@@ -428,15 +443,12 @@ class ModuleObject : public NativeObject {
   IndirectBindingMap& importBindings();
 
   void setStatus(ModuleStatus newStatus);
-  void setDfsIndex(uint32_t index);
   void setDfsAncestorIndex(uint32_t index);
-  void clearDfsIndexes();
+  void clearDfsAncestorIndex();
 
   static PromiseObject* createTopLevelCapability(JSContext* cx,
                                                  Handle<ModuleObject*> module);
   bool hasTopLevelAwait() const;
-  bool isAsyncEvaluating() const;
-  void setAsyncEvaluating();
   void setEvaluationError(HandleValue newValue);
   void setPendingAsyncDependencies(uint32_t newValue);
   void setInitialTopLevelCapability(Handle<PromiseObject*> capability);
@@ -446,9 +458,8 @@ class ModuleObject : public NativeObject {
   ListObject* asyncParentModules() const;
   mozilla::Maybe<uint32_t> maybePendingAsyncDependencies() const;
   uint32_t pendingAsyncDependencies() const;
-  mozilla::Maybe<uint32_t> maybeAsyncEvaluatingPostOrder() const;
-  uint32_t getAsyncEvaluatingPostOrder() const;
-  void clearAsyncEvaluatingPostOrder();
+  AsyncEvaluationOrder& asyncEvaluationOrder();
+  AsyncEvaluationOrder const& asyncEvaluationOrder() const;
   void setCycleRoot(ModuleObject* cycleRoot);
   ModuleObject* getCycleRoot() const;
   bool hasCyclicModuleFields() const;

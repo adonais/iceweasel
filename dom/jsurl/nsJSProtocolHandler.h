@@ -6,7 +6,6 @@
 #ifndef nsJSProtocolHandler_h___
 #define nsJSProtocolHandler_h___
 
-#include "mozilla/Attributes.h"
 #include "nsIClassInfo.h"
 #include "nsINestedURI.h"
 #include "nsIProtocolHandler.h"

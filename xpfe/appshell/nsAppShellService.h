@@ -13,7 +13,6 @@
 #include "AppWindow.h"
 #include "nsStringFwd.h"
 #include "nsIRemoteTab.h"
-#include "mozilla/Attributes.h"
 
 // {0099907D-123C-4853-A46A-43098B5FB68C}
 #define NS_APPSHELLSERVICE_CID \

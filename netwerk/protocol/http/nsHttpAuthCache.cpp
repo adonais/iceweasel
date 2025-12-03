@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <stdlib.h>
 
-#include "mozilla/Attributes.h"
 #include "nsString.h"
 #include "nsCRT.h"
 #include "nsIObserverService.h"

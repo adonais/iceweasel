@@ -24,6 +24,9 @@ only-for-build-platforms:
     - win32/opt
     - win64/opt
 
+task-defaults:
+    run-on-repo-type: [hg]
+
 tasks:
     l10n:
         description: Localization

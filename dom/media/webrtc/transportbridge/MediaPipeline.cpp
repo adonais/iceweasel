@@ -46,7 +46,6 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #include "mozilla/gfx/Point.h"
@@ -224,7 +223,7 @@ class AudioProxyThread {
           self->InternalProcessAudioChunk(aRate, aChunk, aEnabled);
         }));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
+    (void)rv;
   }
 
  protected:

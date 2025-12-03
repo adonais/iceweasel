@@ -108,7 +108,7 @@
 }
 
 #identity-popup-security-description > description {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   margin-top: 0.5em;
 }
 
@@ -190,7 +190,7 @@
 
 .site-information-popup[mixedcontent~="active-loaded"] .identity-popup-connection-not-secure,
 .site-information-popup:not([mixedcontent]) .identity-popup-connection-not-secure {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 #identity-popup-mainView > .panel-subview-body {
@@ -283,7 +283,7 @@
 }
 
 #identity-popup-securityView-extended-info > .identity-popup-warning-box {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 #identity-popup-securityView-extended-info > .identity-popup-warning-box > label {
@@ -613,7 +613,7 @@
 }
 
 #protections-popup-milestones-text {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 #protections-popup-milestones-illustration {
@@ -748,7 +748,7 @@
 
 #cookieBannerView-disable-site,
 #cookieBannerView-enable-site {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .protections-popup-cookieBannerView-footer {
@@ -799,8 +799,14 @@
   padding-inline-start: var(--space-large);
 }
 
+#trustpanel-popup-host-wrapper {
+  overflow: hidden;
+}
+
 #trustpanel-popup-host {
   align-self: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -865,8 +871,8 @@
 }
 
 .trustpanel-header {
-  font-weight: var(--font-weight-bold);
-  margin-block-end: var(--space-small);
+  font-weight: var(--heading-font-weight);
+  margin-block-end: var(--space-medium);
 
   #trustpanel-blockerDetailsView &,
   #trustpanel-blockerView & {
@@ -948,20 +954,38 @@
   #trustpanel-popup[tracking-protection="warning"] & {
     visibility: visible;
   }
+
+  .trustpanel-header {
+    background-image: url(chrome://global/skin/icons/security-broken.svg);
+    background-position: left center;
+    background-repeat: no-repeat;
+    background-size: var(--icon-size);
+    padding-inline-start: calc(var(--icon-size) + var(--space-small));
+
+    &:-moz-locale-dir(rtl) {
+      background-position-x: right;
+    }
+  }
 }
 
-#trustpanel-blockerView moz-button {
+.moz-button-subviewbutton-nav {
   --button-font-weight: normal;
   --button-alignment: inline-start;
+  --button-border-radius: var(--border-radius-small);
+  --focus-outline-offset: -2px;
   margin: var(--space-small);
   width: -moz-available;
-  -moz-context-properties: fill;
-  background-image: url(chrome://global/skin/icons/arrow-right.svg);
-  background-repeat: no-repeat;
-  background-position: right center;
 
-  &:-moz-locale-dir(rtl) {
+  &::part(button) {
+    -moz-context-properties: fill;
+    background-image: url(chrome://global/skin/icons/arrow-right.svg);
+    background-repeat: no-repeat;
+    background-position: right var(--space-large) center;
+    padding-inline-end: calc(var(--space-small) + var(--icon-size) + var(--space-large));
+  }
+
+  &:-moz-locale-dir(rtl)::part(button) {
     background-image: url(chrome://global/skin/icons/arrow-left.svg);
-    background-position-x: left;
+    background-position-x: left var(--space-large);
   }
 }

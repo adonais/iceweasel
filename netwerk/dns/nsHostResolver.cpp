@@ -40,7 +40,6 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/glean/NetwerkMetrics.h"
-#include "mozilla/HashFunctions.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/glean/NetwerkDnsMetrics.h"
 #include "mozilla/DebugOnly.h"
@@ -338,7 +337,7 @@ void nsHostResolver::Shutdown() {
     mNCS = nullptr;
   }
 
-  // Shutdown the resolver threads, but with a timeout of 2 seconds (prefable).
+  // Shutdown the resolver threads, but with a timeout of 5 seconds (prefable).
   // If the timeout is exceeded, any stuck threads will be leaked.
   mResolverThreads->ShutdownWithTimeout(
       StaticPrefs::network_dns_resolver_shutdown_timeout_ms());

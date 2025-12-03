@@ -51,7 +51,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_device_custom.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent a11y_checks results (fails on Try, passes on Autoland)
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent a11y_checks results (fails on Try, passes on Autoland)
 ]
 
@@ -60,7 +59,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_device_custom_remove.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bug 1849028, 1858041 to investigate intermittent a11y_checks results (fails on Try, passes on Autoland)
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent a11y_checks results (fails on Try, passes on Autoland)
 ]
 
@@ -70,7 +68,6 @@ skip-if = [
 
 ["browser_device_modal_submit.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent a11y_checks results (fails on Autoland, passes on Try)
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent a11y_checks results (fails on Autoland, passes on Try)
 ]
 
@@ -93,7 +90,6 @@ tags = "devtools webextensions"
 
 ["browser_eyedropper_update.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan",
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && tsan",
 ]
 
@@ -129,7 +125,6 @@ https_first_disabled = true
 ["browser_permission_doorhanger.js"]
 tags = "devtools geolocation"
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1829298
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 
@@ -151,7 +146,6 @@ https_first_disabled = true
 ["browser_tab_close.js"]
 
 ["browser_tab_not_selected.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked button#device-pixel-ratio-menu element may not be focusable
 
 ["browser_tab_remoteness_change.js"]
 
@@ -177,7 +171,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked button#device-pixel-ratio-menu e
 skip-if = [
   "a11y_checks",
   "os == 'win'", # Bug 1977557 and Bug 1977558
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1980013
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && asan", # Bug 1980013
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1980013
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug", # Bug 1980013
@@ -193,7 +186,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_touch_event_iframes.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug", # Bug 1767692
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && asan", # Bug 1767692
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && opt", # Bug 1767692
 ]

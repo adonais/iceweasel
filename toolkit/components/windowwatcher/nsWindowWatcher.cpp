@@ -63,7 +63,6 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_middlemouse.h"
 #include "mozilla/StaticPrefs_full_screen_api.h"
@@ -2064,7 +2063,7 @@ bool nsWindowWatcher::HaveSpecifiedSize(const WindowFeatures& features) {
 
 /* static */
 already_AddRefed<nsDocShellLoadState> nsWindowWatcher::CreateLoadState(
-    nsIURI* aUri, nsPIDOMWindowOuter* aParent) {
+    nsIURI* aUri, nsPIDOMWindowOuter* aParent, bool aIsWindowOpen) {
   MOZ_ASSERT(aUri);
 
   RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(aUri);
@@ -2092,6 +2091,12 @@ already_AddRefed<nsDocShellLoadState> nsWindowWatcher::CreateLoadState(
       loadState->SetTriggeringClassificationFlags(
           parentDoc->GetScriptTrackingFlags());
     }
+  }
+
+  // If we're called from JS, i.e window.open, we need to set history handling
+  // behavior here to be able to do push to replace conversion if needed.
+  if (aIsWindowOpen && mozilla::SessionHistoryInParent()) {
+    loadState->SetHistoryBehavior(NavigationHistoryBehavior::Auto);
   }
 
   return loadState.forget();

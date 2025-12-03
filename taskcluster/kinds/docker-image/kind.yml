@@ -17,6 +17,9 @@ transforms:
 # (to use subdirectory clones of the proper directory), at which point we can
 # generate tasks for every docker image in the directory, secure in the
 # knowledge that unnecessary images will be omitted from the target task graph
+task-defaults:
+    run-on-repo-type: [hg]
+
 tasks:
     image_builder:
         symbol: I(ib)
@@ -49,6 +52,7 @@ tasks:
         symbol: I(ub18-base)
         parent: ubuntu1804-raw
         packages:
+            - ub18-coreutils
             - ub18-mercurial
             - ub18-python-zstandard
             - ub18-python-psutil
@@ -302,6 +306,8 @@ tasks:
     android-build:
         symbol: I(agb)
         parent: debian12-base
+        packages:
+            - deb12-python-zstandard
     fetch:
         symbol: I(fetch)
         parent: debian12-raw

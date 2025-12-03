@@ -7,7 +7,6 @@
 #ifndef widget_windows_filedialog_WinFileDialogParent_h__
 #define widget_windows_filedialog_WinFileDialogParent_h__
 
-#include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/ProcInfo.h"

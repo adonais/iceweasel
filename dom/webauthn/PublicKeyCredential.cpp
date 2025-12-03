@@ -660,6 +660,8 @@ void PublicKeyCredential::ParseCreationOptionsFromJSON(
     aResult.mAuthenticatorSelection = aOptions.mAuthenticatorSelection.Value();
   }
 
+  aResult.mHints = aOptions.mHints;
+
   aResult.mAttestation = aOptions.mAttestation;
 
   if (aOptions.mExtensions.WasPassed()) {
@@ -752,6 +754,8 @@ void PublicKeyCredential::ParseRequestOptionsFromJSON(
   }
 
   aResult.mUserVerification = aOptions.mUserVerification;
+
+  aResult.mHints = aOptions.mHints;
 
   if (aOptions.mExtensions.WasPassed()) {
     if (aOptions.mExtensions.Value().mAppid.WasPassed()) {

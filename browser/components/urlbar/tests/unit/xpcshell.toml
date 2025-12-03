@@ -47,6 +47,7 @@ support-files = ["data/engine.xml"]
 ["test_autofill_origins.js"]
 
 ["test_autofill_originsAndQueries.js"]
+requesttimeoutfactor = 2  # Slow on Linux debug
 
 ["test_autofill_origins_alt_frecency.js"]
 prefs = [
@@ -135,6 +136,7 @@ skip-if = [
 ["test_providerKeywords.js"]
 
 ["test_providerOmnibox.js"]
+requesttimeoutfactor = 2  # Slow on Linux and Windows
 
 ["test_providerOpenTabs.js"]
 

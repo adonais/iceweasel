@@ -75,10 +75,9 @@ bool WeakSetObject::add(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Steps 5-6.
-  if (ValueValueWeakMap* map =
-          args.thisv().toObject().as<WeakSetObject>().getMap()) {
+  if (Map* map = args.thisv().toObject().as<WeakSetObject>().getMap()) {
     Value value = args[0];
-    if (ValueValueWeakMap::Ptr ptr = map->lookup(value)) {
+    if (Map::Ptr ptr = map->lookup(value)) {
       map->remove(ptr);
       args.rval().setBoolean(true);
       return true;
@@ -111,8 +110,7 @@ bool WeakSetObject::delete_(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Steps 4, 6.
-  if (ValueValueWeakMap* map =
-          args.thisv().toObject().as<WeakSetObject>().getMap()) {
+  if (Map* map = args.thisv().toObject().as<WeakSetObject>().getMap()) {
     Value value = args[0];
     if (map->has(value)) {
       args.rval().setBoolean(true);
@@ -136,7 +134,7 @@ bool WeakSetObject::has(JSContext* cx, unsigned argc, Value* vp) {
 // static
 bool WeakSetObject::hasObject(WeakSetObject* weakSet, JSObject* obj) {
   AutoUnsafeCallWithABI unsafe;
-  ValueValueWeakMap* map = weakSet->getMap();
+  Map* map = weakSet->getMap();
   return map && map->has(ObjectValue(*obj));
 }
 

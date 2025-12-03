@@ -189,12 +189,13 @@ class Queue {
       return;
     }
 
+    std::decay_t<Callback> callback = std::forward<Callback>(aCallback);
+
     uint16_t start = mOffsetHead;
     uint32_t count = mCount;
     uint16_t countInPage = mHeadLength;
     for (Page* page = mHead; page != nullptr; page = page->mNext) {
-      IterateOverPage(page, start, countInPage,
-                      std::forward<Callback>(aCallback));
+      IterateOverPage(page, start, countInPage, callback);
       start = 0;
       count -= countInPage;
       countInPage = std::min(count, static_cast<uint32_t>(ItemsPerPage));
@@ -226,7 +227,7 @@ class Queue {
 
   template <typename Callback>
   void IterateOverPage(Page* aPage, size_t aOffsetStart, size_t aCount,
-                       Callback&& aCallback) {
+                       Callback& aCallback) {
     size_t aOffsetEnd = aOffsetStart + aCount;
     MOZ_ASSERT(aCount <= ItemsPerPage);
     MOZ_ASSERT(aOffsetEnd > aOffsetStart);

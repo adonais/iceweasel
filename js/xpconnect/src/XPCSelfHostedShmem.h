@@ -7,9 +7,6 @@
 #ifndef xpcselfhostedshmem_h___
 #define xpcselfhostedshmem_h___
 
-#include "mozilla/UniquePtr.h"
-#include "mozilla/UniquePtrExtensions.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"

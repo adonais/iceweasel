@@ -15,12 +15,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -36,6 +41,7 @@ import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_PRIVATE_BROWSING_LEARN_MORE_LINK
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Total Private Browsing Mode homepage informational card.
@@ -111,43 +117,49 @@ fun PrivateBrowsingDescription2(
         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = stringResource(id = R.string.felt_privacy_desc_card_title),
-            color = PhotonColors.White,
-            textAlign = TextAlign.Center,
-            style = FirefoxTheme.typography.headline5,
-        )
-
-        Text(
-            text = stringResource(
-                id = R.string.felt_privacy_info_card_subtitle_3,
-                stringResource(id = R.string.app_name),
-            ),
-            color = PhotonColors.White,
-            textAlign = TextAlign.Center,
-            style = FirefoxTheme.typography.subtitle1,
-        )
-
-        Box(
-            modifier = Modifier.semantics {
-                testTagsAsResourceId = true
-                testTag = HOMEPAGE_PRIVATE_BROWSING_LEARN_MORE_LINK
-            },
-        ) {
-            LinkText(
-                text = stringResource(id = R.string.felt_privacy_info_card_subtitle_link_text),
-                linkTextStates = listOf(
-                    LinkTextState(
-                        text = stringResource(id = R.string.felt_privacy_info_card_subtitle_link_text),
-                        url = "",
-                        onClick = { onLearnMoreClick() },
-                    ),
-                ),
-                style = FirefoxTheme.typography.subtitle1,
-                linkTextColor = PhotonColors.White,
-                linkTextDecoration = TextDecoration.Underline,
-                textAlign = TextAlign.Center,
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+            Icon(
+                painter = painterResource(id = iconsR.drawable.mozac_ic_private_mode_72),
+                contentDescription = null,
+                tint = PhotonColors.White.copy(alpha = 0.3f),
             )
+
+            Text(
+                text = stringResource(id = R.string.felt_privacy_desc_card_title),
+                textAlign = TextAlign.Center,
+                style = FirefoxTheme.typography.headline5,
+            )
+
+            Text(
+                text = stringResource(
+                    id = R.string.felt_privacy_info_card_subtitle_3,
+                    stringResource(id = R.string.app_name),
+                ),
+                textAlign = TextAlign.Center,
+                style = FirefoxTheme.typography.subtitle1,
+            )
+
+            Box(
+                modifier = Modifier.semantics {
+                    testTagsAsResourceId = true
+                    testTag = HOMEPAGE_PRIVATE_BROWSING_LEARN_MORE_LINK
+                },
+            ) {
+                LinkText(
+                    text = stringResource(id = R.string.felt_privacy_info_card_subtitle_link_text),
+                    linkTextStates = listOf(
+                        LinkTextState(
+                            text = stringResource(id = R.string.felt_privacy_info_card_subtitle_link_text),
+                            url = "",
+                            onClick = { onLearnMoreClick() },
+                        ),
+                    ),
+                    style = FirefoxTheme.typography.subtitle1,
+                    linkTextColor = MaterialTheme.colorScheme.onSurface,
+                    linkTextDecoration = TextDecoration.Underline,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }
@@ -172,7 +184,7 @@ private fun PrivacyBrowsingDescription2Preview() {
     FirefoxTheme(theme = Theme.Private) {
         Column(
             modifier = Modifier
-                .background(FirefoxTheme.colors.layer1)
+                .background(MaterialTheme.colorScheme.surface)
                 .fillMaxSize(),
         ) {
             PrivateBrowsingDescription2(

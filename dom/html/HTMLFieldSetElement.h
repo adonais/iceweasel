@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_HTMLFieldSetElement_h
 #define mozilla_dom_HTMLFieldSetElement_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/ConstraintValidation.h"
 #include "mozilla/dom/ValidityState.h"
 #include "nsGenericHTMLElement.h"

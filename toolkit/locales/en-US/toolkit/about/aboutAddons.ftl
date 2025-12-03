@@ -206,8 +206,8 @@ addon-sitepermission-host = Site Permissions for { $host }
 
 ## These are global warnings
 
-extensions-warning-safe-mode2 =
-    .message = All add-ons have been disabled by safe mode.
+extensions-warning-safe-mode3 =
+    .message = All add-ons have been disabled by Troubleshoot Mode.
 extensions-warning-check-compatibility2 =
     .message = Add-on compatibility checking is disabled. You may have incompatible add-ons.
 extensions-warning-check-compatibility-button = Enable
@@ -343,6 +343,11 @@ colorway-removal-notice-message =
         the add-ons site.
 colorway-removal-notice-learn-more = Learn more
 colorway-removal-notice-button = Get updated colorways themes
+
+# Notice to make user aware that themes are not applied in forced colors mode.
+# This notice is only visible on Windows.
+forced-colors-theme-notice =
+    .message = Your Windows contrast settings are overriding { -brand-short-name } themes. Turn off these settings to use themes in { -brand-short-name }.
 
 privacy-policy = Privacy Policy
 
@@ -569,14 +574,14 @@ details-notification-hard-blocked-other =
     .message = This add-on is blocked for violating Mozilla’s policies and has been disabled.
 details-notification-blocked-link2 = See Details
 
-details-notification-soft-blocked-extension-disabled =
-    .message = This extension is restricted for violating Mozilla’s policies and has been disabled. You can enable it, but this may be risky.
-details-notification-soft-blocked-extension-enabled =
-    .message = This extension violates Mozilla’s policies. Using it may be risky.
-details-notification-soft-blocked-other-disabled =
-    .message = This add-on is restricted for violating Mozilla’s policies and has been disabled. You can enable it, but this may be risky.
-details-notification-soft-blocked-other-enabled =
-    .message = This add-on violates Mozilla’s policies. Using it may be risky.
+details-notification-soft-blocked-extension-disabled2 =
+    .message = This extension is restricted and has been disabled. You can enable it, but this may be risky.
+details-notification-soft-blocked-extension-enabled2 =
+    .message = This extension is restricted. Using it may be risky.
+details-notification-soft-blocked-other-disabled2 =
+    .message = This add-on is restricted and has been disabled. You can enable it, but this may be risky.
+details-notification-soft-blocked-other-enabled2 =
+    .message = This add-on is restricted. Using it may be risky.
 details-notification-softblocked-link2 = See Details
 
 details-notification-gmp-pending2 =

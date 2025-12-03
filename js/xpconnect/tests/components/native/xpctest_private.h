@@ -15,7 +15,6 @@
 #include "xpctest_params.h"
 #include "xpctest_returncode.h"
 #include "xpctest_cenums.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/ModuleUtils.h"
 
 nsresult xpcTestRegisterComponents();

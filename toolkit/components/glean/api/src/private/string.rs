@@ -134,7 +134,9 @@ impl glean::traits::String for StringMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<std::string::String> for StringMetric {
+impl glean::TestGetValue for StringMetric {
+    type Output = std::string::String;
+
     /// **Exported for test purposes.**
     ///
     /// Gets the currently stored value as a string.

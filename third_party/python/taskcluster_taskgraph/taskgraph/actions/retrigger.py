@@ -147,7 +147,7 @@ def retrigger_action(parameters, graph_config, input, task_group_id, task_id):
     )
 
     task = taskcluster.get_task_definition(task_id)
-    label = task["metadata"]["name"]
+    label = task["metadata"]["name"]  # type: ignore
 
     with_downstream = " "
     to_run = [label]
@@ -201,7 +201,7 @@ def rerun_action(parameters, graph_config, input, task_group_id, task_id):
     decision_task_id, full_task_graph, label_to_taskid = fetch_graph_and_labels(
         parameters, graph_config, task_group_id=task_group_id
     )
-    label = task["metadata"]["name"]
+    label = task["metadata"]["name"]  # type: ignore
     if task_id not in label_to_taskid.values():
         logger.error(
             f"Refusing to rerun {label}: taskId {task_id} not in decision task {decision_task_id} label_to_taskid!"
@@ -233,17 +233,20 @@ def _rerun_task(task_id, label):
             "requests": {
                 "type": "array",
                 "items": {
-                    "tasks": {
-                        "type": "array",
-                        "description": "An array of task labels",
-                        "items": {"type": "string"},
-                    },
-                    "times": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 100,
-                        "title": "Times",
-                        "description": "How many times to run each task.",
+                    "type": "object",
+                    "properties": {
+                        "tasks": {
+                            "type": "array",
+                            "description": "An array of task labels",
+                            "items": {"type": "string"},
+                        },
+                        "times": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "title": "Times",
+                            "description": "How many times to run each task.",
+                        },
                     },
                     "additionalProperties": False,
                 },

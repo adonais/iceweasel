@@ -36,7 +36,19 @@ namespace mozilla {
  * We try to run the control loop at this rate.
  */
 static const int MEDIA_GRAPH_TARGET_PERIOD_MS = 10;
-
+/**
+ * The SystemClockDriver does not necessarily wake up as precisely as an
+ * AudioCallbackDriver.  SleepConditionVariableSRW() has been observed to wake
+ * almost 30ms late on Windows 10 2009 systems, which implies a lower timer
+ * resolution than the 15.6ms default system-wide timer resolution in Windows.
+ * https://download.microsoft.com/download/3/0/2/3027d574-c433-412a-a8b6-5e0a75d5b237/timer-resolution.docx
+ *
+ * Allow a SystemClockDriver to try to catch up when rendering is up to this
+ * many milliseconds late, so that rendered time is close to clock time.  When
+ * later than this threshold, SystemClockDriver will declare bankruptcy and
+ * re-sync target render time with a new clock time.
+ */
+static const int SYSTEM_CLOCK_BANKRUPTCY_THRESHOLD_MS = 30;
 /**
  * After starting a fallback driver, wait this long before attempting to re-init
  * the audio stream the first time.
@@ -511,8 +523,7 @@ class SystemClockDriver final : public ThreadedDriver {
  */
 class OfflineClockDriver final : public ThreadedDriver {
  public:
-  OfflineClockDriver(GraphInterface* aGraphInterface, uint32_t aSampleRate,
-                     GraphTime aSlice);
+  OfflineClockDriver(GraphInterface* aGraphInterface, uint32_t aSampleRate);
   virtual ~OfflineClockDriver();
   OfflineClockDriver* AsOfflineClockDriver() override { return this; }
   const OfflineClockDriver* AsOfflineClockDriver() const override {
@@ -521,13 +532,19 @@ class OfflineClockDriver final : public ThreadedDriver {
 
   void RunThread() override;
 
+  void SetTickCountToRender(uint32_t aTicksToProcess) {
+    MOZ_ASSERT(InIteration());
+    MOZ_ASSERT(mEndTime == 0);
+    mEndTime = aTicksToProcess;
+  }
+
  protected:
   TimeDuration NextIterationWaitDuration() override { return TimeDuration(); }
   MediaTime GetIntervalForIteration() override;
 
  private:
-  // Time, in GraphTime, for each iteration
-  GraphTime mSlice;
+  // The graph will advance up to this time.  Graph thread.
+  GraphTime mEndTime = 0;
 };
 
 enum class AudioInputType { Unknown, Voice };

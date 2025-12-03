@@ -448,4 +448,97 @@ describe("<CardSections />", () => {
     assert.equal(highlight.length, 1);
     assert.isTrue(wrapper.html().includes("follow-section-button-highlight"));
   });
+
+  describe("Keyboard navigation", () => {
+    beforeEach(() => {
+      // Mock window.innerWidth to return a value that will make getActiveColumnLayout return "col-1"
+      Object.defineProperty(window, "innerWidth", {
+        writable: true,
+        configurable: true,
+        value: 500,
+      });
+    });
+
+    it("should pass tabIndex={0} to the first card and tabIndex={-1} to other cards", () => {
+      const firstCard = wrapper.find(DSCard).at(0);
+      const secondCard = wrapper.find(DSCard).at(1);
+      const thirdCard = wrapper.find(DSCard).at(2);
+
+      assert.equal(firstCard.prop("tabIndex"), 0);
+      assert.equal(secondCard.prop("tabIndex"), -1);
+      assert.equal(thirdCard.prop("tabIndex"), -1);
+    });
+
+    it("should update focused index when onFocus is called", () => {
+      const secondCard = wrapper.find(DSCard).at(1);
+      const onFocus = secondCard.prop("onFocus");
+
+      onFocus();
+      wrapper.update();
+
+      assert.equal(wrapper.find(DSCard).at(1).prop("tabIndex"), 0);
+      assert.equal(wrapper.find(DSCard).at(0).prop("tabIndex"), -1);
+    });
+
+    describe("handleCardKeyDown", () => {
+      let grid;
+      let mockLink;
+      let mockTargetCard;
+      let mockGridElement;
+      let mockCurrentCard;
+      let mockEvent;
+
+      beforeEach(() => {
+        grid = wrapper.find(".ds-section-grid.ds-card-grid");
+        mockLink = { focus: sandbox.spy() };
+        mockTargetCard = {
+          querySelector: sandbox.stub().returns(mockLink),
+        };
+        mockGridElement = {
+          querySelector: sandbox.stub().returns(mockTargetCard),
+        };
+        mockCurrentCard = {
+          parentElement: mockGridElement,
+        };
+        mockEvent = {
+          preventDefault: sandbox.spy(),
+          target: {
+            closest: sandbox.stub().returns(mockCurrentCard),
+          },
+        };
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it("should navigate to next card with ArrowRight", () => {
+        mockEvent.key = "ArrowRight";
+        mockCurrentCard.classList = ["col-1-position-0"];
+
+        grid.prop("onKeyDown")(mockEvent);
+
+        assert.calledOnce(mockEvent.preventDefault);
+        assert.calledWith(
+          mockGridElement.querySelector,
+          "article.ds-card.col-1-position-1"
+        );
+        assert.calledOnce(mockLink.focus);
+      });
+
+      it("should navigate to previous card with ArrowLeft", () => {
+        mockEvent.key = "ArrowLeft";
+        mockCurrentCard.classList = ["col-1-position-1"];
+
+        grid.prop("onKeyDown")(mockEvent);
+
+        assert.calledOnce(mockEvent.preventDefault);
+        assert.calledWith(
+          mockGridElement.querySelector,
+          "article.ds-card.col-1-position-0"
+        );
+        assert.calledOnce(mockLink.focus);
+      });
+    });
+  });
 });

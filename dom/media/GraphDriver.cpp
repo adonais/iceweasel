@@ -17,7 +17,6 @@
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/AudioContext.h"
 #include "mozilla/dom/AudioDeviceInfo.h"
 #include "mozilla/dom/BaseAudioContextBinding.h"
@@ -150,7 +149,7 @@ void ThreadedDriver::Start() {
   MOZ_ASSERT(!ThreadRunning());
   LOG(LogLevel::Debug,
       ("Starting thread for a SystemClockDriver  %p", mGraphInterface.get()));
-  Unused << NS_WARN_IF(mThread);
+  (void)NS_WARN_IF(mThread);
   MOZ_ASSERT(!mThread);  // Ensure we haven't already started it
 
   nsCOMPtr<nsIRunnable> event = new MediaTrackGraphInitThreadRunnable(this);
@@ -246,10 +245,10 @@ TimeDuration SystemClockDriver::NextIterationWaitDuration() {
     mTargetIterationTimeStamp += IterationDuration();
   }
   TimeDuration timeout = mTargetIterationTimeStamp - now;
-  if (timeout < TimeDuration::FromMilliseconds(-MEDIA_GRAPH_TARGET_PERIOD_MS)) {
-    // Rendering has fallen so far behind that the entire next rendering
-    // period has already passed.  Don't try to catch up again, but instead
-    // try to render at consistent time intervals from now.
+  if (timeout <
+      TimeDuration::FromMilliseconds(-SYSTEM_CLOCK_BANKRUPTCY_THRESHOLD_MS)) {
+    // Don't try to catch up because rendering has fallen so far behind.
+    // Instead try to render at consistent time intervals from now.
     LOG(LogLevel::Warning, ("%p: Global underrun detected", Graph()));
     mTargetIterationTimeStamp = now;
   }
@@ -262,8 +261,8 @@ TimeDuration SystemClockDriver::NextIterationWaitDuration() {
 }
 
 OfflineClockDriver::OfflineClockDriver(GraphInterface* aGraphInterface,
-                                       uint32_t aSampleRate, GraphTime aSlice)
-    : ThreadedDriver(aGraphInterface, nullptr, aSampleRate), mSlice(aSlice) {}
+                                       uint32_t aSampleRate)
+    : ThreadedDriver(aGraphInterface, nullptr, aSampleRate) {}
 
 OfflineClockDriver::~OfflineClockDriver() = default;
 
@@ -276,8 +275,9 @@ void OfflineClockDriver::RunThread() {
 }
 
 MediaTime OfflineClockDriver::GetIntervalForIteration() {
-  return MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(
-      MillisecondsToMediaTime(mSlice));
+  return MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(std::clamp<MediaTime>(
+      mEndTime - mStateComputedTime, 0,
+      MillisecondsToMediaTime(MEDIA_GRAPH_TARGET_PERIOD_MS)));
 }
 
 /* Helper to proxy the GraphInterface methods used by a running

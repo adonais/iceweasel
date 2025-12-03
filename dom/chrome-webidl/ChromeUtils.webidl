@@ -442,6 +442,20 @@ namespace ChromeUtils {
   UTF8String encodeURIForSrcset(UTF8String uri);
 
   /**
+   * Returns, in bytes, a platform-normalized estimate of the process's private physical memory usage.
+   * Any error when calling the underlying platform-specific API will be thrown.
+   */
+  [Throws]
+  readonly attribute unsigned long long currentProcessMemoryUsage;
+
+  /**
+   * Return the number of milliseconds of CPU time used since process start.
+   * Any error when calling the underlying platform-specific API will be thrown.
+   */
+  [Throws]
+  readonly attribute unsigned long long cpuTimeSinceProcessStart;
+
+  /**
    * IF YOU ADD NEW METHODS HERE, MAKE SURE THEY ARE THREAD-SAFE.
    */
 };

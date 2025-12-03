@@ -34,6 +34,7 @@ dupe-manifest = ""
 ["test_ext_menu_caller.js"]
 
 ["test_ext_menu_startup.js"]
+requesttimeoutfactor = 2  # Slow on Linux debug
 
 ["test_ext_normandyAddonStudy.js"]
 

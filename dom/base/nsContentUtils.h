@@ -39,7 +39,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/SourceLocation.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CacheExpirationTime.h"
 #include "mozilla/dom/FetchPriority.h"
@@ -2745,10 +2744,10 @@ class nsContentUtils {
   static bool IsJsonMimeType(const nsAString& aMimeType);
 
   /**
-   * Returns true if the given MIME type string is a valid CSS MIME type,
+   * Returns true if the given MIME type string has a CSS MIME type essence,
    * otherwise false.
    */
-  static bool IsCssMimeType(const nsAString& aMimeType);
+  static bool HasCssMimeTypeEssence(const nsAString& aMimeType);
 
   static void SplitMimeType(const nsAString& aValue, nsString& aType,
                             nsString& aParams);
@@ -3043,8 +3042,6 @@ class nsContentUtils {
   static mozilla::LayoutDeviceIntPoint ToWidgetPoint(
       const mozilla::CSSPoint& aPoint, const nsPoint& aOffset,
       nsPresContext* aPresContext);
-  static nsView* GetViewToDispatchEvent(nsPresContext* aPresContext,
-                                        mozilla::PresShell** aPresShell);
 
   /**
    * Synthesize a mouse event to the given widget

@@ -395,10 +395,6 @@ NS_EVENT_MESSAGE(eSMILRepeatEvent)
 NS_EVENT_MESSAGE(eAudioProcess)
 NS_EVENT_MESSAGE(eAudioComplete)
 
-// script notification events
-NS_EVENT_MESSAGE(eBeforeScriptExecute)
-NS_EVENT_MESSAGE(eAfterScriptExecute)
-
 NS_EVENT_MESSAGE(eBeforePrint)
 NS_EVENT_MESSAGE(eAfterPrint)
 

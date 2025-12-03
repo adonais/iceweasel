@@ -9,10 +9,12 @@
 
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
+#include "mozilla/ResultVariant.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/glean/bindings/Boolean.h"
 #include "mozilla/glean/bindings/Counter.h"
 #include "mozilla/glean/bindings/CustomDistribution.h"
+#include "mozilla/glean/bindings/DistributionData.h"
 #include "mozilla/glean/bindings/GleanMetric.h"
 #include "mozilla/glean/bindings/HistogramGIFFTMap.h"
 #include "mozilla/glean/bindings/MemoryDistribution.h"
@@ -52,19 +54,73 @@ static inline void UpdateLabeledDistributionMirror(
 }
 
 template <typename T>
+struct MetricOutputTypeTraits;
+
+template <>
+struct MetricOutputTypeTraits<BooleanMetric> {
+  using Output = bool;
+};
+
+template <>
+struct MetricOutputTypeTraits<QuantityMetric> {
+  using Output = int64_t;
+};
+
+template <>
+struct MetricOutputTypeTraits<CounterMetric<CounterType::eBaseOrLabeled>> {
+  using Output = int32_t;
+};
+
+template <>
+struct MetricOutputTypeTraits<StringMetric> {
+  using Output = nsCString;
+};
+
+template <>
+struct MetricOutputTypeTraits<CustomDistributionMetric> {
+  using Output = DistributionData;
+};
+
+template <>
+struct MetricOutputTypeTraits<MemoryDistributionMetric> {
+  using Output = DistributionData;
+};
+
+template <>
+struct MetricOutputTypeTraits<TimingDistributionMetric> {
+  using Output = DistributionData;
+};
+
+template <typename T>
 inline uint32_t fog_labeled_get(uint32_t aId, const nsACString* aLabel);
+
 template <typename T>
 inline uint32_t fog_labeled_enum_get(uint32_t aId, uint16_t aLabel);
 
-#define FOG_LABEL_TYPE_MAP(type, name)                                        \
-  template <>                                                                 \
-  inline uint32_t fog_labeled_get<type>(uint32_t aId,                         \
-                                        const nsACString* aLabel) {           \
-    return fog_labeled_##name##_get(aId, aLabel);                             \
-  }                                                                           \
-  template <>                                                                 \
-  inline uint32_t fog_labeled_enum_get<type>(uint32_t aId, uint16_t aLabel) { \
-    return fog_labeled_##name##_enum_get(aId, aLabel);                        \
+template <typename T, typename O>
+inline Maybe<nsTHashMap<nsCString, O>> fog_labeled_test_get_value(
+    uint32_t aId, const nsACString* aPingName);
+
+template <typename T>
+inline Maybe<nsCString> fog_labeled_test_get_error(uint32_t aId);
+
+#define FOG_LABEL_TYPE_MAP(_type, _name)                                       \
+  template <>                                                                  \
+  inline uint32_t fog_labeled_get<_type>(uint32_t aId,                         \
+                                         const nsACString* aLabel) {           \
+    return fog_labeled_##_name##_get(aId, aLabel);                             \
+  }                                                                            \
+  template <>                                                                  \
+  inline uint32_t fog_labeled_enum_get<_type>(uint32_t aId, uint16_t aLabel) { \
+    return fog_labeled_##_name##_enum_get(aId, aLabel);                        \
+  }                                                                            \
+  template <>                                                                  \
+  inline Maybe<nsCString> fog_labeled_test_get_error<_type>(uint32_t aId) {    \
+    nsCString error;                                                           \
+    if (fog_labeled_##_name##_test_get_error(aId, &error)) {                   \
+      return Some(error);                                                      \
+    }                                                                          \
+    return Nothing();                                                          \
   }
 
 FOG_LABEL_TYPE_MAP(BooleanMetric, boolean)
@@ -74,6 +130,8 @@ FOG_LABEL_TYPE_MAP(CounterMetric<CounterType::eBaseOrLabeled>, counter)
 FOG_LABEL_TYPE_MAP(CustomDistributionMetric, custom_distribution)
 FOG_LABEL_TYPE_MAP(MemoryDistributionMetric, memory_distribution)
 FOG_LABEL_TYPE_MAP(TimingDistributionMetric, timing_distribution)
+
+#undef FOG_LABEL_TYPE_MAP
 
 template <typename T, typename E>
 class Labeled {
@@ -150,6 +208,62 @@ class Labeled {
       }
     }
     return T(submetricId);
+  }
+
+  template <typename M = T,
+            typename V = typename MetricOutputTypeTraits<T>::Output>
+  Result<Maybe<nsTHashMap<nsCString, V>>, nsCString> TestGetValue(
+      const nsCString aPingName = nsCString()) const {
+    Maybe<nsCString> err;
+    err = fog_labeled_test_get_error<T>(mId);
+    if (err.isSome()) {
+      return Err(err.value());
+    }
+    uint64_t count = 0;
+    nsTArray<nsCString> keys;
+    nsTArray<V> values;
+    if constexpr (std::is_same_v<M, BooleanMetric>) {
+      fog_labeled_boolean_test_get_value(mId, &aPingName, &count, &keys,
+                                         &values);
+    } else if constexpr (std::is_same_v<
+                             M, CounterMetric<CounterType::eBaseOrLabeled>>) {
+      fog_labeled_counter_test_get_value(mId, &aPingName, &count, &keys,
+                                         &values);
+    } else if constexpr (std::is_same_v<M, StringMetric>) {
+      fog_labeled_string_test_get_value(mId, &aPingName, &count, &keys,
+                                        &values);
+    } else if constexpr (std::is_same_v<M, QuantityMetric>) {
+      fog_labeled_quantity_test_get_value(mId, &aPingName, &count, &keys,
+                                          &values);
+    } else if constexpr (std::is_same_v<M, CustomDistributionMetric>) {
+      nsTArray<FfiDistributionData> ffi_values;
+      fog_labeled_custom_distribution_test_get_value(mId, &aPingName, &count,
+                                                     &keys, &ffi_values);
+      DistributionData::fromFFIArray(ffi_values, values);
+    } else if constexpr (std::is_same_v<M, MemoryDistributionMetric>) {
+      nsTArray<FfiDistributionData> ffi_values;
+      fog_labeled_memory_distribution_test_get_value(mId, &aPingName, &count,
+                                                     &keys, &ffi_values);
+      DistributionData::fromFFIArray(ffi_values, values);
+    } else if constexpr (std::is_same_v<M, TimingDistributionMetric>) {
+      nsTArray<FfiDistributionData> ffi_values;
+      fog_labeled_timing_distribution_test_get_value(mId, &aPingName, &count,
+                                                     &keys, &ffi_values);
+      DistributionData::fromFFIArray(ffi_values, values);
+    } else {
+      static_assert(std::is_same_v<M, void>,
+                    "There should be a block handling this type");
+    }
+
+    nsTHashMap<nsCStringHashKey, V> result;
+    for (uint64_t i = 0; i < count; i++) {
+      result.InsertOrUpdate(keys[i], std::move(values[i]));
+    }
+
+    if (result.Count() == 0) {
+      return Maybe<nsTHashMap<nsCString, V>>();
+    }
+    return Some(std::move(result));
   }
 
   // This is a workaround only needed in a rare case, ensure it's only compiled

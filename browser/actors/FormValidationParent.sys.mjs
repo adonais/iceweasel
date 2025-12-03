@@ -139,7 +139,7 @@ export class FormValidationParent extends JSWindowActorParent {
     this._panel = null;
   }
 
-  /*
+  /**
    * Shows the form validation popup at a specified position or updates the
    * messaging and position if the popup is already displayed.
    *

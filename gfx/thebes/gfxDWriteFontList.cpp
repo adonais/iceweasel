@@ -3,7 +3,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/intl/OSPreferences.h"
@@ -23,7 +22,6 @@
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/WindowsProcessMitigations.h"
-#include "mozilla/WindowsVersion.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsAppDirectoryServiceDefs.h"

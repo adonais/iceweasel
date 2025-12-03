@@ -12,6 +12,10 @@
 // on tabs where a shim using a given logo happens to be active).
 const LogosBaseURL = "https://smartblock.firefox.etp/";
 
+const loggingPrefPromise = browser.aboutConfigPrefs.getPref(
+  "disable_debug_logging"
+);
+
 const releaseBranchPromise = browser.appConstants.getReleaseBranch();
 
 const platformPromise = browser.runtime.getPlatformInfo().then(info => {
@@ -19,7 +23,10 @@ const platformPromise = browser.runtime.getPlatformInfo().then(info => {
 });
 
 let debug = async function () {
-  if ((await releaseBranchPromise) !== "release_or_beta") {
+  if (
+    (await loggingPrefPromise) !== true &&
+    (await releaseBranchPromise) !== "release_or_beta"
+  ) {
     console.debug.apply(this, arguments);
   }
 };

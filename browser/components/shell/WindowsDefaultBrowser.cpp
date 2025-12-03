@@ -10,7 +10,6 @@
 #include "WindowsDefaultBrowser.h"
 
 #include "city.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/WinHeaderOnlyUtils.h"

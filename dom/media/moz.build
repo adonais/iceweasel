@@ -274,6 +274,8 @@ UNIFIED_SOURCES += [
     "CloneableWithRangeMediaResource.cpp",
     "CrossGraphPort.cpp",
     "CubebInputStream.cpp",
+    "CubebUtils.cpp",
+    "DecoderTraits.cpp",
     "DeviceInputTrack.cpp",
     "DOMMediaStream.cpp",
     "ExternalEngineStateMachine.cpp",
@@ -332,19 +334,10 @@ else:
 if CONFIG["ENABLE_TESTS"] or CONFIG["FUZZING"]:
     UNIFIED_SOURCES += ["MockCubeb.cpp"]
 
-# CubebUtils.cpp needs to be built separately due to what appears to be some kind
-# of compiler bug on Android 4.2 x86 opt. See bug 1408459.
-# DecoderTraits.cpp needs to be built separately because of Mac OS X headers.
 # MediaData.cpp : ambiguous compilation error caused by Mac OS X headers.
 SOURCES += [
-    "CubebUtils.cpp",
-    "DecoderTraits.cpp",
     "MediaData.cpp",
 ]
-
-# Some codec-related code uses multi-character constants, which GCC and clang
-# warn about. Suppress turning this warning into an error.
-SOURCES["DecoderTraits.cpp"].flags += ["-Wno-error=multichar"]
 
 if CONFIG["MOZ_WEBRTC"]:
     XPCOM_MANIFESTS += [

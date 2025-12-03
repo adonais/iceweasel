@@ -4,7 +4,7 @@ XPCOMUtils.defineLazyServiceGetter(
   this,
   "gProxyService",
   "@mozilla.org/network/protocol-proxy-service;1",
-  "nsIProtocolProxyService"
+  Ci.nsIProtocolProxyService
 );
 
 const TRANSPARENT_PROXY_RESOLVES_HOST =
@@ -478,11 +478,12 @@ add_task(async function test_proxyInfo_results() {
           password: "pass123",
           proxyDNS: true,
           failoverTimeout: 3,
-          pathTemplate: "/.well-known/masque/udp/{target_host}/{target_port}/",
+          masqueTemplate:
+            "/.well-known/masque/udp/{target_host}/{target_port}/",
         },
       ],
       expected: {
-        error: `ProxyInfoData: pathTemplate can only be used for "masque" proxies`,
+        error: `ProxyInfoData: masqueTemplate can only be used for "masque" proxies`,
       },
     },
     {
@@ -490,27 +491,8 @@ add_task(async function test_proxyInfo_results() {
         {
           host: "foo.bar",
           port: 3128,
-          pathTemplate: "/.well-known/masque/udp/{target_host}/{target_port}/",
-          type: "masque",
-        },
-      ],
-      expected: {
-        proxyInfo: {
-          host: "foo.bar",
-          port: 3128,
-          type: "masque",
-          pathTemplate: "/.well-known/masque/udp/{target_host}/{target_port}/",
-        },
-      },
-    },
-    {
-      proxy: [
-        {
-          host: "foo.bar",
-          port: 3128,
-          proxyAuthorizationHeader: "test",
-          connectionIsolationKey: "key",
-          pathTemplate: "/.well-known/masque/udp/{target_host}/{target_port}/",
+          masqueTemplate:
+            "/.well-known/masque/udp/{target_host}/{target_port}/",
           type: "masque",
         },
       ],
@@ -519,9 +501,32 @@ add_task(async function test_proxyInfo_results() {
           host: "foo.bar",
           port: 3128,
           type: "masque",
+          masqueTemplate:
+            "/.well-known/masque/udp/{target_host}/{target_port}/",
+        },
+      },
+    },
+    {
+      proxy: [
+        {
+          host: "foo.bar",
+          port: 3128,
           proxyAuthorizationHeader: "test",
           connectionIsolationKey: "key",
-          pathTemplate: "/.well-known/masque/udp/{target_host}/{target_port}/",
+          masqueTemplate:
+            "/.well-known/masque/udp/{target_host}/{target_port}/",
+          type: "masque",
+        },
+      ],
+      expected: {
+        proxyInfo: {
+          host: "foo.bar",
+          port: 3128,
+          type: "masque",
+          proxyAuthorizationHeader: "test",
+          connectionIsolationKey: "key",
+          masqueTemplate:
+            "/.well-known/masque/udp/{target_host}/{target_port}/",
         },
       },
     },
@@ -536,7 +541,7 @@ add_task(async function test_proxyInfo_results() {
         },
       ],
       expected: {
-        error: `ProxyInfoData: Invalid proxy path template: "undefined"`,
+        error: `ProxyInfoData: Invalid proxy masque template: "undefined"`,
       },
     },
     {
@@ -547,7 +552,8 @@ add_task(async function test_proxyInfo_results() {
           port: 3128,
           proxyAuthorizationHeader: "test",
           connectionIsolationKey: "key",
-          pathTemplate: "/.well-known/masque/udp/{target_host}/{target_port}/",
+          masqueTemplate:
+            "/.well-known/masque/udp/{target_host}/{target_port}/",
           username: "mungosantamaria",
         },
       ],
@@ -562,7 +568,8 @@ add_task(async function test_proxyInfo_results() {
           port: 3128,
           proxyAuthorizationHeader: "test",
           connectionIsolationKey: "key",
-          pathTemplate: "/.well-known/masque/udp/{target_host}/{target_port}/",
+          masqueTemplate:
+            "/.well-known/masque/udp/{target_host}/{target_port}/",
           type: "masque",
           password: "pass123",
         },

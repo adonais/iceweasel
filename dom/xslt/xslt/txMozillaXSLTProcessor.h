@@ -6,7 +6,6 @@
 #ifndef TRANSFRMX_TXMOZILLAXSLTPROCESSOR_H
 #define TRANSFRMX_TXMOZILLAXSLTPROCESSOR_H
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/XSLTProcessorBinding.h"
 #include "nsCycleCollectionParticipant.h"

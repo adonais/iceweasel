@@ -399,7 +399,7 @@ nsresult FetchIconInfo(const UniquePtr<ConnectionAdapter>& aConn,
 
   nsAutoCString pageHostAndPort;
   // It's expected that some URIs may not have a host/port.
-  Unused << aPageURI->GetHostPort(pageHostAndPort);
+  (void)aPageURI->GetHostPort(pageHostAndPort);
 
   const uint16_t THRESHOLD_WIDTH = 64;
 
@@ -645,9 +645,9 @@ class Favicon final : public nsIFavicon {
   }
 
   NS_IMETHOD GetRawData(nsTArray<uint8_t>& aRawData) override {
-    Unused << aRawData.ReplaceElementsAt(0, aRawData.Length(),
-                                         TO_INTBUFFER(mRawData),
-                                         mRawData.Length(), fallible);
+    (void)aRawData.ReplaceElementsAt(0, aRawData.Length(),
+                                     TO_INTBUFFER(mRawData), mRawData.Length(),
+                                     fallible);
     return NS_OK;
   }
 
@@ -708,7 +708,7 @@ AsyncAssociateIconToPage::Run() {
       DB->MainConn(), false, mozIStorageConnection::TRANSACTION_IMMEDIATE);
 
   // XXX Handle the error, bug 1696133.
-  Unused << NS_WARN_IF(NS_FAILED(transaction.Start()));
+  (void)NS_WARN_IF(NS_FAILED(transaction.Start()));
 
   nsresult rv;
   if (shouldUpdateIcon) {
@@ -832,7 +832,7 @@ AsyncAssociateIconToPage::Run() {
     if (DB && NS_SUCCEEDED(FetchPageInfo(DB, bookmarkedPage))) {
       RefPtr<AsyncAssociateIconToPage> event =
           new AsyncAssociateIconToPage(mIcon, bookmarkedPage);
-      Unused << event->Run();
+      (void)event->Run();
     }
   }
 

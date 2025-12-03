@@ -43,11 +43,12 @@ def find_existing_tasks_from_previous_kinds(
     existing_tasks = {}
     for previous_graph_id in previous_graph_ids:
         label_to_taskid = get_artifact(previous_graph_id, "public/label-to-taskid.json")
-        kind_labels = {
-            t.label
-            for t in full_task_graph.tasks.values()
-            if t.attributes["kind"] not in rebuild_kinds
-        }
-        for label in set(label_to_taskid.keys()).intersection(kind_labels):
-            existing_tasks[label] = label_to_taskid[label]
+        if label_to_taskid:
+            kind_labels = {
+                t.label
+                for t in full_task_graph.tasks.values()
+                if t.attributes["kind"] not in rebuild_kinds
+            }
+            for label in set(label_to_taskid.keys()).intersection(kind_labels):
+                existing_tasks[label] = label_to_taskid[label]
     return existing_tasks

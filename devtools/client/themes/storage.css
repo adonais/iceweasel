@@ -85,6 +85,7 @@ a {
 
 #expires,
 #lastAccessed,
+#updateTime,
 #creationTime {
   min-width: 115px;
 }

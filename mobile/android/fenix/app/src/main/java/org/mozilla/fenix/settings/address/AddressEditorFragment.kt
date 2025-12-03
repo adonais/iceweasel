@@ -8,8 +8,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.fragment.compose.content
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import mozilla.components.concept.engine.Engine
+import mozilla.components.concept.engine.autofill.AddressStructure
 import org.mozilla.fenix.SecureFragment
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.ext.hideToolbar
@@ -18,9 +23,13 @@ import org.mozilla.fenix.settings.address.store.AddressEnvironment
 import org.mozilla.fenix.settings.address.store.AddressMiddleware
 import org.mozilla.fenix.settings.address.store.AddressState
 import org.mozilla.fenix.settings.address.store.AddressStore
+import org.mozilla.fenix.settings.address.store.AddressStructureMiddleware
 import org.mozilla.fenix.settings.address.store.EnvironmentRehydrated
 import org.mozilla.fenix.settings.address.ui.edit.EditAddressScreen
 import org.mozilla.fenix.theme.FirefoxTheme
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 /**
  * Displays an address editor for adding and editing an address.
@@ -39,15 +48,22 @@ class AddressEditorFragment : SecureFragment() {
                     region = requireComponents.core.store.state.search.region,
                     address = args.address,
                 ),
-                middleware = listOf(AddressMiddleware()),
+                middleware = listOf(
+                    AddressMiddleware(scope = viewLifecycleOwner.lifecycleScope),
+                    AddressStructureMiddleware(scope = viewLifecycleOwner.lifecycleScope),
+                ),
             )
         }.also {
             val storage = requireComponents.core.autofillStorage
+            val engine = requireComponents.core.engine
+            val crashReporter = requireComponents.analytics.crashReporter
             val environment = AddressEnvironment(
                 navigateBack = { findNavController().popBackStack() },
                 createAddress = { fields -> storage.addAddress(fields).guid },
                 updateAddress = { guid, fields -> storage.updateAddress(guid, fields) },
                 deleteAddress = { guid -> storage.deleteAddress(guid) },
+                getAddressStructure = engine::getAddressStructure,
+                submitCaughtException = crashReporter::submitCaughtException,
             )
             it.dispatch(EnvironmentRehydrated(environment))
         }
@@ -59,5 +75,17 @@ class AddressEditorFragment : SecureFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         hideToolbar()
+    }
+}
+
+private suspend fun Engine.getAddressStructure(countryCode: String): AddressStructure {
+    return withContext(Dispatchers.Main) {
+        suspendCoroutine { continuation ->
+            getAddressStructure(
+                countryCode = countryCode,
+                onSuccess = { fields -> continuation.resume(fields) },
+                onError = { throwable -> continuation.resumeWithException(throwable) },
+            )
+        }
     }
 }

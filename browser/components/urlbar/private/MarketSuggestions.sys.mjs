@@ -4,13 +4,6 @@
 
 import { RealtimeSuggestProvider } from "moz-src:///browser/components/urlbar/private/RealtimeSuggestProvider.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
-  UrlbarSearchUtils:
-    "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
-});
-
 /**
  * A feature that supports Market suggestions like stocks, indexes, and funds.
  */
@@ -27,29 +20,7 @@ export class MarketSuggestions extends RealtimeSuggestProvider {
     return "polygon";
   }
 
-  makeMerinoResult(queryContext, suggestion, searchString) {
-    if (!suggestion.custom_details?.polygon?.values?.length) {
-      return null;
-    }
-
-    let engine = lazy.UrlbarSearchUtils.getDefaultEngine(
-      queryContext.isPrivate
-    );
-    if (!engine) {
-      return null;
-    }
-
-    let result = super.makeMerinoResult(queryContext, suggestion, searchString);
-    if (!result) {
-      return null;
-    }
-
-    result.payload.engine = engine.name;
-
-    return result;
-  }
-
-  getViewTemplateForDescriptionTop(index) {
+  getViewTemplateForDescriptionTop(_item, index) {
     return [
       {
         name: `name_${index}`,
@@ -58,7 +29,7 @@ export class MarketSuggestions extends RealtimeSuggestProvider {
       },
       {
         tag: "span",
-        classList: ["urlbarView-realtime-description-separator"],
+        classList: ["urlbarView-realtime-description-separator-dot"],
       },
       {
         name: `ticker_${index}`,
@@ -67,7 +38,7 @@ export class MarketSuggestions extends RealtimeSuggestProvider {
     ];
   }
 
-  getViewTemplateForDescriptionBottom(index) {
+  getViewTemplateForDescriptionBottom(_item, index) {
     return [
       {
         name: `todays_change_perc_${index}`,
@@ -76,7 +47,7 @@ export class MarketSuggestions extends RealtimeSuggestProvider {
       },
       {
         tag: "span",
-        classList: ["urlbarView-realtime-description-separator"],
+        classList: ["urlbarView-realtime-description-separator-dot"],
       },
       {
         name: `last_price_${index}`,
@@ -85,7 +56,7 @@ export class MarketSuggestions extends RealtimeSuggestProvider {
       },
       {
         tag: "span",
-        classList: ["urlbarView-realtime-description-separator"],
+        classList: ["urlbarView-realtime-description-separator-dot"],
       },
       {
         name: `exchange_${index}`,
@@ -95,64 +66,59 @@ export class MarketSuggestions extends RealtimeSuggestProvider {
     ];
   }
 
-  getViewUpdateForValues(values) {
-    return Object.assign(
-      {},
-      ...values.flatMap((v, i) => {
-        let arrowImageUri;
-        let changeDescription;
-        let changePercent = parseFloat(v.todays_change_perc);
-        if (changePercent < 0) {
-          changeDescription = "down";
-          arrowImageUri = "chrome://browser/skin/urlbar/market-down.svg";
-        } else if (changePercent > 0) {
-          changeDescription = "up";
-          arrowImageUri = "chrome://browser/skin/urlbar/market-up.svg";
-        } else {
-          changeDescription = "unchanged";
-          arrowImageUri = "chrome://browser/skin/urlbar/market-unchanged.svg";
-        }
+  getViewUpdateForPayloadItem(item, index) {
+    let arrowImageUri;
+    let changeDescription;
+    let changePercent = parseFloat(item.todays_change_perc);
+    if (changePercent < 0) {
+      changeDescription = "down";
+      arrowImageUri = "chrome://browser/skin/urlbar/market-down.svg";
+    } else if (changePercent > 0) {
+      changeDescription = "up";
+      arrowImageUri = "chrome://browser/skin/urlbar/market-up.svg";
+    } else {
+      changeDescription = "unchanged";
+      arrowImageUri = "chrome://browser/skin/urlbar/market-unchanged.svg";
+    }
 
-        let imageUri = v.image_url;
-        let isImageAnArrow = false;
-        if (!imageUri) {
-          isImageAnArrow = true;
-          imageUri = arrowImageUri;
-        }
+    let imageUri = item.image_url;
+    let isImageAnArrow = false;
+    if (!imageUri) {
+      isImageAnArrow = true;
+      imageUri = arrowImageUri;
+    }
 
-        return {
-          [`item_${i}`]: {
-            attributes: {
-              change: changeDescription,
-            },
-          },
-          [`image_container_${i}`]: {
-            attributes: {
-              "is-arrow": isImageAnArrow ? "" : null,
-            },
-          },
-          [`image_${i}`]: {
-            attributes: {
-              src: imageUri,
-            },
-          },
-          [`name_${i}`]: {
-            textContent: v.name,
-          },
-          [`ticker_${i}`]: {
-            textContent: v.ticker,
-          },
-          [`todays_change_perc_${i}`]: {
-            textContent: `${v.todays_change_perc}%`,
-          },
-          [`last_price_${i}`]: {
-            textContent: v.last_price,
-          },
-          [`exchange_${i}`]: {
-            textContent: v.exchange,
-          },
-        };
-      })
-    );
+    return {
+      [`item_${index}`]: {
+        attributes: {
+          change: changeDescription,
+        },
+      },
+      [`image_container_${index}`]: {
+        attributes: {
+          "is-arrow": isImageAnArrow ? "" : null,
+        },
+      },
+      [`image_${index}`]: {
+        attributes: {
+          src: imageUri,
+        },
+      },
+      [`name_${index}`]: {
+        textContent: item.name,
+      },
+      [`ticker_${index}`]: {
+        textContent: item.ticker,
+      },
+      [`todays_change_perc_${index}`]: {
+        textContent: `${item.todays_change_perc}%`,
+      },
+      [`last_price_${index}`]: {
+        textContent: item.last_price,
+      },
+      [`exchange_${index}`]: {
+        textContent: item.exchange,
+      },
+    };
   }
 }

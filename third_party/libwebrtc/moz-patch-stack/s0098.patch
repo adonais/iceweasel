@@ -16,10 +16,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/60eb5ef11c8df7eb6
  3 files changed, 79 insertions(+), 4 deletions(-)
 
 diff --git a/modules/video_capture/linux/device_info_pipewire.cc b/modules/video_capture/linux/device_info_pipewire.cc
-index db2a3c7099..a0607b4aba 100644
+index 009e1408b9..a737f9bdb3 100644
 --- a/modules/video_capture/linux/device_info_pipewire.cc
 +++ b/modules/video_capture/linux/device_info_pipewire.cc
-@@ -29,13 +29,19 @@
+@@ -23,13 +23,19 @@
  namespace webrtc {
  namespace videocapturemodule {
  DeviceInfoPipeWire::DeviceInfoPipeWire(VideoCaptureOptions* options)
@@ -42,7 +42,7 @@ index db2a3c7099..a0607b4aba 100644
  uint32_t DeviceInfoPipeWire::NumberOfDevices() {
    RTC_CHECK(pipewire_session_);
 diff --git a/modules/video_capture/linux/pipewire_session.cc b/modules/video_capture/linux/pipewire_session.cc
-index 990bfde912..25c4dfae4e 100644
+index 2c533a0edb..86368f6aa1 100644
 --- a/modules/video_capture/linux/pipewire_session.cc
 +++ b/modules/video_capture/linux/pipewire_session.cc
 @@ -9,6 +9,7 @@
@@ -53,7 +53,7 @@ index 990bfde912..25c4dfae4e 100644
  
  #include <spa/monitor/device.h>
  #include <spa/param/format-utils.h>
-@@ -286,6 +287,28 @@ void PipeWireSession::InitPipeWire(int fd) {
+@@ -296,6 +297,28 @@ void PipeWireSession::InitPipeWire(int fd) {
      Finish(VideoCaptureOptions::Status::ERROR);
  }
  
@@ -82,7 +82,7 @@ index 990bfde912..25c4dfae4e 100644
  RTC_NO_SANITIZE("cfi-icall")
  bool PipeWireSession::StartPipeWire(int fd) {
    pw_init(/*argc=*/nullptr, /*argv=*/nullptr);
-@@ -358,6 +381,21 @@ void PipeWireSession::PipeWireSync() {
+@@ -368,6 +391,21 @@ void PipeWireSession::PipeWireSync() {
    sync_seq_ = pw_core_sync(pw_core_, PW_ID_CORE, sync_seq_);
  }
  
@@ -104,7 +104,7 @@ index 990bfde912..25c4dfae4e 100644
  // static
  void PipeWireSession::OnCoreError(void* data,
                                    uint32_t id,
-@@ -416,6 +454,8 @@ void PipeWireSession::OnRegistryGlobal(void* data,
+@@ -426,6 +464,8 @@ void PipeWireSession::OnRegistryGlobal(void* data,
  
    that->nodes_.push_back(PipeWireNode::Create(that, id, props));
    that->PipeWireSync();
@@ -113,7 +113,7 @@ index 990bfde912..25c4dfae4e 100644
  }
  
  // static
-@@ -427,10 +467,15 @@ void PipeWireSession::OnRegistryGlobalRemove(void* data, uint32_t id) {
+@@ -437,10 +477,15 @@ void PipeWireSession::OnRegistryGlobalRemove(void* data, uint32_t id) {
                               return node->id() == id;
                             });
    that->nodes_.erase(it, that->nodes_.end());
@@ -131,10 +131,10 @@ index 990bfde912..25c4dfae4e 100644
    webrtc::MutexLock lock(&callback_lock_);
  
 diff --git a/modules/video_capture/linux/pipewire_session.h b/modules/video_capture/linux/pipewire_session.h
-index aec268e008..7dbba23691 100644
+index b2a2023585..ecf419a026 100644
 --- a/modules/video_capture/linux/pipewire_session.h
 +++ b/modules/video_capture/linux/pipewire_session.h
-@@ -28,6 +28,7 @@
+@@ -31,6 +31,7 @@
  namespace webrtc {
  namespace videocapturemodule {
  
@@ -142,7 +142,7 @@ index aec268e008..7dbba23691 100644
  class PipeWireSession;
  class VideoCaptureModulePipeWire;
  
-@@ -96,6 +97,21 @@ class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
+@@ -99,6 +100,21 @@ class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
  
    void Init(VideoCaptureOptions::Callback* callback,
              int fd = kInvalidPipeWireFd);
@@ -164,7 +164,7 @@ index aec268e008..7dbba23691 100644
    const std::deque<PipeWireNode::PipeWireNodePtr>& nodes() const {
      return nodes_;
    }
-@@ -110,6 +126,8 @@ class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
+@@ -113,6 +129,8 @@ class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
    void StopPipeWire();
    void PipeWireSync();
  
@@ -173,7 +173,7 @@ index aec268e008..7dbba23691 100644
    static void OnCoreError(void* data,
                            uint32_t id,
                            int seq,
-@@ -132,7 +150,13 @@ class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
+@@ -135,7 +153,13 @@ class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
    VideoCaptureOptions::Callback* callback_ RTC_GUARDED_BY(&callback_lock_) =
        nullptr;
  

@@ -26,7 +26,6 @@
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TouchEvents.h"
-#include "nsView.h"
 #include "nsGkAtoms.h"
 
 #include "AnchorPositioningUtils.h"
@@ -107,9 +106,7 @@ void nsCoreUtils::DispatchClickEvent(XULTreeElement* aTree, int32_t aRowIndex,
   nsIFrame* rootFrame = presShell->GetRootFrame();
 
   nsPoint offset;
-  nsCOMPtr<nsIWidget> rootWidget =
-      rootFrame->GetView()->GetNearestWidget(&offset);
-
+  nsCOMPtr<nsIWidget> rootWidget = rootFrame->GetNearestWidget(offset);
   RefPtr<nsPresContext> presContext = presShell->GetPresContext();
 
   int32_t cnvdX = presContext->CSSPixelsToDevPixels(tcX + int32_t(rect.x) + 1) +
@@ -676,7 +673,7 @@ bool nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(nsIFrame* aFrame) {
   return text.mString.IsEmpty();
 }
 
-nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(
+const nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(
     const PresShell* aPresShell, const nsIFrame* aPositionedFrame) {
   if (!aPositionedFrame ||
       !aPositionedFrame->Style()->HasAnchorPosReference()) {
@@ -691,7 +688,7 @@ nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(
     return nullptr;
   }
 
-  for (auto& entry : *referencedAnchors) {
+  for (const auto& entry : *referencedAnchors) {
     if (entry.GetData().isNothing()) {
       continue;
     }
@@ -732,7 +729,7 @@ nsIFrame* nsCoreUtils::GetPositionedFrameForAnchor(
           continue;
         }
         const auto* data = referencedAnchors->Lookup(name.AsAtom());
-        if (data && *data && data->ref().mOrigin) {
+        if (data && *data && data->ref().mOffsetData) {
           if (aAnchorFrame ==
               aPresShell->GetAnchorPosAnchor(name.AsAtom(), frame)) {
             if (positionedFrame) {

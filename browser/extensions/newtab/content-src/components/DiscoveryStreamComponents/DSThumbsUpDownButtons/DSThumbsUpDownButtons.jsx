@@ -11,6 +11,7 @@ function DSThumbsUpDownButtons({
   isThumbsUpActive,
   isThumbsDownActive,
   refinedCardsLayout,
+  tabIndex,
 }) {
   let thumbsButtons = (
     <>
@@ -20,6 +21,7 @@ function DSThumbsUpDownButtons({
           isThumbsUpActive ? "is-active" : null
         }`}
         data-l10n-id="newtab-pocket-thumbs-up-tooltip"
+        tabIndex={tabIndex}
       ></button>
       <button
         onClick={onThumbsDownClick}
@@ -27,6 +29,7 @@ function DSThumbsUpDownButtons({
           isThumbsDownActive ? "is-active" : null
         }`}
         data-l10n-id="newtab-pocket-thumbs-down-tooltip"
+        tabIndex={tabIndex}
       ></button>
     </>
   );
@@ -42,6 +45,7 @@ function DSThumbsUpDownButtons({
           }`}
           data-l10n-id="newtab-pocket-thumbs-up-tooltip"
           type="icon ghost"
+          tabIndex={tabIndex}
         ></moz-button>
         <moz-button
           iconsrc="chrome://global/skin/icons/thumbs-down-20.svg"
@@ -51,6 +55,7 @@ function DSThumbsUpDownButtons({
           }`}
           data-l10n-id="newtab-pocket-thumbs-down-tooltip"
           type="icon ghost"
+          tabIndex={tabIndex}
         ></moz-button>
       </>
     );

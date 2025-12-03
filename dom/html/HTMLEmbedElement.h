@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_HTMLEmbedElement_h
 #define mozilla_dom_HTMLEmbedElement_h
 
-#include "mozilla/Attributes.h"
 #include "nsError.h"
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"

@@ -381,17 +381,6 @@ MOZ_BEGIN_EXTERN_C
 #define MALLOC_FUNCS MALLOC_FUNCS_JEMALLOC
 #include "malloc_decls.h"
 
-#ifdef ANDROID
-
-/* mozjemalloc and jemalloc use pthread_atfork, which Android doesn't have.
- * While gecko has one in libmozglue, the replay program can't use that.
- * Since we're not going to fork anyways, make it a dummy function. */
-int pthread_atfork(void (*aPrepare)(void), void (*aParent)(void),
-                   void (*aChild)(void)) {
-  return 0;
-}
-#endif
-
 MOZ_END_EXTERN_C
 
 template <unsigned Base = 10>

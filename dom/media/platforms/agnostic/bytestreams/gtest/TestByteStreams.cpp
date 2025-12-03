@@ -10,7 +10,6 @@
 #include "H264.h"
 #include "H265.h"
 #include "gtest/gtest.h"
-#include "mozilla/Types.h"
 
 namespace mozilla {
 

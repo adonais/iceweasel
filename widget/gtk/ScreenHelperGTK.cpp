@@ -21,6 +21,7 @@
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/ToString.h"
 #include "mozilla/WidgetUtilsGtk.h"
 #include "nsGtkUtils.h"
 #include "nsTArray.h"
@@ -78,27 +79,18 @@ static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
                                 workarea.width * geometryScaleFactor,
                                 workarea.height * geometryScaleFactor);
 
-  LayoutDeviceIntRect rect;
   DesktopToLayoutDeviceScale contentsScale(1.0);
   CSSToLayoutDeviceScale defaultCssScale(geometryScaleFactor);
-  if (GdkIsX11Display()) {
-    GdkRectangle monitor;
-    gdk_screen_get_monitor_geometry(defaultScreen, aMonitor, &monitor);
-    rect = LayoutDeviceIntRect(monitor.x * geometryScaleFactor,
-                               monitor.y * geometryScaleFactor,
-                               monitor.width * geometryScaleFactor,
-                               monitor.height * geometryScaleFactor);
-  } else {
-    // Use per-monitor scaling factor in Wayland.
-    contentsScale.scale = geometryScaleFactor;
+  contentsScale.scale = geometryScaleFactor;
 
 #ifdef MOZ_WAYLAND
+  if (GdkIsWaylandDisplay()) {
     if (StaticPrefs::widget_wayland_fractional_scale_enabled()) {
       // Check if we're using fractional scale (see Bug 1985720).
       // In such case use workarea is already scaled by fractional scale factor.
       nsWaylandDisplay::MonitorConfig* config =
           WaylandDisplayGet()->GetMonitorConfig(workarea.x, workarea.y);
-      Unused << NS_WARN_IF(!config);
+      (void)NS_WARN_IF(!config);
       if (config && workarea.width > config->pixelWidth / geometryScaleFactor &&
           workarea.height > config->pixelHeight / geometryScaleFactor) {
         float fractionalScale = (float)config->pixelWidth / workarea.width;
@@ -110,10 +102,21 @@ static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
         contentsScale.scale = fractionalScale;
       }
     }
-#endif
     // Don't report screen shift in Wayland, see bug 1795066.
     availRect.MoveTo(0, 0);
-    // We use Gtk workarea on Wayland as it matches our needs (Bug 1732682).
+  }
+#endif
+
+  // Use workarea as screen rect on Wayland (Bug 1732682).
+  LayoutDeviceIntRect rect;
+  if (GdkIsX11Display()) {
+    GdkRectangle monitor;
+    gdk_screen_get_monitor_geometry(defaultScreen, aMonitor, &monitor);
+    rect = LayoutDeviceIntRect(monitor.x * geometryScaleFactor,
+                               monitor.y * geometryScaleFactor,
+                               monitor.width * geometryScaleFactor,
+                               monitor.height * geometryScaleFactor);
+  } else {
     rect = availRect;
   }
 

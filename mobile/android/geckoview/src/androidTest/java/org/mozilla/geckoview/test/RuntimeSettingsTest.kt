@@ -1035,4 +1035,41 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(crliteChannel),
         )
     }
+
+    @Test
+    fun safeBrowsingV5Enabled() {
+        val geckoRuntimeSettings = sessionRule.runtime.settings
+
+        // Read the default pref value.
+        var defaultPrefValue =
+            (sessionRule.getPrefs("browser.safebrowsing.provider.google5.enabled").get(0)) as Boolean
+
+        // Verify the Safe Browsing V5 enabled setting matches the default
+        // pref value.
+        assertThat(
+            "Safe Browsing V5 enabled pref should match setting",
+            geckoRuntimeSettings.contentBlocking.safeBrowsingV5Enabled,
+            equalTo(defaultPrefValue),
+        )
+
+        // Set the Safe Browsing V5 setting.
+        geckoRuntimeSettings.contentBlocking.setSafeBrowsingV5Enabled(!defaultPrefValue)
+
+        // Verify the Safe Browsing V5 enabled setting does change.
+        assertThat(
+            "Safe Browsing V5 enabled pref should match setting",
+            geckoRuntimeSettings.contentBlocking.safeBrowsingV5Enabled,
+            equalTo(!defaultPrefValue),
+        )
+
+        // Verify the Safe Browsing V5 enabled pref does change.
+        var enabled =
+            (sessionRule.getPrefs("browser.safebrowsing.provider.google5.enabled").get(0)) as Boolean
+
+        assertThat(
+            "Safe Browsing V5 enabled pref should match setting",
+            enabled,
+            equalTo(!defaultPrefValue),
+        )
+    }
 }

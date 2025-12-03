@@ -9,7 +9,6 @@
 #include <stdio.h>
 
 #include "gmp-entrypoints.h"
-#include "mozilla/Attributes.h"
 #include "nsExceptionHandler.h"
 #include "prenv.h"
 #include "prerror.h"

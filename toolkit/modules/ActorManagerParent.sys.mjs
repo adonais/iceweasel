@@ -119,6 +119,20 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
+  AboutRestricted: {
+    parent: {
+      esModuleURI: "resource://gre/actors/AboutRestrictedParent.sys.mjs",
+    },
+    child: {
+      esModuleURI: "resource://gre/actors/AboutRestrictedChild.sys.mjs",
+      events: {
+        DOMDocElementInserted: {},
+      },
+    },
+    matches: ["about:restricted?*"],
+    allFrames: true,
+  },
+
   AudioPlayback: {
     parent: {
       esModuleURI: "resource://gre/actors/AudioPlaybackParent.sys.mjs",
@@ -468,6 +482,7 @@ let JSWINDOWACTORS = {
       "file:///*",
       "moz-extension://*",
       "data:text/html,*",
+      "about:reader?*",
     ],
     messageManagerGroups: ["browsers"],
   },
@@ -594,6 +609,13 @@ let JSWINDOWACTORS = {
       esModuleURI: "resource://gre/actors/TranslationsChild.sys.mjs",
       events: {
         DOMContentLoaded: {},
+        load: {
+          // Once the page is loaded, it's important that we react to the page's
+          // language tag as soon as possible in order to give a good response time
+          // for showing the translations panel, or for auto-translating, etc.
+          capture: true,
+          createActor: false,
+        },
       },
     },
     matches: ["http://*/*", "https://*/*", "file:///*", "moz-extension://*"],

@@ -8,7 +8,6 @@
 #define mozilla_dom_HTMLSharedElement_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 

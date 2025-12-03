@@ -252,7 +252,7 @@ class FullScreenFeatureTest {
         ).joinBlocking()
 
         assertEquals(0, viewPort)
-        assertFalse(fullscreen!!)
+        assertFalse(fullscreen)
     }
 
     @Test
@@ -315,12 +315,12 @@ class FullScreenFeatureTest {
         ).joinBlocking()
 
         assertEquals(WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER, viewPort)
-        assertTrue(fullscreen!!)
+        assertTrue(fullscreen)
 
         feature.start()
 
         assertEquals(WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES, viewPort)
-        assertFalse(fullscreen!!)
+        assertFalse(fullscreen)
     }
 
     @Test
@@ -412,7 +412,7 @@ class FullScreenFeatureTest {
         ).joinBlocking()
 
         assertEquals(0, viewPort)
-        assertFalse(fullscreen!!)
+        assertFalse(fullscreen)
     }
 
     @Test

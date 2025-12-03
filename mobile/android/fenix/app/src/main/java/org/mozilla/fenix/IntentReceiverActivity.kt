@@ -136,7 +136,6 @@ class IntentReceiverActivity : Activity() {
                 components.intentProcessors.privateIntentProcessor,
             )
         } else {
-            Events.openedLink.record(Events.OpenedLinkExtra("NORMAL"))
             listOf(
                 components.intentProcessors.customTabIntentProcessor,
                 components.intentProcessors.intentProcessor,

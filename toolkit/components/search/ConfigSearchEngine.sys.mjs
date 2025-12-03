@@ -434,6 +434,21 @@ export class ConfigSearchEngine extends SearchEngine {
   #partnerCode = "";
 
   /**
+   * The telemetry id to use for this engine for legacy telemetry. This is
+   * deprecated and should not be used for new telemetry.
+   *
+   * @type {string}
+   */
+  #telemetryId;
+
+  /**
+   * The order hint for this engine, as determined by the search configuration.
+   *
+   * @type {?number}
+   */
+  #orderHint;
+
+  /**
    * @param {object} options
    *   The options for this search engine.
    * @param {SearchEngineDefinition} options.config
@@ -552,6 +567,36 @@ export class ConfigSearchEngine extends SearchEngine {
   }
 
   /**
+   * Returns the appropriate identifier to use for telemetry. It is based on
+   * the following order:
+   *
+   * - telemetryId: The telemetry id from the configuration, or derived from
+   *                the WebExtension name.
+   * - other-<name>: The engine name prefixed by `other-` for non-config-engines.
+   *
+   * @returns {string}
+   * @deprecated This should not be used for new telemetry. It is a combined
+   * field that contains multiple values. Report separate
+   * id/partner_code/other fields instead.
+   */
+  get telemetryId() {
+    if (this.getAttr("overriddenBy")) {
+      return this.#telemetryId + "-addon";
+    }
+    return this.#telemetryId;
+  }
+
+  /**
+   * Gets the order hint for this engine. This is determined from the search
+   * configuration when the engine is initialized.
+   *
+   * @type {?number}
+   */
+  get orderHint() {
+    return this.#orderHint;
+  }
+
+  /**
    * Returns the icon URL for the search engine closest to the preferred width.
    *
    * @param {number} preferredWidth
@@ -652,8 +697,8 @@ export class ConfigSearchEngine extends SearchEngine {
    *   The engine definition from the search config for this engine.
    */
   #init(engineConfig) {
-    this._orderHint = engineConfig.orderHint;
-    this._telemetryId = engineConfig.identifier;
+    this.#orderHint = engineConfig.orderHint;
+    this.#telemetryId = engineConfig.identifier;
     this.#isGeneralPurposeSearchEngine =
       engineConfig.classification == lazy.SearchEngineClassification.GENERAL;
 
@@ -662,7 +707,7 @@ export class ConfigSearchEngine extends SearchEngine {
     }
 
     if (engineConfig.telemetrySuffix) {
-      this._telemetryId += `-${engineConfig.telemetrySuffix}`;
+      this.#telemetryId += `-${engineConfig.telemetrySuffix}`;
     }
 
     if (engineConfig.clickUrl) {

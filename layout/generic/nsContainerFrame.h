@@ -21,6 +21,7 @@ class nsOverflowContinuationTracker;
 
 namespace mozilla {
 class PresShell;
+struct StylePositionArea;
 }  // namespace mozilla
 
 // Some macros for container classes to do sanity checking on
@@ -283,6 +284,27 @@ class nsContainerFrame : public nsSplittableFrame {
 
   static void PositionChildViews(nsIFrame* aFrame);
 
+  /**
+   * Let the absolutely positioned containing block reflow any absolutely
+   * positioned child frames that need to be reflowed.
+   *
+   * @param aStatus The reflow statuses of any reflowed absolute children will
+   * be merged into aStatus; aside from that, this method won't modify aStatus.
+   */
+  void ReflowAbsoluteFrames(nsPresContext* aPresContext,
+                            ReflowOutput& aDesiredSize,
+                            const ReflowInput& aReflowInput,
+                            nsReflowStatus& aStatus);
+
+  /**
+   * A convenience method to call ReflowAbsoluteFrames() and
+   * FinishAndStoreOverflow().
+   */
+  void FinishReflowWithAbsoluteFrames(nsPresContext* aPresContext,
+                                      ReflowOutput& aDesiredSize,
+                                      const ReflowInput& aReflowInput,
+                                      nsReflowStatus& aStatus);
+
   // ==========================================================================
   /* Overflow containers are continuation frames that hold overflow. They
    * are created when the frame runs out of computed block-size, but still has
@@ -471,7 +493,9 @@ class nsContainerFrame : public nsSplittableFrame {
    * on its type (By overriding `CSSAlignmentForAbsPosChild`).
    */
   mozilla::StyleAlignFlags CSSAlignmentForAbsPosChildWithinContainingBlock(
-      const ReflowInput& aChildRI, mozilla::LogicalAxis aLogicalAxis) const;
+      const ReflowInput& aChildRI, mozilla::LogicalAxis aLogicalAxis,
+      const mozilla::StylePositionArea& aResolvedPositionArea,
+      const mozilla::LogicalSize& aContainingBlockSize) const;
 
 #define NS_DECLARE_FRAME_PROPERTY_FRAMELIST(prop) \
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR_NEVER_CALLED(prop, nsFrameList)

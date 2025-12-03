@@ -27,6 +27,7 @@ tasks-from:
     - windows11-24h2-ref.yml
 
 task-defaults:
+    run-on-repo-type: [hg]
     attributes:
         retrigger: true
     run-on-projects: []

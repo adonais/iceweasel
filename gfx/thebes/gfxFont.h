@@ -20,7 +20,6 @@
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/MruCache.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/RWLock.h"
@@ -1652,13 +1651,11 @@ class gfxFont {
    * We let layout specify spacing on either side of any
    * character. We need to specify both before and after
    * spacing so that substring measurement can do the right things.
-   * These values are in appunits. They're always an integral number of
-   * appunits, but we specify them in floats in case very large spacing
-   * values are required.
+   * These values are in appunits.
    */
   struct Spacing {
-    gfxFloat mBefore;
-    gfxFloat mAfter;
+    nscoord mBefore;
+    nscoord mAfter;
   };
   /**
    * Metrics for a particular string

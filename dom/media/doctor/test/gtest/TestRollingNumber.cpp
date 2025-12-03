@@ -10,7 +10,6 @@
 #include <type_traits>
 
 #include "RollingNumber.h"
-#include "mozilla/Assertions.h"
 
 using RN8 = mozilla::RollingNumber<uint8_t>;
 

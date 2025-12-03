@@ -28,7 +28,6 @@
 #include "gfxPlatform.h"
 #include "gfxUtils.h"
 #include "jsfriendapi.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/dom/BindingUtils.h"

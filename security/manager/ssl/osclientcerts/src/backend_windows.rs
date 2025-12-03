@@ -6,9 +6,10 @@
 #![allow(non_camel_case_types)]
 
 use pkcs11_bindings::*;
-use rsclientcerts::error::{Error, ErrorType};
+use rsclientcerts::cryptoki::*;
 use rsclientcerts::manager::{ClientCertsBackend, CryptokiObject, Sign};
-use rsclientcerts::util::*;
+use rsclientcerts_util::*;
+use rsclientcerts_util::error::{Error, ErrorType};
 use std::convert::TryInto;
 use std::ffi::{c_void, CStr, CString};
 use std::ops::Deref;

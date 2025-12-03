@@ -31,7 +31,8 @@ class JSFunction;
 
 namespace JS {
 struct XrayJitInfo;
-}
+class RegExpFlags;
+}  // namespace JS
 
 namespace js {
 
@@ -85,6 +86,8 @@ class MOZ_RAII IRGenerator {
 
   IRGenerator(const IRGenerator&) = delete;
   IRGenerator& operator=(const IRGenerator&) = delete;
+
+  JSOp jsop() const { return JSOp(*pc_); }
 
   bool maybeGuardInt32Index(const Value& index, ValOperandId indexId,
                             uint32_t* int32Index, Int32OperandId* int32IndexId);
@@ -143,6 +146,7 @@ class MOZ_RAII IRGenerator {
   gc::AllocSite* maybeCreateAllocSite();
 
   friend class CacheIRSpewer;
+  friend class InlinableNativeIRGenerator;
 
  public:
   explicit IRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc,
@@ -162,24 +166,17 @@ class MOZ_RAII IRGenerator {
 class MOZ_RAII GetPropIRGenerator : public IRGenerator {
   HandleValue val_;
   HandleValue idVal_;
+  HandleValue receiverVal_;
+
+  friend class InlinableNativeIRGenerator;
 
   AttachDecision tryAttachNative(HandleObject obj, ObjOperandId objId,
                                  HandleId id, ValOperandId receiverId);
+  AttachDecision tryAttachInlinableNativeGetter(Handle<NativeObject*> holder,
+                                                PropertyInfo prop,
+                                                ValOperandId receiverId);
   AttachDecision tryAttachObjectLength(HandleObject obj, ObjOperandId objId,
                                        HandleId id);
-  AttachDecision tryAttachTypedArray(HandleObject obj, ObjOperandId objId,
-                                     HandleId id);
-  AttachDecision tryAttachDataView(HandleObject obj, ObjOperandId objId,
-                                   HandleId id);
-  AttachDecision tryAttachArrayBufferMaybeShared(HandleObject obj,
-                                                 ObjOperandId objId,
-                                                 HandleId id);
-  AttachDecision tryAttachRegExp(HandleObject obj, ObjOperandId objId,
-                                 HandleId id);
-  AttachDecision tryAttachMap(HandleObject obj, ObjOperandId objId,
-                              HandleId id);
-  AttachDecision tryAttachSet(HandleObject obj, ObjOperandId objId,
-                              HandleId id);
   AttachDecision tryAttachModuleNamespace(HandleObject obj, ObjOperandId objId,
                                           HandleId id);
   AttachDecision tryAttachWindowProxy(HandleObject obj, ObjOperandId objId,
@@ -277,8 +274,8 @@ class MOZ_RAII GetPropIRGenerator : public IRGenerator {
   void emitCallGetterResultGuards(NativeObject* obj, NativeObject* holder,
                                   HandleId id, PropertyInfo prop,
                                   ObjOperandId objId);
-  void emitCallGetterResult(NativeGetPropKind kind, NativeObject* obj,
-                            NativeObject* holder, HandleId id,
+  void emitCallGetterResult(NativeGetPropKind kind, Handle<NativeObject*> obj,
+                            Handle<NativeObject*> holder, HandleId id,
                             PropertyInfo prop, ObjOperandId objId,
                             ValOperandId receiverId);
   void emitCallDOMGetterResult(NativeObject* obj, NativeObject* holder,
@@ -290,7 +287,7 @@ class MOZ_RAII GetPropIRGenerator : public IRGenerator {
  public:
   GetPropIRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc,
                      ICState state, CacheKind cacheKind, HandleValue val,
-                     HandleValue idVal);
+                     HandleValue idVal, HandleValue receiverVal);
 
   AttachDecision tryAttachStub();
 };
@@ -504,6 +501,7 @@ class MOZ_RAII InstanceOfIRGenerator : public IRGenerator {
   HandleValue lhsVal_;
   HandleObject rhsObj_;
 
+  AttachDecision tryAttachFunction();
   void trackAttached(const char* name /* must be a C string literal */);
 
  public:
@@ -598,7 +596,6 @@ enum class ScriptedThisResult { NoAction, UninitializedThis, PlainObjectShape };
 
 class MOZ_RAII CallIRGenerator : public IRGenerator {
  private:
-  JSOp op_;
   uint32_t argc_;
   HandleValue callee_;
   HandleValue thisval_;
@@ -639,7 +636,7 @@ class MOZ_RAII CallIRGenerator : public IRGenerator {
   void trackAttached(const char* name /* must be a C string literal */);
 
  public:
-  CallIRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc, JSOp op,
+  CallIRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc,
                   ICState state, BaselineFrame* frame, uint32_t argc,
                   HandleValue callee, HandleValue thisval,
                   HandleValue newTarget, HandleValueArray args);
@@ -648,28 +645,38 @@ class MOZ_RAII CallIRGenerator : public IRGenerator {
 };
 
 class MOZ_RAII InlinableNativeIRGenerator {
-  CallIRGenerator& generator_;
+  mozilla::Variant<CallIRGenerator*, GetPropIRGenerator*> gen_;
+  IRGenerator& generator_;
   CacheIRWriter& writer;
   JSContext* cx_;
 
+  HandleObject callee_;
   HandleFunction target_;
   HandleValue newTarget_;
   HandleValue thisval_;
   HandleValueArray args_;
+  Handle<BoundFunctionObject*> boundTarget_;
   CallFlags flags_;
+  uint32_t stackArgc_;
+
+  // |this| for inlined accesor operations.
+  ValOperandId receiverId_;
 
   HandleScript script() const { return generator_.script_; }
-  JSObject* callee() const { return &generator_.callee_.toObject(); }
+  JSObject* callee() const { return callee_; }
   bool isFirstStub() const { return generator_.isFirstStub_; }
-  bool ignoresResult() const { return generator_.op_ == JSOp::CallIgnoresRv; }
-  JSOp op() const { return generator_.op_; }
-  uint32_t stackArgc() const { return generator_.argc_; }
+  bool ignoresResult() const { return op() == JSOp::CallIgnoresRv; }
+  JSOp op() const { return generator_.jsop(); }
+  uint32_t stackArgc() const { return stackArgc_; }
+
+  // Inlined native accessor for GetProp(Super) or GetElem(Super) operations.
+  bool isAccessorOp() const { return !IsInvokeOp(op()); }
 
   bool isCalleeBoundFunction() const;
   BoundFunctionObject* boundCallee() const;
 
-  bool isTargetBoundFunction() const;
-  BoundFunctionObject* boundTarget() const;
+  bool isTargetBoundFunction() const { return boundTarget_ != nullptr; }
+  BoundFunctionObject* boundTarget() const { return boundTarget_; }
 
   ObjOperandId emitNativeCalleeGuard(Int32OperandId argcId);
   void emitOptimisticClassGuard(ObjOperandId objId, JSObject* obj,
@@ -695,6 +702,10 @@ class MOZ_RAII InlinableNativeIRGenerator {
   bool hasBoundArguments() const;
 
   Int32OperandId initializeInputOperand() {
+    // Input operands are already initialized for inlined accessors.
+    if (isAccessorOp()) {
+      return Int32OperandId();
+    }
     return Int32OperandId(writer.setInputOperandId(0));
   }
 
@@ -738,6 +749,8 @@ class MOZ_RAII InlinableNativeIRGenerator {
   AttachDecision tryAttachArrayIsArray();
   AttachDecision tryAttachDataViewGet(Scalar::Type type);
   AttachDecision tryAttachDataViewSet(Scalar::Type type);
+  AttachDecision tryAttachDataViewByteLength();
+  AttachDecision tryAttachDataViewByteOffset();
   AttachDecision tryAttachFunctionBind();
   AttachDecision tryAttachSpecializedFunctionBind(
       Handle<JSObject*> target, Handle<BoundFunctionObject*> templateObj);
@@ -760,6 +773,7 @@ class MOZ_RAII InlinableNativeIRGenerator {
   AttachDecision tryAttachGuardToSharedArrayBuffer();
   AttachDecision tryAttachHasClass(const JSClass* clasp,
                                    bool isPossiblyWrapped);
+  AttachDecision tryAttachRegExpFlag(JS::RegExpFlags flags);
   AttachDecision tryAttachRegExpMatcherSearcher(InlinableNative native);
   AttachDecision tryAttachRegExpSearcherLastLimit();
   AttachDecision tryAttachRegExpHasCaptureGroups();
@@ -786,6 +800,8 @@ class MOZ_RAII InlinableNativeIRGenerator {
   AttachDecision tryAttachStringEndsWith();
   AttachDecision tryAttachStringToLowerCase();
   AttachDecision tryAttachStringToUpperCase();
+  AttachDecision tryAttachStringToLocaleLowerCase();
+  AttachDecision tryAttachStringToLocaleUpperCase();
   AttachDecision tryAttachStringTrim();
   AttachDecision tryAttachStringTrimStart();
   AttachDecision tryAttachStringTrimEnd();
@@ -812,6 +828,9 @@ class MOZ_RAII InlinableNativeIRGenerator {
   AttachDecision tryAttachTypedArrayFill();
   AttachDecision tryAttachTypedArraySet();
   AttachDecision tryAttachTypedArraySubarray();
+  AttachDecision tryAttachTypedArrayLength();
+  AttachDecision tryAttachTypedArrayByteLength();
+  AttachDecision tryAttachTypedArrayByteOffset();
   AttachDecision tryAttachIsTypedArray(bool isPossiblyWrapped);
   AttachDecision tryAttachIsTypedArrayConstructor();
   AttachDecision tryAttachTypedArrayLength(bool isPossiblyWrapped);
@@ -863,31 +882,59 @@ class MOZ_RAII InlinableNativeIRGenerator {
   AttachDecision tryAttachMapGet();
   AttachDecision tryAttachMapDelete();
   AttachDecision tryAttachMapSet();
+  AttachDecision tryAttachMapSize();
   AttachDecision tryAttachDateGetTime();
   AttachDecision tryAttachDateGet(DateComponent component);
   AttachDecision tryAttachWeakMapHas();
   AttachDecision tryAttachWeakMapGet();
   AttachDecision tryAttachWeakSetHas();
+  AttachDecision tryAttachArrayBufferByteLength();
+  AttachDecision tryAttachSharedArrayBufferByteLength();
 #ifdef FUZZING_JS_FUZZILLI
   AttachDecision tryAttachFuzzilliHash();
 #endif
 
   void trackAttached(const char* name /* must be a C string literal */) {
-    return generator_.trackAttached(name);
+    return gen_.match(
+        [&](auto* generator) { return generator->trackAttached(name); });
   }
 
  public:
-  InlinableNativeIRGenerator(CallIRGenerator& generator, HandleFunction target,
-                             HandleValue newTarget, HandleValue thisValue,
-                             HandleValueArray args, CallFlags flags)
-      : generator_(generator),
+  InlinableNativeIRGenerator(CallIRGenerator& generator, HandleObject callee,
+                             HandleFunction target, HandleValue newTarget,
+                             HandleValue thisValue, HandleValueArray args,
+                             CallFlags flags,
+                             Handle<BoundFunctionObject*> boundTarget = nullptr)
+      : gen_(&generator),
+        generator_(generator),
         writer(generator.writer),
         cx_(generator.cx_),
+        callee_(callee),
         target_(target),
         newTarget_(newTarget),
         thisval_(thisValue),
         args_(args),
-        flags_(flags) {}
+        boundTarget_(boundTarget),
+        flags_(flags),
+        stackArgc_(generator.argc_),
+        receiverId_() {}
+
+  InlinableNativeIRGenerator(GetPropIRGenerator& generator,
+                             HandleFunction target, HandleValue thisValue,
+                             CallFlags flags, ValOperandId receiverId)
+      : gen_(&generator),
+        generator_(generator),
+        writer(generator.writer),
+        cx_(generator.cx_),
+        callee_(target),
+        target_(target),
+        newTarget_(JS::NullHandleValue),
+        thisval_(thisValue),
+        args_(HandleValueArray::empty()),
+        boundTarget_(nullptr),
+        flags_(flags),
+        stackArgc_(0),
+        receiverId_(receiverId) {}
 
   AttachDecision tryAttachStub();
 };
@@ -1076,11 +1123,17 @@ class MOZ_RAII LambdaIRGenerator : public IRGenerator {
   AttachDecision tryAttachFunctionClone();
 };
 
-// Returns true for bytecode ops that can use InlinableNativeIRGenerator.
+// Returns true for bytecode call ops that can use InlinableNativeIRGenerator.
 inline bool BytecodeCallOpCanHaveInlinableNative(JSOp op) {
   return op == JSOp::Call || op == JSOp::CallContent || op == JSOp::New ||
          op == JSOp::NewContent || op == JSOp::CallIgnoresRv ||
          op == JSOp::SpreadCall;
+}
+
+// Returns true for bytecode get ops that can use InlinableNativeIRGenerator.
+inline bool BytecodeGetOpCanHaveInlinableNative(JSOp op) {
+  return op == JSOp::GetProp || op == JSOp::GetElem ||
+         op == JSOp::GetPropSuper || op == JSOp::GetElemSuper;
 }
 
 inline bool BytecodeOpCanHaveAllocSite(JSOp op) {

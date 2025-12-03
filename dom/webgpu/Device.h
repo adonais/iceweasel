@@ -107,8 +107,8 @@ class Device final : public DOMEventTargetHelper,
   already_AddRefed<Texture> InitSwapChain(
       const dom::GPUCanvasConfiguration* const aConfig,
       const layers::RemoteTextureOwnerId aOwnerId,
-      mozilla::Span<RawId const> aBufferIds, bool aUseSharedTextureInSwapChain,
-      gfx::SurfaceFormat aFormat, gfx::IntSize aCanvasSize);
+      bool aUseSharedTextureInSwapChain, gfx::SurfaceFormat aFormat,
+      gfx::IntSize aCanvasSize);
   bool CheckNewWarning(const nsACString& aMessage);
 
   void TrackBuffer(Buffer* aBuffer);

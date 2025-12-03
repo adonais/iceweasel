@@ -35,7 +35,6 @@ FEATURE_CHECK_NEEDED = {
     "Intl.Segmenter": "!Intl.Segmenter",  # Bug 1423593
     "Intl.DurationFormat": "!Intl.hasOwnProperty('DurationFormat')",  # Bug 1648139
     "uint8array-base64": "!Uint8Array.fromBase64",  # Bug 1862220
-    "json-parse-with-source": "!JSON.hasOwnProperty('isRawJSON')",  # Bug 1658310
     "RegExp.escape": "!RegExp.escape",
     "explicit-resource-management": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('explicit-resource-management'))",  # Bug 1569081
     "Atomics.pause": "!this.hasOwnProperty('Atomics')||!Atomics.pause",
@@ -45,17 +44,12 @@ FEATURE_CHECK_NEEDED = {
     "upsert": "!Map.prototype.getOrInsertComputed",
     "immutable-arraybuffer": "!ArrayBuffer.prototype.sliceToImmutable",
 }
-RELEASE_OR_BETA = set(
-    [
-        "regexp-modifiers",
-    ]
-)
+RELEASE_OR_BETA = set()
 SHELL_OPTIONS = {
     "ShadowRealm": "--enable-shadow-realms",
     "iterator-helpers": "--enable-iterator-helpers",
     "symbols-as-weakmap-keys": "--enable-symbols-as-weakmap-keys",
     "uint8array-base64": "--enable-uint8array-base64",
-    "json-parse-with-source": "--enable-json-parse-with-source",
     "regexp-duplicate-named-groups": "--enable-regexp-duplicate-named-groups",
     "RegExp.escape": "--enable-regexp-escape",
     "regexp-modifiers": "--enable-regexp-modifiers",

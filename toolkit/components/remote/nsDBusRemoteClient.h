@@ -8,7 +8,6 @@
 
 #ifdef MOZ_ENABLE_DBUS
 #  include <gio/gio.h>
-#  include "mozilla/RefPtr.h"
 #  include "mozilla/GRefPtr.h"
 #endif
 #include "nsRemoteClient.h"

@@ -1787,6 +1787,7 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-digitalassetlinks
+    - components:service-firefox-relay
     - components:service-glean
     - components:service-location
     - components:service-nimbus
@@ -2049,6 +2050,15 @@ projects:
     - components:support-test
     - components:support-test-libstate
     - components:support-utils
+    - components:tooling-lint
+  components:service-firefox-relay:
+    description: A library to communicate with the Relay services API
+    path: components/service/firefox-relay
+    publish: false
+    upstream_dependencies:
+    - components:concept-base
+    - components:concept-fetch
+    - components:support-base
     - components:tooling-lint
   components:service-glean:
     description: A client-side telemetry SDK for collecting metrics and sending them

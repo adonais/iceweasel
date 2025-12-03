@@ -6,12 +6,14 @@ package org.mozilla.fenix.settings.address.ui.edit
 
 internal object EditAddressTestTag {
     const val NAME_FIELD = "address.edit.field.name"
+    const val ORGANIZATION_FIELD = "address.edit.field.organization"
     const val STREET_ADDRESS_FIELD = "address.edit.field.street_address"
-    const val CITY_FIELD = "address.edit.field.city"
-    const val ZIP_FIELD = "address.edit.field.zip"
+    const val ADDRESS_LEVEL1_FIELD = "address.edit.field.addressLevel1"
+    const val ADDRESS_LEVEL2_FIELD = "address.edit.field.addressLevel2"
+    const val ADDRESS_LEVEL3_FIELD = "address.edit.field.addressLevel3"
+    const val POSTAL_CODE_FIELD = "address.edit.field.postal_code"
     const val COUNTRY_FIELD = "address.edit.field.country"
-    const val SUBREGION_FIELD = "address.edit.field.subregion"
-    const val PHONE_FIELD = "address.edit.field.phone"
+    const val TEL_FIELD = "address.edit.field.tel"
     const val EMAIL_FIELD = "address.edit.field.email"
     const val SAVE_BUTTON = "address.edit.button.save"
     const val CANCEL_BUTTON = "address.edit.button.cancel"

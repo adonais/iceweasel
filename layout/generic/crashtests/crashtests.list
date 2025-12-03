@@ -824,3 +824,5 @@ asserts(0-5) load 1965081.html # Bug 457400 - ASSERTION: can't mark frame dirty 
 load 1978475-1.html
 load 1990258.html
 load 1990319.html
+load 1998521.html
+load 1999326.html

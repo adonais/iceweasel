@@ -51,7 +51,7 @@ const lazy = {};
 XPCOMUtils.defineLazyServiceGetters(lazy, {
   proxyService: [
     "@mozilla.org/network/protocol-proxy-service;1",
-    "nsIProtocolProxyService",
+    Ci.nsIProtocolProxyService,
   ],
 });
 

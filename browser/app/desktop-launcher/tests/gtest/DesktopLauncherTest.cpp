@@ -96,7 +96,8 @@ TEST_F(DesktopLauncherTest, TempFileNameTest) {
 TEST_F(DesktopLauncherTest, TestGetObjectName) {
   std::optional<std::wstring> objectName = get_object_name();
   ASSERT_TRUE(objectName.has_value());
-  ASSERT_NE(std::wstring::npos,
+  // The object name is a path, not a URL.
+  ASSERT_EQ(std::wstring::npos,
             objectName.value().find(L"https://download.mozilla.org/"));
   ASSERT_NE(std::wstring::npos, objectName.value().find(L"lang="));
   ASSERT_NE(std::wstring::npos, objectName.value().find(L"product="));

@@ -64,9 +64,10 @@ bool LoadRequestedModules(JSContext* cx, Handle<ModuleObject*> module,
                           HandleValue hostDefined,
                           MutableHandle<JSObject*> promiseOut);
 
-bool HostLoadImportedModule(JSContext* cx, Handle<JSScript*> referrer,
-                            Handle<JSObject*> moduleRequest,
-                            Handle<Value> hostDefined, Handle<Value> payload);
+bool HostLoadImportedModule(
+    JSContext* cx, Handle<JSScript*> referrer, Handle<JSObject*> moduleRequest,
+    Handle<Value> hostDefined, Handle<Value> payload, uint32_t lineNumber = 0,
+    JS::ColumnNumberOneOrigin columnNumber = JS::ColumnNumberOneOrigin());
 
 }  // namespace js
 

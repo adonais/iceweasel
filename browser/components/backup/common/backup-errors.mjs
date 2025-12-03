@@ -13,12 +13,12 @@ export const ERROR_L10N_IDS = Object.freeze({
   [ERRORS.CORRUPTED_ARCHIVE]: "backup-service-error-corrupt-file",
   [ERRORS.UNSUPPORTED_BACKUP_VERSION]:
     "backup-service-error-unsupported-version",
-  [ERRORS.UNINITIALIZED]: "backup-service-error-went-wrong",
-  [ERRORS.FILE_SYSTEM_ERROR]: "backup-service-error-went-wrong",
-  [ERRORS.DECRYPTION_FAILED]: "backup-service-error-went-wrong",
+  [ERRORS.UNINITIALIZED]: "backup-service-error-went-wrong2",
+  [ERRORS.FILE_SYSTEM_ERROR]: "backup-service-error-went-wrong2",
+  [ERRORS.DECRYPTION_FAILED]: "backup-service-error-went-wrong2",
   [ERRORS.RECOVERY_FAILED]: "backup-service-error-recovery-failed",
-  [ERRORS.UNKNOWN]: "backup-service-error-went-wrong",
-  [ERRORS.INTERNAL_ERROR]: "backup-service-error-went-wrong",
+  [ERRORS.UNKNOWN]: "backup-service-error-went-wrong2",
+  [ERRORS.INTERNAL_ERROR]: "backup-service-error-went-wrong2",
   [ERRORS.UNSUPPORTED_APPLICATION]:
     "backup-service-error-unsupported-application",
 });

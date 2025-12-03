@@ -246,7 +246,7 @@ function testParseCssProperty(doc, parser) {
 
     makeColorTest(
       "background-image",
-      "linear-gradient(to top, color-mix(in srgb, #008000, rgba(255, 255, 0, 0.9)), blue)",
+      "linear-gradient(to top, color-mix(in srgb, #008000, rgba(255, 255, 0, 0.9)), blue, contrast-color(#abc))",
       [
         "linear-gradient(to top, ",
         "color-mix(in srgb, ",
@@ -255,6 +255,10 @@ function testParseCssProperty(doc, parser) {
         { name: "rgba(255, 255, 0, 0.9)", colorFunction: "color-mix" },
         "), ",
         { name: "blue", colorFunction: "linear-gradient" },
+        ", ",
+        "contrast-color(",
+        { name: "#abc", colorFunction: "contrast-color" },
+        ")",
         ")",
       ]
     ),
@@ -354,6 +358,26 @@ function testParseCssProperty(doc, parser) {
         colorSwatchReadOnly: true,
       },
     },
+
+    makeColorTest("color", "contrast-color(red)", [
+      "contrast-color(",
+      { name: "red", colorFunction: "contrast-color" },
+      ")",
+    ]),
+
+    makeColorTest(
+      "color",
+      "color-mix(in srgb, red, contrast-color(hsl(0 100 200)))",
+      [
+        "color-mix(in srgb, ",
+        { name: "red", colorFunction: "color-mix" },
+        ", ",
+        "contrast-color(",
+        { name: "hsl(0 100 200)", colorFunction: "contrast-color" },
+        ")",
+        ")",
+      ]
+    ),
   ];
 
   const target = doc.querySelector("div");
@@ -947,6 +971,22 @@ function testParseVariable(doc, parser) {
         '<span data-color="color-mix(in srgb, red 50%, blue)">' +
           '<span>var(' +
             `<span data-variable="color-mix(in srgb, red 50%, blue)">--x${getJumpToVariableButton("--x")}</span>` +
+          ')</span>' +
+        '</span>',
+    },
+    {
+      text: "var(--x)",
+      variables: {
+        "--x": "contrast-color(blue)",
+      },
+      parserExtraOptions: {
+        isDarkColorScheme: false,
+      },
+      expected:
+        // prettier-ignore
+        '<span data-color="contrast-color(blue)">' +
+          '<span>var(' +
+            `<span data-variable="contrast-color(blue)">--x${getJumpToVariableButton("--x")}</span>` +
           ')</span>' +
         '</span>',
     },

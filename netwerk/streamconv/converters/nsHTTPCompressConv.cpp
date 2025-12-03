@@ -920,7 +920,7 @@ nsresult nsHTTPCompressConv::do_OnDataAvailable(nsIRequest* request,
         [request{RefPtr<nsIRequest>(request)}, stream{std::move(stream)},
          listener{std::move(listener)}, offset, count]() {
           LOG(("nsHttpCompressConv Calling OnDataAvailable on Mainthread"));
-          Unused << listener->OnDataAvailable(request, stream, offset, count);
+          (void)listener->OnDataAvailable(request, stream, offset, count);
         });
 
     mDecodedDataLength += count;
@@ -1130,7 +1130,7 @@ nsHTTPCompressConv::OnDataFinished(nsresult aStatus) {
     if (mDispatchToMainThread && !NS_IsMainThread()) {
       nsCOMPtr<nsIRunnable> handler = NS_NewRunnableFunction(
           "dispatch", [listener{std::move(listener)}, aStatus]() {
-            Unused << listener->OnDataFinished(aStatus);
+            (void)listener->OnDataFinished(aStatus);
           });
 
       return NS_DispatchToMainThread(handler);

@@ -5,7 +5,10 @@
 package org.mozilla.fenix.onboarding
 
 import org.mozilla.fenix.GleanMetrics.Onboarding
+import org.mozilla.fenix.GleanMetrics.TermsOfUse
 import org.mozilla.fenix.onboarding.view.OnboardingPageUiData
+import org.mozilla.fenix.termsofuse.TOU_VERSION
+import org.mozilla.fenix.termsofuse.store.Surface
 
 /**
  * Abstraction responsible for recording telemetry events for Onboarding.
@@ -340,6 +343,14 @@ class OnboardingTelemetryRecorder {
      */
     fun onTermsOfServiceManagerAcceptTermsButtonClick() {
         Onboarding.termsOfServiceAccepted.record()
+        TermsOfUse.accepted.record(
+            TermsOfUse.AcceptedExtra(
+                surface = Surface.ONBOARDING.metricLabel,
+                touVersion = TOU_VERSION,
+            ),
+        )
+        TermsOfUse.version.set(TOU_VERSION.toLong())
+        TermsOfUse.date.set()
     }
 
     /**

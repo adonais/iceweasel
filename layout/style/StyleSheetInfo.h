@@ -41,17 +41,10 @@ struct StyleSheetInfo final {
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
-  // FIXME(emilio): most of this struct should be const, then we can remove the
-  // duplication with the UrlExtraData member and such.
-  nsCOMPtr<nsIURI> mSheetURI;          // for error reports, etc.
-  nsCOMPtr<nsIURI> mOriginalSheetURI;  // for GetHref.  Can be null.
-  nsCOMPtr<nsIURI> mBaseURI;           // for resolving relative URIs
-  nsCOMPtr<nsIPrincipal> mPrincipal;
   const CORSMode mCORSMode;
-  // The ReferrerInfo of a stylesheet is used for its child sheets and loads
-  // come from this stylesheet, so it is stored here.
-  nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
   dom::SRIMetadata mIntegrity;
+  // https://drafts.csswg.org/cssom/#concept-css-style-sheet-origin-clean-flag
+  bool mOriginClean = true;
 
   // Pointer to the list of child sheets. This is all fundamentally broken,
   // because each of the child sheets has a unique parent... We can only hope
@@ -66,15 +59,6 @@ struct StyleSheetInfo final {
   nsCString mSourceMapURL;
 
   RefPtr<const StyleStylesheetContents> mContents;
-
-  // XXX We already have mSheetURI, mBaseURI, and mPrincipal.
-  //
-  // Can we somehow replace them with URLExtraData directly? The issue
-  // is currently URLExtraData is immutable, but URIs in StyleSheetInfo
-  // seems to be mutable, so we probably cannot set them altogether.
-  // Also, this is mostly a duplicate reference of the same url data
-  // inside RawServoStyleSheet. We may want to just use that instead.
-  RefPtr<URLExtraData> mURLData;
 
   // HACK: This must be the after any member rust accesses in order to not cause
   // issues on i686-android. Bindgen generates an opaque blob of [u64; N] for

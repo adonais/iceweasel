@@ -68,6 +68,7 @@ RefPtr<MediaDataDecoder::InitPromise> RemoteMediaDataDecoder::Init() {
             mIsHardwareAccelerated =
                 mChild->IsHardwareAccelerated(mHardwareAcceleratedReason);
             mConversion = mChild->NeedsConversion();
+            mDecodeProperties = mChild->GetDecodeProperties();
             mShouldDecoderAlwaysBeRecycled =
                 mChild->ShouldDecoderAlwaysBeRecycled();
             LOG("%p RemoteDecoderChild has been initialized - description: %s, "
@@ -156,6 +157,13 @@ MediaDataDecoder::ConversionRequired RemoteMediaDataDecoder::NeedsConversion()
     const {
   MutexAutoLock lock(mMutex);
   return mConversion;
+}
+
+Maybe<MediaDataDecoder::PropertyValue>
+RemoteMediaDataDecoder::GetDecodeProperty(
+    MediaDataDecoder::PropertyName aName) const {
+  MutexAutoLock lock(mMutex);
+  return mDecodeProperties[aName];
 }
 
 nsCString RemoteMediaDataDecoder::GetDescriptionName() const {

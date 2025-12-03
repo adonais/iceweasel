@@ -114,7 +114,7 @@ add_setup(async function () {
     prefs: [
       ["yelpRealtime.featureGate", true],
       ["suggest.yelpRealtime", true],
-      ["suggest.quicksuggest.nonsponsored", true],
+      ["suggest.quicksuggest.all", true],
     ],
   });
 });

@@ -155,7 +155,7 @@ class SitePackagesSource(enum.Enum):
         )
 
 
-class MozSiteMetadata:
+class MozSiteMetadata:  # noqa PLW1641
     """Details about a Moz-managed python site
 
     When a Moz-managed site is active, its associated metadata is available
@@ -761,15 +761,19 @@ class CommandSiteManager:
                 f'Failed to install "{path}" into the "{self._site_name}" site.'
             )
 
+        check_errors: str = "\n"  # save output when check fails
         check_result = subprocess.run(
             pip_command(python_executable=self.python_path, subcommand="check"),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
+            check=False,
         )
 
         if not check_result.returncode:
             return
+        else:
+            check_errors += "\n" + check_result.stdout
 
         """
         Some commands may use the "setup.py" script of first-party modules. This causes
@@ -825,9 +829,12 @@ class CommandSiteManager:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
+            check=False,
         )
 
         if check_result.returncode:
+            if check_result.stdout not in check_errors:
+                check_errors += "\n" + check_result.stdout
             if quiet:
                 # If "quiet" was specified, then the "pip install" output wasn't printed
                 # earlier, and was buffered instead. Print that buffer so that debugging
@@ -846,7 +853,7 @@ class CommandSiteManager:
             raise InstallPipRequirementsException(
                 f'As part of validation after installing "{path}" into the '
                 f'"{self._site_name}" site, the site appears to contain installed '
-                "packages that are incompatible with each other."
+                "packages that are incompatible with each other." + check_errors
             )
 
     def _pthfile_lines(self):
@@ -1073,7 +1080,7 @@ class PythonVirtualenv:
         # self.python_path. However, this seems more risk than it's worth.
 
         try:
-            install_result = subprocess.run(
+            install_result = subprocess.run(  # noqa PLW1510
                 pip_command(
                     python_executable=self.python_path,
                     subcommand="install",
@@ -1295,7 +1302,7 @@ def resolve_requirements(topsrcdir, site_name):
             f"https://docs.astral.sh/uv/guides/install-python/"
         )
 
-        exit(1)
+        sys.exit(1)
 
     return requirements
 
@@ -1378,6 +1385,7 @@ def _assert_pip_check(pthfile_lines, virtualenv_name, requirements):
             [sys.executable, "-m", "venv", "--without-pip", check_env_path],
             capture_output=True,
             encoding="UTF-8",
+            check=False,
         )
 
         if process.returncode != 0:
@@ -1425,6 +1433,7 @@ def _assert_pip_check(pthfile_lines, virtualenv_name, requirements):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
+            check=False,
         )
         if check_result.returncode:
             subprocess.check_call(pip + ["list", "-v"], stdout=sys.stderr)
@@ -1489,6 +1498,7 @@ def _create_venv_with_pthfile(
         [sys.executable, "-m", "venv", "--without-pip", virtualenv_root],
         capture_output=True,
         encoding="UTF-8",
+        check=False,
     )
 
     if process.returncode != 0:

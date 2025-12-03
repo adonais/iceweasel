@@ -9,7 +9,6 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/GRefPtr.h"
 #include "mozilla/GUniquePtr.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/widget/GSettings.h"
 #include "nsIAccessibleEvent.h"
 #include "nsMai.h"

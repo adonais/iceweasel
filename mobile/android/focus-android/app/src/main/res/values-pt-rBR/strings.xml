@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -149,7 +156,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>Assuma o controle com o %1$s.</p> <p>Use para navegação privativa: <ul> <li>Pesquisa e navegação direto no aplicativo.</li> <li>Bloqueio de rastreamento (ou mude as configurações para permitir).</li> <li>Limpeza de cookies e histórico de pesquisa e navegação.</li> </ul> </p> <p>O %1$s é produzido pela Mozilla. Nossa missão é promover uma internet saudável e aberta.<br/> <a href=\"%2$s\">Saiba mais</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>Assuma o controle com o %1$s.</p>\n<p>Use para navegação privativa:\n<ul>\n<li>Pesquisa e navegação direto no aplicativo.</li>\n<li>Bloqueio de rastreamento (ou mude as configurações para permitir).</li>\n<li>Limpeza de cookies e histórico de pesquisa e navegação.</li>\n</ul> </p>\n<p>O %1$s é produzido pela Mozilla. Nossa missão é promover uma internet saudável e aberta.<br/>\n<a href=\"%2$s\">Saiba mais</a></p>]]></string>
   <!-- A link to SUMO at the bottom of About Focus screen. -->
   <string name="about_screen_learn_more">Saiba mais</string>
   <!-- Header for the Privacy and Security settings menu -->
@@ -875,7 +882,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Isto pode ser um problema com a configuração do servidor, ou pode ser alguém tentando se passar pelo servidor. <br/><br/> Se você já se conectou a este servidor com sucesso antes, o erro pode ser temporário.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Alguém pode estar tentando se passar pelo site, continuar pode ser arriscado.</label> <br><br> <label>O %1$s não confia em <b>%2$s</b> porque o emissor do certificado é desconhecido, ou o certificado é autoassinado, ou o servidor não está enviando os certificados intermediários corretos.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Alguém pode estar tentando se passar pelo site, continuar pode ser arriscado.</label> <br><br>\n<label>O %1$s não confia em <b>%2$s</b> porque o emissor do certificado é desconhecido, ou o certificado é autoassinado, ou o servidor não está enviando os certificados intermediários corretos.</label>]]></string>
   <!--
     Sessions List
 

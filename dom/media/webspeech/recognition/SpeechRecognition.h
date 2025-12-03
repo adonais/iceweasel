@@ -14,7 +14,6 @@
 #include "SpeechRecognitionResultList.h"
 #include "endpointer.h"
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"

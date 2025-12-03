@@ -26,7 +26,7 @@ export var WebNavigationManager = {
   /** @type {Map<string, Set<callback>>} */
   listeners: new Map(),
 
-  /** @type {WeakMap<XULBrowserElement, object>} */
+  /** @type {WeakMap<MozBrowser, object>} */
   recentTabTransitionData: new WeakMap(),
 
   init() {
@@ -231,7 +231,7 @@ export var WebNavigationManager = {
    * collected when one of the `onCommitted`, `onHistoryStateUpdated`
    * or `onReferenceFragmentUpdated` events has been received.
    *
-   * @param {XULBrowserElement} browser
+   * @param {MozBrowser} browser
    * @returns {object}
    */
   getAndForgetRecentTabTransitionData(browser) {

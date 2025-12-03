@@ -9,14 +9,6 @@
 #include "nsString.h"
 #include "mozilla/CheckedInt.h"
 
-int32_t nsHtml5Portability::checkedAdd(int32_t a, int32_t b) {
-  mozilla::CheckedInt<int32_t> sum(a);
-  sum += b;
-  MOZ_RELEASE_ASSERT(sum.isValid(),
-                     "HTML input too large for signed 32-bit integer.");
-  return sum.value();
-}
-
 nsAtom* nsHtml5Portability::newLocalNameFromBuffer(char16_t* buf,
                                                    int32_t length,
                                                    nsHtml5AtomTable* interner) {

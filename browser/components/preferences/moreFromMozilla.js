@@ -159,7 +159,7 @@ var gMoreFromMozillaPane = {
 
     products.push({
       id: "solo-ai",
-      title_string_id: "more-from-moz-solo-title",
+      title_string_id: "more-from-moz-solo-title-2",
       description_string_id: "more-from-moz-solo-description",
       region: "global",
       button: {

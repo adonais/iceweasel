@@ -25,9 +25,16 @@
 #include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
 #include "nsString.h"
+#include "nsStringFwd.h"
+#include "nsTHashMap.h"
 
 class ProfilerCodeAddressService;
 struct JSContext;
+
+// Typedef for process-global identifiers for JS script sources.
+using SourceId = uint32_t;
+// Typedef for indexes into the source table array.
+using IndexIntoSourceTable = uint32_t;
 
 class ProfileBufferEntry {
  public:
@@ -47,6 +54,7 @@ class ProfileBufferEntry {
   ProfileBufferEntry(Kind aKind, double aDouble);
   ProfileBufferEntry(Kind aKind, int64_t aInt64);
   ProfileBufferEntry(Kind aKind, uint64_t aUint64);
+  ProfileBufferEntry(Kind aKind, uint32_t aUint32);
   ProfileBufferEntry(Kind aKind, int aInt);
   ProfileBufferEntry(Kind aKind, ProfilerThreadId aThreadId);
 
@@ -82,6 +90,7 @@ class ProfileBufferEntry {
   int GetInt() const;
   int64_t GetInt64() const;
   uint64_t GetUint64() const;
+  uint32_t GetUint32() const;
   ProfilerThreadId GetThreadId() const;
   void CopyCharsInto(char (&aOutArray)[kNumChars]) const;
 };
@@ -168,7 +177,9 @@ class JITFrameInfo final {
   void AddInfoForRange(
       uint64_t aRangeStart, uint64_t aRangeEnd, JSContext* aCx,
       const std::function<void(const std::function<void(void*)>&)>&
-          aJITAddressProvider);
+          aJITAddressProvider,
+      const nsTHashMap<SourceId, IndexIntoSourceTable>* aSourceIdToIndexMap =
+          nullptr);
 
   // Returns whether the information stored in this object is still relevant
   // for any entries in the buffer.
@@ -213,15 +224,16 @@ class UniqueStacks final : public mozilla::FailureLatch {
  public:
   struct FrameKey {
     explicit FrameKey(const char* aLocation)
-        : mData(NormalFrameData{nsCString(aLocation), false, false, 0,
+        : mData(NormalFrameData{nsCString(aLocation), false, false, 0, 0,
                                 mozilla::Nothing(), mozilla::Nothing()}) {}
 
     FrameKey(nsCString&& aLocation, bool aRelevantForJS, bool aBaselineInterp,
-             uint64_t aInnerWindowID, const mozilla::Maybe<unsigned>& aLine,
+             uint64_t aInnerWindowID, uint32_t aSourceId,
+             const mozilla::Maybe<unsigned>& aLine,
              const mozilla::Maybe<unsigned>& aColumn,
              const mozilla::Maybe<JS::ProfilingCategoryPair>& aCategoryPair)
         : mData(NormalFrameData{aLocation, aRelevantForJS, aBaselineInterp,
-                                aInnerWindowID, aLine, aColumn,
+                                aInnerWindowID, aSourceId, aLine, aColumn,
                                 aCategoryPair}) {}
 
     FrameKey(void* aJITAddress, uint32_t aJITDepth, uint32_t aRangeIndex)
@@ -237,10 +249,26 @@ class UniqueStacks final : public mozilla::FailureLatch {
     struct NormalFrameData {
       bool operator==(const NormalFrameData& aOther) const;
 
+      nsCString GetLocationWithSourceIndex(
+          const nsTHashMap<SourceId, IndexIntoSourceTable>* aSourceIdToIndexMap)
+          const {
+        nsCString result = mLocation;
+        if (mSourceId && aSourceIdToIndexMap) {
+          auto index = aSourceIdToIndexMap->MaybeGet(mSourceId);
+          if (index) {
+            result.AppendLiteral("[");
+            result.AppendInt(*index);
+            result.AppendLiteral("]");
+          }
+        }
+        return result;
+      }
+
       nsCString mLocation;
       bool mRelevantForJS;
       bool mBaselineInterp;
       uint64_t mInnerWindowID;
+      uint32_t mSourceId;
       mozilla::Maybe<unsigned> mLine;
       mozilla::Maybe<unsigned> mColumn;
       mozilla::Maybe<JS::ProfilingCategoryPair> mCategoryPair;
@@ -270,6 +298,7 @@ class UniqueStacks final : public mozilla::FailureLatch {
         hash = mozilla::AddToHash(hash, data.mRelevantForJS);
         hash = mozilla::AddToHash(hash, data.mBaselineInterp);
         hash = mozilla::AddToHash(hash, data.mInnerWindowID);
+        hash = mozilla::AddToHash(hash, data.mSourceId);
         if (data.mLine.isSome()) {
           hash = mozilla::AddToHash(hash, *data.mLine);
         }
@@ -341,7 +370,9 @@ class UniqueStacks final : public mozilla::FailureLatch {
 
   UniqueStacks(mozilla::FailureLatch& aFailureLatch,
                JITFrameInfo&& aJITFrameInfo,
-               ProfilerCodeAddressService* aCodeAddressService = nullptr);
+               ProfilerCodeAddressService* aCodeAddressService = nullptr,
+               const nsTHashMap<SourceId, IndexIntoSourceTable>*
+                   aSourceIdToIndexMap = nullptr);
 
   // Return a StackKey for aFrame as the stack's root frame (no prefix).
   [[nodiscard]] mozilla::Maybe<StackKey> BeginStack(const FrameKey& aFrame);
@@ -396,6 +427,8 @@ class UniqueStacks final : public mozilla::FailureLatch {
   mozilla::HashMap<StackKey, uint32_t, StackKeyHasher> mStackToIndexMap;
 
   mozilla::Vector<JITFrameInfoForBufferRange> mJITInfoRanges;
+
+  const nsTHashMap<SourceId, IndexIntoSourceTable>* mSourceIdToIndexMap;
 };
 
 //

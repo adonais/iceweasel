@@ -31,6 +31,9 @@ const PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID =
 const PREF_SELECTED_WALLPAPER =
   "browser.newtabpage.activity-stream.newtabWallpapers.wallpaper";
 
+const RS_FALLBACK_BASE_URL =
+  "https://firefox-settings-attachments.cdn.mozilla.net/";
+
 export class WallpaperFeed {
   #customBackgroundObjectURL = null;
 
@@ -155,7 +158,15 @@ export class WallpaperFeed {
       PREF_WALLPAPERS_CUSTOM_WALLPAPER_ENABLED
     );
 
-    const baseAttachmentURL = await lazy.Utils.baseAttachmentsURL();
+    let baseAttachmentURL = RS_FALLBACK_BASE_URL;
+    try {
+      baseAttachmentURL = await lazy.Utils.baseAttachmentsURL();
+    } catch (error) {
+      console.error(
+        `Error fetching remote settings base url from CDN. Falling back to ${RS_FALLBACK_BASE_URL}`,
+        error
+      );
+    }
 
     const wallpapers = [
       ...records.map(record => {

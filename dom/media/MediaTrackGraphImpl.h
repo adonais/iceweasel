@@ -19,7 +19,6 @@
 #include "mozilla/Monitor.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/WeakPtr.h"
 #include "nsClassHashtable.h"
 #include "nsIMemoryReporter.h"
 #include "nsINamed.h"

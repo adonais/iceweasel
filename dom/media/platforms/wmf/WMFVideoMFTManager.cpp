@@ -34,6 +34,7 @@
 #include "mozilla/glean/DomMediaPlatformsWmfMetrics.h"
 #include "mozilla/layers/FenceD3D11.h"
 #include "mozilla/layers/LayersTypes.h"
+#include "mozilla/mscom/EnsureMTA.h"
 #include "nsPrintfCString.h"
 #include "nsThreadUtils.h"
 #include "nsWindowsHelpers.h"
@@ -200,7 +201,10 @@ MediaResult WMFVideoMFTManager::Init() {
     return result;
   }
 
-  result = InitInternal();
+  // InitInternal() indirectly calls IMFTransform interface and should run on
+  // MTA thread.
+  // https://msdn.microsoft.com/en-us/library/windows/desktop/ee892371(v=vs.85).aspx#components
+  mozilla::mscom::EnsureMTA([&]() { result = InitInternal(); });
   if (NS_SUCCEEDED(result) && mDXVA2Manager) {
     // If we had some failures but eventually made it work,
     // make sure we preserve the messages.

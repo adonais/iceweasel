@@ -22,7 +22,6 @@
 #include "mozilla/layers/RepaintRequest.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsLayoutUtils.h"
-#include "nsView.h"
 
 static mozilla::LazyLogModule sApzChromeLog("apz.cc.chrome");
 
@@ -342,14 +341,9 @@ void ChromeProcessController::NotifyAsyncAutoscrollRejected(
 
 void ChromeProcessController::CancelAutoscroll(
     const ScrollableLayerGuid& aGuid) {
-  if (!mUIThread->IsOnCurrentThread()) {
-    mUIThread->Dispatch(NewRunnableMethod<ScrollableLayerGuid>(
-        "layers::ChromeProcessController::CancelAutoscroll", this,
-        &ChromeProcessController::CancelAutoscroll, aGuid));
-    return;
-  }
-
-  APZCCallbackHelper::CancelAutoscroll(aGuid.mScrollId);
+  mUIThread->Dispatch(NewRunnableFunction("layers::CancelAutoscroll",
+                                          &APZCCallbackHelper::CancelAutoscroll,
+                                          aGuid.mScrollId));
 }
 
 void ChromeProcessController::NotifyScaleGestureComplete(

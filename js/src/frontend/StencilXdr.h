@@ -218,6 +218,10 @@ JS::TranscodeResult EncodeStencil(JSContext* cx,
                                   frontend::CompilationStencil* stencil,
                                   JS::TranscodeBuffer& buffer);
 
+JS::TranscodeResult EncodeStencil(JS::FrontendContext* fc,
+                                  frontend::CompilationStencil* stencil,
+                                  JS::TranscodeBuffer& buffer);
+
 JS::TranscodeResult DecodeStencil(JS::FrontendContext* fc,
                                   const JS::ReadOnlyDecodeOptions& options,
                                   const JS::TranscodeRange& range,

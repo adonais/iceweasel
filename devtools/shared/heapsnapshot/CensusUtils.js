@@ -7,7 +7,7 @@ const {
   flatten,
 } = require("resource://devtools/shared/ThreadSafeDevToolsUtils.js");
 
-/** * Visitor ****************************************************************/
+/*** Visitor ****************************************************************/
 
 /**
  * A Visitor visits each node and edge of a census report tree as the census
@@ -62,7 +62,7 @@ Visitor.prototype.exit = function () {};
  */
 Visitor.prototype.count = function () {};
 
-/** * getReportEdges *********************************************************/
+/*** getReportEdges *********************************************************/
 
 const EDGES = Object.create(null);
 
@@ -143,7 +143,7 @@ function getReportEdges(breakdown, report) {
 }
 exports.getReportEdges = getReportEdges;
 
-/** * walk *******************************************************************/
+/*** walk *******************************************************************/
 
 function recursiveWalk(breakdown, edge, report, visitor) {
   if (breakdown.by === "count") {
@@ -181,7 +181,7 @@ function walk(breakdown, report, visitor) {
 }
 exports.walk = walk;
 
-/** * diff *******************************************************************/
+/*** diff *******************************************************************/
 
 /**
  * Return true if the object is a Map, false otherwise. Works with Map objects

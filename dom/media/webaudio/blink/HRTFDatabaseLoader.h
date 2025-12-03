@@ -32,7 +32,6 @@
 #include "HRTFDatabase.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/RefPtr.h"
 #include "nsHashKeys.h"
 
 template <class EntryType>

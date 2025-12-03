@@ -28,6 +28,7 @@ import org.mozilla.focus.R
 import org.mozilla.focus.ui.theme.FocusTheme
 import org.mozilla.focus.ui.theme.focusTypography
 import org.mozilla.focus.ui.theme.gradientBackground
+import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 @Preview
@@ -79,7 +80,7 @@ private fun ComponentShowBiometricPromptButton(showBiometricPrompt: () -> Unit) 
             .fillMaxWidth(),
     ) {
         Image(
-            painter = painterResource(R.drawable.ic_fingerprint),
+            painter = painterResource(iconsR.drawable.mozac_ic_fingerprinter_24),
             contentDescription = stringResource(R.string.biometric_auth_image_description),
             modifier = Modifier.padding(end = 10.dp),
         )

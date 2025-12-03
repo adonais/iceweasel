@@ -9,7 +9,6 @@
 
 #include <algorithm>
 
-#include "mozilla/ArrayUtils.h"
 #include "nsGkAtoms.h"
 #include "txCore.h"
 #include "txExpr.h"

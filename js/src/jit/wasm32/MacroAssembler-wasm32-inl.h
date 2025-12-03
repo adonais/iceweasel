@@ -1127,12 +1127,12 @@ void MacroAssembler::branchAdd64(Condition cond, Imm64 imm, Register64 dest,
   MOZ_CRASH();
 }
 
-void MacroAssembler::quotient32(Register rhs, Register srcDest,
+void MacroAssembler::quotient32(Register lhs, Register rhs, Register dest,
                                 bool isUnsigned) {
   MOZ_CRASH();
 }
 
-void MacroAssembler::remainder32(Register rhs, Register srcDest,
+void MacroAssembler::remainder32(Register lhs, Register rhs, Register dest,
                                  bool isUnsigned) {
   MOZ_CRASH();
 }

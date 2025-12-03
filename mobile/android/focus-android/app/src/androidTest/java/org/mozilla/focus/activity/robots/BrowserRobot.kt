@@ -25,7 +25,6 @@ import androidx.test.uiautomator.Until
 import org.hamcrest.Matchers.not
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.mozilla.focus.R
 import org.mozilla.focus.helpers.Constants.RETRY_COUNT
 import org.mozilla.focus.helpers.TestHelper.mDevice
 import org.mozilla.focus.helpers.TestHelper.packageName

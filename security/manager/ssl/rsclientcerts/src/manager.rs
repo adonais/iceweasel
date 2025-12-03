@@ -4,13 +4,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use pkcs11_bindings::*;
+use rsclientcerts_util::error::{Error, ErrorType};
+use rsclientcerts_util::error_here;
 use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
-use crate::error::{Error, ErrorType};
-use crate::error_here;
-use crate::util::CryptokiCert;
+use crate::cryptoki::CryptokiCert;
 
 pub trait CryptokiObject {
     fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool;

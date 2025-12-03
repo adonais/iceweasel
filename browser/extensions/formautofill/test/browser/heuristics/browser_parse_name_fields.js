@@ -242,8 +242,8 @@ add_heuristic_tests([
     description: `Form field where fathom detects credit card name`,
     fixtureData: `
         <html><body>
-            <label>Nom<input/></label>
             <label>Prénom<input/></label>
+            <label>Nom<input/></label>
             <label>Saisir une adresse avec un numéro de maison<input/></label>
             <label>Ligne d'adresse 2<input/></label>
             <label>Code postal<input/></label>
@@ -255,8 +255,8 @@ add_heuristic_tests([
           reason: "regex-heuristic",
         },
         fields: [
-          { fieldName: "family-name", reason: "update-heuristic" },
           { fieldName: "given-name" },
+          { fieldName: "name", reason: "update-heuristic-alternate" },
           { fieldName: "address-line1", reason: "update-heuristic-alternate" },
           { fieldName: "address-line2", reason: "update-heuristic" },
           { fieldName: "postal-code" },

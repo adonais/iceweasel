@@ -14,7 +14,6 @@
 #include "txXPathNode.h"
 
 using mozilla::UniquePtr;
-using mozilla::Unused;
 
 class txEarlyEvalContext : public txIEvalContext {
  public:
@@ -220,7 +219,7 @@ void txXPathOptimizer::optimizeUnion(Expr* aInExpr, Expr** aOutExpr) {
         unionTest->addNodeTest(currentStep->getNodeTest());
 
         currentStep->setNodeTest(unionTest);
-        Unused << owner.release();
+        (void)owner.release();
       }
 
       // Merge the nodetest into the union

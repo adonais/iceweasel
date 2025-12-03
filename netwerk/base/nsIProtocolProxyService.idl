@@ -206,7 +206,7 @@ interface nsIProtocolProxyService : nsISupports
      */
     nsIProxyInfo newMASQUEProxyInfo(in AUTF8String aHost,
                                     in long aPort,
-                                    in AUTF8String aPathTemplate,
+                                    in AUTF8String aMasqueTemplate,
                                     in ACString aProxyAuthorizationHeader,
                                     in ACString aConnectionIsolationKey,
                                     in unsigned long aFlags,

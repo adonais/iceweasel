@@ -29,6 +29,10 @@ export let gIsCertError = gErrorCode == "nssBadCert";
 export let gHasSts = gIsCertError && getCSSClass() === "badStsCert";
 const HOST_NAME = getHostName();
 
+export function isCaptive() {
+  return searchParams.get("captive") == "true";
+}
+
 export function getCSSClass() {
   return searchParams.get("s");
 }

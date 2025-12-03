@@ -13,7 +13,6 @@ struct JSContext;
 #include "nsIPrintSettings.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/gfx/PrintPromise.h"
 
 #include "nsCRT.h" /* should be <limits.h>? */

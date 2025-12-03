@@ -21,9 +21,6 @@ class nsIURLParser;
 
 /* shutdown frees URL parser */
 void net_ShutdownURLHelper();
-#ifdef XP_MACOSX
-void net_ShutdownURLHelperOSX();
-#endif
 
 /* access URL parsers */
 already_AddRefed<nsIURLParser> net_GetAuthURLParser();

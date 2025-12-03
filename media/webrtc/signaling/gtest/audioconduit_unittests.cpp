@@ -31,7 +31,7 @@ class AudioConduitTest : public ::testing::Test {
   }
 
   ~AudioConduitTest() override {
-    mozilla::Unused << WaitFor(mAudioConduit->Shutdown());
+    (void)WaitFor(mAudioConduit->Shutdown());
     mCallWrapper->Destroy();
   }
 

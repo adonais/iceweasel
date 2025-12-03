@@ -12,7 +12,6 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/Logging.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WidgetUtilsGtk.h"
 #include "mozilla/widget/AsyncDBus.h"
 #include "mozilla/dom/Promise.h"
@@ -304,7 +303,7 @@ void NativeMessagingPortal::OnCreateSessionDone(GObject* source,
         subscription_id_ptr.get(), [](gpointer aUserData) {
           UniquePtr<guint> release(reinterpret_cast<guint*>(aUserData));
         });
-    Unused << subscription_id_ptr.release();  // Ownership transferred above.
+    (void)subscription_id_ptr.release();  // Ownership transferred above.
 
     callbackData->promise->MaybeResolve(nsDependentCString(value, length));
   } else {

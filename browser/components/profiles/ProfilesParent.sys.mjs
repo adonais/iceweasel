@@ -4,6 +4,7 @@
 
 import { SelectableProfileService } from "resource:///modules/profiles/SelectableProfileService.sys.mjs";
 import { ProfileAge } from "resource://gre/modules/ProfileAge.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 
@@ -267,10 +268,12 @@ export class ProfilesParent extends JSWindowActorParent {
     let themes = await this.getSafeForContentThemes(isDark);
     return {
       currentProfile: await currentProfile.toContentSafeObject(),
+      isInAutomation: Cu.isInAutomation,
+      hasDesktopShortcut: currentProfile.hasDesktopShortcut(),
+      platform: AppConstants.platform,
       profiles: await Promise.all(profiles.map(p => p.toContentSafeObject())),
       profileCreated: await profileAge.created,
       themes,
-      isInAutomation: Cu.isInAutomation,
     };
   }
 
@@ -368,6 +371,18 @@ export class ProfilesParent extends JSWindowActorParent {
         let profileObj = message.data;
         SelectableProfileService.currentProfile.name = profileObj.name;
         break;
+      }
+      case "Profiles:SetDesktopShortcut": {
+        let profile = SelectableProfileService.currentProfile;
+        let { shouldEnable } = message.data;
+        if (shouldEnable) {
+          await profile.ensureDesktopShortcut();
+        } else {
+          await profile.removeDesktopShortcut();
+        }
+        return {
+          hasDesktopShortcut: profile.hasDesktopShortcut(),
+        };
       }
       case "Profiles:GetDeleteProfileContent": {
         // Make sure SelectableProfileService is initialized

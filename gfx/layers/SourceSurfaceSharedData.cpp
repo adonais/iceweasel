@@ -8,7 +8,6 @@
 
 #include "mozilla/Likely.h"
 #include "mozilla/StaticPrefs_image.h"
-#include "mozilla/Types.h"  // for decltype
 #include "mozilla/ipc/SharedMemoryMapping.h"
 #include "mozilla/layers/SharedSurfacesChild.h"
 #include "mozilla/layers/SharedSurfacesParent.h"

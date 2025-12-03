@@ -32,7 +32,7 @@ class {{ ping|camelize }}ServerEventLogger:
         self._app_display_version = app_display_version
         self._channel = channel
 
-    def _record(
+    def record(
         self,
         user_agent: str,
         ip_address: str,
@@ -43,11 +43,12 @@ class {{ ping|camelize }}ServerEventLogger:
         {% endfor %}
         {% endif %}
         {% endfor %}
-        event: dict[str, Any]
+        events: list[dict[str, Any]]
     ) -> None:
         now = datetime.now(timezone.utc)
         timestamp = now.isoformat()
-        event["timestamp"] = int(1000.0 * now.timestamp())  # Milliseconds since epoch
+        for event in events:
+            event["timestamp"] = int(1000.0 * now.timestamp())  # Milliseconds since epoch
         event_payload = {
             "metrics": {
                 {% for metric_type, metrics in metrics_by_type.items() %}
@@ -60,7 +61,7 @@ class {{ ping|camelize }}ServerEventLogger:
                 {% endif %}
                 {% endfor %}
             },
-            "events": [event],
+            "events": events,
             "ping_info": {
                 # seq is required in the Glean schema, however is not useful in server context
                 "seq": 0,
@@ -160,7 +161,7 @@ class {{ ping|camelize }}ServerEventLogger:
             },
             {% endif %}
         }
-        self._record(
+        self.record(
             user_agent,
             ip_address,
             {% for metric_type, metrics in metrics_by_type.items() %}
@@ -170,7 +171,7 @@ class {{ ping|camelize }}ServerEventLogger:
             {% endfor %}
             {% endif %}
             {% endfor %}
-            event
+            [event],
         )
     {% endfor %}
 {% endfor %}

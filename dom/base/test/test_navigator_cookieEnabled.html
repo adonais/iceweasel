@@ -11,7 +11,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1753586
   <script type="application/javascript">
   "use strict";
 
-  /** Test for Bug 1753586 **/
+  /** Test for Bug 1753586 */
 
   const BEHAVIOR_REJECT = 2;
   const BEHAVIOR_REJECT_TRACKER = 4;
@@ -38,11 +38,11 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1753586
         { once: true }
       );
 
-      win.document.body.appendChild(iframe);
       if (sandbox) {
         iframe.sandbox = sandbox;
       }
       iframe.src = src;
+      win.document.body.appendChild(iframe);
     });
   }
 

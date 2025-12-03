@@ -181,10 +181,6 @@ class MapObject : public OrderedHashMapObject {
   [[nodiscard]] static bool set(JSContext* cx, unsigned argc, Value* vp);
   [[nodiscard]] static bool has(JSContext* cx, unsigned argc, Value* vp);
 
-  static bool isOriginalSizeGetter(Native native) {
-    return native == static_cast<Native>(MapObject::size);
-  }
-
  private:
   static const ClassSpec classSpec_;
   static const JSClassOps classOps_;
@@ -310,10 +306,6 @@ class SetObject : public OrderedHashSetObject {
   static SetObject* sweepAfterMinorGC(JS::GCContext* gcx, SetObject* setobj);
 
   size_t sizeOfData(mozilla::MallocSizeOf mallocSizeOf);
-
-  static bool isOriginalSizeGetter(Native native) {
-    return native == static_cast<Native>(SetObject::size);
-  }
 
  private:
   static const ClassSpec classSpec_;

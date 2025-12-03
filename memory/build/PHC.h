@@ -7,7 +7,6 @@
 #ifndef PHC_h
 #define PHC_h
 
-#include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
 #include <stdint.h>
 #include <stdlib.h>

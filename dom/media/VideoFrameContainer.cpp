@@ -106,7 +106,7 @@ void VideoFrameContainer::SetCurrentFrames(
   // When there are multiple frames, only the last one is effective
   // (see bug 1299068 comment 4). Here I just count on VideoSink and VideoOutput
   // to send one frame at a time and warn if not.
-  Unused << NS_WARN_IF(aImages.Length() > 1);
+  (void)NS_WARN_IF(aImages.Length() > 1);
   for (auto& image : aImages) {
     NotifySetCurrent(image.mImage);
   }

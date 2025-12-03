@@ -110,6 +110,14 @@ impl MarkerSchema {
         self
     }
 
+    /// Set the marker to be stack based
+    pub fn set_stack_based(&mut self) -> &mut Self {
+        unsafe {
+            bindings::gecko_profiler_marker_schema_set_stack_based(self.ptr);
+        }
+        self
+    }
+
     // Each data element that is streamed by `stream_json_marker_data()` can be
     // displayed as indicated by using one of the `add_...` function below.
     // Each `add...` will add a line in the full marker description. Parameters:

@@ -865,9 +865,8 @@ void BaseCompiler::insertBreakablePoint(CallSiteKind kind) {
   Label L;
   masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugStub()), scratch);
   masm.branchPtr(Assembler::Equal, scratch, ImmWord(0), &L);
-  masm.call(&perFunctionDebugStub_);
-  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
-              CodeOffset(masm.currentOffset()));
+  const CodeOffset retAddr = masm.call(&perFunctionDebugStub_);
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind), retAddr);
   masm.bind(&L);
 #else
   MOZ_CRASH("BaseCompiler platform hook: insertBreakablePoint");
@@ -1102,9 +1101,10 @@ class OutOfLineRequestTierUp : public OutOfLineCode {
     }
 #endif
     // Call the stub
-    masm->call(Address(InstanceReg, Instance::offsetOfRequestTierUpStub()));
+    const CodeOffset retAddr =
+        masm->call(Address(InstanceReg, Instance::offsetOfRequestTierUpStub()));
     masm->append(CallSiteDesc(lastOpcodeOffset_, CallSiteKind::RequestTierUp),
-                 CodeOffset(masm->currentOffset()));
+                 retAddr);
     // And swap again, if we swapped above.
 #ifndef RABALDR_PIN_INSTANCE
     if (Register(instance_) != InstanceReg) {
@@ -2382,18 +2382,18 @@ void BaseCompiler::popAndAllocateForDivAndRemI32(RegI32* r0, RegI32* r1,
 static void QuotientI32(MacroAssembler& masm, RegI32 rs, RegI32 rsd,
                         RegI32 reserved, IsUnsigned isUnsigned) {
 #if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
-  masm.quotient32(rs, rsd, reserved, isUnsigned);
+  masm.quotient32(rsd, rs, rsd, reserved, isUnsigned);
 #else
-  masm.quotient32(rs, rsd, isUnsigned);
+  masm.quotient32(rsd, rs, rsd, isUnsigned);
 #endif
 }
 
 static void RemainderI32(MacroAssembler& masm, RegI32 rs, RegI32 rsd,
                          RegI32 reserved, IsUnsigned isUnsigned) {
 #if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
-  masm.remainder32(rs, rsd, reserved, isUnsigned);
+  masm.remainder32(rsd, rs, rsd, reserved, isUnsigned);
 #else
-  masm.remainder32(rs, rsd, isUnsigned);
+  masm.remainder32(rsd, rs, rsd, isUnsigned);
 #endif
 }
 
@@ -2457,35 +2457,8 @@ static void QuotientI64(MacroAssembler& masm, RegI64 rhs, RegI64 srcDest,
     masm.cqo();
     masm.idivq(rhs.reg);
   }
-#  elif defined(JS_CODEGEN_MIPS64)
-  MOZ_ASSERT(reserved.isInvalid());
-  if (isUnsigned) {
-    masm.as_ddivu(srcDest.reg, rhs.reg);
-  } else {
-    masm.as_ddiv(srcDest.reg, rhs.reg);
-  }
-  masm.as_mflo(srcDest.reg);
-#  elif defined(JS_CODEGEN_ARM64)
-  MOZ_ASSERT(reserved.isInvalid());
-  ARMRegister sd(srcDest.reg, 64);
-  ARMRegister r(rhs.reg, 64);
-  if (isUnsigned) {
-    masm.Udiv(sd, sd, r);
-  } else {
-    masm.Sdiv(sd, sd, r);
-  }
-#  elif defined(JS_CODEGEN_LOONG64)
-  if (isUnsigned) {
-    masm.as_div_du(srcDest.reg, srcDest.reg, rhs.reg);
-  } else {
-    masm.as_div_d(srcDest.reg, srcDest.reg, rhs.reg);
-  }
-#  elif defined(JS_CODEGEN_RISCV64)
-  if (isUnsigned) {
-    masm.divu(srcDest.reg, srcDest.reg, rhs.reg);
-  } else {
-    masm.div(srcDest.reg, srcDest.reg, rhs.reg);
-  }
+#  elif !defined(JS_CODEGEN_NONE) && !defined(JS_CODEGEN_WASM32)
+  masm.quotient64(srcDest.reg, rhs.reg, srcDest.reg, isUnsigned);
 #  else
   MOZ_CRASH("BaseCompiler platform hook: quotientI64");
 #  endif
@@ -2506,37 +2479,8 @@ static void RemainderI64(MacroAssembler& masm, RegI64 rhs, RegI64 srcDest,
     masm.idivq(rhs.reg);
   }
   masm.movq(rdx, rax);
-#  elif defined(JS_CODEGEN_MIPS64)
-  MOZ_ASSERT(reserved.isInvalid());
-  if (isUnsigned) {
-    masm.as_ddivu(srcDest.reg, rhs.reg);
-  } else {
-    masm.as_ddiv(srcDest.reg, rhs.reg);
-  }
-  masm.as_mfhi(srcDest.reg);
-#  elif defined(JS_CODEGEN_ARM64)
-  ARMRegister sd(srcDest.reg, 64);
-  ARMRegister r(rhs.reg, 64);
-  ARMRegister t(reserved.reg, 64);
-  if (isUnsigned) {
-    masm.Udiv(t, sd, r);
-  } else {
-    masm.Sdiv(t, sd, r);
-  }
-  masm.Mul(t, t, r);
-  masm.Sub(sd, sd, t);
-#  elif defined(JS_CODEGEN_LOONG64)
-  if (isUnsigned) {
-    masm.as_mod_du(srcDest.reg, srcDest.reg, rhs.reg);
-  } else {
-    masm.as_mod_d(srcDest.reg, srcDest.reg, rhs.reg);
-  }
-#  elif defined(JS_CODEGEN_RISCV64)
-  if (isUnsigned) {
-    masm.remu(srcDest.reg, srcDest.reg, rhs.reg);
-  } else {
-    masm.rem(srcDest.reg, srcDest.reg, rhs.reg);
-  }
+#  elif !defined(JS_CODEGEN_NONE) && !defined(JS_CODEGEN_WASM32)
+  masm.remainder64(srcDest.reg, rhs.reg, srcDest.reg, isUnsigned);
 #  else
   MOZ_CRASH("BaseCompiler platform hook: remainderI64");
 #  endif
@@ -3092,14 +3036,12 @@ static void MaxF64(BaseCompiler& bc, RegF64 rs, RegF64 rsd) {
   bc.masm.maxDouble(rs, rsd, HandleNaNSpecially(true));
 }
 
-static void CopysignF64(MacroAssembler& masm, RegF64 rs, RegF64 rsd,
-                        RegI64 temp0, RegI64 temp1) {
-  masm.moveDoubleToGPR64(rsd, temp0);
-  masm.moveDoubleToGPR64(rs, temp1);
-  masm.and64(Imm64(INT64_MAX), temp0);
-  masm.and64(Imm64(INT64_MIN), temp1);
-  masm.or64(temp1, temp0);
-  masm.moveGPR64ToDouble(temp0, rsd);
+static void CopysignF64(MacroAssembler& masm, RegF64 rs, RegF64 rsd) {
+  // No code generated for the no-op case.
+  if (rs == rsd) {
+    return;
+  }
+  masm.copySignDouble(rsd, rs, rsd);
 }
 
 static void AbsF64(MacroAssembler& masm, RegF64 rsd) {
@@ -3161,14 +3103,12 @@ static void MaxF32(BaseCompiler& bc, RegF32 rs, RegF32 rsd) {
   bc.masm.maxFloat32(rs, rsd, HandleNaNSpecially(true));
 }
 
-static void CopysignF32(MacroAssembler& masm, RegF32 rs, RegF32 rsd,
-                        RegI32 temp0, RegI32 temp1) {
-  masm.moveFloat32ToGPR(rsd, temp0);
-  masm.moveFloat32ToGPR(rs, temp1);
-  masm.and32(Imm32(INT32_MAX), temp0);
-  masm.and32(Imm32(INT32_MIN), temp1);
-  masm.or32(temp1, temp0);
-  masm.moveGPRToFloat32(temp0, rsd);
+static void CopysignF32(MacroAssembler& masm, RegF32 rs, RegF32 rsd) {
+  // No code generated for the no-op case.
+  if (rs == rsd) {
+    return;
+  }
+  masm.copySignFloat32(rsd, rs, rsd);
 }
 
 static void AbsF32(MacroAssembler& masm, RegF32 rsd) {

@@ -8,7 +8,6 @@
 #define nsTreeSelection_h__
 
 #include "XULTreeElement.h"
-#include "mozilla/Attributes.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsITimer.h"
 #include "nsITreeSelection.h"

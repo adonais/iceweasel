@@ -7,8 +7,6 @@
 #ifndef wasm_WasmMetadata_h
 #define wasm_WasmMetadata_h
 
-#include "mozilla/Atomics.h"
-
 #include "wasm/WasmBinaryTypes.h"
 #include "wasm/WasmHeuristics.h"
 #include "wasm/WasmInstanceData.h"  // various of *InstanceData

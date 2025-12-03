@@ -7,7 +7,7 @@ XPCOMUtils.defineLazyServiceGetter(
   this,
   "spellCheck",
   "@mozilla.org/spellchecker/engine;1",
-  "mozISpellCheckingEngine"
+  Ci.mozISpellCheckingEngine
 );
 
 add_setup(async function setup() {

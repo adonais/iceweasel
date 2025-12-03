@@ -7,8 +7,7 @@ package org.mozilla.fenix.termsofuse.store
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.MiddlewareContext
 import org.mozilla.fenix.GleanMetrics.TermsOfUse
-
-const val TOU_VERSION = 5
+import org.mozilla.fenix.termsofuse.TOU_VERSION
 
 internal class TermsOfUsePromptTelemetryMiddleware :
     Middleware<TermsOfUsePromptState, TermsOfUsePromptAction> {
@@ -20,12 +19,16 @@ internal class TermsOfUsePromptTelemetryMiddleware :
         next(action)
 
         when (action) {
-            is TermsOfUsePromptAction.OnAcceptClicked -> TermsOfUse.accepted.record(
-                TermsOfUse.AcceptedExtra(
-                    surface = action.surface.metricLabel,
-                    touVersion = TOU_VERSION,
-                ),
-            )
+            is TermsOfUsePromptAction.OnAcceptClicked -> {
+                TermsOfUse.accepted.record(
+                    TermsOfUse.AcceptedExtra(
+                        surface = action.surface.metricLabel,
+                        touVersion = TOU_VERSION,
+                    ),
+                )
+                TermsOfUse.version.set(TOU_VERSION.toLong())
+                TermsOfUse.date.set()
+            }
 
             is TermsOfUsePromptAction.OnRemindMeLaterClicked -> {
                 TermsOfUse.remindMeLaterCount.add()

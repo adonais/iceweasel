@@ -5,7 +5,6 @@
 package org.mozilla.fenix.tabstray
 
 import android.content.res.Configuration
-import android.util.DisplayMetrics
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -19,11 +18,9 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 import io.mockk.Called
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.spyk
-import io.mockk.unmockkStatic
 import io.mockk.verify
-import mozilla.components.support.ktx.android.util.dpToPx
+import mozilla.components.support.ktx.android.util.DisplayUnitConverter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -31,6 +28,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TabSheetBehaviorManagerTest {
+
+    private val testDisplayUnitConverter = TestDisplayUnitConverter(1)
 
     @Test
     fun `WHEN state is hidden THEN invoke interactor`() {
@@ -401,7 +400,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_UNDEFINED,
             5,
             4,
-            mockk(),
+            testDisplayUnitConverter,
         )
         assertEquals(Configuration.ORIENTATION_UNDEFINED, manager0.currentOrientation)
 
@@ -410,7 +409,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_PORTRAIT,
             5,
             4,
-            mockk(),
+            testDisplayUnitConverter,
         )
         assertEquals(Configuration.ORIENTATION_PORTRAIT, manager1.currentOrientation)
 
@@ -419,7 +418,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_LANDSCAPE,
             5,
             4,
-            mockk(),
+            testDisplayUnitConverter,
         )
         assertEquals(Configuration.ORIENTATION_LANDSCAPE, manager2.currentOrientation)
     }
@@ -433,7 +432,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_PORTRAIT,
             5,
             4,
-            mockk(),
+            testDisplayUnitConverter,
         )
 
         assertEquals(STATE_EXPANDED, behavior.state)
@@ -448,7 +447,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_PORTRAIT,
             5,
             5,
-            mockk(),
+            testDisplayUnitConverter,
         )
 
         assertEquals(STATE_EXPANDED, behavior.state)
@@ -463,7 +462,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_PORTRAIT,
             4,
             5,
-            mockk(),
+            testDisplayUnitConverter,
         )
 
         assertEquals(STATE_COLLAPSED, behavior.state)
@@ -478,7 +477,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_UNDEFINED,
             5,
             4,
-            mockk(),
+            testDisplayUnitConverter,
         )
 
         assertEquals(STATE_EXPANDED, behavior.state)
@@ -493,7 +492,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_UNDEFINED,
             5,
             5,
-            mockk(),
+            testDisplayUnitConverter,
         )
 
         assertEquals(STATE_EXPANDED, behavior.state)
@@ -508,7 +507,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_UNDEFINED,
             4,
             5,
-            mockk(),
+            testDisplayUnitConverter,
         )
 
         assertEquals(STATE_COLLAPSED, behavior.state)
@@ -523,7 +522,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_LANDSCAPE,
             5,
             4,
-            mockk(),
+            testDisplayUnitConverter,
         )
 
         assertEquals(STATE_EXPANDED, behavior.state)
@@ -538,7 +537,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_LANDSCAPE,
             5,
             5,
-            mockk(),
+            testDisplayUnitConverter,
         )
 
         assertEquals(STATE_EXPANDED, behavior.state)
@@ -553,7 +552,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_LANDSCAPE,
             4,
             5,
-            mockk(),
+            testDisplayUnitConverter,
         )
 
         assertEquals(STATE_EXPANDED, behavior.state)
@@ -567,7 +566,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_UNDEFINED,
             5,
             4,
-            mockk(),
+            testDisplayUnitConverter,
         )
 
         manager.updateBehaviorState(false)
@@ -583,7 +582,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_UNDEFINED,
             5,
             5,
-            mockk(),
+            testDisplayUnitConverter,
         )
 
         manager.updateBehaviorState(false)
@@ -599,7 +598,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_UNDEFINED,
             4,
             5,
-            mockk(),
+            testDisplayUnitConverter,
         )
 
         manager.updateBehaviorState(false)
@@ -615,7 +614,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_UNDEFINED,
             5,
             4,
-            mockk(),
+            testDisplayUnitConverter,
         )
 
         manager.updateBehaviorState(true)
@@ -631,7 +630,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_UNDEFINED,
             5,
             5,
-            mockk(),
+            testDisplayUnitConverter,
         )
 
         manager.updateBehaviorState(true)
@@ -647,7 +646,7 @@ class TabSheetBehaviorManagerTest {
             Configuration.ORIENTATION_UNDEFINED,
             4,
             5,
-            mockk(),
+            testDisplayUnitConverter,
         )
 
         manager.updateBehaviorState(true)
@@ -663,7 +662,7 @@ class TabSheetBehaviorManagerTest {
                 Configuration.ORIENTATION_PORTRAIT,
                 4,
                 5,
-                mockk(),
+                testDisplayUnitConverter,
             ),
         )
 
@@ -682,7 +681,7 @@ class TabSheetBehaviorManagerTest {
                 Configuration.ORIENTATION_PORTRAIT,
                 4,
                 5,
-                mockk(),
+                testDisplayUnitConverter,
             ),
         )
 
@@ -705,7 +704,7 @@ class TabSheetBehaviorManagerTest {
                 Configuration.ORIENTATION_PORTRAIT,
                 4,
                 5,
-                mockk(),
+                testDisplayUnitConverter,
             ),
         )
 
@@ -720,7 +719,7 @@ class TabSheetBehaviorManagerTest {
                 Configuration.ORIENTATION_PORTRAIT,
                 4,
                 5,
-                mockk(),
+                testDisplayUnitConverter,
             ),
         )
 
@@ -735,7 +734,7 @@ class TabSheetBehaviorManagerTest {
                 Configuration.ORIENTATION_PORTRAIT,
                 4,
                 5,
-                mockk(),
+                testDisplayUnitConverter,
             ),
         )
 
@@ -747,22 +746,14 @@ class TabSheetBehaviorManagerTest {
         val behavior = BottomSheetBehavior<ConstraintLayout>()
         // expandedOffset is only used if isFitToContents == false
         behavior.isFitToContents = false
-        val displayMetrics: DisplayMetrics = mockk()
 
-        try {
-            mockkStatic("mozilla.components.support.ktx.android.util.DisplayMetricsKt")
-            every { EXPANDED_OFFSET_IN_LANDSCAPE_DP.dpToPx(displayMetrics) } returns EXPANDED_OFFSET_IN_LANDSCAPE_DP
-
-            TabSheetBehaviorManager(
-                behavior,
-                Configuration.ORIENTATION_LANDSCAPE,
-                5,
-                4,
-                displayMetrics,
-            )
-        } finally {
-            unmockkStatic("mozilla.components.support.ktx.android.util.DisplayMetricsKt")
-        }
+        TabSheetBehaviorManager(
+            behavior,
+            Configuration.ORIENTATION_LANDSCAPE,
+            5,
+            4,
+            testDisplayUnitConverter,
+        )
 
         assertEquals(0, behavior.expandedOffset)
     }
@@ -772,22 +763,14 @@ class TabSheetBehaviorManagerTest {
         val behavior = BottomSheetBehavior<ConstraintLayout>()
         // expandedOffset is only used if isFitToContents == false
         behavior.isFitToContents = false
-        val displayMetrics: DisplayMetrics = mockk()
 
-        try {
-            mockkStatic("mozilla.components.support.ktx.android.util.DisplayMetricsKt")
-            every { EXPANDED_OFFSET_IN_PORTRAIT_DP.dpToPx(displayMetrics) } returns EXPANDED_OFFSET_IN_PORTRAIT_DP
-
-            TabSheetBehaviorManager(
-                behavior,
-                Configuration.ORIENTATION_PORTRAIT,
-                5,
-                4,
-                displayMetrics,
-            )
-        } finally {
-            unmockkStatic("mozilla.components.support.ktx.android.util.DisplayMetricsKt")
-        }
+        TabSheetBehaviorManager(
+            behavior,
+            Configuration.ORIENTATION_PORTRAIT,
+            5,
+            4,
+            testDisplayUnitConverter,
+        )
 
         assertEquals(40, behavior.expandedOffset)
     }
@@ -797,22 +780,14 @@ class TabSheetBehaviorManagerTest {
         val behavior = BottomSheetBehavior<ConstraintLayout>()
         // expandedOffset is only used if isFitToContents == false
         behavior.isFitToContents = false
-        val displayMetrics: DisplayMetrics = mockk()
 
-        try {
-            mockkStatic("mozilla.components.support.ktx.android.util.DisplayMetricsKt")
-            every { EXPANDED_OFFSET_IN_PORTRAIT_DP.dpToPx(displayMetrics) } returns EXPANDED_OFFSET_IN_PORTRAIT_DP
-
-            TabSheetBehaviorManager(
-                behavior,
-                Configuration.ORIENTATION_UNDEFINED,
-                5,
-                4,
-                displayMetrics,
-            )
-        } finally {
-            unmockkStatic("mozilla.components.support.ktx.android.util.DisplayMetricsKt")
-        }
+        TabSheetBehaviorManager(
+            behavior,
+            Configuration.ORIENTATION_UNDEFINED,
+            5,
+            4,
+            testDisplayUnitConverter,
+        )
 
         assertEquals(40, behavior.expandedOffset)
     }
@@ -822,23 +797,16 @@ class TabSheetBehaviorManagerTest {
         val behavior = BottomSheetBehavior<ConstraintLayout>()
         // expandedOffset is only used if isFitToContents == false
         behavior.isFitToContents = false
-        val displayMetrics: DisplayMetrics = mockk()
 
-        try {
-            mockkStatic("mozilla.components.support.ktx.android.util.DisplayMetricsKt")
-            every { EXPANDED_OFFSET_IN_PORTRAIT_DP.dpToPx(displayMetrics) } returns EXPANDED_OFFSET_IN_PORTRAIT_DP
-            val manager = TabSheetBehaviorManager(
-                behavior,
-                Configuration.ORIENTATION_LANDSCAPE,
-                5,
-                4,
-                displayMetrics,
-            )
+        val manager = TabSheetBehaviorManager(
+            behavior,
+            Configuration.ORIENTATION_LANDSCAPE,
+            5,
+            4,
+            testDisplayUnitConverter,
+        )
 
-            manager.updateDependingOnOrientation(Configuration.ORIENTATION_PORTRAIT)
-        } finally {
-            unmockkStatic("mozilla.components.support.ktx.android.util.DisplayMetricsKt")
-        }
+        manager.updateDependingOnOrientation(Configuration.ORIENTATION_PORTRAIT)
 
         assertEquals(40, behavior.expandedOffset)
     }
@@ -848,23 +816,16 @@ class TabSheetBehaviorManagerTest {
         val behavior = BottomSheetBehavior<ConstraintLayout>()
         // expandedOffset is only used if isFitToContents == false
         behavior.isFitToContents = false
-        val displayMetrics: DisplayMetrics = mockk()
 
-        try {
-            mockkStatic("mozilla.components.support.ktx.android.util.DisplayMetricsKt")
-            every { EXPANDED_OFFSET_IN_PORTRAIT_DP.dpToPx(displayMetrics) } returns EXPANDED_OFFSET_IN_PORTRAIT_DP
-            val manager = TabSheetBehaviorManager(
-                behavior,
-                Configuration.ORIENTATION_LANDSCAPE,
-                5,
-                4,
-                displayMetrics,
-            )
+        val manager = TabSheetBehaviorManager(
+            behavior,
+            Configuration.ORIENTATION_LANDSCAPE,
+            5,
+            4,
+            testDisplayUnitConverter,
+        )
 
-            manager.updateDependingOnOrientation(Configuration.ORIENTATION_UNDEFINED)
-        } finally {
-            unmockkStatic("mozilla.components.support.ktx.android.util.DisplayMetricsKt")
-        }
+        manager.updateDependingOnOrientation(Configuration.ORIENTATION_UNDEFINED)
 
         assertEquals(40, behavior.expandedOffset)
     }
@@ -874,24 +835,23 @@ class TabSheetBehaviorManagerTest {
         val behavior = BottomSheetBehavior<ConstraintLayout>()
         // expandedOffset is only used if isFitToContents == false
         behavior.isFitToContents = false
-        val displayMetrics: DisplayMetrics = mockk()
 
-        try {
-            mockkStatic("mozilla.components.support.ktx.android.util.DisplayMetricsKt")
-            every { EXPANDED_OFFSET_IN_LANDSCAPE_DP.dpToPx(displayMetrics) } returns EXPANDED_OFFSET_IN_LANDSCAPE_DP
-            val manager = TabSheetBehaviorManager(
-                behavior,
-                Configuration.ORIENTATION_UNDEFINED,
-                5,
-                4,
-                displayMetrics,
-            )
+        val manager = TabSheetBehaviorManager(
+            behavior,
+            Configuration.ORIENTATION_UNDEFINED,
+            5,
+            4,
+            testDisplayUnitConverter,
+        )
 
-            manager.updateDependingOnOrientation(Configuration.ORIENTATION_LANDSCAPE)
-        } finally {
-            unmockkStatic("mozilla.components.support.ktx.android.util.DisplayMetricsKt")
-        }
+        manager.updateDependingOnOrientation(Configuration.ORIENTATION_LANDSCAPE)
 
         assertEquals(0, behavior.expandedOffset)
+    }
+
+    class TestDisplayUnitConverter(private val conversionDensity: Int) : DisplayUnitConverter {
+        override fun dpToPx(dp: Int): Int {
+            return dp * conversionDensity
+        }
     }
 }

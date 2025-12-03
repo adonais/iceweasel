@@ -14,7 +14,6 @@
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
-#include "mozilla/Unused.h"
 #include "mozilla/css/Loader.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Promise.h"
@@ -54,11 +53,11 @@ nsStyleSheetService::~nsStyleSheetService() {
 
 NS_IMPL_ISUPPORTS(nsStyleSheetService, nsIStyleSheetService, nsIMemoryReporter)
 
-static bool SheetHasURI(StyleSheet* aSheet, nsIURI* aSheetURI) {
+static bool SheetHasOriginalURI(StyleSheet* aSheet, nsIURI* aSheetURI) {
   MOZ_ASSERT(aSheetURI);
 
   bool result;
-  nsIURI* uri = aSheet->GetSheetURI();
+  nsIURI* uri = aSheet->GetOriginalURI();
   return uri && NS_SUCCEEDED(uri->Equals(aSheetURI, &result)) && result;
 }
 
@@ -66,7 +65,7 @@ int32_t nsStyleSheetService::FindSheetByURI(uint32_t aSheetType,
                                             nsIURI* aSheetURI) {
   SheetArray& sheets = mSheets[aSheetType];
   for (int32_t i = sheets.Length() - 1; i >= 0; i--) {
-    if (SheetHasURI(sheets[i], aSheetURI)) {
+    if (SheetHasOriginalURI(sheets[i], aSheetURI)) {
       return i;
     }
   }
@@ -126,7 +125,7 @@ nsStyleSheetService::LoadAndRegisterSheet(nsIURI* aSheetURI,
       }
 
       for (uint32_t i = 0; i < children.Length(); i++) {
-        Unused << children[i]->SendLoadAndRegisterSheet(aSheetURI, aSheetType);
+        (void)children[i]->SendLoadAndRegisterSheet(aSheetURI, aSheetType);
       }
     }
   }
@@ -175,8 +174,7 @@ nsStyleSheetService::SheetRegistered(nsIURI* sheetURI, uint32_t aSheetType,
   MOZ_ASSERT(_retval, "Null out param");
 
   // Check to see if we have the sheet.
-  *_retval = (FindSheetByURI(aSheetType, sheetURI) >= 0);
-
+  *_retval = FindSheetByURI(aSheetType, sheetURI) >= 0;
   return NS_OK;
 }
 
@@ -280,7 +278,7 @@ nsStyleSheetService::UnregisterSheet(nsIURI* aSheetURI, uint32_t aSheetType) {
     }
 
     for (uint32_t i = 0; i < children.Length(); i++) {
-      Unused << children[i]->SendUnregisterSheet(aSheetURI, aSheetType);
+      (void)children[i]->SendUnregisterSheet(aSheetURI, aSheetType);
     }
   }
 
@@ -316,7 +314,7 @@ nsStyleSheetService::CollectReports(nsIHandleReportCallback* aHandleReport,
 size_t nsStyleSheetService::SizeOfIncludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) const {
   size_t n = aMallocSizeOf(this);
-  for (auto& sheetArray : mSheets) {
+  for (const auto& sheetArray : mSheets) {
     n += sheetArray.ShallowSizeOfExcludingThis(aMallocSizeOf);
     for (StyleSheet* sheet : sheetArray) {
       if (sheet) {

@@ -296,7 +296,7 @@ events:
           show_search_shortcuts, open_links_in_a_private_tab, pref_key_sync_logins,
           pref_key_sync_bookmarks, pref_key_sync_history, pref_key_show_voice_search,
           pref_key_show_search_suggestions_in_private, pref_key_show_trending_search_suggestions,
-          pref_key_show_recent_search_suggestions, pref_key_show_shortcuts_suggestions.
+          pref_key_show_recent_search_suggestions.
         type: string
       enabled:
         description: "Whether or not the preference is *now* enabled"
@@ -877,29 +877,6 @@ translations:
     notification_emails:
       - android-probes@mozilla.com
     expires: never
-  offer_event:
-    type: event
-    description: |
-      The translations engine decided the user may be interested in a translation or that the user
-      should be offered a translation.
-      An "expected" event means the user is expected to want to translate and we should show the feature on the toolbar.
-      An "offer" event means we should popup the translations dialog.
-    extra_keys:
-      item:
-        description: |
-          A string containing the type of signal sent by the translations engine.
-          These signals include:
-          expected, offer
-        type: string
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1886851
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1886851#c8
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
   translate_requested:
     type: event
     description: |
@@ -963,21 +940,15 @@ translations:
     notification_emails:
       - android-probes@mozilla.com
     expires: never
-  engine_supported:
+  engine_unsupported:
     type: event
     description: |
       The translations engine for translating pages is only supported on certain devices.
-      This probe indicates if the device supports the translations engine or not.
-    extra_keys:
-      support:
-        description: |
-          A string describing the support of the engine, either:
-          supported, unsupported,
-        type: string
+      This probe is sent when the device does not support the translations engine.
     bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1886221
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1978120
     data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1886221#c3
+      - https://phabricator.services.mozilla.com/D270865
     data_sensitivity:
       - technical
     notification_emails:
@@ -4390,6 +4361,25 @@ preferences:
     metadata:
       tags:
         - Settings
+  app_zygote_isolated_content_processes_enabled:
+    type: boolean
+    lifetime: application
+    description: True when app Zygote preloading with isolated processes is enabled.
+    send_in_pings:
+      - metrics
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989943
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D265600
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Settings
+        - Performance
 
 search.default_engine:
   code:
@@ -4995,8 +4985,6 @@ activation:
     notification_emails:
       - android-probes@mozilla.com
     expires: never
-    no_lint:
-      - USER_LIFETIME_EXPIRATION
     metadata:
       tags:
         - Privacy&Security
@@ -12024,6 +12012,8 @@ wallpapers:
     metadata:
       tags:
         - Wallpapers
+    no_lint:
+      - HIGHER_DATA_SENSITIVITY_REQUIRED
 
 recently_visited_homepage:
   history_highlight_opened:
@@ -12941,10 +12931,12 @@ nimbus_system:
           type: boolean
         no_shortcuts_or_stories_opt_outs:
           type: boolean
-        user_clicked_tou_prompt_link:
-          type: boolean
-        user_clicked_tou_prompt_remind_me_later:
-          type: boolean
+        addon_ids:
+          type: array
+          items:
+            type: string
+        tou_points:
+          type: number
     description: |
       The Nimbus context object that is recorded to Glean
     bugs:
@@ -12953,12 +12945,18 @@ nimbus_system:
       - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1970165'
       - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1981877'
       - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1984639'
+      - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1991528'
+      - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1993034'
+      - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1992306'
     data_reviews:
       - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1898552#c3'
       - 'https://phabricator.services.mozilla.com/D258942'
       - 'https://phabricator.services.mozilla.com/D259407'
       - 'https://phabricator.services.mozilla.com/D260845'
       - 'https://phabricator.services.mozilla.com/D262139'
+      - 'https://phabricator.services.mozilla.com/D268391'
+      - 'https://phabricator.services.mozilla.com/D268931'
+      - 'https://phabricator.services.mozilla.com/D270859'
     data_sensitivity:
       - interaction
     notification_emails:

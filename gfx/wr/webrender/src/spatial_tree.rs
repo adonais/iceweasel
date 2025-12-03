@@ -1379,8 +1379,11 @@ pub fn get_external_scroll_offset<S: SpatialNodeContainer>(
             SpatialNodeType::ScrollFrame(ref scrolling) => {
                 offset += scrolling.external_scroll_offset;
             }
-            SpatialNodeType::StickyFrame(..) => {
-                // Doesn't provide any external scroll offset
+            SpatialNodeType::StickyFrame(ref sticky) => {
+                // Remove the sticky offset that was applied in the
+                // content process, so that primitive interning
+                // sees stable values, and doesn't invalidate unnecessarily.
+                offset -= sticky.previously_applied_offset;
             }
             SpatialNodeType::ReferenceFrame(..) => {
                 // External scroll offsets are not propagated across

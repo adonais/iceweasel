@@ -193,7 +193,6 @@
 #include "gc/GC-inl.h"
 
 #include "mozilla/glue/Debug.h"
-#include "mozilla/Range.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/TimeStamp.h"
@@ -1858,8 +1857,14 @@ int SliceBudget::describe(char* buffer, size_t maxlen) const {
     return snprintf(buffer, maxlen, "unlimited");
   }
 
+  const char* nonstop = "";
+  if (keepGoing) {
+    nonstop = "nonstop ";
+  }
+
   if (isWorkBudget()) {
-    return snprintf(buffer, maxlen, "work(%" PRId64 ")", workBudget());
+    return snprintf(buffer, maxlen, "%swork(%" PRId64 ")", nonstop,
+                    workBudget());
   }
 
   const char* interruptStr = "";
@@ -1870,7 +1875,7 @@ int SliceBudget::describe(char* buffer, size_t maxlen) const {
   if (idle) {
     extra = extended ? " (started idle but extended)" : " (idle)";
   }
-  return snprintf(buffer, maxlen, "%s%" PRId64 "ms%s", interruptStr,
+  return snprintf(buffer, maxlen, "%s%s%" PRId64 "ms%s", nonstop, interruptStr,
                   timeBudget(), extra);
 }
 
@@ -3111,6 +3116,8 @@ void GCRuntime::beginMarkPhase(AutoGCSession& session) {
   {
     BufferAllocator::MaybeLock lock;
     for (GCZonesIter zone(this); !zone.done(); zone.next()) {
+      MOZ_ASSERT(zone->cellsToAssertNotGray().empty());
+
       // In an incremental GC, clear the arena free lists to ensure that
       // subsequent allocations refill them and end up marking new cells black.
       // See arenaAllocatedDuringGC().
@@ -3557,9 +3564,9 @@ void GCRuntime::checkGCStateNotInUse() {
     MOZ_ASSERT(marker->isDrained());
   }
   MOZ_ASSERT(!hasDelayedMarking());
-
   MOZ_ASSERT(!lastMarkSlice);
 
+  MOZ_ASSERT(!disableBarriersForSweeping);
   MOZ_ASSERT(foregroundFinalizedArenas.ref().isNothing());
 
   for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
@@ -3571,11 +3578,11 @@ void GCRuntime::checkGCStateNotInUse() {
     MOZ_ASSERT(!zone->isOnList());
     MOZ_ASSERT(!zone->gcNextGraphNode);
     MOZ_ASSERT(!zone->gcNextGraphComponent);
+    MOZ_ASSERT(zone->cellsToAssertNotGray().empty());
     zone->bufferAllocator.checkGCStateNotInUse();
   }
 
   MOZ_ASSERT(zonesToMaybeCompact.ref().isEmpty());
-  MOZ_ASSERT(cellsToAssertNotGray.ref().empty());
 
   MOZ_ASSERT(!atomsUsedByUncollectedZones.ref());
 
@@ -3783,6 +3790,10 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
         zone->arenas.mergeArenasFromCollectingLists();
       }
 
+      // The gray marking state may not be valid. We don't do gray unmarking
+      // when zones are in the Prepare state.
+      setGrayBitsInvalid();
+
       incrementalState = State::NotActive;
       checkGCStateNotInUse();
       break;
@@ -3797,6 +3808,11 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
       for (GCCompartmentsIter c(rt); !c.done(); c.next()) {
         resetGrayList(c);
       }
+
+      // The gray marking state may not be valid. We depend on the mark stack to
+      // do gray unmarking in zones that are being marked by the GC and we've
+      // just cancelled that part way through.
+      setGrayBitsInvalid();
 
       // Wait for sweeping of nursery owned sized allocations to finish.
       nursery().joinSweepTask();
@@ -3872,12 +3888,17 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
   return IncrementalResult::Reset;
 }
 
-AutoDisableBarriers::AutoDisableBarriers(GCRuntime* gc) : gc(gc) {
-  /*
-   * Clear needsIncrementalBarrier early so we don't do any write barriers
-   * during sweeping.
-   */
-  for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
+void GCRuntime::setGrayBitsInvalid() {
+  grayBitsValid = false;
+  atomMarking.unmarkAllGrayReferences(this);
+}
+
+void GCRuntime::disableIncrementalBarriers() {
+  // Clear needsIncrementalBarrier so we don't do any write barriers during
+  // foreground finalization. This would otherwise happen when destroying
+  // HeapPtr<>s to GC things in zones which are still marking.
+
+  for (GCZonesIter zone(this); !zone.done(); zone.next()) {
     if (zone->isGCMarking()) {
       MOZ_ASSERT(zone->needsIncrementalBarrier());
       zone->setNeedsIncrementalBarrier(false);
@@ -3886,8 +3907,8 @@ AutoDisableBarriers::AutoDisableBarriers(GCRuntime* gc) : gc(gc) {
   }
 }
 
-AutoDisableBarriers::~AutoDisableBarriers() {
-  for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
+void GCRuntime::enableIncrementalBarriers() {
+  for (GCZonesIter zone(this); !zone.done(); zone.next()) {
     MOZ_ASSERT(!zone->needsIncrementalBarrier());
     if (zone->isGCMarking()) {
       zone->setNeedsIncrementalBarrier(true);
@@ -4591,6 +4612,7 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
 
   IncrementalResult result =
       budgetIncrementalGC(nonincrementalByAPI, reason, budget);
+
   if (result != IncrementalResult::Ok && incrementalState == State::NotActive) {
     // The collection was reset or aborted and has finished.
     return result;
@@ -5481,14 +5503,18 @@ JS_PUBLIC_API bool js::gc::detail::CanCheckGrayBits(const TenuredCell* cell) {
 
   MOZ_ASSERT(cell);
 
+  JS::Zone* zone = cell->zoneFromAnyThread();
+  if (zone->isAtomsZone() && cell->isMarkedBlack()) {
+    // This could be a shared atom in the parent runtime. Skip this check.
+    return true;
+  }
+
   auto* runtime = cell->runtimeFromAnyThread();
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime));
 
   if (!runtime->gc.areGrayBitsValid()) {
     return false;
   }
-
-  JS::Zone* zone = cell->zone();
 
   if (runtime->gc.isIncrementalGCInProgress() && !zone->wasGCStarted()) {
     return false;
@@ -5529,15 +5555,15 @@ JS_PUBLIC_API void js::gc::detail::AssertCellIsNotGray(const Cell* cell) {
   // called during GC and while iterating the heap for memory reporting.
   MOZ_ASSERT(!JS::RuntimeHeapIsCycleCollecting());
 
-  if (tc->zone()->isGCMarkingBlackAndGray()) {
+  Zone* zone = tc->zone();
+  if (zone->isGCMarkingBlackAndGray()) {
     // We are doing gray marking in the cell's zone. Even if the cell is
     // currently marked gray it may eventually be marked black. Delay checking
     // non-black cells until we finish gray marking.
 
     if (!tc->isMarkedBlack()) {
-      JSRuntime* rt = tc->zone()->runtimeFromMainThread();
       AutoEnterOOMUnsafeRegion oomUnsafe;
-      if (!rt->gc.cellsToAssertNotGray.ref().append(cell)) {
+      if (!zone->cellsToAssertNotGray().append(cell)) {
         oomUnsafe.crash("Can't append to delayed gray checks list");
       }
     }

@@ -7,6 +7,7 @@ package org.mozilla.fenix.ui.efficiency.helpers
 import android.util.Log
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -20,13 +21,18 @@ import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.pressImeActionButton
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.ViewMatchers
+import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
+import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiObject
 import androidx.test.uiautomator.UiSelector
+import org.hamcrest.CoreMatchers.containsString
+import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
@@ -80,12 +86,11 @@ abstract class BasePage(
         val deadline = System.currentTimeMillis() + timeout
 
         while (System.currentTimeMillis() < deadline) {
-            if (requiredSelectors.all { mozVerifyElement(it) }) {
+            if (requiredSelectors.all { mozVerifyElement(it, applyPreconditions = false) }) {
                 return true
             }
             android.os.SystemClock.sleep(interval)
         }
-
         return false
     }
 
@@ -93,12 +98,8 @@ abstract class BasePage(
 
     fun mozVerifyElementsByGroup(group: String = "requiredForPage"): BasePage {
         val selectors = mozGetSelectorsByGroup(group)
-        val allPresent = selectors.all { mozVerifyElement(it) }
-
-        if (!allPresent) {
-            throw AssertionError("Not all elements in group '$group' are present")
-        }
-
+        val allPresent = selectors.all { mozVerifyElement(it, applyPreconditions = true) }
+        if (!allPresent) throw AssertionError("Not all elements in group '$group' are present")
         return this
     }
 
@@ -148,10 +149,11 @@ abstract class BasePage(
     fun mozSwipeTo(
         selector: Selector,
         direction: SwipeDirection = SwipeDirection.DOWN,
-        maxSwipes: Int = 5,
+        maxSwipes: Int = 10, // TODO (Jackie J. 10/30/2025): replace hard-coded value with self-selecting x,y boundaries
+        applyPreconditions: Boolean = false, // default false to avoid recursive preconditions
         ): BasePage {
         repeat(maxSwipes) { attempt ->
-            val element = mozGetElement(selector)
+            val element = mozGetElement(selector, applyPreconditions = applyPreconditions)
 
             val isVisible = when (element) {
                 is ViewInteraction -> try {
@@ -204,7 +206,7 @@ abstract class BasePage(
             SwipeDirection.RIGHT -> listOf(width / 4, height / 2, width * 3 / 4, height / 2)
         }
 
-        mDevice.swipe(startX, startY, endX, endY, 10)
+        mDevice.swipe(startX, startY, endX, endY, 20)
     }
 
     fun mozEnterText(text: String, selector: Selector): BasePage {
@@ -284,10 +286,14 @@ abstract class BasePage(
         return this
     }
 
-    private fun mozGetElement(selector: Selector): Any? {
+    private fun mozGetElement(selector: Selector, applyPreconditions: Boolean = true): Any? {
         if (selector.value.isBlank()) {
             Log.i("mozGetElement", "Empty or blank selector value: ${selector.description}")
             return null
+        }
+
+        if (applyPreconditions && requiresScroll(selector.groups)) {
+            ensureReachable(selector) // may call mozSwipeTo with applyPreconditions = false
         }
 
         return when (selector.strategy) {
@@ -330,7 +336,6 @@ abstract class BasePage(
 
             SelectorStrategy.ESPRESSO_BY_TEXT -> onView(withText(selector.value))
             SelectorStrategy.ESPRESSO_BY_CONTENT_DESC -> onView(withContentDescription(selector.value))
-
             SelectorStrategy.UIAUTOMATOR2_BY_CLASS -> {
                 val obj = mDevice.findObject(UiSelector().className(selector.value))
                 if (!obj.exists()) null else obj
@@ -371,14 +376,13 @@ abstract class BasePage(
         }
     }
 
-    private fun mozVerifyElement(selector: Selector): Boolean {
-        val element = mozGetElement(selector)
+    private fun mozVerifyElement(selector: Selector, applyPreconditions: Boolean = true): Boolean {
+        val element = mozGetElement(selector, applyPreconditions = applyPreconditions)
 
         return when (element) {
             is ViewInteraction -> {
                 try {
-                    element.check(matches(isDisplayed()))
-                    true
+                    element.check(matches(isDisplayed())); true
                 } catch (e: Exception) {
                     false
                 }
@@ -386,14 +390,38 @@ abstract class BasePage(
             is UiObject -> element.exists()
             is SemanticsNodeInteraction -> {
                 try {
-                    element.assertExists()
-                    element.assertIsDisplayed()
-                    true
+                    element.assertExists(); element.assertIsDisplayed(); true
                 } catch (e: AssertionError) {
                     false
                 }
             }
             else -> false
+        }
+    }
+
+    private fun requiresScroll(groups: List<String>): Boolean {
+        return groups.any { it.equals("requiresScroll", ignoreCase = true) || it.equals("needsSwipeNavStep", ignoreCase = true) }
+    }
+
+    private fun desiredSwipeDirection(groups: List<String>): SwipeDirection {
+        return when {
+            groups.any { it.equals("swipeDown", true) } -> SwipeDirection.DOWN
+            groups.any { it.equals("swipeLeft", true) } -> SwipeDirection.LEFT
+            groups.any { it.equals("swipeRight", true) } -> SwipeDirection.RIGHT
+            else -> SwipeDirection.UP
+        }
+    }
+
+    private fun ensureReachable(selector: Selector) {
+        // If it's already visible, skip swiping.
+        val visibleNow = mozVerifyElement(selector, applyPreconditions = false)
+        if (visibleNow) return
+
+        if (requiresScroll(selector.groups)) {
+            val dir = desiredSwipeDirection(selector.groups)
+            Log.i("Preconditions", "🧭 '${selector.description}' requires scroll. Swiping $dir to bring into view.")
+            // IMPORTANT: do not allow nested preconditions during swipe-to lookup
+            mozSwipeTo(selector, direction = dir, maxSwipes = 10, applyPreconditions = false)
         }
     }
 }

@@ -21,6 +21,7 @@ mod perf;
 mod png;
 mod premultiply;
 mod rawtest;
+mod rawtests;
 mod reftest;
 mod test_invalidation;
 mod test_shaders;

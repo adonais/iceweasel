@@ -857,7 +857,7 @@ function waitForLoadedSource(dbg, url) {
   );
 }
 
-/*
+/**
  * Selects the source node for a specific source
  * from the source tree.
  *
@@ -896,7 +896,7 @@ async function selectSourceFromSourceTreeWithIndex(
   );
 }
 
-/*
+/**
  * Trigger a context menu in the debugger source tree
  *
  * @param {Object} dbg
@@ -1548,7 +1548,7 @@ function type(dbg, string) {
   string.split("").forEach(char => EventUtils.synthesizeKey(char, {}, dbg.win));
 }
 
-/*
+/**
  * Checks to see if the inner element is visible inside the editor.
  *
  * @memberof mochitest/helpers
@@ -1562,7 +1562,7 @@ function isVisibleInEditor(dbg, element) {
   return isVisible(findElement(dbg, "codeMirror"), element);
 }
 
-/*
+/**
  * Checks to see if the inner element is visible inside the
  * outer element.
  *
@@ -1739,7 +1739,7 @@ function assertTextContentOnLine(dbg, line, expectedTextContent) {
   is(textContent, expectedTextContent, `Expected text content on line ${line}`);
 }
 
-/*
+/**
  * Assert that no breakpoint is set on a given line of
  * the currently selected source in the editor.
  *
@@ -1755,7 +1755,7 @@ async function assertNoBreakpoint(dbg, line) {
   ok(!exists, `Breakpoint doesn't exists on line ${line}`);
 }
 
-/*
+/**
  * Assert that a regular breakpoint is set in the currently
  * selected source in the editor. (no conditional, nor log breakpoint)
  *
@@ -1781,7 +1781,7 @@ async function assertBreakpoint(dbg, line) {
   ok(!hasLogClass, `Regular breakpoint doesn't have log on line ${line}`);
 }
 
-/*
+/**
  * Assert that a conditionnal breakpoint is set.
  *
  * @memberof mochitest/helpers
@@ -1807,7 +1807,7 @@ async function assertConditionBreakpoint(dbg, line) {
   );
 }
 
-/*
+/**
  * Assert that a log breakpoint is set.
  *
  * @memberof mochitest/helpers
@@ -3533,19 +3533,28 @@ async function toggleJsTracerMenuItem(dbg, selector) {
 }
 
 /**
- * Asserts that the contents of the inline previews and the lines
- * that they are displayed on are accurate
+ * Asserts that the number of displayed inline previews, the contents of the inline previews and the lines
+ * that they are displayed on, are accurate
  *
  * @param {Object} dbg
  * @param {Array} expectedInlinePreviews
  * @param {String} fnName
  */
 async function assertInlinePreviews(dbg, expectedInlinePreviews, fnName) {
-  await waitForAllElements(
+  // Accumulate all the previews over the various lines
+  let expectedNumberOfInlinePreviews = 0;
+  for (const { previews } of expectedInlinePreviews) {
+    expectedNumberOfInlinePreviews += previews.length;
+  }
+
+  const inlinePreviews = await waitForAllElements(
     dbg,
     "visibleInlinePreviews",
-    expectedInlinePreviews.length
+    expectedNumberOfInlinePreviews,
+    true
   );
+
+  ok(true, `Displayed ${inlinePreviews.length} inline previews`);
 
   for (const expectedInlinePreview of expectedInlinePreviews) {
     const { previews, line } = expectedInlinePreview;

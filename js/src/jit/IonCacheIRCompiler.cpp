@@ -940,7 +940,8 @@ bool IonCacheIRCompiler::emitLoadFixedSlotResult(ObjOperandId objId,
 bool IonCacheIRCompiler::emitLoadFixedSlotTypedResult(ObjOperandId objId,
                                                       uint32_t offsetOffset,
                                                       ValueType) {
-  MOZ_CRASH("Call ICs not used in ion");
+  // The type is only used by Warp.
+  return emitLoadFixedSlotResult(objId, offsetOffset);
 }
 
 bool IonCacheIRCompiler::emitLoadDynamicSlotResult(ObjOperandId objId,
@@ -1573,9 +1574,9 @@ bool IonCacheIRCompiler::emitAllocateAndStoreDynamicSlot(
       newShapeOffset, mozilla::Some(numNewSlotsOffset), preserveWrapper);
 }
 
-bool IonCacheIRCompiler::emitLoadStringCharResult(StringOperandId strId,
-                                                  Int32OperandId indexId,
-                                                  bool handleOOB) {
+bool IonCacheIRCompiler::emitLoadStringCharResult(
+    StringOperandId strId, Int32OperandId indexId,
+    StringCharOutOfBounds outOfBounds) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   AutoOutputRegister output(*this);
   Register str = allocator.useRegister(masm, strId);
@@ -1591,15 +1592,21 @@ bool IonCacheIRCompiler::emitLoadStringCharResult(StringOperandId strId,
 
   // Bounds check, load string char.
   Label done;
+  Label tagResult;
   Label loadFailed;
-  if (!handleOOB) {
+  if (outOfBounds == StringCharOutOfBounds::Failure) {
     masm.spectreBoundsCheck32(index, Address(str, JSString::offsetOfLength()),
                               scratch1, failure->label());
     masm.loadStringChar(str, index, scratch1, scratch2, scratch3,
                         failure->label());
   } else {
-    // Return the empty string for out-of-bounds access.
-    masm.movePtr(ImmGCPtr(cx_->runtime()->emptyString), scratch2);
+    if (outOfBounds == StringCharOutOfBounds::EmptyString) {
+      // Return the empty string for out-of-bounds access.
+      masm.movePtr(ImmGCPtr(cx_->runtime()->emptyString), scratch2);
+    } else {
+      // Return |undefined| for out-of-bounds access.
+      masm.moveValue(UndefinedValue(), output.valueReg());
+    }
 
     // This CacheIR op is always preceded by |LinearizeForCharAccess|, so we're
     // guaranteed to see no nested ropes.
@@ -1611,9 +1618,9 @@ bool IonCacheIRCompiler::emitLoadStringCharResult(StringOperandId strId,
   // Load StaticString for this char. For larger code units perform a VM call.
   Label vmCall;
   masm.lookupStaticString(scratch1, scratch2, cx_->staticStrings(), &vmCall);
-  masm.jump(&done);
+  masm.jump(&tagResult);
 
-  if (handleOOB) {
+  if (outOfBounds != StringCharOutOfBounds::Failure) {
     masm.bind(&loadFailed);
     masm.assumeUnreachable("loadStringChar can't fail for linear strings");
   }
@@ -1645,9 +1652,34 @@ bool IonCacheIRCompiler::emitLoadStringCharResult(StringOperandId strId,
     masm.branchPtr(Assembler::Equal, scratch2, ImmWord(0), failure->label());
   }
 
-  masm.bind(&done);
-  masm.tagValue(JSVAL_TYPE_STRING, scratch2, output.valueReg());
+  if (outOfBounds != StringCharOutOfBounds::UndefinedValue) {
+    masm.bind(&tagResult);
+    masm.bind(&done);
+    masm.tagValue(JSVAL_TYPE_STRING, scratch2, output.valueReg());
+  } else {
+    masm.bind(&tagResult);
+    masm.tagValue(JSVAL_TYPE_STRING, scratch2, output.valueReg());
+    masm.bind(&done);
+  }
   return true;
+}
+
+bool IonCacheIRCompiler::emitLoadStringCharResult(StringOperandId strId,
+                                                  Int32OperandId indexId,
+                                                  bool handleOOB) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  auto outOfBounds = handleOOB ? StringCharOutOfBounds::EmptyString
+                               : StringCharOutOfBounds::Failure;
+  return emitLoadStringCharResult(strId, indexId, outOfBounds);
+}
+
+bool IonCacheIRCompiler::emitLoadStringAtResult(StringOperandId strId,
+                                                Int32OperandId indexId,
+                                                bool handleOOB) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  auto outOfBounds = handleOOB ? StringCharOutOfBounds::UndefinedValue
+                               : StringCharOutOfBounds::Failure;
+  return emitLoadStringCharResult(strId, indexId, outOfBounds);
 }
 
 bool IonCacheIRCompiler::emitCallNativeSetter(ObjOperandId receiverId,
@@ -2286,17 +2318,6 @@ bool IonCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
   MOZ_CRASH("Call ICs not used in ion");
 }
 
-bool IonCacheIRCompiler::emitBindFunctionResult(ObjOperandId targetId,
-                                                uint32_t argc,
-                                                uint32_t templateObjectOffset) {
-  MOZ_CRASH("Call ICs not used in ion");
-}
-
-bool IonCacheIRCompiler::emitSpecializedBindFunctionResult(
-    ObjOperandId targetId, uint32_t argc, uint32_t templateObjectOffset) {
-  MOZ_CRASH("Call ICs not used in ion");
-}
-
 bool IonCacheIRCompiler::emitLoadArgumentFixedSlot(ValOperandId resultId,
                                                    uint8_t slotIndex) {
   MOZ_CRASH("Call ICs not used in ion");
@@ -2305,24 +2326,6 @@ bool IonCacheIRCompiler::emitLoadArgumentFixedSlot(ValOperandId resultId,
 bool IonCacheIRCompiler::emitLoadArgumentDynamicSlot(ValOperandId resultId,
                                                      Int32OperandId argcId,
                                                      uint8_t slotIndex) {
-  MOZ_CRASH("Call ICs not used in ion");
-}
-
-bool IonCacheIRCompiler::emitArrayJoinResult(ObjOperandId objId,
-                                             StringOperandId sepId) {
-  MOZ_CRASH("Call ICs not used in ion");
-}
-
-bool IonCacheIRCompiler::emitPackedArraySliceResult(
-    uint32_t templateObjectOffset, ObjOperandId arrayId, Int32OperandId beginId,
-    Int32OperandId endId) {
-  MOZ_CRASH("Call ICs not used in ion");
-}
-
-bool IonCacheIRCompiler::emitArgumentsSliceResult(uint32_t templateObjectOffset,
-                                                  ObjOperandId argsId,
-                                                  Int32OperandId beginId,
-                                                  Int32OperandId endId) {
   MOZ_CRASH("Call ICs not used in ion");
 }
 
@@ -2340,10 +2343,6 @@ bool IonCacheIRCompiler::emitStringFromCharCodeResult(Int32OperandId codeId) {
 }
 
 bool IonCacheIRCompiler::emitStringFromCodePointResult(Int32OperandId codeId) {
-  MOZ_CRASH("Call ICs not used in ion");
-}
-
-bool IonCacheIRCompiler::emitMathRandomResult(uint32_t rngOffset) {
   MOZ_CRASH("Call ICs not used in ion");
 }
 
@@ -2426,11 +2425,5 @@ bool IonCacheIRCompiler::emitRegExpBuiltinExecTestResult(
 
 bool IonCacheIRCompiler::emitRegExpHasCaptureGroupsResult(
     ObjOperandId regexpId, StringOperandId inputId) {
-  MOZ_CRASH("Call ICs not used in ion");
-}
-
-bool IonCacheIRCompiler::emitLoadStringAtResult(StringOperandId strId,
-                                                Int32OperandId indexId,
-                                                bool handleOOB) {
   MOZ_CRASH("Call ICs not used in ion");
 }

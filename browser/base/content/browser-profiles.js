@@ -4,6 +4,7 @@
 
 var gProfiles = {
   async init() {
+    this.copyProfile = this.copyProfile.bind(this);
     this.createNewProfile = this.createNewProfile.bind(this);
     this.handleCommand = this.handleCommand.bind(this);
     this.launchProfile = this.launchProfile.bind(this);
@@ -165,6 +166,12 @@ var gProfiles = {
     });
   },
 
+  copyProfile() {
+    SelectableProfileService.maybeSetupDataStore().then(() => {
+      SelectableProfileService.currentProfile.copyProfile();
+    });
+  },
+
   createNewProfile() {
     SelectableProfileService.createNewProfile();
   },
@@ -185,6 +192,16 @@ var gProfiles = {
     ).then(profile => {
       SelectableProfileService.launchInstance(profile);
     });
+  },
+
+  async openTabsInProfile(aEvent, tabsToOpen) {
+    let profile = await SelectableProfileService.getProfile(
+      aEvent.target.getAttribute("profileid")
+    );
+    SelectableProfileService.launchInstance(
+      profile,
+      tabsToOpen.map(tab => tab.linkedBrowser.currentURI.spec)
+    );
   },
 
   async handleCommand(aEvent) {
@@ -218,6 +235,10 @@ var gProfiles = {
         this.manageProfiles();
         break;
       }
+      case "profiles-copy-profile-button": {
+        this.copyProfile();
+        break;
+      }
       case "profiles-create-profile-button": {
         this.createNewProfile();
         break;
@@ -234,6 +255,16 @@ var gProfiles = {
       }
       case "Profiles:LaunchProfile": {
         this.launchProfile(aEvent.sourceEvent);
+        break;
+      }
+      case "Profiles:MoveTabsToProfile": {
+        let tabs;
+        if (TabContextMenu.contextTab.multiselected) {
+          tabs = gBrowser.selectedTabs;
+        } else {
+          tabs = [TabContextMenu.contextTab];
+        }
+        this.openTabsInProfile(aEvent.sourceEvent, tabs);
         break;
       }
     }
@@ -313,6 +344,18 @@ var gProfiles = {
       );
     }
 
+    let copyProfileButton = PanelMultiView.getViewNode(
+      document,
+      "profiles-copy-profile-button"
+    );
+
+    if (!copyProfileButton) {
+      copyProfileButton = document.createXULElement("toolbarbutton");
+      copyProfileButton.id = "profiles-copy-profile-button";
+      copyProfileButton.classList.add("subviewbutton", "subviewbutton-iconic");
+      copyProfileButton.setAttribute("data-l10n-id", "appmenu-copy-profile");
+    }
+
     let manageProfilesButton = PanelMultiView.getViewNode(
       document,
       "profiles-manage-profiles-button"
@@ -339,6 +382,7 @@ var gProfiles = {
       footerSeparator.hidden = true;
       const subviewBody = subview.querySelector(".panel-subview-body");
       subview.insertBefore(createProfileButton, subviewBody);
+      subview.insertBefore(copyProfileButton, subviewBody);
       subview.insertBefore(manageProfilesButton, subviewBody);
     } else {
       profilesHeader.style.backgroundColor = "var(--appmenu-profiles-theme-bg)";
@@ -352,8 +396,10 @@ var gProfiles = {
       subview.style.setProperty("--appmenu-profiles-theme-fg", themeFg);
 
       headerSeparator.hidden = true;
+      footerSeparator.hidden = false;
       subview.appendChild(footerSeparator);
       subview.appendChild(createProfileButton);
+      subview.appendChild(copyProfileButton);
       subview.appendChild(manageProfilesButton);
 
       let headerText = PanelMultiView.getViewNode(
@@ -399,6 +445,52 @@ var gProfiles = {
       button.setAttribute("image", await profile.getAvatarURL(16));
 
       profilesList.appendChild(button);
+    }
+  },
+
+  async populateMoveTabMenu(menuPopup) {
+    if (!SelectableProfileService.initialized) {
+      return;
+    }
+
+    const profiles = await SelectableProfileService.getAllProfiles();
+    const currentProfile = SelectableProfileService.currentProfile;
+
+    const separator = document.getElementById("moveTabSeparator");
+    separator.hidden = profiles.length < 2;
+
+    let existingItems = [
+      ...menuPopup.querySelectorAll(":scope > menuitem[profileid]"),
+    ];
+
+    for (let profile of profiles) {
+      if (profile.id === currentProfile.id) {
+        continue;
+      }
+
+      let menuitem = existingItems.shift();
+      let isNewItem = !menuitem;
+      if (isNewItem) {
+        menuitem = document.createXULElement("menuitem");
+        menuitem.setAttribute("tbattr", "tabbrowser-multiple-visible");
+        menuitem.setAttribute("data-l10n-id", "move-to-new-profile");
+        menuitem.setAttribute("command", "Profiles:MoveTabsToProfile");
+      }
+
+      menuitem.disabled = false;
+      menuitem.setAttribute("profileid", profile.id);
+      menuitem.setAttribute(
+        "data-l10n-args",
+        JSON.stringify({ profileName: profile.name })
+      );
+
+      if (isNewItem) {
+        menuPopup.appendChild(menuitem);
+      }
+    }
+    // If there's any old item to remove, do so now.
+    for (let remaining of existingItems) {
+      remaining.remove();
     }
   },
 };

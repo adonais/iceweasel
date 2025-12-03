@@ -45,16 +45,26 @@ def generic_worker_add_artifacts(config, job, taskdesc):
 def get_cache_name(config, job):
     cache_name = "checkouts"
 
-    # Sparse checkouts need their own cache because they can interfere
-    # with clients that aren't sparse aware.
-    if job["run"]["sparse-profile"]:
-        cache_name += "-sparse"
+    if config.params["repository_type"] == "git":
+        # Ensure tasks cloning git don't try to use an hg cache or vice versa.
+        cache_name += "-git"
 
-    # Workers using Mercurial >= 5.8 will enable revlog-compression-zstd, which
-    # workers using older versions can't understand, so they can't share cache.
-    # At the moment, only docker workers use the newer version.
-    if job["worker"]["implementation"] == "docker-worker":
-        cache_name += "-hg58"
+        # Shallow clones need their own cache because they can interfere with
+        # tasks that aren't expecting a shallow clone.
+        if job["run"].get("shallow-clone", True):
+            cache_name += "-shallow"
+
+    else:
+        # Sparse checkouts need their own cache because they can interfere with
+        # clients that aren't sparse aware.
+        if job["run"]["sparse-profile"]:
+            cache_name += "-sparse"
+
+        # Workers using Mercurial >= 5.8 will enable revlog-compression-zstd, which
+        # workers using older versions can't understand, so they can't share cache.
+        # At the moment, only docker workers use the newer version.
+        if job["worker"]["implementation"] == "docker-worker":
+            cache_name += "-hg58"
 
     return cache_name
 

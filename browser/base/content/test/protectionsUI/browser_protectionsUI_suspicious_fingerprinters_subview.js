@@ -92,9 +92,9 @@ async function openTestPage(urls, usePrivateWin, testFn) {
           await new content.Promise(resolve => {
             let ifr = content.document.createElement("iframe");
             ifr.onload = resolve;
+            ifr.src = testUrl;
 
             content.document.body.appendChild(ifr);
-            ifr.src = testUrl;
           });
         });
       }

@@ -169,7 +169,7 @@ import { GlobalState } from "resource:///modules/sessionstore/GlobalState.sys.mj
 const lazy = {};
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
-  gScreenManager: ["@mozilla.org/gfx/screenmanager;1", "nsIScreenManager"],
+  gScreenManager: ["@mozilla.org/gfx/screenmanager;1", Ci.nsIScreenManager],
 });
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -5697,7 +5697,8 @@ var SessionStoreInternal = {
     return Promise.all(windowOpenedPromises);
   },
 
-  /** reset closedId's from previous sessions to ensure these IDs are unique
+  /**
+   * Reset closedId's from previous sessions to ensure these IDs are unique
    * @param tabData
    *        an array of data to be restored
    * @param {String} windowId

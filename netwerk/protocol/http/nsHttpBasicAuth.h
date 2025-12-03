@@ -7,7 +7,6 @@
 #define nsBasicAuth_h__
 
 #include "nsIHttpAuthenticator.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
 
 namespace mozilla {

@@ -214,7 +214,7 @@ uint32_t WindowContext::NonSyntheticLightDOMChildrenCount() {
 void WindowContext::SendCommitTransaction(ContentParent* aParent,
                                           const BaseTransaction& aTxn,
                                           uint64_t aEpoch) {
-  Unused << aParent->SendCommitWindowContextTransaction(this, aTxn, aEpoch);
+  (void)aParent->SendCommitWindowContextTransaction(this, aTxn, aEpoch);
 }
 
 void WindowContext::SendCommitTransaction(ContentChild* aChild,
@@ -277,15 +277,7 @@ bool WindowContext::CanSet(FieldIndex<IDX_IsThirdPartyTrackingResourceWindow>,
 bool WindowContext::CanSet(FieldIndex<IDX_UsingStorageAccess>,
                            const bool& aUsingStorageAccess,
                            ContentParent* aSource) {
-  return XRE_IsParentProcess() || CheckOnlyOwningProcessCanSet(aSource);
-}
-
-void WindowContext::DidSet(FieldIndex<IDX_UsingStorageAccess>, bool aOldValue) {
-  if (!aOldValue && GetUsingStorageAccess() && XRE_IsContentProcess()) {
-    if (nsGlobalWindowInner* windowInner = GetInnerWindow()) {
-      windowInner->StorageAccessPermissionChanged(true);
-    }
-  }
+  return CheckOnlyOwningProcessCanSet(aSource);
 }
 
 bool WindowContext::CanSet(FieldIndex<IDX_ShouldResistFingerprinting>,
@@ -378,7 +370,7 @@ void WindowContext::ProcessCloseRequest() {
   top->PreOrderWalk([&](BrowsingContext* aBrowsingContext) {
     CanonicalBrowsingContext* canonical = aBrowsingContext->Canonical();
     if (WindowGlobalParent* parent = canonical->GetCurrentWindowGlobal()) {
-      Unused << parent->SendProcessCloseRequest(aBrowsingContext);
+      (void)parent->SendProcessCloseRequest(aBrowsingContext);
     }
   });
 }
@@ -474,7 +466,7 @@ void WindowContext::DidSet(FieldIndex<IDX_HasReportedShadowDOMUsage>,
       Document* topLevelDoc = mBrowsingContext->GetDocument();
       if (topLevelDoc) {
         nsAutoString uri;
-        Unused << topLevelDoc->GetDocumentURI(uri);
+        (void)topLevelDoc->GetDocumentURI(uri);
         if (!uri.IsEmpty()) {
           nsAutoString msg = u"Shadow DOM used in ["_ns + uri +
                              u"] or in some of its subdocuments."_ns;
@@ -576,13 +568,13 @@ void WindowContext::NotifyUserGestureActivation(
   if (auto* innerWindow = GetInnerWindow()) {
     innerWindow->EnsureCloseWatcherManager()->NotifyUserInteraction();
   }
-  Unused << SetUserActivationStateAndModifiers(stateAndModifiers.GetRawData());
+  (void)SetUserActivationStateAndModifiers(stateAndModifiers.GetRawData());
 }
 
 void WindowContext::NotifyResetUserGestureActivation() {
   UserActivation::StateAndModifiers stateAndModifiers;
   stateAndModifiers.SetState(UserActivation::State::None);
-  Unused << SetUserActivationStateAndModifiers(stateAndModifiers.GetRawData());
+  (void)SetUserActivationStateAndModifiers(stateAndModifiers.GetRawData());
 }
 
 bool WindowContext::HasBeenUserGestureActivated() {
@@ -655,7 +647,7 @@ bool WindowContext::ConsumeTransientUserGestureActivation() {
       // DidSet(FieldIndex<IDX_UserActivationStateAndModifiers>),
       // which in turn updates mLastActivationTimestamp.
       stateAndModifiers.SetState(UserActivation::State::HasBeenActivated);
-      Unused << windowContext->SetUserActivationStateAndModifiers(
+      (void)windowContext->SetUserActivationStateAndModifiers(
           stateAndModifiers.GetRawData());
     }
   });
@@ -789,27 +781,29 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WindowContext)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 }  // namespace dom
+}  // namespace mozilla
 
-namespace ipc {
+namespace IPC {
 
-void IPDLParamTraits<dom::MaybeDiscarded<dom::WindowContext>>::Write(
-    IPC::MessageWriter* aWriter, IProtocol* aActor,
-    const dom::MaybeDiscarded<dom::WindowContext>& aParam) {
+using mozilla::dom::MaybeDiscarded;
+using mozilla::dom::WindowContext;
+
+void ParamTraits<MaybeDiscarded<WindowContext>>::Write(
+    MessageWriter* aWriter, const MaybeDiscarded<WindowContext>& aParam) {
   uint64_t id = aParam.ContextId();
-  WriteIPDLParam(aWriter, aActor, id);
+  WriteParam(aWriter, id);
 }
 
-bool IPDLParamTraits<dom::MaybeDiscarded<dom::WindowContext>>::Read(
-    IPC::MessageReader* aReader, IProtocol* aActor,
-    dom::MaybeDiscarded<dom::WindowContext>* aResult) {
+bool ParamTraits<MaybeDiscarded<WindowContext>>::Read(
+    MessageReader* aReader, MaybeDiscarded<WindowContext>* aResult) {
   uint64_t id = 0;
-  if (!ReadIPDLParam(aReader, aActor, &id)) {
+  if (!ReadParam(aReader, &id)) {
     return false;
   }
 
   if (id == 0) {
     *aResult = nullptr;
-  } else if (RefPtr<dom::WindowContext> wc = dom::WindowContext::GetById(id)) {
+  } else if (RefPtr<WindowContext> wc = WindowContext::GetById(id)) {
     *aResult = std::move(wc);
   } else {
     aResult->SetDiscarded(id);
@@ -817,27 +811,24 @@ bool IPDLParamTraits<dom::MaybeDiscarded<dom::WindowContext>>::Read(
   return true;
 }
 
-void IPDLParamTraits<dom::WindowContext::IPCInitializer>::Write(
-    IPC::MessageWriter* aWriter, IProtocol* aActor,
-    const dom::WindowContext::IPCInitializer& aInit) {
+void ParamTraits<WindowContext::IPCInitializer>::Write(
+    MessageWriter* aWriter, const WindowContext::IPCInitializer& aInit) {
   // Write actor ID parameters.
-  WriteIPDLParam(aWriter, aActor, aInit.mInnerWindowId);
-  WriteIPDLParam(aWriter, aActor, aInit.mOuterWindowId);
-  WriteIPDLParam(aWriter, aActor, aInit.mBrowsingContextId);
-  WriteIPDLParam(aWriter, aActor, aInit.mFields);
+  WriteParam(aWriter, aInit.mInnerWindowId);
+  WriteParam(aWriter, aInit.mOuterWindowId);
+  WriteParam(aWriter, aInit.mBrowsingContextId);
+  WriteParam(aWriter, aInit.mFields);
 }
 
-bool IPDLParamTraits<dom::WindowContext::IPCInitializer>::Read(
-    IPC::MessageReader* aReader, IProtocol* aActor,
-    dom::WindowContext::IPCInitializer* aInit) {
+bool ParamTraits<WindowContext::IPCInitializer>::Read(
+    MessageReader* aReader, WindowContext::IPCInitializer* aInit) {
   // Read actor ID parameters.
-  return ReadIPDLParam(aReader, aActor, &aInit->mInnerWindowId) &&
-         ReadIPDLParam(aReader, aActor, &aInit->mOuterWindowId) &&
-         ReadIPDLParam(aReader, aActor, &aInit->mBrowsingContextId) &&
-         ReadIPDLParam(aReader, aActor, &aInit->mFields);
+  return ReadParam(aReader, &aInit->mInnerWindowId) &&
+         ReadParam(aReader, &aInit->mOuterWindowId) &&
+         ReadParam(aReader, &aInit->mBrowsingContextId) &&
+         ReadParam(aReader, &aInit->mFields);
 }
 
-template struct IPDLParamTraits<dom::WindowContext::BaseTransaction>;
+template struct ParamTraits<WindowContext::BaseTransaction>;
 
-}  // namespace ipc
-}  // namespace mozilla
+}  // namespace IPC

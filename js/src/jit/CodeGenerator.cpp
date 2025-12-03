@@ -554,11 +554,15 @@ void CodeGenerator::visitOutOfLineCallVM(
   JitSpewFin(JitSpew_Codegen);
 #endif
   perfSpewer().recordInstruction(masm, lir);
-  saveLive(lir);
+  if (!lir->isCall()) {
+    saveLive(lir);
+  }
   ool->args().generate(this);
   callVM<Fn, fn>(lir);
   ool->out().generate(this);
-  restoreLiveIgnore(lir, ool->out().clobbered());
+  if (!lir->isCall()) {
+    restoreLiveIgnore(lir, ool->out().clobbered());
+  }
   masm.jump(ool->rejoin());
 }
 
@@ -4470,14 +4474,13 @@ void CodeGenerator::visitGuardShape(LGuardShape* guard) {
 void CodeGenerator::visitGuardFuse(LGuardFuse* guard) {
   auto fuseIndex = guard->mir()->fuseIndex();
 
-  Register temp = ToRegister(guard->temp0());
   Label bail;
 
   // Bake specific fuse address for Ion code, because we won't share this code
   // across realms.
   GuardFuse* fuse = mirGen().realm->realmFuses().getFuseByIndex(fuseIndex);
-  masm.loadPtr(AbsoluteAddress(fuse->fuseRef()), temp);
-  masm.branchPtr(Assembler::NotEqual, temp, ImmPtr(nullptr), &bail);
+  masm.branchPtr(Assembler::NotEqual, AbsoluteAddress(fuse->fuseRef()),
+                 ImmWord(0), &bail);
 
   bailoutFrom(&bail, guard->snapshot());
 }
@@ -8696,11 +8699,11 @@ void CodeGenerator::visitNewTypedArrayInline(LNewTypedArrayInline* lir) {
 }
 
 void CodeGenerator::visitNewTypedArray(LNewTypedArray* lir) {
-  Register objReg = ToRegister(lir->output());
+  Register output = ToRegister(lir->output());
   Register temp1Reg = ToRegister(lir->temp0());
   Register temp2Reg = ToRegister(lir->temp1());
   Register lengthReg = ToRegister(lir->temp2());
-  LiveRegisterSet liveRegs = liveVolatileRegs(lir);
+  Register temp4Reg = ToRegister(lir->temp3());
 
   auto* templateObject = lir->mir()->templateObject();
   gc::Heap initialHeap = lir->mir()->initialHeap();
@@ -8712,15 +8715,17 @@ void CodeGenerator::visitNewTypedArray(LNewTypedArray* lir) {
   using Fn = TypedArrayObject* (*)(JSContext*, HandleObject, int32_t length);
   OutOfLineCode* ool = oolCallVM<Fn, NewTypedArrayWithTemplateAndLength>(
       lir, ArgList(ImmGCPtr(templateObject), Imm32(n)),
-      StoreRegisterTo(objReg));
+      StoreRegisterTo(output));
 
   TemplateObject templateObj(templateObject);
-  masm.createGCObject(objReg, temp1Reg, templateObj, initialHeap, ool->entry());
+  masm.createGCObject(temp4Reg, temp1Reg, templateObj, initialHeap,
+                      ool->entry());
 
   masm.move32(Imm32(n), lengthReg);
 
-  masm.initTypedArraySlots(objReg, lengthReg, temp1Reg, temp2Reg, liveRegs,
+  masm.initTypedArraySlots(temp4Reg, lengthReg, temp1Reg, temp2Reg,
                            ool->entry(), templateObject);
+  masm.mov(temp4Reg, output);
 
   masm.bind(ool->rejoin());
 }
@@ -8728,10 +8733,10 @@ void CodeGenerator::visitNewTypedArray(LNewTypedArray* lir) {
 void CodeGenerator::visitNewTypedArrayDynamicLength(
     LNewTypedArrayDynamicLength* lir) {
   Register lengthReg = ToRegister(lir->length());
-  Register objReg = ToRegister(lir->output());
+  Register output = ToRegister(lir->output());
   Register temp1Reg = ToRegister(lir->temp0());
   Register temp2Reg = ToRegister(lir->temp1());
-  LiveRegisterSet liveRegs = liveVolatileRegs(lir);
+  Register temp3Reg = ToRegister(lir->temp2());
 
   JSObject* templateObject = lir->mir()->templateObject();
   gc::Heap initialHeap = lir->mir()->initialHeap();
@@ -8741,16 +8746,15 @@ void CodeGenerator::visitNewTypedArrayDynamicLength(
   using Fn = TypedArrayObject* (*)(JSContext*, HandleObject, int32_t length);
   OutOfLineCode* ool = oolCallVM<Fn, NewTypedArrayWithTemplateAndLength>(
       lir, ArgList(ImmGCPtr(templateObject), lengthReg),
-      StoreRegisterTo(objReg));
-
-  // Volatile |lengthReg| is saved across the ABI call in |initTypedArraySlots|.
-  MOZ_ASSERT_IF(lengthReg.volatile_(), liveRegs.has(lengthReg));
+      StoreRegisterTo(output));
 
   TemplateObject templateObj(templateObject);
-  masm.createGCObject(objReg, temp1Reg, templateObj, initialHeap, ool->entry());
+  masm.createGCObject(temp3Reg, temp1Reg, templateObj, initialHeap,
+                      ool->entry());
 
-  masm.initTypedArraySlots(objReg, lengthReg, temp1Reg, temp2Reg, liveRegs,
+  masm.initTypedArraySlots(temp3Reg, lengthReg, temp1Reg, temp2Reg,
                            ool->entry(), ttemplate);
+  masm.mov(temp3Reg, output);
 
   masm.bind(ool->rejoin());
 }
@@ -12796,6 +12800,36 @@ void CodeGenerator::visitRoundToFloat32(LRoundToFloat32* lir) {
   masm.roundFloat32(input, output);
 }
 
+void CodeGenerator::visitCopySignF(LCopySignF* lir) {
+  FloatRegister lhs = ToFloatRegister(lir->lhs());
+  FloatRegister rhs = ToFloatRegister(lir->rhs());
+  FloatRegister out = ToFloatRegister(lir->output());
+
+  if (lhs == rhs) {
+    if (lhs != out) {
+      masm.moveFloat32(lhs, out);
+    }
+    return;
+  }
+
+  masm.copySignFloat32(lhs, rhs, out);
+}
+
+void CodeGenerator::visitCopySignD(LCopySignD* lir) {
+  FloatRegister lhs = ToFloatRegister(lir->lhs());
+  FloatRegister rhs = ToFloatRegister(lir->rhs());
+  FloatRegister out = ToFloatRegister(lir->output());
+
+  if (lhs == rhs) {
+    if (lhs != out) {
+      masm.moveDouble(lhs, out);
+    }
+    return;
+  }
+
+  masm.copySignDouble(lhs, rhs, out);
+}
+
 void CodeGenerator::visitCompareS(LCompareS* lir) {
   JSOp op = lir->mir()->jsop();
   Register left = ToRegister(lir->left());
@@ -16786,6 +16820,7 @@ static bool CreateStackMapFromLSafepoint(LSafepoint& safepoint,
                                          const RegisterOffsets& trapExitLayout,
                                          size_t trapExitLayoutNumWords,
                                          size_t nInboundStackArgBytes,
+                                         wasm::StackMaps& stackMaps,
                                          wasm::StackMap** result) {
   // Ensure this is defined on all return paths.
   *result = nullptr;
@@ -16840,8 +16875,7 @@ static bool CreateStackMapFromLSafepoint(LSafepoint& safepoint,
   }
 #endif
 
-  wasm::StackMap* stackMap =
-      wasm::StackMap::create(nTotalBytes / sizeof(void*));
+  wasm::StackMap* stackMap = stackMaps.create(nTotalBytes / sizeof(void*));
   if (!stackMap) {
     return false;
   }
@@ -17027,7 +17061,7 @@ bool CodeGenerator::generateWasm(wasm::CallIndirectId callIndirectId,
     wasm::StackMap* functionEntryStackMap = nullptr;
     if (!CreateStackMapForFunctionEntryTrap(
             argTypes, trapExitLayout, trapExitLayoutNumWords,
-            nBytesReservedBeforeTrap, nInboundStackArgBytes,
+            nBytesReservedBeforeTrap, nInboundStackArgBytes, *stackMaps,
             &functionEntryStackMap)) {
       return false;
     }
@@ -17037,8 +17071,7 @@ bool CodeGenerator::generateWasm(wasm::CallIndirectId callIndirectId,
     MOZ_ASSERT(functionEntryStackMap);
 
     if (functionEntryStackMap &&
-        !stackMaps->add(trapInsnOffset.offset(), functionEntryStackMap)) {
-      functionEntryStackMap->destroy();
+        !stackMaps->finalize(trapInsnOffset.offset(), functionEntryStackMap)) {
       return false;
     }
   }
@@ -17079,9 +17112,9 @@ bool CodeGenerator::generateWasm(wasm::CallIndirectId callIndirectId,
   // collection thereof.
   for (CodegenSafepointIndex& index : safepointIndices_) {
     wasm::StackMap* stackMap = nullptr;
-    if (!CreateStackMapFromLSafepoint(*index.safepoint(), trapExitLayout,
-                                      trapExitLayoutNumWords,
-                                      nInboundStackArgBytes, &stackMap)) {
+    if (!CreateStackMapFromLSafepoint(
+            *index.safepoint(), trapExitLayout, trapExitLayoutNumWords,
+            nInboundStackArgBytes, *stackMaps, &stackMap)) {
       return false;
     }
 
@@ -17091,8 +17124,7 @@ bool CodeGenerator::generateWasm(wasm::CallIndirectId callIndirectId,
       continue;
     }
 
-    if (!stackMaps->add(index.displacement(), stackMap)) {
-      stackMap->destroy();
+    if (!stackMaps->finalize(index.displacement(), stackMap)) {
       return false;
     }
   }

@@ -4,6 +4,8 @@
 
 import { html, ifDefined } from "../vendor/lit.all.mjs";
 import { GROUP_TYPES } from "./moz-box-group.mjs";
+// eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+import "chrome://browser/content/preferences/widgets/setting-control.mjs";
 
 export default {
   title: "UI Widgets/Box Group",
@@ -53,10 +55,34 @@ moz-box-button-footer =
   },
 };
 
+function basicTemplate({ type, hasHeader, hasFooter, wrapped }) {
+  return html`<moz-box-group type=${ifDefined(type)}>
+      ${hasHeader
+        ? html`<moz-box-item
+            slot="header"
+            data-l10n-id="moz-box-item-header"
+          ></moz-box-item>`
+        : ""}
+      ${getInnerElements(type, wrapped)}
+      ${hasFooter
+        ? html`<moz-box-button
+            slot="footer"
+            data-l10n-id="moz-box-button-footer"
+          ></moz-box-button>`
+        : ""}
+    </moz-box-group>
+    ${type == "list"
+      ? html`<moz-button class="delete" @click=${appendItem}>
+          Add an item
+        </moz-button>`
+      : ""}`;
+}
+
 function getInnerElements(type) {
   if (type == GROUP_TYPES.reorderable) {
     return reorderableElements();
   }
+
   return basicElements();
 }
 
@@ -116,34 +142,6 @@ function basicElements() {
     <moz-box-button data-l10n-id="moz-box-button-2"></moz-box-button>`;
 }
 
-const Template = ({ type, hasHeader, hasFooter }) => html`
-  <style>
-    .delete {
-      margin-top: var(--space-medium);
-    }
-  </style>
-  <moz-box-group type=${ifDefined(type)}>
-    ${hasHeader
-      ? html`<moz-box-item
-          slot="header"
-          data-l10n-id="moz-box-item-header"
-        ></moz-box-item>`
-      : ""}
-    ${getInnerElements(type)}
-    ${hasFooter
-      ? html`<moz-box-button
-          slot="footer"
-          data-l10n-id="moz-box-button-footer"
-        ></moz-box-button>`
-      : ""}
-  </moz-box-group>
-  ${type == "list"
-    ? html`<moz-button class="delete" @click=${appendItem}>
-        Add an item
-      </moz-button>`
-    : ""}
-`;
-
 const appendItem = event => {
   let group = event.target.getRootNode().querySelector("moz-box-group");
 
@@ -161,11 +159,165 @@ const appendItem = event => {
   group.prepend(boxItem);
 };
 
+// Example with all child elements wrapped in setting-control/setting-group,
+// which is the most common use case in Firefox preferences.
+function wrappedTemplate({ type, hasHeader, hasFooter }) {
+  return html`<setting-control
+    .config=${getConfig({ type, hasHeader, hasFooter })}
+    .setting=${DEFAULT_SETTING}
+    .getSetting=${getSetting}
+  ></setting-control>`;
+}
+
+const getConfig = ({ type, hasHeader, hasFooter }) => ({
+  id: "exampleWrapped",
+  control: "moz-box-group",
+  controlAttrs: {
+    type,
+  },
+  items: [
+    ...(hasHeader
+      ? [
+          {
+            id: "header",
+            control: "moz-box-item",
+            l10nId: "moz-box-item-header",
+            controlAttrs: { slot: "header " },
+          },
+        ]
+      : []),
+    {
+      id: "item1",
+      control: "moz-box-item",
+      l10nId: "moz-box-item",
+      options: [
+        {
+          id: "slotted-button",
+          control: "moz-button",
+          l10nId: "moz-box-edit-action",
+          iconSrc: "chrome://global/skin/icons/edit-outline.svg",
+          controlAttrs: {
+            type: "ghost",
+            slot: "actions",
+          },
+        },
+        {
+          id: "slotted-toggle",
+          control: "moz-toggle",
+          l10nId: "moz-box-toggle-action",
+          controlAttrs: {
+            slot: "actions",
+          },
+        },
+        {
+          id: "slotted-icon-button",
+          control: "moz-button",
+          l10nId: "moz-box-more-action",
+          iconSrc: "chrome://global/skin/icons/more.svg",
+          controlAttrs: {
+            slot: "actions",
+          },
+        },
+      ],
+    },
+    {
+      id: "link1",
+      control: "moz-box-link",
+      l10nId: "moz-box-link",
+    },
+    {
+      id: "button1",
+      control: "moz-box-button",
+      l10nId: "moz-box-button-1",
+    },
+    {
+      id: "item2",
+      control: "moz-box-item",
+      l10nId: "moz-box-item",
+      options: [
+        {
+          id: "slotted-button-start",
+          control: "moz-button",
+          l10nId: "moz-box-edit-action",
+          iconSrc: "chrome://global/skin/icons/edit-outline.svg",
+          controlAttrs: {
+            type: "ghost",
+            slot: "actions-start",
+          },
+        },
+        {
+          id: "slotted-icon-button-start",
+          control: "moz-button",
+          l10nId: "moz-box-more-action",
+          iconSrc: "chrome://global/skin/icons/more.svg",
+          controlAttrs: {
+            slot: "actions-start",
+          },
+        },
+      ],
+    },
+    {
+      id: "button2",
+      control: "moz-box-button",
+      l10nId: "moz-box-button-2",
+    },
+    ...(hasFooter
+      ? [
+          {
+            id: "footer",
+            control: "moz-box-button",
+            l10nId: "moz-box-button-footer",
+            controlAttrs: { slot: "footer " },
+          },
+        ]
+      : []),
+  ],
+});
+
+const DEFAULT_SETTING = {
+  value: 1,
+  on() {},
+  off() {},
+  userChange() {},
+  getControlConfig: c => c,
+  controllingExtensionInfo: {},
+  visible: true,
+};
+
+function getSetting() {
+  return {
+    value: true,
+    on() {},
+    off() {},
+    userChange() {},
+    visible: () => true,
+    getControlConfig: c => c,
+    controllingExtensionInfo: {},
+  };
+}
+
+const Template = ({ type, hasHeader, hasFooter, scrollable, wrapped }) => html`
+  <style>
+    moz-box-group {
+      --box-group-max-height: ${scrollable ? "250px" : "unset"};
+    }
+
+    .delete {
+      margin-top: var(--space-medium);
+    }
+  </style>
+  ${wrapped
+    ? wrappedTemplate({ type, hasHeader, hasFooter })
+    : basicTemplate({ type, hasHeader, hasFooter, wrapped })}
+`;
+
 export const Default = Template.bind({});
 Default.args = {
   type: "default",
   hasHeader: false,
   hasFooter: false,
+  scrollable: false,
+  wrapped: false,
 };
 
 export const List = Template.bind({});
@@ -185,4 +337,16 @@ ListWithHeaderAndFooter.args = {
   ...List.args,
   hasHeader: true,
   hasFooter: true,
+};
+
+export const Scrollable = Template.bind({});
+Scrollable.args = {
+  ...ListWithHeaderAndFooter.args,
+  scrollable: true,
+};
+
+export const Wrapped = Template.bind({});
+Wrapped.args = {
+  ...ListWithHeaderAndFooter.args,
+  wrapped: true,
 };

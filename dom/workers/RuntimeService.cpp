@@ -20,12 +20,10 @@
 #include "js/experimental/CTypes.h"  // JS::CTypesActivityType, JS::SetCTypesActivityCallback
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "jsfriendapi.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/FlowMarkers.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Preferences.h"
@@ -1015,16 +1013,16 @@ class WorkerJSContext final : public mozilla::CycleCollectedJSContext {
       if (IsWorkerGlobal(global) || IsShadowRealmGlobal(global)) {
         if (!EnqueueMicroTask(cx, runnable.forget())) {
           // This should never fail, but if it does, we have no choice but to
-          // crash.
-          MOZ_CRASH("Failed to enqueue micro task from worker.");
+          // crash. This is always an OOM.
+          NS_ABORT_OOM(0);
         }
       } else {
         MOZ_ASSERT(IsWorkerDebuggerGlobal(global) ||
                    IsWorkerDebuggerSandbox(global));
         if (!EnqueueDebugMicroTask(cx, runnable.forget())) {
           // This should never fail, but if it does, we have no choice but to
-          // crash.
-          MOZ_CRASH("Failed to enqueue debugger micro task from worker.");
+          // crash. This is always an OOM.
+          NS_ABORT_OOM(0);
         }
       }
     } else {
@@ -1119,7 +1117,7 @@ void PrefLanguagesChanged(const char* /* aPrefName */, void* /* aClosure */) {
   AssertIsOnMainThread();
 
   nsTArray<nsString> languages;
-  Navigator::GetAcceptLanguages(languages);
+  Navigator::GetAcceptLanguages(languages, nullptr);
 
   RuntimeService* runtime = RuntimeService::GetService();
   if (runtime) {
@@ -1251,8 +1249,8 @@ bool RuntimeService::RegisterWorker(WorkerPrivate& aWorkerPrivate) {
                 domain,
                 [&domain, parent] {
                   NS_ASSERTION(!parent, "Shouldn't have a parent here!");
-                  Unused << parent;  // silence clang -Wunused-lambda-capture in
-                                     // opt builds
+                  (void)parent;  // silence clang -Wunused-lambda-capture in
+                                 // opt builds
                   auto wdi = MakeUnique<WorkerDomainInfo>();
                   wdi->mDomain = domain;
                   return wdi;
@@ -1310,7 +1308,7 @@ bool RuntimeService::RegisterWorker(WorkerPrivate& aWorkerPrivate) {
 
       // The navigator overridden properties should have already been read.
 
-      Navigator::GetAcceptLanguages(mNavigatorProperties.mLanguages);
+      Navigator::GetAcceptLanguages(mNavigatorProperties.mLanguages, nullptr);
       mNavigatorPropertiesLoaded = true;
     }
 
@@ -1761,7 +1759,7 @@ void RuntimeService::Cleanup() {
           [self](nsITimer*) { self->DumpRunningWorkers(); },
           TimeDuration::FromSeconds(1), nsITimer::TYPE_ONE_SHOT,
           "RuntimeService::WorkerShutdownDump"_ns);
-      Unused << NS_WARN_IF(NS_FAILED(rv));
+      (void)NS_WARN_IF(NS_FAILED(rv));
 
       // And make sure all their final messages have run and all their threads
       // have joined.
@@ -2055,8 +2053,7 @@ uint32_t RuntimeService::ClampedHardwareConcurrency(bool aRFPHardcoded,
     if (numberOfProcessors <= 0) {
       numberOfProcessors = 1;  // Must be one there somewhere
     }
-    Unused << unclampedHardwareConcurrency.compareExchange(0,
-                                                           numberOfProcessors);
+    (void)unclampedHardwareConcurrency.compareExchange(0, numberOfProcessors);
   }
 
   if (MOZ_UNLIKELY(aRFPTiered)) {

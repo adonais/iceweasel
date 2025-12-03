@@ -75,13 +75,7 @@ export default class IPProtectionMessageBarElement extends MozLitElement {
       return null;
     }
 
-    return html`
-      <link
-        rel="stylesheet"
-        href="chrome://browser/content/ipprotection/ipprotection-header.css"
-      />
-      ${messageBarTemplate}
-    `;
+    return html` ${messageBarTemplate} `;
   }
 }
 

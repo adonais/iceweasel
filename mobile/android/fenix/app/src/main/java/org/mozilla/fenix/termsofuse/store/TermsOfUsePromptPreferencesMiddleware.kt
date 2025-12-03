@@ -25,14 +25,8 @@ class TermsOfUsePromptPreferencesMiddleware(
                 repository.updateHasAcceptedTermsOfUsePreference()
 
             is TermsOfUsePromptAction.OnRemindMeLaterClicked -> {
-                repository.updateHasClickedTermOfUsePromptRemindMeLaterPreference()
                 repository.updateHasPostponedAcceptingTermsOfUsePreference()
             }
-
-            is TermsOfUsePromptAction.OnLearnMoreClicked,
-            is TermsOfUsePromptAction.OnPrivacyNoticeClicked,
-            is TermsOfUsePromptAction.OnTermsOfUseClicked,
-                -> repository.updateHasClickedTermOfUsePromptLinkPreference()
 
             is TermsOfUsePromptAction.OnPromptManuallyDismissed ->
                 repository.updateHasPostponedAcceptingTermsOfUsePreference()
@@ -42,6 +36,13 @@ class TermsOfUsePromptPreferencesMiddleware(
 
             is TermsOfUsePromptAction.OnImpression ->
                 repository.incrementTermsOfUsePromptDisplayedCount()
+
+            // no-ops
+            is TermsOfUsePromptAction.OnLearnMoreClicked,
+            is TermsOfUsePromptAction.OnPrivacyNoticeClicked,
+            is TermsOfUsePromptAction.OnTermsOfUseClicked,
+                -> {
+            }
         }
 
         next(action)

@@ -18,7 +18,7 @@
  * Only once any of these entry point is fired, this module ensures starting
  * core modules like 'devtools-browser.js' that hooks the browser windows
  * and ensure setting up tools.
- **/
+ */
 
 const kDebuggerPrefs = [
   "devtools.debugger.remote-enabled",
@@ -71,6 +71,9 @@ ChromeUtils.defineLazyGetter(lazy, "KeyShortcutsBundle", function () {
  *
  * This means that language pack users might get a new Beta version but will not
  * have a language pack with the new strings yet.
+ *
+ * @param {string} id
+ * @returns {string|null}
  */
 function getLocalizedKeyShortcut(id) {
   try {
@@ -552,6 +555,8 @@ DevToolsStartup.prototype = {
   /**
    * Called when receiving the "browser-delayed-startup-finished" event for a new
    * top-level window.
+   *
+   * @param {Window} window
    */
   onWindowReady(window) {
     if (
@@ -573,6 +578,12 @@ DevToolsStartup.prototype = {
     JsonView.initialize();
   },
 
+  /**
+   * Called when receiving the "browser-delayed-startup-finished" event for a top-level
+   * window for the first time.
+   *
+   * @param {Window} window
+   */
   onFirstWindowReady(window) {
     if (this.devtoolsFlag) {
       this.handleDevToolsFlag(window);
@@ -592,6 +603,8 @@ DevToolsStartup.prototype = {
    * But instead of implementing the actual actions, defer to DevTools codebase.
    * In most cases, it only needs to call this.initDevTools which handles the rest.
    * We do that to prevent loading any DevTools module until the user intent to use them.
+   *
+   * @param {Window} window
    */
   hookWindow(window) {
     // Key Shortcuts need to be added on all the created windows.
@@ -790,7 +803,7 @@ DevToolsStartup.prototype = {
    * Check if the user is a DevTools user by looking at our selfxss pref.
    * This preference is incremented everytime the console is used (up to 5).
    *
-   * @return {Boolean} true if the user can be considered as a devtools user.
+   * @returns {boolean} true if the user can be considered as a devtools user.
    */
   isDevToolsUser() {
     const selfXssCount = Services.prefs.getIntPref("devtools.selfxss.count", 0);
@@ -820,6 +833,10 @@ DevToolsStartup.prototype = {
 
   /**
    * This method attaches on the key elements to the devtools keyset.
+   *
+   * @param {Document} doc
+   * @param {Array<object>} keyShortcuts
+   * @param {XULElement} [keyset]
    */
   attachKeys(doc, keyShortcuts, keyset = doc.getElementById("devtoolsKeyset")) {
     const window = doc.defaultView;
@@ -837,6 +854,9 @@ DevToolsStartup.prototype = {
 
   /**
    * This method removes keys from the devtools keyset.
+   *
+   * @param {Document} doc
+   * @param {Array<object>} keyShortcuts
    */
   removeKeys(doc, keyShortcuts) {
     for (const key of keyShortcuts) {
@@ -850,6 +870,7 @@ DevToolsStartup.prototype = {
   /**
    * We only want to have the keyboard shortcuts active when the menu button is on.
    * This function either adds or removes the elements.
+   *
    * @param {boolean} isEnabled
    */
   toggleProfilerKeyShortcuts(isEnabled) {
@@ -1082,6 +1103,9 @@ DevToolsStartup.prototype = {
    *
    * --start-debugger-server ws:
    *   Start the WebSocket server on the default port (taken from d.d.remote-port)
+   *
+   * @param {nsICommandLine} cmdLine
+   * @param {boolean|string} portOrPath
    */
   handleDevToolsServerFlag(cmdLine, portOrPath) {
     if (!this._isRemoteDebuggingEnabled()) {
@@ -1168,10 +1192,10 @@ DevToolsStartup.prototype = {
    * because this codepath is only used the first time a toolbox is opened for a
    * tab.
    *
-   * @param {String} reason
+   * @param {string} reason
    *        One of "KeyShortcut", "SystemMenu", "HamburgerMenu", "ContextMenu",
    *        "CommandLine".
-   * @param {String} key
+   * @param {string} key
    *        The key used by a key shortcut.
    */
   sendEntryPointTelemetry(reason, key = "") {
@@ -1275,6 +1299,8 @@ DevToolsStartup.prototype = {
 
   /**
    * Called by setSlowScriptDebugHandler, when a tab freeze because of a slow running script
+   *
+   * @param {XULFrameElement} tab
    */
   async slowScriptDebugHandler(tab) {
     const require = this.initDevTools("SlowScript");
@@ -1371,6 +1397,8 @@ const JsonView = {
   /**
    * Save JSON to a file needs to be implemented here
    * in the parent process.
+   *
+   * @param {object} message
    */
   onSave(message) {
     const browser = message.target;

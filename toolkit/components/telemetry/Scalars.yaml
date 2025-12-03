@@ -377,11 +377,44 @@ browser.backup:
     bug_numbers:
       - 1908727
     description: >
-      True if the BackupService is enabled by default.
+      True if the BackupService has initialized and reached idle. You may want
+      to use archive_enabled/restore_enabled to determine whether those
+      features are available, or use scheduler_enabled for whether automatic
+      backups are enabled.
     expires: never
     kind: boolean
     notification_emails:
       - mconley@mozilla.com
+    release_channel_collection: opt-out
+    products:
+      - 'firefox'
+    record_in_processes:
+      - 'main'
+  archive_enabled:
+    bug_numbers:
+      - 1908727
+    description: >
+      True if the user can create backups, i.e. it has not been disabled by a
+      pref or otherwise deemed incompatible.
+    expires: never
+    kind: boolean
+    notification_emails:
+      - drubino@mozilla.com
+    release_channel_collection: opt-out
+    products:
+      - 'firefox'
+    record_in_processes:
+      - 'main'
+  restore_enabled:
+    bug_numbers:
+      - 1908727
+    description: >
+      True if the user can restore backups, i.e. it has not been disabled by a
+      pref or otherwise deemed incompatible.
+    expires: never
+    kind: boolean
+    notification_emails:
+      - drubino@mozilla.com
     release_channel_collection: opt-out
     products:
       - 'firefox'
@@ -1986,9 +2019,10 @@ extensions.startupCache:
       - 1892151
       - 1928258
       - 1958168
+      - 1994581
     description: >
       The amount of bytes writted into the Extensions StartupCache file.
-    expires: "147"
+    expires: "154"
     kind: uint
     notification_emails:
       - addons-dev-internal@mozilla.com
@@ -2003,10 +2037,11 @@ extensions.startupCache:
       - 1892151
       - 1928258
       - 1958168
+      - 1994581
     description: >
       The amount of times an unexpected error has been raised while
       reading the Extensions StartupCache file
-    expires: "147"
+    expires: "154"
     kind: uint
     keyed: true
     notification_emails:
@@ -2021,6 +2056,7 @@ extensions.startupCache:
       - 1767336
       - 1912170
       - 1958168
+      - 1994581
     description: >
       Time to load and deserialize the extensions startupCache data.
       This scalar is mirroring the never expiring Glean metric named
@@ -2029,7 +2065,7 @@ extensions.startupCache:
       Unlike the related glean metric, this scalar has an expiring date,
       set as a deadline to consider removing the mirrored scalar in
       favor to just use the Glean metric).
-    expires: "147"
+    expires: "154"
     kind: uint
     notification_emails:
       - addons-dev-internal@mozilla.com
@@ -5248,10 +5284,11 @@ startup:
       - 1878339
       - 1916867
       - 1958171
+      - 1994608
     description: >
       The version of the profiles.ini database loaded during startup. A value
       of "0" is used to indicate that no file was present during startup.
-    expires: "147"
+    expires: "150"
     keyed: false
     kind: string
     notification_emails:
@@ -5272,10 +5309,11 @@ startup:
       - 1878339
       - 1916867
       - 1958171
+      - 1994608
     description: >
       This records the number of known profiles after startup completes. This
       includes any profiles that were created during startup.
-    expires: "147"
+    expires: "150"
     keyed: false
     kind: uint
     notification_emails:

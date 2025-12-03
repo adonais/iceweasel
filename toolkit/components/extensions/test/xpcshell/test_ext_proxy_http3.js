@@ -97,7 +97,7 @@ add_task(async function test_connect_udp() {
     host: proxyHost,
     port: proxyPort,
     type: "masque",
-    pathTemplate: "/.well-known/masque/udp/{target_host}/{target_port}/",
+    masqueTemplate: "/.well-known/masque/udp/{target_host}/{target_port}/",
     connectionIsolationKey: "masque-udp",
   };
 

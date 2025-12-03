@@ -1,7 +1,13 @@
 .ds-privacy-link {
   text-align: center;
   font-size: var(--font-size-small);
-  font-weight: var(--font-weight-bold);
+
+  /**
+   * @backward-compat { version 146 }
+   *
+   * Replace this with `--font-weight-semibold` once 146 hits release.
+   */
+  font-weight: var(--heading-font-weight);
 
   a:hover {
     text-decoration: none;

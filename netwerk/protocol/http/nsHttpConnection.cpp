@@ -692,7 +692,7 @@ nsresult nsHttpConnection::AddTransaction(nsAHttpTransaction* httpTransaction,
     }
   }
 
-  Unused << ResumeSend();
+  (void)ResumeSend();
   return NS_OK;
 }
 
@@ -1017,7 +1017,7 @@ nsresult nsHttpConnection::OnHeadersAvailable(nsAHttpTransaction* trans,
   bool foundKeepAliveMax = false;
   if (mKeepAlive) {
     nsAutoCString keepAlive;
-    Unused << responseHead->GetHeader(nsHttp::Keep_Alive, keepAlive);
+    (void)responseHead->GetHeader(nsHttp::Keep_Alive, keepAlive);
 
     if (mUsingSpdyVersion == SpdyVersion::NONE) {
       const char* cp = nsCRT::strcasestr(keepAlive.get(), "timeout=");
@@ -1422,7 +1422,7 @@ nsresult nsHttpConnection::ResumeRecv() {
         if (hasDataToRecv && NS_SUCCEEDED(ForceRecv())) {
           return NS_OK;
         }
-        Unused << mSocketIn->AsyncWait(this, 0, 0, nullptr);
+        (void)mSocketIn->AsyncWait(this, 0, 0, nullptr);
         // We have to return an error here to let the underlying layer know this
         // connection doesn't read any data.
         return NS_BASE_STREAM_WOULD_BLOCK;
@@ -1852,7 +1852,7 @@ nsresult nsHttpConnection::OnSocketReadable() {
     // give the handler a chance to create a new persistent connection to
     // this host if we've been busy for too long.
     mKeepAliveMask = false;
-    Unused << gHttpHandler->ProcessPendingQ(mConnInfo);
+    (void)gHttpHandler->ProcessPendingQ(mConnInfo);
   }
 
   // Reduce the estimate of the time since last read by up to 1 RTT to
@@ -2222,7 +2222,7 @@ nsHttpConnection::OnInputStreamReady(nsIAsyncInputStream* in) {
 
     if (!CanReuse()) {
       LOG(("Server initiated close of idle conn %p\n", this));
-      Unused << gHttpHandler->ConnMgr()->CloseIdleConnection(this);
+      (void)gHttpHandler->ConnMgr()->CloseIdleConnection(this);
       return NS_OK;
     }
 
@@ -2536,7 +2536,7 @@ void nsHttpConnection::HandshakeDoneInternal() {
     if (mSocketIn) {
       mSocketIn->AsyncWait(nullptr, 0, 0, nullptr);
     }
-    Unused << ResumeSend();
+    (void)ResumeSend();
   }
 
   int16_t tlsVersion;
@@ -2595,7 +2595,7 @@ void nsHttpConnection::HandshakeDoneInternal() {
   }
 
   mTlsHandshaker->FinishNPNSetup(true, true);
-  Unused << ResumeSend();
+  (void)ResumeSend();
 }
 
 void nsHttpConnection::SetTunnelSetupDone() {

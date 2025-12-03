@@ -66,7 +66,7 @@ impl ProcessReader {
             .filter_map(Result::ok)
             .find_map(|(name, address)| {
                 let name = name?;
-                if &name == module_name {
+                if name == module_name {
                     return Some(address);
                 }
                 // Check whether the SO_NAME matches the module name.

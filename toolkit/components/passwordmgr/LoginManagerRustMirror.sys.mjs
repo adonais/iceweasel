@@ -249,22 +249,24 @@ export class LoginManagerRustMirror {
         }
         break;
 
+      // re-migrate on importLogins event
       case "importLogins":
-        // ignoring importLogins event
+        this.#logger.log("re-migrating logins after import...");
+        await this.#migrate();
         break;
 
       default:
         this.#logger.error(`error: received unhandled event "${eventName}"`);
         break;
     }
+
+    Services.obs.notifyObservers(
+      null,
+      `rust-mirror.event.${eventName}.finished`
+    );
   }
 
   async #maybeRunMigration() {
-    if (this.#migrationInProgress) {
-      this.#logger.log("Migration already in progress.");
-      return;
-    }
-
     if (!this.#isEnabled || lazy.LoginHelper.isPrimaryPasswordSet()) {
       this.#logger.log("Mirror is not active. Migration will not run.");
       return;
@@ -281,15 +283,23 @@ export class LoginManagerRustMirror {
       return;
     }
 
-    this.#logger.log("Migration is needed, migrating...");
+    this.#logger.log("Migration is needed");
+
+    await this.#migrate();
+  }
+
+  async #migrate() {
+    if (this.#migrationInProgress) {
+      this.#logger.log("Migration already in progress.");
+      return;
+    }
+
+    this.#logger.log("Starting migration...");
 
     // We ignore events during migration run. Once we switch the
     // stores over, we will run an initial migration again to ensure
     // consistancy.
     this.#migrationInProgress = true;
-
-    // wait until loaded
-    await this.#jsonStorage.initializationPromise;
 
     const t0 = Date.now();
     const runId = Services.uuid.generateUUID();
@@ -334,6 +344,9 @@ export class LoginManagerRustMirror {
         numberOfLoginsMigrated
       );
       this.#migrationInProgress = false;
+
+      // Notify about the finished migration. This is used in tests.
+      Services.obs.notifyObservers(null, "rust-mirror.migration.finished");
     }
   }
 }

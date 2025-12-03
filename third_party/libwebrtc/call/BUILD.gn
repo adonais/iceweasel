@@ -648,7 +648,6 @@ if (rtc_include_tests) {
         "../system_wrappers:metrics",
         "../test:encoder_settings",
         "../test:fake_video_codecs",
-        "../test:field_trial",
         "../test:fileutils",
         "../test:frame_generator_capturer",
         "../test:test_common",
@@ -659,6 +658,7 @@ if (rtc_include_tests) {
         "../test/network:simulated_network",
         "../video/config:encoder_config",
         "//third_party/abseil-cpp/absl/flags:flag",
+        "//third_party/abseil-cpp/absl/strings",
         "//third_party/abseil-cpp/absl/strings:string_view",
       ]
     }

@@ -11,7 +11,6 @@
 #include "nsCOMPtr.h"
 #include "nsICategoryManager.h"
 #include "nsStringFwd.h"
-#include "mozilla/Attributes.h"
 
 class nsWebNavigationInfo final : public nsIWebNavigationInfo {
  public:

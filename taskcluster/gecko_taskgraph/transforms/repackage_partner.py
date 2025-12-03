@@ -59,6 +59,7 @@ packaging_description_schema = Schema(
         Optional("task-from"): task_description_schema["task-from"],
         Optional("attributes"): task_description_schema["attributes"],
         Optional("dependencies"): task_description_schema["dependencies"],
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
     }
 )
 

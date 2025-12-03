@@ -7,11 +7,14 @@ package org.mozilla.fenix.onboarding
 import io.mockk.mockk
 import io.mockk.verify
 import mozilla.components.support.test.robolectric.testContext
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
+
+private const val TIME_IN_MILLIS = 1759926358L
 
 @RunWith(RobolectricTestRunner::class)
 class DefaultOnboardingTermsOfServiceEventHandlerTest {
@@ -79,12 +82,14 @@ class DefaultOnboardingTermsOfServiceEventHandlerTest {
 
     @Test
     fun onAcceptTermsButtonClicked() {
-        eventHandler.onAcceptTermsButtonClicked()
+        eventHandler.onAcceptTermsButtonClicked(nowMillis = TIME_IN_MILLIS)
 
         verify {
             telemetryRecorder.onTermsOfServiceManagerAcceptTermsButtonClick()
         }
 
         assert(settings.hasAcceptedTermsOfService)
+        assertEquals(5, settings.termsOfUseAcceptedVersion)
+        assertEquals(TIME_IN_MILLIS, settings.termsOfUseAcceptedTimeInMillis)
     }
 }

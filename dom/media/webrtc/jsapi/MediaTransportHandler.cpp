@@ -35,7 +35,6 @@
 #include <string>
 #include <vector>
 
-#include "mozilla/Algorithm.h"
 #include "mozilla/PublicSSL.h"  // For psm::InitializeCipherSuite
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #include "nsDNSService2.h"

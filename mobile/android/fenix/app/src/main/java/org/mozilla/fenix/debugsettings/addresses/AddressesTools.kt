@@ -41,15 +41,15 @@ import org.mozilla.fenix.theme.FirefoxTheme
  */
 @Composable
 fun AddressesTools(
-    debugLocalesRepository: AddressesDebugLocalesRepository,
+    debugRegionRepository: AddressesDebugRegionRepository,
     creditCardsAddressesStorage: CreditCardsAddressesStorage,
 ) {
-    var possibleDebugLocales by remember {
-        mutableStateOf(debugLocalesRepository.initialEnabledState())
+    var possibleDebugRegions by remember {
+        mutableStateOf(debugRegionRepository.initialEnabledState())
     }
-    val onLocaleToggled = { locale: DebugLocale, isEnabled: Boolean ->
-        debugLocalesRepository.setLocaleEnabled(locale, isEnabled)
-        possibleDebugLocales = possibleDebugLocales.updateLocaleEnabled(locale, isEnabled)
+    val onRegionToggled = { region: DebugRegion, isEnabled: Boolean ->
+        debugRegionRepository.setRegionEnabled(region, isEnabled)
+        possibleDebugRegions = possibleDebugRegions.updateRegionEnabled(region, isEnabled)
     }
 
     val scope = rememberCoroutineScope()
@@ -79,8 +79,8 @@ fun AddressesTools(
     }
 
     AddressesContent(
-        debugLocaleStates = possibleDebugLocales,
-        onLocaleToggled = onLocaleToggled,
+        debugRegionStates = possibleDebugRegions,
+        onRegionToggled = onRegionToggled,
         addresses = addresses,
         onAddAddressClick = onAddAddress,
         onDeleteAddressClick = onDeleteAddress,
@@ -90,10 +90,10 @@ fun AddressesTools(
 
 @Composable
 private fun AddressesContent(
-    debugLocaleStates: List<DebugLocaleEnabledState>,
-    onLocaleToggled: (DebugLocale, Boolean) -> Unit,
+    debugRegionStates: List<DebugRegionEnabledState>,
+    onRegionToggled: (DebugRegion, Boolean) -> Unit,
     addresses: List<Address>,
-    onAddAddressClick: (locale: String) -> Unit,
+    onAddAddressClick: (region: String) -> Unit,
     onDeleteAddressClick: (Address) -> Unit,
     onDeleteAllAddressesClick: () -> Unit,
 ) {
@@ -110,9 +110,9 @@ private fun AddressesContent(
 
         Spacer(Modifier.height(16.dp))
 
-        DebugLocalesToEnableSection(
-            debugLocaleStates = debugLocaleStates,
-            onLocaleToggled = onLocaleToggled,
+        DebugRegionsToEnableSection(
+            debugRegionStates = debugRegionStates,
+            onRegionToggled = onRegionToggled,
         )
 
         Spacer(Modifier.height(16.dp))
@@ -127,9 +127,9 @@ private fun AddressesContent(
 }
 
 @Composable
-private fun DebugLocalesToEnableSection(
-    debugLocaleStates: List<DebugLocaleEnabledState>,
-    onLocaleToggled: (DebugLocale, Boolean) -> Unit,
+private fun DebugRegionsToEnableSection(
+    debugRegionStates: List<DebugRegionEnabledState>,
+    onRegionToggled: (DebugRegion, Boolean) -> Unit,
 ) {
     Text(
         text = stringResource(R.string.debug_drawer_addresses_debug_locales_header),
@@ -138,11 +138,11 @@ private fun DebugLocalesToEnableSection(
     )
 
     Column {
-        debugLocaleStates.forEach { debugLocaleState ->
+        debugRegionStates.forEach { debugLocaleState ->
             SwitchWithLabel(
-                label = debugLocaleState.locale.name,
+                label = debugLocaleState.region.name,
                 checked = debugLocaleState.enabled,
-                onCheckedChange = { onLocaleToggled(debugLocaleState.locale, it) },
+                onCheckedChange = { onRegionToggled(debugLocaleState.region, it) },
             )
         }
     }
@@ -204,25 +204,25 @@ private fun AddressesManagementSection(
     }
 }
 
-private data class DebugLocaleEnabledState(
-    val locale: DebugLocale,
+private data class DebugRegionEnabledState(
+    val region: DebugRegion,
     val enabled: Boolean,
 )
 
-private fun AddressesDebugLocalesRepository.initialEnabledState(): List<DebugLocaleEnabledState> =
-    DebugLocale.entries.map { debugLocale ->
-        DebugLocaleEnabledState(
-            locale = debugLocale,
-            enabled = isLocaleEnabled(debugLocale),
+private fun AddressesDebugRegionRepository.initialEnabledState(): List<DebugRegionEnabledState> =
+    DebugRegion.entries.map { debugRegion ->
+        DebugRegionEnabledState(
+            region = debugRegion,
+            enabled = isRegionEnabled(debugRegion),
         )
     }
 
-private fun List<DebugLocaleEnabledState>.updateLocaleEnabled(localeToUpdate: DebugLocale, isEnabled: Boolean) =
-    this.map { localeState ->
-        if (localeState.locale == localeToUpdate) {
-            localeState.copy(enabled = isEnabled)
+private fun List<DebugRegionEnabledState>.updateRegionEnabled(regionToUpdate: DebugRegion, isEnabled: Boolean) =
+    this.map { regionState ->
+        if (regionState.region == regionToUpdate) {
+            regionState.copy(enabled = isEnabled)
         } else {
-            localeState
+            regionState
         }
     }
 
@@ -234,7 +234,7 @@ private fun AddressesScreenPreview() {
             modifier = Modifier.background(color = FirefoxTheme.colors.layer1),
         ) {
             AddressesTools(
-                debugLocalesRepository = FakeAddressesDebugLocalesRepository(),
+                debugRegionRepository = FakeAddressesDebugRegionRepository(),
                 creditCardsAddressesStorage = FakeCreditCardsAddressesStorage(),
             )
         }

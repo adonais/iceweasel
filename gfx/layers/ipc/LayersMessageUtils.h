@@ -1229,26 +1229,20 @@ struct ParamTraits<mozilla::layers::CompositorScrollUpdate> {
   }
 };
 
-} /* namespace IPC */
-
-namespace mozilla {
-namespace ipc {
-
 template <>
-struct IPDLParamTraits<layers::GpuFence*> {
-  static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
-                    layers::GpuFence* aParam) {
+struct ParamTraits<mozilla::layers::GpuFence*> {
+  static void Write(MessageWriter* aWriter, mozilla::layers::GpuFence* aParam) {
     if (aParam) {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     }
-    WriteIPDLParam(aWriter, aActor, false);
+    WriteParam(aWriter, false);
   }
 
-  static bool Read(IPC::MessageReader* aReader, IProtocol* aActor,
-                   RefPtr<layers::GpuFence>* aResult) {
+  static bool Read(MessageReader* aReader,
+                   RefPtr<mozilla::layers::GpuFence>* aResult) {
     *aResult = nullptr;
     bool notnull = false;
-    if (!ReadIPDLParam(aReader, aActor, &notnull)) {
+    if (!ReadParam(aReader, &notnull)) {
       return false;
     }
 
@@ -1261,8 +1255,7 @@ struct IPDLParamTraits<layers::GpuFence*> {
   }
 };
 
-}  // namespace ipc
-}  // namespace mozilla
+} /* namespace IPC */
 
 #define DEFINE_SERVO_PARAMTRAITS(ty_)                                \
   MOZ_DEFINE_RUST_PARAMTRAITS(mozilla::ty_, Servo_##ty_##_Serialize, \

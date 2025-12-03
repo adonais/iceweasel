@@ -16,7 +16,6 @@
 #include "mozilla/Assertions.h"  // for MOZ_ASSERT, etc
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"  // for override
-#include "mozilla/DebugOnly.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"  // for RefPtr, RefCounted
 #include "mozilla/dom/ipc/IdType.h"

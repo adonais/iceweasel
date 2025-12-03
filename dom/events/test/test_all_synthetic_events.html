@@ -265,6 +265,12 @@ const kEventConstructors = {
                                                          return e;
                                                        },
                                              },
+  NavigateEvent:                             { create: null
+                                               // Cannot create NavigateEvent without NavigationDestination which can't be created
+                                             },
+  NavigationCurrentEntryChangeEvent:         { create: null
+                                               // Cannot create NavigationCurrentEntryChangeEvent without window.navigation
+                                             },
   OfflineAudioCompletionEvent:               { create: "AudioContext" in self
                                                         ? function (aName, aProps) {
                                                             var ac = new AudioContext();
@@ -484,7 +490,8 @@ function test() {
 SimpleTest.waitForExplicitFinish();
 SpecialPowers.pushPrefEnv(
   {"set": [["dom.w3c_touch_events.legacy_apis.enabled", true],
-           ["dom.events.textevent.enabled", true]]},
+           ["dom.events.textevent.enabled", true],
+           ["dom.navigation.webidl.enabled", true]]},
   function() {
     test();
     SimpleTest.finish();

@@ -177,6 +177,18 @@ export const tokensTable = {
       },
       name: "--color-accent-primary-active",
     },
+    {
+      value: {
+        forcedColors: "SelectedItem",
+        brand: {
+          light: "var(--color-blue-60)",
+          dark: "var(--color-cyan-30)",
+          default: "light-dark(var(--color-blue-60), var(--color-cyan-30))",
+        },
+        platform: { default: "SelectedItem" },
+      },
+      name: "--color-accent-primary-selected",
+    },
   ],
   "background-color": [
     {
@@ -666,10 +678,11 @@ export const tokensTable = {
     { value: "var(--font-size-large)", name: "--heading-font-size-medium" },
   ],
   "font-weight": [
-    { value: "var(--font-weight-bold)", name: "--button-font-weight" },
+    { value: "var(--font-weight-semibold)", name: "--button-font-weight" },
     { value: "normal", name: "--font-weight" },
-    { value: 600, name: "--font-weight-bold" },
-    { value: "var(--font-weight-bold)", name: "--heading-font-weight" },
+    { value: 600, name: "--font-weight-semibold" },
+    { value: 700, name: "--font-weight-bold" },
+    { value: "var(--font-weight-semibold)", name: "--heading-font-weight" },
   ],
   "icon-color": [
     { value: "currentColor", name: "--button-icon-fill" },
@@ -935,6 +948,18 @@ export const tokensTable = {
         default: "light-dark(var(--color-red-70), var(--color-red-20))",
       },
       name: "--text-color-error",
+    },
+    {
+      value: {
+        forcedColors: "SelectedItemText",
+        brand: {
+          light: "var(--color-white)",
+          dark: "var(--color-gray-100)",
+          default: "light-dark(var(--color-white), var(--color-gray-100))",
+        },
+        platform: { default: "SelectedItemText" },
+      },
+      name: "--text-color-accent-primary-selected",
     },
   ],
   outline: [
@@ -1322,7 +1347,7 @@ export const variableLookupTable = {
   "button-border-radius": "var(--border-radius-medium)",
   "button-font-size": "var(--font-size-root)",
   "button-font-size-small": "var(--font-size-small)",
-  "button-font-weight": "var(--font-weight-bold)",
+  "button-font-weight": "var(--font-weight-semibold)",
   "button-icon-fill": "currentColor",
   "button-icon-stroke": "var(--button-icon-fill)",
   "button-min-height": "var(--size-item-large)",
@@ -1567,6 +1592,15 @@ export const variableLookupTable = {
       default: "color-mix(in srgb, black 20%, var(--color-accent-primary))",
     },
   },
+  "color-accent-primary-selected": {
+    forcedColors: "SelectedItem",
+    brand: {
+      light: "var(--color-blue-60)",
+      dark: "var(--color-cyan-30)",
+      default: "light-dark(var(--color-blue-60), var(--color-cyan-30))",
+    },
+    platform: { default: "SelectedItem" },
+  },
   "focus-outline":
     "var(--focus-outline-width) solid var(--focus-outline-color)",
   "focus-outline-color": {
@@ -1609,11 +1643,12 @@ export const variableLookupTable = {
     platform: { default: "unset" },
   },
   "font-weight": "normal",
-  "font-weight-bold": 600,
+  "font-weight-semibold": 600,
+  "font-weight-bold": 700,
   "heading-font-size-xlarge": "var(--font-size-xxlarge)",
   "heading-font-size-large": "var(--font-size-xlarge)",
   "heading-font-size-medium": "var(--font-size-large)",
-  "heading-font-weight": "var(--font-weight-bold)",
+  "heading-font-weight": "var(--font-weight-semibold)",
   "icon-color": {
     light: "var(--color-gray-70)",
     dark: "var(--color-gray-05)",
@@ -1760,5 +1795,14 @@ export const variableLookupTable = {
     dark: "var(--color-red-20)",
     prefersContrast: "inherit",
     default: "light-dark(var(--color-red-70), var(--color-red-20))",
+  },
+  "text-color-accent-primary-selected": {
+    forcedColors: "SelectedItemText",
+    brand: {
+      light: "var(--color-white)",
+      dark: "var(--color-gray-100)",
+      default: "light-dark(var(--color-white), var(--color-gray-100))",
+    },
+    platform: { default: "SelectedItemText" },
   },
 };

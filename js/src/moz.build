@@ -64,6 +64,12 @@ if not CONFIG["JS_DISABLE_SHELL"]:
             "fuzz-tests",
         ]
 
+LegacyTest(
+    f"%{CONFIG['PYTHON3']}",
+    "/config/check_js_msg_encoding.py",
+    depends=["/config/check_js_msg_encoding.py"],
+)
+
 if CONFIG["FUZZING_INTERFACES"] and CONFIG["LIBFUZZER"]:
     # In addition to regular coverage provided by trace-pc-guard,
     # LibFuzzer can use trace-cmp to instrument various compare instructions.
@@ -96,10 +102,6 @@ CONFIGURE_DEFINE_FILES += [
 CONFIGURE_DEFINE_FILES += [
     "js-config.h",
 ]
-
-if CONFIG["HAVE_DTRACE"]:
-    GeneratedFile("javascript-trace.h")
-    EXPORTS += ["!javascript-trace.h"]
 
 # Changes to internal header files, used externally, massively slow down
 # browser builds.  Don't add new files here unless you know what you're
@@ -174,6 +176,7 @@ EXPORTS.js += [
     "../public/Printf.h",
     "../public/ProfilingCategory.h",
     "../public/ProfilingFrameIterator.h",
+    "../public/ProfilingSources.h",
     "../public/ProfilingStack.h",
     "../public/Promise.h",
     "../public/PropertyAndElement.h",
@@ -570,6 +573,8 @@ if CONFIG["JS_HAS_INTL_API"]:
 # back to clang 4.
 if CONFIG["CC_TYPE"] == "clang":
     CXXFLAGS += ["-fstandalone-debug"]
+
+CXXFLAGS += CONFIG["MOZ_ZLIB_CFLAGS"]
 
 # Bug 1722102 - This should never be enabled in Release without explicit
 # security and SpiderMonkey review.

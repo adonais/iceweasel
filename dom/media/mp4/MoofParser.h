@@ -12,7 +12,6 @@
 #include "MediaResource.h"
 #include "SinfParser.h"
 #include "TimeUnits.h"
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/Variant.h"
 
 namespace mozilla {

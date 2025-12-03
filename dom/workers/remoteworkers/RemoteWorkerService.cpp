@@ -195,7 +195,7 @@ void RemoteWorkerService::RegisterRemoteDebugger(
   // RemoteWorkerDebuggerManager::SendRegister.
   if (sRemoteWorkerService->mThread->IsOnCurrentThread()) {
     MOZ_ASSERT(sRemoteWorkerService->mDebuggerManagerChild);
-    Unused << sRemoteWorkerService->mDebuggerManagerChild->SendRegister(
+    (void)sRemoteWorkerService->mDebuggerManagerChild->SendRegister(
         std::move(aDebuggerInfo), std::move(aDebuggerParentEp));
     return;
   }
@@ -203,7 +203,7 @@ void RemoteWorkerService::RegisterRemoteDebugger(
   // For top-level workers in parent process, directly call RecvRegister().
   if (XRE_IsParentProcess() && NS_IsMainThread()) {
     MOZ_ASSERT(sRemoteWorkerService->mDebuggerManagerParent);
-    Unused << sRemoteWorkerService->mDebuggerManagerParent->RecvRegister(
+    (void)sRemoteWorkerService->mDebuggerManagerParent->RecvRegister(
         std::move(aDebuggerInfo), std::move(aDebuggerParentEp));
     return;
   }
@@ -217,7 +217,7 @@ void RemoteWorkerService::RegisterRemoteDebugger(
         RemoteWorkerService::RegisterRemoteDebugger(
             std::move(debuggerInfo), std::move(debuggerParentEp));
       });
-  Unused << NS_WARN_IF(
+  (void)NS_WARN_IF(
       NS_FAILED(sRemoteWorkerService->mThread->Dispatch(r.forget())));
 }
 

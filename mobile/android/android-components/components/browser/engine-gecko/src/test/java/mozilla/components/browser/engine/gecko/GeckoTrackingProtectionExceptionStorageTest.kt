@@ -232,7 +232,7 @@ class GeckoTrackingProtectionExceptionStorageTest {
         shadowOf(getMainLooper()).idle()
 
         assertTrue(exceptionList!!.isNotEmpty())
-        val exception = exceptionList!!.first() as GeckoTrackingProtectionException
+        val exception = exceptionList.first() as GeckoTrackingProtectionException
 
         assertEquals("https://example.com/", exception.url)
         assertEquals(contentPermission, exception.contentPermission)

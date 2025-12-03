@@ -160,8 +160,8 @@
 
   /* Toolbar buttons */
   --toolbarbutton-background: light-dark(var(--grey-10), var(--grey-70));
-  --toolbarbutton-hover-background: light-dark(var(--grey-20), var(--grey-70));
-  --toolbarbutton-hover-color: inherit;
+  --toolbarbutton-hover-background: light-dark(var(--grey-20), var(--grey-60));
+  --toolbarbutton-hover-color: light-dark(var(--grey-80), var(--grey-30));
   --toolbarbutton-checked-background: var(--toolbarbutton-hover-background);
   --toolbarbutton-checked-color: var(--theme-icon-checked-color);
 

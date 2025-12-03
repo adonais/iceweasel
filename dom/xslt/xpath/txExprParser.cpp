@@ -13,7 +13,6 @@
 
 #include <utility>
 
-#include "mozilla/UniquePtrExtensions.h"
 #include "nsError.h"
 #include "nsGkAtoms.h"
 #include "txExpr.h"
@@ -26,7 +25,6 @@
 
 using mozilla::MakeUnique;
 using mozilla::UniquePtr;
-using mozilla::Unused;
 using mozilla::WrapUnique;
 
 /**
@@ -251,8 +249,8 @@ nsresult txExprParser::createBinaryExpr(UniquePtr<Expr>& left,
       return NS_ERROR_UNEXPECTED;
   }
 
-  Unused << left.release();
-  Unused << right.release();
+  (void)left.release();
+  (void)right.release();
 
   *aResult = expr;
   return NS_OK;
@@ -383,7 +381,7 @@ nsresult txExprParser::createFilterOrStep(txExprLexer& lexer,
   if (lexer.peek()->mType == Token::L_BRACKET) {
     UniquePtr<FilterExpr> filterExpr(new FilterExpr(expr.get()));
 
-    Unused << expr.release();
+    (void)expr.release();
 
     //-- handle predicates
     rv = parsePredicates(filterExpr.get(), lexer, aContext);
@@ -543,7 +541,7 @@ nsresult txExprParser::createLocationStep(txExprLexer& lexer,
   UniquePtr<LocationStep> lstep(
       new LocationStep(nodeTest.get(), axisIdentifier));
 
-  Unused << nodeTest.release();
+  (void)nodeTest.release();
 
   //-- handle predicates
   rv = parsePredicates(lstep.get(), lexer, aContext);

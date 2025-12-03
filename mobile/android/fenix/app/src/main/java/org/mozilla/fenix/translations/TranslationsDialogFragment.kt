@@ -144,9 +144,9 @@ class TranslationsDialogFragment : BottomSheetDialogFragment() {
                     SupportUtils.SumoTopic.TRANSLATIONS,
                 )
 
-                isTranslationInProgress = translationsDialogState?.isTranslationInProgress
+                isTranslationInProgress = translationsDialogState.isTranslationInProgress
 
-                if (translationsDialogState?.dismissDialogState is DismissDialogState.Dismiss) {
+                if (translationsDialogState.dismissDialogState is DismissDialogState.Dismiss) {
                     dismissDialog()
                 }
 
@@ -174,7 +174,7 @@ class TranslationsDialogFragment : BottomSheetDialogFragment() {
                                     }
                                 },
                             ) {
-                                translationsDialogState?.let {
+                                translationsDialogState.let {
                                     TranslationsDialogContent(
                                         learnMoreUrl = learnMoreUrl,
                                         showPageSettings = FxNimbus.features.translations.value().pageSettingsEnabled,
@@ -204,8 +204,8 @@ class TranslationsDialogFragment : BottomSheetDialogFragment() {
                                 TranslationsOptionsDialogContent(
                                     learnMoreUrl = learnMoreUrl,
                                     showGlobalSettings = FxNimbus.features.translations.value().globalSettingsEnabled,
-                                    isTranslated = translationsDialogState?.isTranslated == true,
-                                    initialFrom = translationsDialogState?.initialFrom,
+                                    isTranslated = translationsDialogState.isTranslated == true,
+                                    initialFrom = translationsDialogState.initialFrom,
                                     onBackClicked = { translationsVisibility = true },
                                     onTranslate = {
                                         translate(
@@ -222,7 +222,7 @@ class TranslationsDialogFragment : BottomSheetDialogFragment() {
                     }
 
                     if (showDownloadLanguageFileDialog) {
-                        translationsDialogState?.translationDownloadSize?.size?.let { fileSize ->
+                        translationsDialogState.translationDownloadSize?.size?.let { fileSize ->
                             DownloadLanguageFileDialog(
                                 fileSize = fileSize,
                                 fileSizeFormatter = requireComponents.core.fileSizeFormatter,

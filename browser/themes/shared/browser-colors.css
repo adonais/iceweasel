@@ -60,6 +60,9 @@
     --toolbox-textcolor: var(--lwt-text-color, currentColor);
     --toolbox-textcolor-inactive: var(--lwt-text-color, currentColor);
 
+    --sidebar-background-color: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.1));
+    --sidebar-text-color: CanvasText;
+
     @media not (prefers-contrast) {
       --focus-outline-color: light-dark(#0061e0, #00ddff);
     }
@@ -79,8 +82,7 @@
  * theme enabled, instead choosing to fall back to system colors and
  * transparencies in order to look more native.
  */
-/* stylelint-disable-next-line media-query-no-invalid */
-@media not ((prefers-contrast) or -moz-pref("browser.theme.native-theme")) {
+@media not ((forced-colors) or (-moz-native-theme)) {
   :root:not([lwtheme]) {
     --color-accent-primary: light-dark(rgb(0, 97, 224), rgb(0, 221, 255));
     --button-text-color-primary: light-dark(rgb(251, 251, 254), rgb(43, 42, 51));
@@ -103,15 +105,12 @@
     --tab-selected-textcolor: light-dark(rgb(21, 20, 26), rgb(255, 255, 255));
     --tabs-navbar-separator-style: none;
 
-    /* stylelint-disable-next-line media-query-no-invalid */
-    @media not ((-moz-windows-mica) or ((-moz-windows-accent-color-in-titlebar) and -moz-pref("browser.theme.windows.accent-color-in-tabs.enabled"))) {
-      --toolbox-bgcolor: light-dark(rgb(234, 234, 237), rgb(28, 27, 34));
-      --toolbox-textcolor: light-dark(rgb(21, 20, 26), rgb(251, 251, 254));
-      --toolbox-bgcolor-inactive: var(--toolbox-bgcolor);
-      --toolbox-textcolor-inactive: var(--toolbox-textcolor);
-      &:where([customtitlebar]) {
-        --toolbox-bgcolor-inactive: light-dark(rgb(235, 235, 239), rgb(31, 30, 37));
-      }
+    --toolbox-bgcolor: light-dark(rgb(234, 234, 237), rgb(28, 27, 34));
+    --toolbox-textcolor: light-dark(rgb(21, 20, 26), rgb(251, 251, 254));
+    --toolbox-bgcolor-inactive: var(--toolbox-bgcolor);
+    --toolbox-textcolor-inactive: var(--toolbox-textcolor);
+    &:where([customtitlebar]) {
+      --toolbox-bgcolor-inactive: light-dark(rgb(235, 235, 239), rgb(31, 30, 37));
     }
 
     --toolbar-color: light-dark(rgb(21, 20, 26), rgb(251, 251, 254));

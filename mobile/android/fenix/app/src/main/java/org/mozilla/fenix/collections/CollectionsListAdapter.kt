@@ -9,12 +9,13 @@ import android.view.ViewGroup
 import android.widget.CheckedTextView
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.content.res.AppCompatResources
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.updatePaddingRelative
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.color.MaterialColors
 import mozilla.components.support.ktx.android.view.putCompoundDrawablesRelativeWithIntrinsicBounds
 import org.mozilla.fenix.R
+import com.google.android.material.R as materialR
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -56,9 +57,10 @@ class CollectionsListAdapter(
             drawable?.let {
                 DrawableCompat.setTint(
                     it,
-                    ContextCompat.getColor(
+                    MaterialColors.getColor(
                         holder.textView.context,
-                        R.color.fx_mobile_icon_color_primary,
+                        materialR.attr.colorOnSurface,
+                        "Could not resolve themed color",
                     ),
                 )
             }

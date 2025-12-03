@@ -16,6 +16,7 @@ kind-dependencies:
 
 
 task-defaults:
+    run-on-repo-type: [hg]
     attributes:
         build_platform: android
         build-type: regular

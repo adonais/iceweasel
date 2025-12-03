@@ -12,7 +12,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "ClipboardHelper",
   "@mozilla.org/widget/clipboardhelper;1",
-  "nsIClipboardHelper"
+  Ci.nsIClipboardHelper
 );
 
 const TELEMETRY_MIN_MS_BETWEEN_OPEN_MANAGEMENT = 5000;

@@ -17,7 +17,6 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/RefCounted.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"

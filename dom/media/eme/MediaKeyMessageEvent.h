@@ -8,7 +8,6 @@
 #define mozilla_dom_MediaKeyMessageEvent_h__
 
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/MediaKeyMessageEventBinding.h"
 #include "mozilla/dom/TypedArray.h"

@@ -80,7 +80,7 @@ HeapAnalysesClient.prototype.getCreationTime = function (snapshotFilePath) {
   return this._worker.performTask("getCreationTime", snapshotFilePath);
 };
 
-/** * Censuses *****************************************************************/
+/*** Censuses *****************************************************************/
 
 /**
  * Ask the worker to perform a census analysis on the heap snapshot with the
@@ -209,7 +209,7 @@ HeapAnalysesClient.prototype.takeCensusDiff = function (
   });
 };
 
-/** * Dominator Trees **********************************************************/
+/*** Dominator Trees **********************************************************/
 
 /**
  * Compute the dominator tree of the heap snapshot loaded from the given file

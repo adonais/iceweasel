@@ -404,7 +404,7 @@ newtab-wallpaper-abstract-purple-green = Gradijent ljubičaste boje i zelenog sv
 newtab-wallpaper-abstract-blue-purple-waves = Plavi i ljubičasti valoviti oblici
 newtab-wallpaper-abstract-black-waves = Crni valoviti oblici
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotografije
 newtab-wallpaper-beach-at-sunrise = Plaža pri izlasku sunca
@@ -662,10 +662,6 @@ newtab-widget-timer-mode-focus =
     .label = Fokus
 newtab-widget-timer-mode-break =
     .label = Pauza
-newtab-widget-timer-play =
-    .title = Pokreni
-newtab-widget-timer-pause =
-    .title = Pauziraj
 newtab-widget-timer-label-play =
     .label = Pokreni
 newtab-widget-timer-label-pause =

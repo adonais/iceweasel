@@ -258,6 +258,10 @@ class JUnitTestRunner(MochitestDesktop):
             env["MOZ_FORCE_DISABLE_FISSION"] = "1"
         else:
             env["MOZ_FORCE_ENABLE_FISSION"] = "1"
+        if self.options.enable_isolated_zygote_process:
+            env["MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE"] = "1"
+        else:
+            env["MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE"] = "0"
 
         # Add additional env variables
         for [key, value] in [p.split("=", 1) for p in self.options.add_env]:
@@ -595,6 +599,13 @@ class JunitArgumentParser(argparse.ArgumentParser):
             dest="disable_fission",
             default=False,
             help="Run the tests without Fission (site isolation) enabled.",
+        )
+        self.add_argument(
+            "--enable-isolated-zygote-process",
+            action="store_true",
+            dest="enable_isolated_zygote_process",
+            default=False,
+            help="Run with app Zygote preloading enabled.",
         )
         self.add_argument(
             "--web-content-isolation-strategy",

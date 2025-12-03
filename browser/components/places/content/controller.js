@@ -1738,5 +1738,5 @@ XPCOMUtils.defineLazyServiceGetter(
   PlacesControllerDragHelper,
   "dragService",
   "@mozilla.org/widget/dragservice;1",
-  "nsIDragService"
+  Ci.nsIDragService
 );

@@ -12,7 +12,6 @@
 #include "GfxDriverInfo.h"
 
 #include "nsString.h"
-#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
 
@@ -33,7 +32,6 @@ class GfxInfo : public GfxInfoBase {
 
   // We only declare the subset of nsIGfxInfo that we actually implement. The
   // rest is brought forward from GfxInfoBase.
-  NS_IMETHOD GetD2DEnabled(bool* aD2DEnabled) override;
   NS_IMETHOD GetDWriteEnabled(bool* aDWriteEnabled) override;
   NS_IMETHOD GetEmbeddedInFirefoxReality(
       bool* aEmbeddedInFirefoxReality) override;

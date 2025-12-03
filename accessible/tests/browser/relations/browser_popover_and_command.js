@@ -42,6 +42,12 @@ addAccessibleTask(
     await testCachedRelation(toggleSibling, RELATION_DETAILS, []);
     await testCachedRelation(popover, RELATION_DETAILS_FOR, toggle1);
 
+    is(
+      toggle1.attributes.getStringProperty("details-from"),
+      "popover-target",
+      "Correct details-from attribute"
+    );
+
     info("Setting toggle2 popovertarget");
     await invokeSetAttribute(browser, "toggle2", "popovertarget", "popover");
     await testCachedRelation(toggle2, RELATION_DETAILS, popover);
@@ -134,10 +140,16 @@ addAccessibleTask(
     // of the popover.
     await testCachedRelation(toggleSibling, RELATION_DETAILS, []);
     await testCachedRelation(popover, RELATION_DETAILS_FOR, [toggle1, show]);
+    is(
+      toggle1.attributes.getStringProperty("details-from"),
+      "command-for",
+      "Correct details-from attribute"
+    );
 
     info("Setting toggle2 commandfor");
     await invokeSetAttribute(browser, "toggle2", "commandfor", "popover");
     await testCachedRelation(toggle2, RELATION_DETAILS, popover);
+
     await testCachedRelation(popover, RELATION_DETAILS_FOR, [
       toggle1,
       show,
@@ -154,12 +166,24 @@ addAccessibleTask(
     const details = findAccessibleChildByID(docAcc, "details");
     // aria-details overrides popover.
     await testCachedRelation(toggle1, RELATION_DETAILS, details);
+    is(
+      toggle1.attributes.getStringProperty("details-from"),
+      "aria-details",
+      "Correct details-from attribute"
+    );
+
     await testCachedRelation(popover, RELATION_DETAILS_FOR, [show]);
 
     info("Removing aria-details from toggle1");
     await invokeSetAttribute(browser, "toggle1", "aria-details", null);
     await testCachedRelation(toggle1, RELATION_DETAILS, popover);
     await testCachedRelation(popover, RELATION_DETAILS_FOR, [toggle1, show]);
+
+    is(
+      toggle1.attributes.getStringProperty("details-from"),
+      "command-for",
+      "Correct details-from attribute"
+    );
 
     info("Hiding popover");
     let hidden = waitForEvent(EVENT_HIDE, popover);

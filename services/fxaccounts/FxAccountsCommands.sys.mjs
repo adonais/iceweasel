@@ -47,7 +47,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "idleService",
   "@mozilla.org/widget/useridleservice;1",
-  "nsIUserIdleService"
+  Ci.nsIUserIdleService
 );
 
 const TOPIC_TABS_CHANGED = "services.sync.tabs.changed";

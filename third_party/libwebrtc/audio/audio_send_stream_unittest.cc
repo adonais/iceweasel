@@ -76,28 +76,28 @@ using ::testing::Return;
 using ::testing::StrEq;
 using ::testing::WithArg;
 
-const float kTolerance = 0.0001f;
+constexpr float kTolerance = 0.0001f;
 
-const uint32_t kSsrc = 1234;
-const char* kCName = "foo_name";
-const std::array<uint32_t, 2> kCsrcs = {5678, 9012};
-const int kAudioLevelId = 2;
-const int kTransportSequenceNumberId = 4;
-const int32_t kEchoDelayMedian = 254;
-const int32_t kEchoDelayStdDev = -3;
-const double kDivergentFilterFraction = 0.2f;
-const double kEchoReturnLoss = -65;
-const double kEchoReturnLossEnhancement = 101;
-const double kResidualEchoLikelihood = -1.0f;
-const double kResidualEchoLikelihoodMax = 23.0f;
-const CallSendStatistics kCallStats = {112, 12, 13456, 17890};
+constexpr uint32_t kSsrc = 1234;
+constexpr char kCName[] = "foo_name";
+constexpr std::array<uint32_t, 2> kCsrcs = {5678, 9012};
+constexpr int kAudioLevelId = 2;
+constexpr int kTransportSequenceNumberId = 4;
+constexpr int32_t kEchoDelayMedian = 254;
+constexpr int32_t kEchoDelayStdDev = -3;
+constexpr double kDivergentFilterFraction = 0.2f;
+constexpr double kEchoReturnLoss = -65;
+constexpr double kEchoReturnLossEnhancement = 101;
+constexpr double kResidualEchoLikelihood = -1.0f;
+constexpr double kResidualEchoLikelihoodMax = 23.0f;
+constexpr CallSendStatistics kCallStats = {112, 12, 13456, 17890};
 constexpr int kFractionLost = 123;
 constexpr int kCumulativeLost = 567;
 constexpr uint32_t kInterarrivalJitter = 132;
-const int kTelephoneEventPayloadType = 123;
-const int kTelephoneEventPayloadFrequency = 65432;
-const int kTelephoneEventCode = 45;
-const int kTelephoneEventDuration = 6789;
+constexpr int kTelephoneEventPayloadType = 123;
+constexpr int kTelephoneEventPayloadFrequency = 65432;
+constexpr int kTelephoneEventCode = 45;
+constexpr int kTelephoneEventDuration = 6789;
 constexpr int kIsacPayloadType = 103;
 const SdpAudioFormat kIsacFormat = {"isac", 16000, 1};
 const SdpAudioFormat kOpusFormat = {"opus", 48000, 2};
@@ -110,11 +110,11 @@ const AudioCodecSpec kCodecSpecs[] = {
 // TODO(dklee): This mirrors calculation in audio_send_stream.cc, which
 // should be made more precise in the future. This can be changed when that
 // logic is more accurate.
-const DataSize kOverheadPerPacket = DataSize::Bytes(20 + 8 + 10 + 12);
-const TimeDelta kMinFrameLength = TimeDelta::Millis(20);
-const TimeDelta kMaxFrameLength = TimeDelta::Millis(120);
-const DataRate kMinOverheadRate = kOverheadPerPacket / kMaxFrameLength;
-const DataRate kMaxOverheadRate = kOverheadPerPacket / kMinFrameLength;
+constexpr DataSize kOverheadPerPacket = DataSize::Bytes(20 + 8 + 10 + 12);
+constexpr TimeDelta kMinFrameLength = TimeDelta::Millis(20);
+constexpr TimeDelta kMaxFrameLength = TimeDelta::Millis(120);
+constexpr DataRate kMinOverheadRate = kOverheadPerPacket / kMaxFrameLength;
+constexpr DataRate kMaxOverheadRate = kOverheadPerPacket / kMinFrameLength;
 
 class MockLimitObserver : public BitrateAllocator::LimitObserver {
  public:

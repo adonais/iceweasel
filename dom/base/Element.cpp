@@ -69,8 +69,6 @@
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/Try.h"
-#include "mozilla/TypedEnumBits.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/AnimatableBinding.h"
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/Attr.h"
@@ -306,11 +304,6 @@ nsDOMAttributeMap* Element::Attributes() {
 }
 
 void Element::SetPointerCapture(int32_t aPointerId, ErrorResult& aError) {
-  if (OwnerDoc()->ShouldResistFingerprinting(RFPTarget::PointerId) &&
-      aPointerId != PointerEventHandler::GetSpoofedPointerIdForRFP()) {
-    aError.ThrowNotFoundError("Invalid pointer id");
-    return;
-  }
   const PointerInfo* pointerInfo =
       PointerEventHandler::GetPointerInfo(aPointerId);
   if (!pointerInfo) {
@@ -337,11 +330,6 @@ void Element::SetPointerCapture(int32_t aPointerId, ErrorResult& aError) {
 }
 
 void Element::ReleasePointerCapture(int32_t aPointerId, ErrorResult& aError) {
-  if (OwnerDoc()->ShouldResistFingerprinting(RFPTarget::PointerId) &&
-      aPointerId != PointerEventHandler::GetSpoofedPointerIdForRFP()) {
-    aError.ThrowNotFoundError("Invalid pointer id");
-    return;
-  }
   if (!PointerEventHandler::GetPointerInfo(aPointerId)) {
     aError.ThrowNotFoundError("Invalid pointer id");
     return;
@@ -1081,7 +1069,7 @@ int32_t Element::ScreenY() {
 already_AddRefed<nsIScreen> Element::GetScreen() {
   // Flush layout to guarantee that frames are created if needed, and preserve
   // behavior.
-  Unused << GetPrimaryFrame(FlushType::Frames);
+  (void)GetPrimaryFrame(FlushType::Frames);
   if (nsIWidget* widget = nsContentUtils::WidgetForContent(this)) {
     return widget->GetWidgetScreen();
   }
@@ -1507,7 +1495,7 @@ void Element::NotifyUAWidgetTeardown(UnattachShadowRoot aUnattachShadowRoot) {
           return;
         }
 
-        Unused << nsContentUtils::DispatchChromeEvent(
+        (void)nsContentUtils::DispatchChromeEvent(
             doc, self, u"UAWidgetTeardown"_ns, CanBubble::eYes,
             Cancelable::eNo);
       }));
@@ -4149,27 +4137,68 @@ static void GetAnimationsUnsorted(const Element* aElement,
   }
 }
 
-// This traverses all the view transition pseudo-elements and get all of the
-// animations on them.
-static void GetAnimationsOfViewTransitionTree(
-    const Element* aOriginatingElement,
-    nsTArray<RefPtr<Animation>>& aAnimations) {
-  if (!aOriginatingElement->IsRootElement()) {
+static inline bool IsSupportedForGetAnimationsSubtree(PseudoStyleType aType) {
+  return aType == PseudoStyleType::NotPseudo ||
+         aType == PseudoStyleType::mozSnapshotContainingBlock ||
+         PseudoStyle::IsViewTransitionPseudoElement(aType);
+}
+
+// This traverses the subtree from the root, |aRootElement|, to get the
+// animations.
+static void GetAnimationsUnsortedForSubtree(
+    const Element* aRootElement, nsTArray<RefPtr<Animation>>& aAnimations) {
+  const PseudoStyleType type = aRootElement->GetPseudoElementType();
+  // Only elements and view transition pseudo-elements get handled in this
+  // function.
+  if (MOZ_UNLIKELY(!IsSupportedForGetAnimationsSubtree(type))) {
     return;
   }
 
-  const Document* doc = aOriginatingElement->OwnerDoc();
-  const ViewTransition* vt = doc->GetActiveViewTransition();
-  if (!vt) {
+  // For non pseudo-elements, we have to get the animations on the element
+  // itself, ::before, ::after, and ::marker.
+  if (type == PseudoStyleType::NotPseudo) {
+    for (const nsIContent* node = aRootElement; node;
+         node = node->GetNextNode(aRootElement)) {
+      if (!node->IsElement()) {
+        continue;
+      }
+      const Element* element = node->AsElement();
+      GetAnimationsUnsorted(element, PseudoStyleRequest::NotPseudo(),
+                            aAnimations);
+      GetAnimationsUnsorted(element, PseudoStyleRequest::Before(), aAnimations);
+      GetAnimationsUnsorted(element, PseudoStyleRequest::After(), aAnimations);
+      GetAnimationsUnsorted(element, PseudoStyleRequest::Marker(), aAnimations);
+    }
+  }
+
+  // If |aRootElement| is the document element, or it is a view transition
+  // pseudo-element (including the snapshot containing block), we have to
+  // traverse the view transition subtree. Otherwise, we can skip the traversal.
+  if (!aRootElement->IsRootElement() && type == PseudoStyleType::NotPseudo) {
     return;
   }
 
-  Element* root = vt->GetViewTransitionTreeRoot();
-  if (!root) {
+  const Document* doc = aRootElement->OwnerDoc();
+  const Element* originatingElement = doc->GetRootElement();
+  if (!originatingElement) {
     return;
   }
 
-  for (const nsIContent* node = root; node; node = node->GetNextNode(root)) {
+  const Element* rootForTraversal = [&]() -> const Element* {
+    if (!aRootElement->IsRootElement()) {
+      // It is in the view transition pseudo-element tree already, so we use it
+      // directly.
+      return aRootElement;
+    }
+    // View transition pseudo-elements cannot be accessed directly from the
+    // document element, so we have to retrieve its tree root from the active
+    // view transition object.
+    const ViewTransition* vt = doc->GetActiveViewTransition();
+    return vt ? vt->GetViewTransitionTreeRoot() : nullptr;
+  }();
+
+  for (const nsIContent* node = rootForTraversal; node;
+       node = node->GetNextNode(rootForTraversal)) {
     if (!node->IsElement()) {
       continue;
     }
@@ -4179,7 +4208,7 @@ static void GetAnimationsOfViewTransitionTree(
         pseudo->HasName()
             ? pseudo->GetParsedAttr(nsGkAtoms::name)->GetAtomValue()
             : nullptr);
-    GetAnimationsUnsorted(aOriginatingElement, request, aAnimations);
+    GetAnimationsUnsorted(originatingElement, request, aAnimations);
   }
 }
 
@@ -4209,20 +4238,16 @@ void Element::GetAnimationsWithoutFlush(
   if (!aOptions.mSubtree || (pseudoRequest.mType == PseudoStyleType::before ||
                              pseudoRequest.mType == PseudoStyleType::after ||
                              pseudoRequest.mType == PseudoStyleType::marker)) {
+    // Case 1: Non-subtree, or |this| is ::before, ::after, or ::marker.
+    //
+    // ::before, ::after, and ::marker doesn't have subtree on themself, so we
+    // just simply get the animations of the element itself even if mSubtree is
+    // true.
     GetAnimationsUnsorted(elem, pseudoRequest, aAnimations);
   } else {
-    for (nsIContent* node = this; node; node = node->GetNextNode(this)) {
-      if (!node->IsElement()) {
-        continue;
-      }
-      Element* element = node->AsElement();
-      GetAnimationsUnsorted(element, PseudoStyleRequest::NotPseudo(),
-                            aAnimations);
-      GetAnimationsUnsorted(element, PseudoStyleRequest::Before(), aAnimations);
-      GetAnimationsUnsorted(element, PseudoStyleRequest::After(), aAnimations);
-      GetAnimationsUnsorted(element, PseudoStyleRequest::Marker(), aAnimations);
-    }
-    GetAnimationsOfViewTransitionTree(this, aAnimations);
+    // Case 2: Subtree. |this| is an element or a view transition
+    // pseudo-element.
+    GetAnimationsUnsortedForSubtree(elem, aAnimations);
   }
   aAnimations.Sort(AnimationPtrComparator<RefPtr<Animation>>());
 }

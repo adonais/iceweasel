@@ -15,7 +15,6 @@
 #include "mozilla/AnimatedPropertyID.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/RangedArray.h"
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoCSSParser.h"
@@ -876,7 +875,7 @@ static void BuildSegmentsFromValueEntries(
         // If the last entry with offset 1 and no animation property, that means
         // it is the only entry for this property so append a single segment
         // from 0 offset to |aEntry[i].offset|.
-        Unused << HandleMissingInitialKeyframe(aResult, aEntries[i]);
+        (void)HandleMissingInitialKeyframe(aResult, aEntries[i]);
       }
       animationProperty = nullptr;
       break;

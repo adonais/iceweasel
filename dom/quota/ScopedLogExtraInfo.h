@@ -9,7 +9,6 @@
 
 #include <map>
 
-#include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Tainting.h"
 #include "mozilla/ThreadLocal.h"

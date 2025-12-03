@@ -6,8 +6,8 @@
 
 #include "mozilla/RandomNum.h"
 
-#include <fcntl.h>
 #ifdef XP_UNIX
+#  include <fcntl.h>
 #  include <unistd.h>
 #endif
 

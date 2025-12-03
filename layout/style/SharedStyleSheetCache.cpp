@@ -257,8 +257,8 @@ void SharedStyleSheetCache::Clear(
 
   if (XRE_IsParentProcess()) {
     for (auto* cp : ContentParent::AllProcesses(ContentParent::eLive)) {
-      Unused << cp->SendClearStyleSheetCache(aChrome, aPrincipal,
-                                             aSchemelessSite, aPattern, aURL);
+      (void)cp->SendClearStyleSheetCache(aChrome, aPrincipal, aSchemelessSite,
+                                         aPattern, aURL);
     }
   }
 

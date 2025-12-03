@@ -25,29 +25,13 @@ add_setup(async () => {
 add_task(async function test_preferences_visibility() {
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     const sandbox = sinon.createSandbox();
-    let backupSection =
-      browser.contentDocument.querySelector("#dataBackupSection");
-    let syncPane = gBrowser.contentWindow.gSyncPane;
     let settings = browser.contentDocument.querySelector("backup-settings");
-
-    const spy = sandbox.spy(syncPane, "updateBackupUIVisibility");
-    Services.obs.addObserver(
-      syncPane.updateBackupUIVisibility,
-      "backup-service-status-updated"
-    );
-
-    Assert.ok(backupSection, "Found backup preferences section");
-
-    const waitForCall = () =>
-      BrowserTestUtils.waitForCondition(
-        () => spy.callCount >= 1,
-        `Waiting for updateBackupUIVisibility() to be called 1 time`
-      );
 
     // Our mochitest-browser tests are configured to have the section visible
     // by default.
     Assert.ok(
-      BrowserTestUtils.isVisible(backupSection),
+      BrowserTestUtils.isVisible(settings.restoreSectionEl) &&
+        BrowserTestUtils.isVisible(settings.archiveSectionEl),
       "Backup section is visible"
     );
 
@@ -55,20 +39,17 @@ add_task(async function test_preferences_visibility() {
       set: [["privacy.sanitize.sanitizeOnShutdown", true]],
     });
 
-    await waitForCall();
-
     Assert.ok(
-      BrowserTestUtils.isHidden(backupSection),
-      "Backup section is not available"
+      !settings.restoreSectionEl && !settings.archiveSectionEl,
+      "Backup section is not available when sanitizeOnShutdown is enabled"
     );
 
     await SpecialPowers.popPrefEnv();
 
-    await waitForCall();
-
     Assert.ok(
-      BrowserTestUtils.isVisible(backupSection),
-      "Backup section is visible"
+      BrowserTestUtils.isVisible(settings.restoreSectionEl) &&
+        BrowserTestUtils.isVisible(settings.archiveSectionEl),
+      "Backup section is visible now"
     );
 
     await SpecialPowers.pushPrefEnv({
@@ -76,42 +57,24 @@ add_task(async function test_preferences_visibility() {
     });
 
     Assert.ok(
-      BrowserTestUtils.isVisible(backupSection),
-      "Backup section is now visible"
-    );
-
-    let backupArchiveSection = settings.querySelector("#scheduled-backups");
-
-    Assert.ok(!backupArchiveSection, "Backup archive section is not available");
-
-    Assert.ok(
-      settings.restoreFromBackupEl,
-      "Backup restore section is available"
+      BrowserTestUtils.isVisible(settings.restoreSectionEl) &&
+        !settings.archiveSectionEl,
+      "Backup section is still visible since restore is enabled"
     );
 
     await SpecialPowers.pushPrefEnv({
       set: [[BACKUP_RESTORE_ENABLED_PREF, false]],
     });
 
-    await settings.updateComplete;
-
     Assert.ok(
-      BrowserTestUtils.isHidden(backupSection),
-      "Backup section is not available"
-    );
-
-    Assert.ok(
-      !settings.restoreFromBackupEl,
-      "Backup Restore section is not available"
+      !settings.restoreSectionEl && !settings.archiveSectionEl,
+      "Backup section is not available anymore after both archive and restore are disabled"
     );
 
     await SpecialPowers.popPrefEnv();
     await SpecialPowers.popPrefEnv();
 
-    Services.obs.removeObserver(
-      gBrowser.contentWindow.gSyncPane.updateBackupUIVisibility,
-      "backup-service-status-updated"
-    );
+    sandbox.restore();
   });
 });
 
@@ -476,5 +439,51 @@ add_task(async function test_last_backup_info_and_location() {
     await SpecialPowers.popPrefEnv();
     sandbox.restore();
   });
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_dialogs_close_on_cancel_with_restore_disabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [BACKUP_ARCHIVE_ENABLED_PREF, true],
+      [BACKUP_RESTORE_ENABLED_PREF, false],
+    ],
+  });
+
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
+    let settings = browser.contentDocument.querySelector("backup-settings");
+    await settings.updateComplete;
+
+    for (let dialog of settings.dialogs.filter(element => !!element)) {
+      dialog.showModal();
+      is(dialog.open, true, `${dialog.id} was opened.`);
+      settings.dispatchEvent(new CustomEvent("dialogCancel"));
+      is(dialog.open, false, `${dialog.id} was closed by dialogCancel.`);
+    }
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_dialogs_close_on_cancel_with_archive_disabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [BACKUP_ARCHIVE_ENABLED_PREF, false],
+      [BACKUP_RESTORE_ENABLED_PREF, true],
+    ],
+  });
+
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
+    let settings = browser.contentDocument.querySelector("backup-settings");
+    await settings.updateComplete;
+
+    for (let dialog of settings.dialogs.filter(element => !!element)) {
+      dialog.showModal();
+      is(dialog.open, true, `${dialog.id} was opened.`);
+      settings.dispatchEvent(new CustomEvent("dialogCancel"));
+      is(dialog.open, false, `${dialog.id} was closed by dialogCancel.`);
+    }
+  });
+
   await SpecialPowers.popPrefEnv();
 });

@@ -22,7 +22,6 @@
 
 #include "nsIAsyncInputStream.h"
 #include "nsCOMPtr.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/DataMutex.h"
 
 namespace mozilla {

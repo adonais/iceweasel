@@ -11,7 +11,6 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/UniquePtr.h"
 
 #include "nsIEventTarget.h"
 #include "nsIRunnable.h"

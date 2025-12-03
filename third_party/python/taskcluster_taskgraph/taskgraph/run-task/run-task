@@ -13,12 +13,6 @@ the requested process and prints its output, prefixing it with the
 current time to improve log usefulness.
 """
 
-import sys
-
-if sys.version_info[0:2] < (3, 5):
-    print("run-task requires Python 3.5+")
-    sys.exit(1)
-
 import argparse
 import datetime
 import errno
@@ -28,18 +22,20 @@ import os
 import platform
 import re
 import shutil
-import signal
 import socket
 import stat
 import subprocess
+import sys
+import threading
 import time
 import urllib.error
 import urllib.request
 from pathlib import Path
-from threading import Thread
-from typing import Optional
+from typing import Dict, Optional
 
-SECRET_BASEURL_TPL = "{}/secrets/v1/secret/{{}}".format(os.environ.get("TASKCLUSTER_PROXY_URL", "http://taskcluster").rstrip('/'))
+SECRET_BASEURL_TPL = "{}/secrets/v1/secret/{{}}".format(
+    os.environ.get("TASKCLUSTER_PROXY_URL", "http://taskcluster").rstrip("/")
+)
 
 GITHUB_SSH_FINGERPRINT = (
     b"github.com ssh-ed25519 "
@@ -106,7 +102,7 @@ IS_MACOSX = sys.platform == "darwin"
 IS_POSIX = os.name == "posix"
 IS_WINDOWS = os.name == "nt"
 
-# Both mercurial and git use sha1 as revision idenfiers. Luckily, both define
+# Both mercurial and git use sha1 as revision identifiers. Luckily, both define
 # the same value as the null revision.
 #
 # https://github.com/git/git/blob/dc04167d378fb29d30e1647ff6ff51dd182bc9a3/t/oid-info/hash-info#L7
@@ -122,6 +118,17 @@ def print_line(prefix, m):
     )
     sys.stdout.buffer.write(b"[%s %s] %s" % (prefix, now, m))
     sys.stdout.buffer.flush()
+
+
+def reap_zombies(main_subprocess):
+    """Wait for main_subprocess to exit, while awaiting any other child processes"""
+    while main_subprocess.poll() is None:
+        with main_subprocess._waitpid_lock:
+            if main_subprocess.returncode is not None:
+                return
+            pid, status = os.wait()
+            if pid == main_subprocess.pid:
+                main_subprocess._handle_exitstatus(status)
 
 
 def _call_windows_retry(func, args=(), retry_max=5, retry_delay=0.5):
@@ -148,8 +155,7 @@ def _call_windows_retry(func, args=(), retry_max=5, retry_delay=0.5):
             retry_count += 1
 
             print(
-                '%s() failed for "%s". Reason: %s (%s). Retrying...'
-                % (func.__name__, args, e.strerror, e.errno)
+                f'{func.__name__}() failed for "{args}". Reason: {e.strerror} ({e.errno}). Retrying...'
             )
             time.sleep(retry_count * retry_delay)
         else:
@@ -209,7 +215,7 @@ def remove(path):
         and path[1] == ":"
         and path[2] in (os.pathsep, os.altsep)
     ):
-        path = "\\\\?\\%s" % path
+        path = f"\\\\?\\{path}"
 
     if os.path.isfile(path) or os.path.islink(path):
         # Verify the file or link is read/write for the current user
@@ -282,6 +288,13 @@ def run_command(prefix, args, *, extra_env=None, cwd=None):
 
     stdout = io.TextIOWrapper(p.stdout, encoding="latin1")
 
+    if os.getpid() == 1:
+        # in docker we're init, so we get to adopt unawaited zombies
+        reaper_thread = threading.Thread(target=reap_zombies, args=(p,))
+        reaper_thread.start()
+    else:
+        reaper_thread = None
+
     while True:
         data = stdout.readline().encode("latin1")
 
@@ -290,34 +303,36 @@ def run_command(prefix, args, *, extra_env=None, cwd=None):
 
         print_line(prefix, data)
 
+    if reaper_thread:
+        reaper_thread.join()
     return p.wait()
 
 
 def get_posix_user_group(user, group):
-    import grp
-    import pwd
+    import grp  # noqa: PLC0415
+    import pwd  # noqa: PLC0415
 
     try:
         user_record = pwd.getpwnam(user)
     except KeyError:
-        print("could not find user %s; specify a valid user with --user" % user)
+        print(f"could not find user {user}; specify a valid user with --user")
         sys.exit(1)
 
     try:
         group_record = grp.getgrnam(group)
     except KeyError:
-        print("could not find group %s; specify a valid group with --group" % group)
+        print(f"could not find group {group}; specify a valid group with --group")
         sys.exit(1)
 
     # Most tasks use worker:worker. We require they have a specific numeric ID
     # because otherwise it is too easy for files written to caches to have
     # mismatched numeric IDs, which results in permissions errors.
     if user_record.pw_name == "worker" and user_record.pw_uid != 1000:
-        print("user `worker` must have uid=1000; got %d" % user_record.pw_uid)
+        print(f"user `worker` must have uid=1000; got {user_record.pw_uid}")
         sys.exit(1)
 
     if group_record.gr_name == "worker" and group_record.gr_gid != 1000:
-        print("group `worker` must have gid=1000; got %d" % group_record.gr_gid)
+        print(f"group `worker` must have gid=1000; got {group_record.gr_gid}")
         sys.exit(1)
 
     # Find all groups to which this user is a member.
@@ -475,16 +490,17 @@ def configure_cache_posix(cache, user, group, untrusted_caches, running_as_root)
 
         elif missing:
             print(
-                "error: requirements for populated cache %s differ from "
-                "this task" % cache
+                f"error: requirements for populated cache {cache} differ from this task"
             )
             print(
-                "cache requirements: %s"
-                % " ".join(sorted(s.decode("utf-8") for s in wanted_requirements))
+                "cache requirements: {}".format(
+                    " ".join(sorted(s.decode("utf-8") for s in wanted_requirements))
+                )
             )
             print(
-                "our requirements:   %s"
-                % " ".join(sorted(s.decode("utf-8") for s in our_requirements))
+                "our requirements:   {}".format(
+                    " ".join(sorted(s.decode("utf-8") for s in our_requirements))
+                )
             )
             if any(s.startswith((b"uid=", b"gid=")) for s in missing):
                 print(CACHE_UID_GID_MISMATCH)
@@ -497,7 +513,7 @@ def configure_cache_posix(cache, user, group, untrusted_caches, running_as_root)
 
             print("")
             print("audit log:")
-            with open(audit_path, "r") as fh:
+            with open(audit_path) as fh:
                 print(fh.read())
 
             return True
@@ -514,10 +530,10 @@ def configure_cache_posix(cache, user, group, untrusted_caches, running_as_root)
     # happen because run-task should be the first thing that touches a
     # cache.
     print(
-        "error: cache %s is not empty and is missing a "
+        f"error: cache {cache} is not empty and is missing a "
         ".cacherequires file; the cache names for this task are "
         "likely mis-configured or TASKCLUSTER_CACHES is not set "
-        "properly" % cache
+        "properly"
     )
 
     write_audit_entry(audit_path, b"missing .cacherequires")
@@ -536,7 +552,7 @@ def configure_volume_posix(volume, user, group, running_as_root):
     volume_files = os.listdir(volume)
     if volume_files:
         print(NON_EMPTY_VOLUME % volume)
-        print("entries in root directory: %s" % " ".join(sorted(volume_files)))
+        print("entries in root directory: {}".format(" ".join(sorted(volume_files))))
         sys.exit(1)
 
     # The volume is almost certainly owned by root:root. Chown it so it
@@ -551,6 +567,26 @@ def configure_volume_posix(volume, user, group, running_as_root):
         set_dir_permissions(volume, user.pw_uid, group.gr_gid)
 
 
+def git_fetch(
+    destination_path: str,
+    *targets: str,
+    remote: str = "origin",
+    tags: bool = False,
+    shallow: bool = False,
+    env: Optional[Dict[str, str]] = None,
+):
+    args = ["git", "fetch"]
+    if tags:
+        # `--force` is needed to be able to update an existing outdated tag.
+        args.extend(["--tags", "--force"])
+
+    if shallow:
+        args.append("--depth=1")
+
+    args.extend([remote, *set(targets)])
+    retry_required_command(b"vcs", args, cwd=destination_path, extra_env=env)
+
+
 def _clean_git_checkout(destination_path):
     # Delete untracked files (i.e. build products)
     print_line(b"vcs", b"cleaning git checkout...\n")
@@ -562,27 +598,18 @@ def _clean_git_checkout(destination_path):
         "-nxdff",
     ]
     print_line(b"vcs", b"executing %r\n" % args)
-    p = subprocess.Popen(
+    p = subprocess.run(
         args,
-        # Disable buffering because we want to receive output
-        # as it is generated so timestamps in logs are
-        # accurate.
-        bufsize=0,
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        stdin=sys.stdin.fileno(),
+        encoding="latin1",
         cwd=destination_path,
         env=os.environ,
+        check=True,
     )
-    stdout = io.TextIOWrapper(p.stdout, encoding="latin1")
-    ret = p.wait()
-    if ret:
-        sys.exit(ret)
-    data = stdout.read()
     prefix = "Would remove "
     filenames = [
         os.path.join(destination_path, line[len(prefix) :])
-        for line in data.splitlines()
+        for line in p.stdout.splitlines()
     ]
     print_line(b"vcs", b"removing %r\n" % filenames)
     for filename in filenames:
@@ -590,17 +617,32 @@ def _clean_git_checkout(destination_path):
     print_line(b"vcs", b"successfully cleaned git checkout!\n")
 
 
+def shortref(ref: str) -> str:
+    """Normalize a git ref to its short form.
+
+    Returns the ref unchanged if it's already in short form.
+    """
+    # Strip common ref prefixes
+    for prefix in ("refs/heads/", "refs/tags/"):
+        if ref.startswith(prefix):
+            return ref[len(prefix) :]
+
+    return ref
+
+
 def git_checkout(
     destination_path: str,
     head_repo: str,
     base_repo: Optional[str],
-    base_ref: Optional[str],
     base_rev: Optional[str],
-    ref: Optional[str],
-    commit: Optional[str],
+    head_ref: Optional[str],
+    head_rev: Optional[str],
     ssh_key_file: Optional[Path],
     ssh_known_hosts_file: Optional[Path],
+    shallow: bool = False,
 ):
+    assert head_ref or head_rev
+
     env = {
         # abort if transfer speed is lower than 1kB/s for 1 minute
         "GIT_HTTP_LOW_SPEED_LIMIT": "1024",
@@ -616,9 +658,9 @@ def git_checkout(
         env["GIT_SSH_COMMAND"] = " ".join(
             [
                 "ssh",
-                "-oIdentityFile={}".format(ssh_key_file.as_posix()),
+                f"-oIdentityFile={ssh_key_file.as_posix()}",
                 "-oStrictHostKeyChecking=yes",
-                "-oUserKnownHostsFile={}".format(ssh_known_hosts_file.as_posix()),
+                f"-oUserKnownHostsFile={ssh_known_hosts_file.as_posix()}",
             ]
         )
     elif ssh_key_file or ssh_known_hosts_file:
@@ -628,7 +670,14 @@ def git_checkout(
 
     # Bypass Git's "safe directory" feature as the destination could be
     # coming from a cache and therefore cloned by a different user.
-    args = ["git", "config", "--global", "--add", "safe.directory", Path(destination_path).as_posix()]
+    args = [
+        "git",
+        "config",
+        "--global",
+        "--add",
+        "safe.directory",
+        Path(destination_path).as_posix(),
+    ]
     retry_required_command(b"vcs", args, extra_env=env)
 
     if not os.path.exists(destination_path):
@@ -636,62 +685,54 @@ def git_checkout(
         args = [
             "git",
             "clone",
-            base_repo if base_repo else head_repo,
-            destination_path,
         ]
+
+        if shallow:
+            args.extend(["--depth=1", "--no-checkout"])
+
+        args.extend(
+            [
+                base_repo if base_repo else head_repo,
+                destination_path,
+            ]
+        )
 
         retry_required_command(b"vcs", args, extra_env=env)
 
-    if base_ref:
-        args = ["git", "fetch", "origin", base_ref]
-
-        retry_required_command(b"vcs", args, cwd=destination_path, extra_env=env)
-
-        # Create local branch so that taskgraph is able to compute differences
-        # between the head branch and the base one, if needed
-        args = ["git", "checkout", base_ref]
-
-        retry_required_command(b"vcs", args, cwd=destination_path, extra_env=env)
-
-    # When commits are force-pushed (like on a testing branch), base_rev doesn't
-    # exist on base_ref. Fetching it allows taskgraph to compute differences
-    # between the previous state before the force-push and the current state.
-    #
-    # Unlike base_ref just above, there is no need to checkout the revision:
-    # it's immediately available after the fetch.
+    # For Github based repos, base_rev often doesn't refer to an ancestor of
+    # head_rev simply due to Github not providing that information in their
+    # webhook events. Therefore we fetch it independently from `head_rev` so
+    # that consumers can compute the merge-base or files modified between the
+    # two as needed.
     if base_rev and base_rev != NULL_REVISION:
-        args = ["git", "fetch", "origin", base_rev]
+        git_fetch(destination_path, base_rev, shallow=shallow, env=env)
 
-        retry_required_command(b"vcs", args, cwd=destination_path, extra_env=env)
-
-    # If a ref was provided, it might be tag, so we need to make sure we fetch
+    # If a head_ref was provided, it might be tag, so we need to make sure we fetch
     # those. This is explicitly only done when base and head repo match,
     # because it is the only scenario where tags could be present. (PRs, for
     # example, always include an explicit rev.) Failure to do this could result
     # in not having a tag, or worse: having an outdated version of one.
-    # `--force` is needed to be able to update an existing tag.
-    if ref and base_repo == head_repo:
-        args = [
-            "git",
-            "fetch",
-            "--tags",
-            "--force",
-            base_repo,
-            ref,
-        ]
+    tags = False
+    if head_ref and not head_ref.startswith("refs/heads/") and base_repo == head_repo:
+        tags = True
 
-        retry_required_command(b"vcs", args, cwd=destination_path, extra_env=env)
+    # Fetch head_ref and/or head_rev
+    targets = []
+    if head_ref:
+        targets.append(head_ref)
+    if not head_ref or (shallow and head_rev):
+        # If head_ref wasn't provided, we fallback to head_rev. If we have a
+        # shallow clone, head_rev needs to be fetched independently regardless.
+        targets.append(head_rev)
 
-    # If a ref isn't provided, we fetch all refs from head_repo, which may be slow
-    args = [
-        "git",
-        "fetch",
-        "--no-tags",
-        head_repo,
-        ref if ref else "+refs/heads/*:refs/remotes/work/*",
-    ]
-
-    retry_required_command(b"vcs", args, cwd=destination_path, extra_env=env)
+    git_fetch(
+        destination_path,
+        *targets,
+        remote=head_repo,
+        tags=tags,
+        shallow=shallow,
+        env=env,
+    )
 
     args = [
         "git",
@@ -699,11 +740,11 @@ def git_checkout(
         "-f",
     ]
 
-    if ref:
-        args.extend(["-B", ref])
+    if head_ref:
+        args.extend(["-B", shortref(head_ref)])
 
     # `git fetch` set `FETCH_HEAD` reference to the last commit of the desired branch
-    args.append(commit if commit else "FETCH_HEAD")
+    args.append(head_rev if head_rev else "FETCH_HEAD")
 
     run_required_command(b"vcs", args, cwd=destination_path)
 
@@ -738,18 +779,16 @@ def git_checkout(
         if head_repo.endswith("/"):
             head_repo = head_repo[:-1]
 
-        tinderbox_link = "{}/commit/{}".format(head_repo, commit_hash)
+        tinderbox_link = f"{head_repo}/commit/{commit_hash}"
         repo_name = head_repo.split("/")[-1]
     else:
         tinderbox_link = head_repo
         repo_name = head_repo
 
     msg = (
-        "TinderboxPrint:<a href='{link}' "
-        "title='Built from {name} commit {commit_hash}'>"
-        "{commit_hash}</a>\n".format(
-            commit_hash=commit_hash, link=tinderbox_link, name=repo_name
-        )
+        f"TinderboxPrint:<a href='{tinderbox_link}' "
+        f"title='Built from {repo_name} commit {commit_hash}'>"
+        f"{commit_hash}</a>\n"
     )
 
     print_line(b"vcs", msg.encode("utf-8"))
@@ -795,7 +834,7 @@ def hg_checkout(
         # This is where OCC installs it in the AMIs.
         hg_bin = r"C:\Program Files\Mercurial\hg.exe"
         if not os.path.exists(hg_bin):
-            print("could not find Mercurial executable: %s" % hg_bin)
+            print(f"could not find Mercurial executable: {hg_bin}")
             sys.exit(1)
     else:
         raise RuntimeError("Must be running on mac, posix or windows")
@@ -872,30 +911,35 @@ def add_vcs_arguments(parser, project, name):
     """Adds arguments to ArgumentParser to control VCS options for a project."""
 
     parser.add_argument(
-        "--%s-checkout" % project,
-        help="Directory where %s checkout should be created" % name,
+        f"--{project}-checkout",
+        help=f"Directory where {name} checkout should be created",
     )
     parser.add_argument(
-        "--%s-sparse-profile" % project,
-        help="Path to sparse profile for %s checkout" % name,
+        f"--{project}-sparse-profile",
+        help=f"Path to sparse profile for {name} checkout",
+    )
+    parser.add_argument(
+        f"--{project}-shallow-clone",
+        action="store_true",
+        help=f"Use shallow clone for {name}",
     )
 
 
 def collect_vcs_options(args, project, name):
-    checkout = getattr(args, "%s_checkout" % project)
-    sparse_profile = getattr(args, "%s_sparse_profile" % project)
+    checkout = getattr(args, f"{project}_checkout")
+    sparse_profile = getattr(args, f"{project}_sparse_profile")
+    shallow_clone = getattr(args, f"{project}_shallow_clone")
 
     env_prefix = project.upper()
 
-    repo_type = os.environ.get("%s_REPOSITORY_TYPE" % env_prefix)
-    base_repo = os.environ.get("%s_BASE_REPOSITORY" % env_prefix)
-    base_ref = os.environ.get("%s_BASE_REF" % env_prefix)
-    base_rev = os.environ.get("%s_BASE_REV" % env_prefix)
-    head_repo = os.environ.get("%s_HEAD_REPOSITORY" % env_prefix)
-    revision = os.environ.get("%s_HEAD_REV" % env_prefix)
-    ref = os.environ.get("%s_HEAD_REF" % env_prefix)
-    pip_requirements = os.environ.get("%s_PIP_REQUIREMENTS" % env_prefix)
-    private_key_secret = os.environ.get("%s_SSH_SECRET_NAME" % env_prefix)
+    repo_type = os.environ.get(f"{env_prefix}_REPOSITORY_TYPE")
+    base_repo = os.environ.get(f"{env_prefix}_BASE_REPOSITORY")
+    base_rev = os.environ.get(f"{env_prefix}_BASE_REV")
+    head_repo = os.environ.get(f"{env_prefix}_HEAD_REPOSITORY")
+    head_ref = os.environ.get(f"{env_prefix}_HEAD_REF")
+    head_rev = os.environ.get(f"{env_prefix}_HEAD_REV")
+    pip_requirements = os.environ.get(f"{env_prefix}_PIP_REQUIREMENTS")
+    private_key_secret = os.environ.get(f"{env_prefix}_SSH_SECRET_NAME")
 
     store_path = os.environ.get("HG_STORE_PATH")
 
@@ -922,26 +966,26 @@ def collect_vcs_options(args, project, name):
         "checkout": checkout,
         "sparse-profile": sparse_profile,
         "base-repo": base_repo,
-        "base-ref": base_ref,
         "base-rev": base_rev,
         "head-repo": head_repo,
-        "revision": revision,
-        "ref": ref,
+        "head-ref": head_ref,
+        "head-rev": head_rev,
         "repo-type": repo_type,
         "ssh-secret-name": private_key_secret,
         "pip-requirements": pip_requirements,
+        "shallow-clone": shallow_clone,
     }
 
 
 def vcs_checkout_from_args(options):
     if not options["checkout"]:
-        if options["ref"] and not options["revision"]:
+        if options["head-ref"] and not options["head-rev"]:
             print("task should be defined in terms of non-symbolic revision")
             sys.exit(1)
         return
 
-    revision = options["revision"]
-    ref = options["ref"]
+    head_ref = options["head-ref"]
+    head_rev = options["head-rev"]
     ssh_key_file = None
     ssh_known_hosts_file = None
     ssh_dir = None
@@ -959,40 +1003,36 @@ def vcs_checkout_from_args(options):
             ssh_known_hosts_file = ssh_dir.joinpath("known_hosts")
             ssh_known_hosts_file.write_bytes(GITHUB_SSH_FINGERPRINT)
 
-        if options["repo-type"] == "git":
-            if not revision and not ref:
-                raise RuntimeError(
-                    "Git requires that either a ref, a revision, or both are provided"
-                )
+        if not head_rev and not head_ref:
+            raise RuntimeError(
+                f"{options['repo-type'].capitalize()} requires that either a "
+                "ref, a revision, or both are provided"
+            )
 
-            if not ref:
+        if options["repo-type"] == "git":
+            if not head_ref:
                 print("Providing a ref will improve the performance of this checkout")
 
             revision = git_checkout(
                 options["checkout"],
                 options["head-repo"],
                 options["base-repo"],
-                options["base-ref"],
                 options["base-rev"],
-                ref,
-                revision,
+                head_ref,
+                head_rev,
                 ssh_key_file,
                 ssh_known_hosts_file,
+                shallow=options.get("shallow-clone", False),
             )
         elif options["repo-type"] == "hg":
-            if not revision and not ref:
-                raise RuntimeError(
-                    "Hg requires that at least one of a ref or revision " "is provided"
-                )
-
             revision = hg_checkout(
                 options["checkout"],
                 options["head-repo"],
                 options["base-repo"],
                 options["store-path"],
                 options["sparse-profile"],
-                ref,
-                revision,
+                head_ref,
+                head_rev,
             )
         else:
             raise RuntimeError('Type of VCS must be either "git" or "hg"')
@@ -1001,7 +1041,7 @@ def vcs_checkout_from_args(options):
             shutil.rmtree(ssh_dir, ignore_errors=True)
             pass
 
-    os.environ["%s_HEAD_REV" % options["env-prefix"]] = revision
+    os.environ["{}_HEAD_REV".format(options["env-prefix"])] = revision
 
 
 def install_pip_requirements(repositories):
@@ -1014,8 +1054,18 @@ def install_pip_requirements(repositories):
 
     # TODO: Stop using system Python (#381)
     if shutil.which("uv"):
-        user_site_dir = subprocess.run([sys.executable, "-msite", "--user-site"], capture_output=True, text=True).stdout.strip()
-        cmd = ["uv", "pip", "install", "--python", sys.executable, "--target", user_site_dir]
+        user_site_dir = subprocess.run(
+            [sys.executable, "-msite", "--user-site"], capture_output=True, text=True
+        ).stdout.strip()
+        cmd = [
+            "uv",
+            "pip",
+            "install",
+            "--python",
+            sys.executable,
+            "--target",
+            user_site_dir,
+        ]
     else:
         cmd = [sys.executable, "-mpip", "install", "--user", "--break-system-packages"]
 
@@ -1032,19 +1082,27 @@ def _display_python_versions():
     print_line(
         b"setup", b"Python version: %s\n" % platform.python_version().encode("utf-8")
     )
-    
+
     print_line(b"setup", b"Subprocess python version: " + b"\n")
 
     try:
-        subprocess.run(["uv", "python", "list","--no-cache","--only-installed"], check=True)
+        subprocess.run(
+            ["uv", "python", "list", "--no-cache", "--only-installed"], check=True
+        )
 
     except (FileNotFoundError, subprocess.CalledProcessError):
-
-        python_versions = ["python","python3"]
+        python_versions = ["python", "python3"]
 
         for python_executable in python_versions:
             try:
-                subprocess.run([python_executable, "-c", "import platform; print(platform.python_version())"], check=True)
+                subprocess.run(
+                    [
+                        python_executable,
+                        "-c",
+                        "import platform; print(platform.python_version())",
+                    ],
+                    check=True,
+                )
             except FileNotFoundError:
                 pass
 
@@ -1133,10 +1191,7 @@ def main(args):
 
     for cache in caches:
         if not os.path.isdir(cache):
-            print(
-                "error: cache %s is not a directory; this should never "
-                "happen" % cache
-            )
+            print(f"error: cache {cache} is not a directory; this should never happen")
             return 1
 
         purge = configure_cache_posix(
@@ -1189,7 +1244,7 @@ def main(args):
         # special cache files in the cache's root directory and working
         # directory purging could blow them away, disallow this scenario.
         if os.path.exists(os.path.join(checkout, ".cacherequires")):
-            print("error: cannot perform vcs checkout into cache root: %s" % checkout)
+            print(f"error: cannot perform vcs checkout into cache root: {checkout}")
             sys.exit(1)
 
         # TODO given the performance implications, consider making this a fatal
@@ -1281,8 +1336,7 @@ def main(args):
         "UV_CACHE_DIR",
         "npm_config_cache",
     ] + [
-        "{}_PATH".format(repository["project"].upper())
-        for repository in repositories
+        "{}_PATH".format(repository["project"].upper()) for repository in repositories
     ]:
         if k in os.environ:
             os.environ[k] = os.path.abspath(os.environ[k])

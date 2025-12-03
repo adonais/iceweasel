@@ -142,7 +142,8 @@ export function showSourceTreeItemContextMenu(
 }
 
 /**
- * Compute the string which will be displayed as tooltip on the project directory root header */
+ * Compute the string which will be displayed as tooltip on the project directory root header
+ */
 function getItemProjectDirectoryRootName(item) {
   if (item.thread) {
     return item.thread.name;

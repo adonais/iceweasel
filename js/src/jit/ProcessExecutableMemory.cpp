@@ -10,6 +10,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/PodOperations.h"
 #include "mozilla/TaggedAnonymousMemory.h"
 #include "mozilla/XorShift128PlusRNG.h"
 
@@ -30,7 +31,6 @@
 
 #ifdef XP_WIN
 #  include "mozilla/StackWalk_windows.h"
-#  include "mozilla/WindowsVersion.h"
 #elif defined(__wasi__)
 #  if defined(JS_CODEGEN_WASM32)
 #    include <cstdlib>

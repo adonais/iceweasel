@@ -4,7 +4,9 @@
 
 package org.mozilla.fenix.home.toolbar
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,15 +19,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.localAcornColors
 import mozilla.components.compose.browser.toolbar.ActionContainer
+import mozilla.components.compose.browser.toolbar.concept.Action
+import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
+import mozilla.components.compose.browser.toolbar.concept.Action.TabCounterAction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarMenu
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.ContentDescription
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Icon
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Text
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
+import mozilla.components.compose.browser.toolbar.store.DisplayState
 import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.wallpapers.WallpaperState
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A simple browser toolbar that displays only the browser end actions configured in [store].
@@ -82,4 +96,88 @@ fun BrowserSimpleToolbar(
             }
         }
     }
+}
+
+@Composable
+@PreviewLightDark
+private fun BrowserSimpleToolbarPreview_Edit() {
+    SimpleBrowserToolbarPreview(editEndActions())
+}
+
+@Composable
+@PreviewLightDark
+private fun BrowserSimpleToolbarPreview_Initial() {
+    SimpleBrowserToolbarPreview(initialActions())
+}
+
+@Composable
+@PreviewLightDark
+private fun BrowserSimpleToolbarPreview_Search() {
+    SimpleBrowserToolbarPreview(searchEndActions())
+}
+
+@Composable
+private fun SimpleBrowserToolbarPreview(actions: List<Action>) {
+    val store = BrowserToolbarStore(
+        initialState = BrowserToolbarState(
+            displayState = DisplayState(browserActionsEnd = actions),
+        ),
+    )
+    FirefoxTheme {
+        Column(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
+            BrowserSimpleToolbar(store = store, appStore = AppStore())
+        }
+    }
+}
+
+private fun editEndActions(): List<Action> {
+    return listOf(
+        ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_stop,
+            contentDescription = android.R.string.untitled,
+            onClick = object : BrowserToolbarEvent {},
+        ),
+    )
+}
+
+private fun searchEndActions(): List<Action> {
+    return listOf(
+        ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_microphone_24,
+            contentDescription = android.R.string.untitled,
+            onClick = object : BrowserToolbarEvent {},
+        ),
+        ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_qr_code_24,
+            contentDescription = android.R.string.untitled,
+            onClick = object : BrowserToolbarEvent {},
+        ),
+    )
+}
+private fun initialActions(): List<Action> {
+    return listOf(
+        TabCounterAction(
+            count = 1,
+            contentDescription = "Tabs open: 1",
+            showPrivacyMask = false,
+            onClick = object : BrowserToolbarEvent {},
+        ),
+
+        ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+            contentDescription = android.R.string.untitled,
+            onClick = BrowserToolbarMenu {
+                listOf(
+                    BrowserToolbarMenuButton(
+                        icon = Icon.DrawableResIcon(iconsR.drawable.mozac_ic_settings_24),
+                        text = Text.StringResText(android.R.string.untitled),
+                        contentDescription = ContentDescription.StringResContentDescription(
+                            android.R.string.untitled,
+                        ),
+                        onClick = object : BrowserToolbarEvent {},
+                    ),
+                )
+            },
+        ),
+    )
 }

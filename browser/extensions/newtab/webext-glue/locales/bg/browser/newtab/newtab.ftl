@@ -381,7 +381,7 @@ newtab-wallpaper-abstract-orange = Оранжеви фигури
 newtab-wallpaper-gradient-orange = Преливащо се оранжево и розово
 newtab-wallpaper-abstract-blue-purple = Сини и лилави фигури
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Снимки
 newtab-wallpaper-beach-at-sunrise = Плаж при изгрев

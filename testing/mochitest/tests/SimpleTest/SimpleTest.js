@@ -417,7 +417,7 @@ SimpleTest.setExpected();
 
 /**
  * Something like assert.
- **/
+ */
 SimpleTest.ok = function (condition, name) {
   if (arguments.length > 2) {
     const diag = "Too many arguments passed to `ok(condition, name)`";
@@ -501,7 +501,7 @@ SimpleTest.record = function (condition, name, diag, stack, expected) {
 
 /**
  * Roughly equivalent to ok(Object.is(a, b), name)
- **/
+ */
 SimpleTest.is = function (a, b, name) {
   // Be lazy and use Object.is til we want to test a browser without it.
   var pass = Object.is(a, b);
@@ -666,7 +666,7 @@ SimpleTest.info = function (name, message) {
 
 /**
  * Copies of is and isnot with the call to ok replaced by a call to todo.
- **/
+ */
 
 SimpleTest.todo_is = function (a, b, name) {
   var pass = Object.is(a, b);
@@ -686,7 +686,7 @@ SimpleTest.todo_isnot = function (a, b, name) {
 
 /**
  * Makes a test report, returns it as a DIV element.
- **/
+ */
 SimpleTest.report = function () {
   var passed = 0;
   var failed = 0;
@@ -738,7 +738,7 @@ SimpleTest.report = function () {
 
 /**
  * Toggle element visibility
- **/
+ */
 SimpleTest.toggle = function (el) {
   if (computedStyle(el, "display") == "block") {
     el.style.display = "none";
@@ -749,7 +749,7 @@ SimpleTest.toggle = function (el) {
 
 /**
  * Toggle visibility for divs with a specific class.
- **/
+ */
 SimpleTest.toggleByClass = function (cls, evt) {
   var children = document.getElementsByTagName("div");
   var elements = [];
@@ -778,7 +778,7 @@ SimpleTest.toggleByClass = function (cls, evt) {
 
 /**
  * Shows the report in the browser
- **/
+ */
 SimpleTest.showReport = function () {
   var togglePassed = createEl("a", { href: "#" }, "Toggle passed checks");
   var toggleFailed = createEl("a", { href: "#" }, "Toggle failed checks");
@@ -821,7 +821,7 @@ SimpleTest.showReport = function () {
  *
  * When SimpleTest.waitForExplicitFinish is called,
  * explicit SimpleTest.finish() is required.
- **/
+ */
 SimpleTest.waitForExplicitFinish = function () {
   SimpleTest._stopOnLoad = false;
 };
@@ -1081,7 +1081,7 @@ const kTextHtmlPrefixClipboardDataWindows =
 const kTextHtmlSuffixClipboardDataWindows =
   "<!--EndFragment-->\n</body>\n</html>";
 
-/*
+/**
  * Polls the clipboard waiting for the expected value. A known value different than
  * the expected value is put on the clipboard first (and also polled for) so we
  * can be sure the value we get isn't just the expected value because it was already
@@ -1408,7 +1408,7 @@ SimpleTest.finishWithFailure = function (msg) {
 /**
  * Finishes the tests. This is automatically called, except when
  * SimpleTest.waitForExplicitFinish() has been invoked.
- **/
+ */
 SimpleTest.finish = function () {
   if (SimpleTest._alreadyFinished) {
     var err =

@@ -6,7 +6,6 @@
 #ifndef mozilla_dom_TouchEvent_h_
 #define mozilla_dom_TouchEvent_h_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/dom/Touch.h"

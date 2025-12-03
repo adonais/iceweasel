@@ -618,9 +618,6 @@ const SNAPSHOT_SCHEMA = {
         isGPU2Active: {
           type: "boolean",
         },
-        direct2DEnabled: {
-          type: "boolean",
-        },
         directWriteEnabled: {
           type: "boolean",
         },
@@ -686,19 +683,6 @@ const SNAPSHOT_SCHEMA = {
         },
         crashGuards: {
           type: "array",
-        },
-        direct2DEnabledMessage: {
-          type: "object",
-          properties: {
-            key: {
-              required: true,
-              type: "string",
-            },
-            args: {
-              required: false,
-              type: "object",
-            },
-          },
         },
         targetFrameRate: {
           type: "number",

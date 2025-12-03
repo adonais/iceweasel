@@ -278,7 +278,7 @@ class ProgressTimelineScheduler {
 
   void AddTimeline(ScrollTimeline* aScrollTimeline) {
     MOZ_ASSERT(!mIsInScheduling, "Do not mutate the hashset during scheduling");
-    Unused << mTimelines.put(aScrollTimeline);
+    (void)mTimelines.put(aScrollTimeline);
   }
   void RemoveTimeline(ScrollTimeline* aScrollTimeline) {
     MOZ_ASSERT(!mIsInScheduling, "Do not mutate the hashset during scheduling");

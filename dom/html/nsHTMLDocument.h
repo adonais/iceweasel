@@ -7,7 +7,6 @@
 #define nsHTMLDocument_h___
 
 #include "PLDHashTable.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLSharedElement.h"
@@ -40,7 +39,7 @@ class nsHTMLDocument : public mozilla::dom::Document {
  public:
   using Document::SetDocumentURI;
 
-  nsHTMLDocument();
+  explicit nsHTMLDocument(mozilla::dom::LoadedAsData aLoadedAsData);
   virtual nsresult Init(nsIPrincipal* aPrincipal,
                         nsIPrincipal* aPartitionedPrincipal) override;
 

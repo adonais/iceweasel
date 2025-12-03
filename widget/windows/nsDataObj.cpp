@@ -3,7 +3,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/TextUtils.h"
 
 #include <ole2.h>
@@ -30,7 +29,6 @@
 #include "mozilla/Components.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StaticPrefs_clipboard.h"
-#include "mozilla/Unused.h"
 #include "nsProxyRelease.h"
 #include "nsIObserverService.h"
 #include "nsIOutputStream.h"
@@ -99,7 +97,7 @@ nsresult nsDataObj::CStream::Init(nsIURI* pSourceURI,
 
   if (nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel)) {
     rv = httpChannel->SetReferrerInfo(aReferrerInfo);
-    Unused << NS_WARN_IF(NS_FAILED(rv));
+    (void)NS_WARN_IF(NS_FAILED(rv));
   }
 
   // Do not HTTPS-Only/-First upgrade this request. If we reach this point, any
@@ -2183,8 +2181,8 @@ HRESULT nsDataObj::GetDownloadDetails(nsIURI** aSourceURI,
 
   nsAutoString srcFileName;
   nsCOMPtr<nsISupports> fileNamePrimitive;
-  Unused << mTransferable->GetTransferData(kFilePromiseDestFilename,
-                                           getter_AddRefs(fileNamePrimitive));
+  (void)mTransferable->GetTransferData(kFilePromiseDestFilename,
+                                       getter_AddRefs(fileNamePrimitive));
   nsCOMPtr<nsISupportsString> srcFileNamePrimitive =
       do_QueryInterface(fileNamePrimitive);
   if (srcFileNamePrimitive) {

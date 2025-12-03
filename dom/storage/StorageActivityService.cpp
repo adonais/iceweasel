@@ -99,7 +99,7 @@ void StorageActivityService::SendActivity(const nsACString& aOrigin) {
       });
 
   if (NS_IsMainThread()) {
-    Unused << r->Run();
+    (void)r->Run();
   } else {
     NS_DispatchToMainThread(r.forget());
   }

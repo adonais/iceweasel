@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -86,7 +85,6 @@ private val TrailingIconHeight = 24.dp
  * called. Note that this IME action may be different from what you specified in
  * [KeyboardOptions.imeAction].
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Suppress("LongMethod")
 @Composable
 fun TextField(

@@ -5,7 +5,6 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/ModuleUtils.h"
-#include "mozilla/Unused.h"
 #include "mozilla/chrome/RegistryMessageUtils.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/ipc/URIUtils.h"
@@ -366,7 +365,7 @@ nsresult SubstitutingProtocolHandler::SendSubstitution(const nsACString& aRoot,
   mapping.flags = aFlags;
 
   for (uint32_t i = 0; i < parents.Length(); i++) {
-    Unused << parents[i]->SendRegisterChromeItem(mapping);
+    (void)parents[i]->SendRegisterChromeItem(mapping);
   }
 
   return NS_OK;

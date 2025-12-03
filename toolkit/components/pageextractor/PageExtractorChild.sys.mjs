@@ -52,8 +52,14 @@ export class PageExtractorChild extends JSWindowActorChild {
   async receiveMessage({ name, data }) {
     switch (name) {
       case "PageExtractorParent:GetReaderModeContent":
+        if (this.isAboutReader()) {
+          return this.getAboutReaderContent();
+        }
         return this.getReaderModeContent(data);
       case "PageExtractorParent:GetText":
+        if (this.isAboutReader()) {
+          return this.getAboutReaderContent();
+        }
         return this.getText(data);
     }
     return Promise.reject(new Error("Unknown message: " + name));
@@ -82,11 +88,14 @@ export class PageExtractorChild extends JSWindowActorChild {
       return "";
     }
 
-    const text = (article?.textContent || "")
+    let text = (article?.textContent || "")
       .trim()
       // Replace duplicate whitespace with either a single newline or space
       .replace(/(\s*\n\s*)|\s{2,}/g, (_, newline) => (newline ? "\n" : " "));
 
+    if (article.title) {
+      text = article.title + "\n\n" + text;
+    }
     lazy.console.log("GetReaderModeContent", { force });
     lazy.console.debug(text);
 
@@ -115,11 +124,55 @@ export class PageExtractorChild extends JSWindowActorChild {
       throw new Error("Just getting the viewport is not supported yet.");
     }
 
-    const text = lazy.extractTextFromDOM(document);
+    const text = lazy.extractTextFromDOM(document, options);
 
     lazy.console.log("GetText", options);
     lazy.console.debug(text);
 
     return text.trim();
+  }
+
+  /**
+   * Special case extracting text from Reader Mode. The original article content is not
+   * retained once reader mode is activated. It is rendered out to the page. Rather
+   * than cache an additional copy of the article, just extract the text from the
+   * actual reader mode DOM.
+   *
+   * @returns {string | null}
+   */
+  getAboutReaderContent() {
+    lazy.console.log("Using special text extraction strategy for about:reader");
+    const document = this.manager.contentWindow.document;
+
+    if (!document) {
+      return null;
+    }
+    /** @type {HTMLElement?} */
+    const titleEl = document.querySelector(".reader-title");
+    /** @type {HTMLElement?} */
+    const contentEl = document.querySelector(".moz-reader-content");
+
+    const title = titleEl?.innerText;
+    const content = contentEl?.innerText;
+    if (!title && !content) {
+      return null;
+    }
+
+    if (title) {
+      return `${title}\n\n${content}`.trim();
+    }
+    return content.trim();
+  }
+
+  /**
+   * Checks if about:reader is loaded, which requires special handling.
+   *
+   * @returns {boolean}
+   */
+  isAboutReader() {
+    // Accessing the documentURIObject in this way does not materialize the
+    // `window.location.href` and should be a cheaper check here.
+    let url = this.manager.contentWindow.document.documentURIObject;
+    return url.schemeIs("about") && url.pathQueryRef.startsWith("reader?");
   }
 }

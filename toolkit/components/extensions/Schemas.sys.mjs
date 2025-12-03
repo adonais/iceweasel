@@ -708,7 +708,7 @@ class Context {
 
   /**
    * Executes the given callback, and returns an array of choice strings
-   * passed to {@see #error} during its execution.
+   * passed to {@link #error} during its execution.
    *
    * @param {Function} callback
    * @returns {object}

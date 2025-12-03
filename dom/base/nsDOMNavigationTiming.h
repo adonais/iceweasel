@@ -26,12 +26,9 @@ namespace IPC {
 class Message;
 class MessageReader;
 class MessageWriter;
-}  // namespace IPC
-namespace mozilla::ipc {
-class IProtocol;
 template <typename>
-struct IPDLParamTraits;
-}  // namespace mozilla::ipc
+struct ParamTraits;
+}  // namespace IPC
 
 class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
  public:
@@ -256,22 +253,22 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
 
   bool mDocShellHasBeenActiveSinceNavigationStart;
 
-  friend struct mozilla::ipc::IPDLParamTraits<nsDOMNavigationTiming*>;
+  friend struct IPC::ParamTraits<nsDOMNavigationTiming*>;
 };
 
 // IPDL serializer. Please be aware of the caveats in sending across
 // the information and the potential resulting data leakage.
 // For now, this serializer is to only be used under a very narrowed scope
 // so that only the starting times are ever set.
-namespace mozilla::ipc {
+namespace IPC {
+
 template <>
-struct IPDLParamTraits<nsDOMNavigationTiming*> {
-  static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
-                    nsDOMNavigationTiming* aParam);
-  static bool Read(IPC::MessageReader* aReader, IProtocol* aActor,
+struct ParamTraits<nsDOMNavigationTiming*> {
+  static void Write(MessageWriter* aWriter, nsDOMNavigationTiming* aParam);
+  static bool Read(MessageReader* aReader,
                    RefPtr<nsDOMNavigationTiming>* aResult);
 };
 
-}  // namespace mozilla::ipc
+}  // namespace IPC
 
 #endif /* nsDOMNavigationTiming_h___ */

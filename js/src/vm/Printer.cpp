@@ -8,7 +8,6 @@
 
 #include "mozilla/PodOperations.h"
 #include "mozilla/Printf.h"
-#include "mozilla/RangedPtr.h"
 
 #include <stdarg.h>
 #include <stdio.h>

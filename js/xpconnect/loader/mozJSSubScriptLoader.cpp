@@ -35,7 +35,6 @@
 #include "mozilla/SystemPrincipal.h"
 #include "mozilla/scache/StartupCache.h"
 #include "mozilla/scache/StartupCacheUtils.h"
-#include "mozilla/Unused.h"
 #include "mozilla/Utf8.h"  // mozilla::Utf8Unit
 #include "nsContentUtils.h"
 #include "nsContentSecurityUtils.h"
@@ -489,7 +488,7 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
   // into the preload cache.
   bool storeIntoPreloadCache = !ignoreCache && !options.wantReturnValue;
 
-  Unused << EvalStencil(cx, targetObj, loadScope, retval, uri,
-                        storeIntoStartupCache, storeIntoPreloadCache, stencil);
+  (void)EvalStencil(cx, targetObj, loadScope, retval, uri,
+                    storeIntoStartupCache, storeIntoPreloadCache, stencil);
   return NS_OK;
 }

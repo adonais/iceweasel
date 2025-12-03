@@ -7,6 +7,7 @@
 #include "BounceTrackingProtection.h"
 #include "BounceTrackingState.h"
 #include "BounceTrackingRecord.h"
+#include "ProfileAfterChangeGate.h"
 
 #include "BounceTrackingStorageObserver.h"
 #include "ErrorList.h"
@@ -67,6 +68,13 @@ BounceTrackingState::~BounceTrackingState() {
 already_AddRefed<BounceTrackingState> BounceTrackingState::GetOrCreate(
     dom::BrowsingContextWebProgress* aWebProgress, nsresult& aRv) {
   aRv = NS_OK;
+
+  // Do not init before profile-after-change.
+  nsresult rv = EnsurePastProfileAfterChange();
+  if (NS_FAILED(rv)) {
+    aRv = rv;
+    return nullptr;
+  }
 
   if (!aWebProgress) {
     aRv = NS_ERROR_INVALID_ARG;

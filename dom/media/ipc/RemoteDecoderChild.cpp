@@ -75,6 +75,9 @@ RefPtr<MediaDataDecoder::InitPromise> RemoteDecoderChild::Init() {
             mConversion = initResponse.conversion();
             mShouldDecoderAlwaysBeRecycled =
                 initResponse.shouldDecoderAlwaysBeRecycled();
+            for (auto p : initResponse.decodeProperties()) {
+              mDecodeProperties[p.name()] = Some(p.value());
+            }
             // Either the promise has not yet been resolved or the handler has
             // been disconnected and we can't get here.
             mInitPromise.Resolve(initResponse.type(), __func__);
@@ -258,7 +261,7 @@ nsCString RemoteDecoderChild::GetCodecName() const {
 
 void RemoteDecoderChild::SetSeekThreshold(const media::TimeUnit& aTime) {
   AssertOnManagerThread();
-  Unused << SendSetSeekThreshold(aTime);
+  (void)SendSetSeekThreshold(aTime);
 }
 
 MediaDataDecoder::ConversionRequired RemoteDecoderChild::NeedsConversion()

@@ -199,6 +199,7 @@ class SelectableProfileServiceClass extends EventEmitter {
     "datareporting.policy.minimumPolicyVersion.channel-beta",
     "datareporting.usage.uploadEnabled",
     "termsofuse.acceptedDate",
+    "termsofuse.firstAcceptedDate",
     "termsofuse.acceptedVersion",
     "termsofuse.bypassNotification",
     "termsofuse.currentVersion",
@@ -231,6 +232,14 @@ class SelectableProfileServiceClass extends EventEmitter {
       () => this.updateEnabledState(),
       "profile-after-change"
     );
+
+    Services.prefs.addObserver(PROFILES_CREATED_PREF_NAME, () =>
+      Services.obs.notifyObservers(
+        null,
+        "sps-profile-created",
+        lazy.PROFILES_CREATED ? "true" : "false"
+      )
+    );
   }
 
   // Migrate any early users who created profiles before the datastore service
@@ -240,6 +249,10 @@ class SelectableProfileServiceClass extends EventEmitter {
     if (this.groupToolkitProfile?.storeID && !lazy.PROFILES_CREATED) {
       Services.prefs.setBoolPref(PROFILES_CREATED_PREF_NAME, true);
     }
+  }
+
+  hasCreatedSelectableProfiles() {
+    return Services.prefs.getBoolPref(PROFILES_CREATED_PREF_NAME, false);
   }
 
   #getEnabledState() {
@@ -619,13 +632,17 @@ class SelectableProfileServiceClass extends EventEmitter {
    * Launch a new Firefox instance using the given selectable profile.
    *
    * @param {SelectableProfile} aProfile The profile to launch
-   * @param {string} aUrl A url to open in launched profile
+   * @param {Array<string>} aUrls An array of urls to open in launched profile
    */
-  launchInstance(aProfile, aUrl) {
+  launchInstance(aProfile, aUrls) {
     let args = [];
 
-    if (aUrl) {
-      args.push("-url", aUrl);
+    if (aUrls?.length) {
+      // See https://wiki.mozilla.org/Firefox/CommandLineOptions#-url_URL
+      // Use '-new-tab' instead of '-url' because when opening multiple URLs,
+      // Firefox always opens them as tabs in a new window and we want to
+      // attempt opening these tabs in an existing window.
+      args.push(...aUrls.flatMap(url => ["-new-tab", url]));
     } else {
       args.push(`--${COMMAND_LINE_ACTIVATE}`);
     }
@@ -1353,6 +1370,8 @@ class SelectableProfileServiceClass extends EventEmitter {
     let newDefault = profiles.find(p => p.id !== this.currentProfile.id);
     await this.setDefaultProfileForGroup(newDefault);
 
+    await this.currentProfile.removeDesktopShortcut();
+
     await this.#connection.executeBeforeShutdown(
       "SelectableProfileService: deleteCurrentProfile",
       async db => {
@@ -1438,7 +1457,7 @@ class SelectableProfileServiceClass extends EventEmitter {
 
     let profile = await this.#createProfile();
     if (launchProfile) {
-      this.launchInstance(profile, "about:newprofile");
+      this.launchInstance(profile, ["about:newprofile"]);
     }
     return profile;
   }

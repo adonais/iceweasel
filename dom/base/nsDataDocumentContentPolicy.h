@@ -19,7 +19,6 @@
 #define NS_DATADOCUMENTCONTENTPOLICY_CONTRACTID \
   "@mozilla.org/data-document-content-policy;1"
 
-#include "mozilla/Attributes.h"
 #include "nsIContentPolicy.h"
 
 class nsDataDocumentContentPolicy final : public nsIContentPolicy {

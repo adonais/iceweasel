@@ -2,6 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * @import { ExperimentManager } from "./lib/ExperimentManager.sys.mjs"
+ * @import { RemoteSettingsExperimentLoader } from "./lib/RemoteSettingsExperimentLoader.sys.mjs"
+ */
+
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
@@ -74,26 +79,6 @@ const experimentBranchAccessor = {
 
 const NIMBUS_PROFILE_ID_PREF = "nimbus.profileId";
 
-let cachedProfileId = null;
-
-/**
- * Ensure the Nimbus profile ID exists.
- *
- * @returns {string} The profile ID.
- */
-function ensureNimbusProfileId() {
-  if (!cachedProfileId) {
-    if (Services.prefs.prefHasUserValue(NIMBUS_PROFILE_ID_PREF)) {
-      cachedProfileId = Services.prefs.getStringPref(NIMBUS_PROFILE_ID_PREF);
-    } else {
-      cachedProfileId = Services.uuid.generateUUID().toString().slice(1, -1);
-      Services.prefs.setStringPref(NIMBUS_PROFILE_ID_PREF, cachedProfileId);
-    }
-  }
-
-  return cachedProfileId;
-}
-
 /**
  * Metadata about an enrollment.
  *
@@ -131,11 +116,83 @@ export const EnrollmentType = Object.freeze({
   ROLLOUT: "rollout",
 });
 
-let initialized = false;
-let experimentManager = null;
-let experimentLoader = null;
+export const ExperimentAPI = new (class {
+  /**
+   * Whether or not the ExperimentAPI has been initialized.
+   */
+  #initialized = false;
 
-export const ExperimentAPI = {
+  /**
+   * The current ExperimentManager.
+   *
+   * @type {ExperimentManager | null}
+   */
+  #experimentManager = null;
+
+  /**
+   * The current RemoteSettingsExperimentLoader.
+   *
+   * @type {RemoteSettingsExperimentLoader | null}
+   */
+  #experimentLoader = null;
+
+  /**
+   * The unique ID of this Profile.
+   *
+   * @type {string | null}
+   */
+  #cachedProfileId = null;
+
+  /**
+   * Cached pref values.
+   */
+  #prefValues = {
+    /**
+     * Whether or not opt-out studies are enabled.
+     *
+     * @see {@link STUDIES_OPT_OUT_PREF}
+     */
+    studiesEnabled: false,
+
+    /**
+     * Whether or not telemetry is enabled.
+     *
+     * @see {@link UPLOAD_ENABLED_PREF}
+     */
+    telemetryEnabled: false,
+  };
+
+  #studiesEnabled = false;
+
+  constructor() {
+    if (IS_MAIN_PROCESS) {
+      // Ensure that the profile ID is cached in a pref.
+      if (Services.prefs.prefHasUserValue(NIMBUS_PROFILE_ID_PREF)) {
+        this.#cachedProfileId = Services.prefs.getStringPref(
+          NIMBUS_PROFILE_ID_PREF
+        );
+      } else {
+        this.#cachedProfileId = Services.uuid
+          .generateUUID()
+          .toString()
+          .slice(1, -1);
+        Services.prefs.setStringPref(
+          NIMBUS_PROFILE_ID_PREF,
+          this.#cachedProfileId
+        );
+      }
+    }
+
+    this._onStudiesEnabledChanged = this._onStudiesEnabledChanged.bind(this);
+    this._annotateCrashReport = this._annotateCrashReport.bind(this);
+    this._removeCrashReportAnnotator =
+      this._removeCrashReportAnnotator.bind(this);
+
+    ChromeUtils.defineLazyGetter(this, "_remoteSettingsClient", function () {
+      return lazy.RemoteSettings(lazy.COLLECTION_ID);
+    });
+  }
+
   /**
    * The topic that is notified when either the studies enabled pref or the
    * telemetry enabled pref changes.
@@ -145,7 +202,7 @@ export const ExperimentAPI = {
    */
   get STUDIES_ENABLED_CHANGED() {
     return "nimbus:studies-enabled-changed";
-  },
+  }
 
   /**
    * Initialize the ExperimentAPI.
@@ -166,14 +223,16 @@ export const ExperimentAPI = {
    *          Whether or not the ExperimentAPI was initialized.
    */
   async init({ extraContext, forceSync = false } = {}) {
-    if (initialized) {
+    if (this.#initialized) {
       return false;
     }
 
-    ensureNimbusProfileId();
+    this.#initialized = true;
 
-    initialized = true;
-
+    // Compute the enabled state and cache it. It is possible for the enabled
+    // state to change during ExperimentAPI initialization, but we do not
+    // register our observers until the end of this function.
+    this.#computeEnabled();
     const studiesEnabled = this.studiesEnabled;
 
     try {
@@ -241,11 +300,11 @@ export const ExperimentAPI = {
     }
 
     Services.prefs.addObserver(
-      UPLOAD_ENABLED_PREF,
+      STUDIES_OPT_OUT_PREF,
       this._onStudiesEnabledChanged
     );
     Services.prefs.addObserver(
-      STUDIES_OPT_OUT_PREF,
+      UPLOAD_ENABLED_PREF,
       this._onStudiesEnabledChanged
     );
 
@@ -256,78 +315,121 @@ export const ExperimentAPI = {
     }
 
     return true;
-  },
+  }
 
   /**
    * Return the global ExperimentManager.
    *
    * The ExperimentManager will be lazily created upon first access to this
    * property.
+   *
+   * @type {ExperimentManager}
    */
   get manager() {
-    if (experimentManager === null) {
-      experimentManager = new lazy.ExperimentManager();
+    if (this.#experimentManager === null) {
+      this.#experimentManager = new lazy.ExperimentManager();
     }
 
-    return experimentManager;
-  },
+    return this.#experimentManager;
+  }
 
   /**
    * Return the global ExperimentManager.
    *
    * @deprecated Use ExperimentAPI.Manager instead of this property.
+   *
+   * @type {ExperimentManager}
    */
   get _manager() {
     return this.manager;
-  },
+  }
 
   /**
    * Return the global RemoteSettingsExperimentLoader.
+   *
+   * @type {RemoteSettingsExperimentLoader}
    */
   get _rsLoader() {
-    if (experimentLoader === null) {
-      experimentLoader = new lazy.RemoteSettingsExperimentLoader(this.manager);
+    if (this.#experimentLoader === null) {
+      this.#experimentLoader = new lazy.RemoteSettingsExperimentLoader(
+        this.manager
+      );
     }
 
-    return experimentLoader;
-  },
+    return this.#experimentLoader;
+  }
 
   _resetForTests() {
-    experimentLoader?.disable();
-    experimentLoader = null;
+    this.#experimentLoader?.disable();
+    this.#experimentLoader = null;
 
-    lazy.CleanupManager.removeCleanupHandler(
-      ExperimentAPI._removeCrashReportAnnotator
+    lazy.CleanupManager.removeCleanupHandler(this._removeCrashReportAnnotator);
+    this.#experimentManager?.store.off("update", this._annotateCrashReport);
+    this.#experimentManager = null;
+
+    Services.prefs.removeObserver(
+      STUDIES_OPT_OUT_PREF,
+      this._onStudiesEnabledChanged
     );
-    experimentManager?.store.off("update", this._annotateCrashReport);
-    experimentManager = null;
+    Services.prefs.removeObserver(
+      UPLOAD_ENABLED_PREF,
+      this._onStudiesEnabledChanged
+    );
 
-    initialized = false;
-  },
+    this.#initialized = false;
+  }
+
+  #computeEnabled() {
+    this.#prefValues.studiesEnabled = Services.prefs.getBoolPref(
+      STUDIES_OPT_OUT_PREF,
+      false
+    );
+    this.#prefValues.telemetryEnabled = Services.prefs.getBoolPref(
+      UPLOAD_ENABLED_PREF,
+      false
+    );
+
+    this.#studiesEnabled =
+      this.#prefValues.studiesEnabled &&
+      this.#prefValues.telemetryEnabled &&
+      Services.policies.isAllowed("Shield");
+  }
+
+  get enabled() {
+    return this.studiesEnabled || this.labsEnabled;
+  }
+
+  get labsEnabled() {
+    return Services.policies.isAllowed("FirefoxLabs");
+  }
 
   get studiesEnabled() {
-    return (
-      Services.prefs.getBoolPref(UPLOAD_ENABLED_PREF, false) &&
-      Services.prefs.getBoolPref(STUDIES_OPT_OUT_PREF, false) &&
-      Services.policies.isAllowed("Shield")
-    );
-  },
+    return this.#studiesEnabled;
+  }
 
   /**
    * Return the profile ID.
    *
    * This is used to distinguish different profiles in a shared profile group
    * apart. Each profile has a persistent and stable profile ID. It is stored as
-   * a user branch pref but is locked to prevent tampering.
+   * a user branch pref.
    *
    * This is still susceptible to user.js editing, but there's nothing we can do
    * about that.
    *
+   * @throws {Error} If accessed outside the main process.
+   *
    * @returns {string} The profile ID.
    */
   get profileId() {
-    return ensureNimbusProfileId();
-  },
+    if (!IS_MAIN_PROCESS) {
+      throw new Error(
+        "ExperimentAPI.profileId is not available outside the main process"
+      );
+    }
+
+    return this.#cachedProfileId;
+  }
 
   /**
    * Wait for the ExperimentAPI to become ready.
@@ -342,7 +444,7 @@ export const ExperimentAPI = {
    */
   async ready() {
     return this.manager.store.ready();
-  },
+  }
 
   /**
    * Annotate the current crash report with current enrollments.
@@ -362,23 +464,44 @@ export const ExperimentAPI = {
       "NimbusEnrollments",
       activeEnrollments
     );
-  },
+  }
 
   _removeCrashReportAnnotator() {
-    if (initialized) {
-      experimentManager?.store.off("update", this._annotateCrashReport);
+    if (this.#initialized) {
+      this.#experimentManager?.store.off("update", this._annotateCrashReport);
     }
-  },
+  }
 
-  async _onStudiesEnabledChanged() {
-    if (!this.studiesEnabled) {
-      await this.manager._handleStudiesOptOut();
+  async _onStudiesEnabledChanged(_topic, _subject, prefName) {
+    const studiesPreviouslyEnabled = this.studiesEnabled;
+
+    switch (prefName) {
+      case STUDIES_OPT_OUT_PREF:
+      case UPLOAD_ENABLED_PREF:
+        this.#computeEnabled();
+        break;
+
+      default:
+        return;
     }
 
-    await this._rsLoader.onEnabledPrefChange();
+    if (!this.#initialized) {
+      return;
+    }
 
-    Services.obs.notifyObservers(null, this.STUDIES_ENABLED_CHANGED);
-  },
+    if (studiesPreviouslyEnabled !== this.studiesEnabled) {
+      if (!this.studiesEnabled) {
+        this.manager._handleStudiesOptOut();
+      }
+
+      // Labs is disabled only by policy, so it cannot be disabled at runtime.
+      // Thus we only need to notify the RemoteSettingsExperimentLoader when
+      // studies become enabled or disabled.
+      await this._rsLoader.onEnabledPrefChange();
+
+      Services.obs.notifyObservers(null, this.STUDIES_ENABLED_CHANGED);
+    }
+  }
 
   /**
    * Returns the recipe for a given experiment slug
@@ -415,7 +538,7 @@ export const ExperimentAPI = {
     }
 
     return recipe;
-  },
+  }
 
   /**
    * Returns all the branches for a given experiment slug
@@ -437,7 +560,7 @@ export const ExperimentAPI = {
     return recipe?.branches.map(
       branch => new Proxy(branch, experimentBranchAccessor)
     );
-  },
+  }
 
   /**
    * Opt-in to the given experiment on the given branch.
@@ -465,8 +588,8 @@ export const ExperimentAPI = {
    */
   async optInToExperiment(options) {
     return this._rsLoader._optInToExperiment(options);
-  },
-};
+  }
+})();
 
 /**
  * Singleton that holds lazy references to _ExperimentFeature instances
@@ -932,21 +1055,6 @@ export class _ExperimentFeature {
     return undefined;
   }
 }
-
-ExperimentAPI._annotateCrashReport =
-  ExperimentAPI._annotateCrashReport.bind(ExperimentAPI);
-ExperimentAPI._onStudiesEnabledChanged =
-  ExperimentAPI._onStudiesEnabledChanged.bind(ExperimentAPI);
-ExperimentAPI._removeCrashReportAnnotator =
-  ExperimentAPI._removeCrashReportAnnotator.bind(ExperimentAPI);
-
-ChromeUtils.defineLazyGetter(
-  ExperimentAPI,
-  "_remoteSettingsClient",
-  function () {
-    return lazy.RemoteSettings(lazy.COLLECTION_ID);
-  }
-);
 
 class ExperimentLocalizationError extends Error {
   constructor(reason, locale) {

@@ -97,7 +97,7 @@ class NonBlockingHttpIconLoaderTest {
                 assertEquals("Hello World!", downloadedResource)
                 assertSame(Icon.Source.DOWNLOAD, ((callbackIcon as IconLoader.Result.BytesResult).source))
                 assertTrue(callbackResource!!.url.endsWith("/some/path"))
-                assertSame(IconRequest.Resource.Type.APPLE_TOUCH_ICON, callbackResource?.type)
+                assertSame(IconRequest.Resource.Type.APPLE_TOUCH_ICON, callbackResource.type)
                 assertSame(iconRequest, callbackIconRequest)
             } finally {
                 server.shutdown()
@@ -203,7 +203,7 @@ class NonBlockingHttpIconLoaderTest {
         assertEquals(IconLoader.Result.NoResult, callbackIcon)
         assertNotNull(callbackIconRequest)
         assertEquals("https://www.example.org", callbackResource!!.url)
-        assertSame(IconRequest.Resource.Type.APPLE_TOUCH_ICON, callbackResource?.type)
+        assertSame(IconRequest.Resource.Type.APPLE_TOUCH_ICON, callbackResource.type)
     }
 
     @Test
@@ -261,7 +261,7 @@ class NonBlockingHttpIconLoaderTest {
         assertEquals(IconLoader.Result.NoResult, callbackIcon)
         assertNotNull(callbackIconRequest)
         assertEquals("https://www.example.org", callbackResource!!.url)
-        assertSame(IconRequest.Resource.Type.APPLE_TOUCH_ICON, callbackResource?.type)
+        assertSame(IconRequest.Resource.Type.APPLE_TOUCH_ICON, callbackResource.type)
     }
 
     @Test
@@ -300,7 +300,7 @@ class NonBlockingHttpIconLoaderTest {
         assertEquals(IconLoader.Result.NoResult, callbackIcon)
         assertNotNull(callbackIconRequest)
         assertEquals("https://www.example.org", callbackResource!!.url)
-        assertSame(IconRequest.Resource.Type.APPLE_TOUCH_ICON, callbackResource?.type)
+        assertSame(IconRequest.Resource.Type.APPLE_TOUCH_ICON, callbackResource.type)
     }
 
     @Test

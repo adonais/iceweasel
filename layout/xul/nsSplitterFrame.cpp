@@ -21,7 +21,6 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ReflowInput.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"

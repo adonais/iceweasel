@@ -22,7 +22,7 @@ XPCOMUtils.defineLazyServiceGetter(
   this,
   "clipboardHelper",
   "@mozilla.org/widget/clipboardhelper;1",
-  "nsIClipboardHelper"
+  Ci.nsIClipboardHelper
 );
 
 // These should match the same consts in UrlbarProviderSearchTips.sys.mjs.

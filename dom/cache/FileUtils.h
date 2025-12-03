@@ -10,7 +10,6 @@
 #include "CacheCipherKeyManager.h"
 #include "CacheCommon.h"
 #include "mozIStorageConnection.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/cache/Types.h"
 #include "nsStreamUtils.h"
 #include "nsTArrayForwardDeclare.h"

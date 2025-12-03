@@ -10,8 +10,6 @@
 #include "platform.h"
 #include "ThreadInfo.h"
 
-#include "mozilla/UniquePtr.h"
-
 namespace mozilla {
 namespace baseprofiler {
 

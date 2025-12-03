@@ -4,16 +4,6 @@
 
 @import "chrome://global/skin/global.css";
 
-:host {
-  --status-card-connected-background-color: var(--color-violet-90);
-  --connection-globe-icon-size: 48px;
-  --connection-rings-extra-space-x: 23px;
-  --connection-rings-extra-space-y: 23px;
-  --connection-shield-color: var(--panel-background);
-  --connection-shield-off-background-color: var(--icon-color-critical);
-  --connection-shield-on-background-color: var(--color-accent-primary);
-}
-
 hr {
   border-style: solid none none none;
   border-color: var(--panel-separator-color);
@@ -30,87 +20,6 @@ hr {
 .vpn-top-content {
   margin-inline: var(--space-large);
   margin-block-start: var(--space-small);
-}
-
-.vpn-status-group {
-  position: relative;
-  margin: var(--space-large);
-  overflow: hidden;
-}
-
-.is-enabled {
-  color: #fff;
-  background-color: var(--status-card-connected-background-color);
-}
-
-#status-card {
-  --shield-bgcolor: var(--connection-shield-off-background-color);
-  --box-icon-size: var(--connection-globe-icon-size);
-  --box-icon-fill: var(--connection-shield-color);
-  --box-icon-stroke: var(--shield-bgcolor);
-  --box-label-font-weight: var(--font-weight-bold);
-  -moz-context-properties: fill, stroke;
-  /**
-   * moz-box-group changes the border of items based on its position in the group.
-   * Undo it to preserve the border radius even though the animation rings are
-   * loaded first in the group.
-   */
-  --box-border-radius-start: initial;
-  fill: var(--connection-shield-color);
-  stroke: var(--shield-bgcolor);
-
-  &.is-enabled {
-    --shield-bgcolor: var(--connection-shield-on-background-color);
-  }
-}
-
-#connection-toggle {
-  --toggle-width: var(--size-item-xlarge);
-  --toggle-height: var(--size-item-medium);
-  --toggle-dot-margin: 2px;
-  margin-inline-end: var(--space-small);
-}
-
-#status-card-animation {
-  display: block;
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-#animation-rings {
-  display: block;
-  width: 100%;
-  height: 100%;
-  contain: strict;
-  /**
-   * A hacky attempt at centering the rings with the globe icon.
-   * It makes some assumptions about the icon size and padding pixels used in moz-box-item.
-   * The rings are 200px in height and width, so they have a radius of 100px.
-   * Additional px gap is merely for alignment and not tied to any element.
-   * TODO: (Bug 1981251) See if we can better calculate the center coords.
-   */
-  background-position-x: calc(-100px + var(--connection-globe-icon-size) + var(--space-large) - var(--connection-rings-extra-space-x));
-  background-position-y: calc(-100px + var(--connection-globe-icon-size) + var(--space-large) - var(--connection-rings-extra-space-y));
-  background-image: url("chrome://browser/content/ipprotection/assets/rings.svg");
-  background-repeat: no-repeat;
-
-  &:dir(rtl) {
-    --connection-rings-extra-space-x: 4.5px;
-    /* Shift by approximately 100% of the element's width to move the rings to the opposite side. */
-    background-position-x: calc(100% + var(--connection-globe-icon-size) + var(--space-large) + var(--connection-rings-extra-space-x));
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    display: none;
-  }
-}
-
-#location-wrapper {
-  --box-icon-fill: currentColor;
-  --box-label-font-weight: var(--font-weight-bold);
 }
 
 .vpn-bottom-content {

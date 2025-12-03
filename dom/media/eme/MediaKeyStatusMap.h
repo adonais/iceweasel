@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_MediaKeyStatuses_h
 #define mozilla_dom_MediaKeyStatuses_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/CDMCaps.h"
 #include "mozilla/dom/BufferSourceBindingFwd.h"
 #include "mozilla/dom/MediaKeyStatusMapBinding.h"

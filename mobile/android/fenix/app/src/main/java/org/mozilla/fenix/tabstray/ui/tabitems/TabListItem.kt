@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.tabstray.ui.tabitems
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.BorderStroke
@@ -53,6 +54,7 @@ import org.mozilla.fenix.compose.TabThumbnail
 import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
+import org.mozilla.fenix.tabstray.ui.sharedTabTransition
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.browser.tabstray.R as tabstrayR
 import mozilla.components.ui.icons.R as iconsR
@@ -93,7 +95,6 @@ fun TabListItem(
     val decayAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay()
     val density = LocalDensity.current
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    val thumbnailSize = with(density) { ThumbnailWidth.toPx() }.toInt()
 
     val swipeState = remember(multiSelectionEnabled, swipingEnabled) {
         SwipeToDismissState2(
@@ -118,7 +119,6 @@ fun TabListItem(
     ) {
         TabContent(
             tab = tab,
-            thumbnailSize = thumbnailSize,
             isSelected = isSelected,
             multiSelectionEnabled = multiSelectionEnabled,
             multiSelectionSelected = multiSelectionSelected,
@@ -135,7 +135,6 @@ fun TabListItem(
 @Composable
 private fun TabContent(
     tab: TabSessionState,
-    thumbnailSize: Int,
     isSelected: Boolean,
     multiSelectionEnabled: Boolean,
     multiSelectionSelected: Boolean,
@@ -189,10 +188,7 @@ private fun TabContent(
             },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Thumbnail(
-            tab = tab,
-            size = thumbnailSize,
-        )
+        Thumbnail(tab = tab)
 
         Column(
             modifier = Modifier
@@ -247,15 +243,18 @@ private fun clickableColor() = when (isSystemInDarkTheme()) {
     false -> PhotonColors.Black
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun Thumbnail(
     tab: TabSessionState,
-    size: Int,
 ) {
+    val density = LocalDensity.current
+    val thumbnailSize = with(density) { ThumbnailWidth.toPx() }.toInt()
     TabThumbnail(
         tab = tab,
-        size = size,
+        thumbnailSizePx = thumbnailSize,
         modifier = Modifier
+            .sharedTabTransition(tab = tab)
             .size(
                 width = ThumbnailWidth,
                 height = ThumbnailHeight,

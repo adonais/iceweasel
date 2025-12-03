@@ -3,7 +3,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Base64.h"
 #include "mozilla/MemoryReporting.h"
 
@@ -138,7 +137,7 @@ already_AddRefed<SharedFTFace> FT2FontEntry::GetFTFace(bool aCommit) {
   if (aCommit) {
     if (mFTFace.compareExchange(nullptr, face.get())) {
       // The reference we created is now owned by mFTFace.
-      Unused << face.forget();
+      face.forget().leak();
     } else {
       // We lost a race! Just discard our new face and use the existing one.
     }
@@ -459,7 +458,7 @@ nsresult FT2FontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
   if (setCharMap) {
     if (mCharacterMap.compareExchange(nullptr, charmap.get())) {
       // We forget rather than addref because we don't use the charmap below.
-      Unused << charmap.forget();
+      charmap.forget().leak();
     }
   }
 
@@ -1347,7 +1346,7 @@ gfxFT2FontList::GetFilteredPlatformFontLists() {
   static Device fontVisibilityDevice = Device::Unassigned;
   if (fontVisibilityDevice == Device::Unassigned) {
     nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
-    Unused << gfxInfo->GetFontVisibilityDetermination(&fontVisibilityDevice);
+    (void)gfxInfo->GetFontVisibilityDetermination(&fontVisibilityDevice);
   }
 
   nsTArray<std::pair<const char**, uint32_t>> fontLists;

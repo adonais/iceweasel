@@ -8,9 +8,12 @@
 
 #include "CompositorWidget.h"
 #include "mozilla/ipc/Endpoint.h"
-#include "mozilla/layers/NativeLayerRemoteChild.h"
+#include "mozilla/layers/NativeLayer.h"
 
 namespace mozilla {
+namespace layers {
+class PNativeLayerRemoteChild;
+}
 namespace widget {
 
 class PlatformCompositorWidgetDelegate : public CompositorWidgetDelegate {
@@ -34,7 +37,7 @@ class CocoaCompositorWidget : public CompositorWidget {
   virtual void Init(CompositorWidgetInitData&& aInitData);
 
   // CompositorWidget overrides
-  RefPtr<layers::NativeLayerRoot> GetNativeLayerRoot() override;
+  layers::NativeLayerRoot* GetNativeLayerRoot() override;
 
   LayoutDeviceIntSize GetClientSize() override;
 

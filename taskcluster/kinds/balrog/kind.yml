@@ -25,6 +25,9 @@ not-for-build-platforms:
     - android-x86_64-shippable/opt
     - android-aarch64-shippable/opt
 
+task-defaults:
+    run-on-repo-type: [hg]
+
 tasks:
     balrog:
         from-deps:

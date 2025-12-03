@@ -32,7 +32,6 @@
 #endif
 
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/Vector.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "mozilla/dom/UserActivation.h"
@@ -52,8 +51,7 @@
 
 // XXX Includes that are only required by implementations which could be moved
 // to the cpp file.
-#include "base/string_util.h"    // for StringPrintf
-#include "mozilla/ArrayUtils.h"  // for ArrayLength
+#include "base/string_util.h"  // for StringPrintf
 
 #ifdef _MSC_VER
 #  pragma warning(disable : 4800)
@@ -323,7 +321,7 @@ struct ParamTraits<std::set<V, Compare, Allocator>> final {
     T set;
     for (const auto i : mozilla::IntegerRange(size)) {
       V value;
-      mozilla::Unused << i;
+      (void)i;
       if (!ReadParam(reader, &(value))) {
         return false;
       }
@@ -353,7 +351,7 @@ struct ParamTraits<std::unordered_map<K, V>> final {
     map.reserve(size);
     for (const auto i : mozilla::IntegerRange(size)) {
       std::pair<K, V> pair;
-      mozilla::Unused << i;
+      (void)i;
       if (!ReadParam(reader, &(pair.first)) ||
           !ReadParam(reader, &(pair.second))) {
         return false;

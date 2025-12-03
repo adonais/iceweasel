@@ -15,6 +15,7 @@ from shutil import copytree, unpack_archive
 import mozinfo
 import mozinstall
 import requests
+from gecko_taskgraph.transforms.update_test import ReleaseType
 from mach.decorators import Command, CommandArgument
 from mozbuild.base import BinaryNotFoundException
 from mozlog.structured import commandline
@@ -37,8 +38,8 @@ class UpdateTestConfig:
     update_verify_file: str = "update-verify.cfg"
     update_verify_config = None
     config_source = None
-    beta: bool = False
-    release: bool = False
+    release_type: ReleaseType = ReleaseType.release
+    esr_version = None
 
     def __post_init__(self):
         if environ.get("UPLOAD_DIR"):
@@ -51,20 +52,21 @@ class UpdateTestConfig:
         else:
             self.version_info_path = None
 
-    def set_channel(self, new_channel):
+    def set_channel(self, new_channel, esr_version=None):
         self.channel = new_channel
         if self.channel.startswith("release"):
             self.mar_channel = "firefox-mozilla-release"
-            self.beta = False
-            self.release = True
+            self.release_type = ReleaseType.release
         elif self.channel.startswith("beta"):
             self.mar_channel = "firefox-mozilla-beta,firefox-mozilla-release"
-            self.beta = True
-            self.release = False
+            self.release_type = ReleaseType.beta
+        elif self.channel.startswith("esr"):
+            self.mar_channel = "firefox-mozilla-esr,firefox-mozilla-release"
+            self.release_type = ReleaseType.esr
+            self.esr_version = esr_version
         else:
             self.mar_channel = "firefox-mozilla-central"
-            self.beta = False
-            self.release = False
+            self.release_type = ReleaseType.other
 
     def set_ftp_info(self):
         """Get server URL and template for downloading application/installer"""
@@ -159,37 +161,56 @@ def get_valid_source_versions(config):
     """
     Get a list of versions to update from, based on config.
     For beta, this means a list of betas, not releases.
+    For ESR, this means a list of ESR versions where major version matches target.
     """
     ftp_content = requests.get(config.ftp_server).content.decode()
     # All versions start with e.g. 140.0, so beta and release can be int'ed
     latest_version = int(config.target_version.split(".")[0])
+    major_minor = ".".join(config.target_version.split(".")[:1])
 
-    valid_versions = []
+    valid_versions: list[str] = []
     for major in range(latest_version - config.major_version_range, latest_version + 1):
         minor_versions = []
+        if config.release_type == ReleaseType.esr and major != latest_version:
+            continue
         for minor in range(0, 11):
-            if f"{major}.{minor}" == config.target_version:
+            if f"{major}.{minor}" == major_minor:
                 break
-            if f"/{major}.{minor}/" in ftp_content:
+            elif f"/{major}.{minor}/" in ftp_content:
                 minor_versions.append(minor)
                 valid_versions.append(f"{major}.{minor}")
-            elif config.beta and minor == 0:
+            elif (
+                config.release_type == ReleaseType.esr
+                and f"/{major}.{minor}esr/" in ftp_content
+            ):
+                minor_versions.append(minor)
+                valid_versions.append(f"{major}.{minor}")
+            elif config.release_type == ReleaseType.beta and minor == 0:
                 # Release 1xx.0 is not available, but 1xx.0b1 is:
                 minor_versions.append(minor)
 
-        sep = "b" if config.beta else "."
+        sep = "b" if config.release_type == ReleaseType.beta else "."
 
         for minor in minor_versions:
             for dot in range(1, 15):
                 if f"{major}.{minor}{sep}{dot}" == config.target_version:
                     break
-                if f"/{major}.{minor}{sep}{dot}/" in ftp_content:
+                if config.release_type == ReleaseType.esr:
+                    if f"/{major}.{minor}{sep}{dot}esr/" in ftp_content:
+                        valid_versions.append(f"{major}.{minor}{sep}{dot}")
+                elif f"/{major}.{minor}{sep}{dot}/" in ftp_content:
                     valid_versions.append(f"{major}.{minor}{sep}{dot}")
 
     # Only test beta versions if channel is beta
-    if config.beta:
+    if config.release_type == ReleaseType.beta:
         valid_versions = [ver for ver in valid_versions if "b" in ver]
+    elif config.release_type == ReleaseType.esr:
+        valid_versions = [
+            f"{ver}esr" if not ver.endswith("esr") else ver for ver in valid_versions
+        ]
     valid_versions.sort()
+    while len(valid_versions) < 5:
+        valid_versions.insert(0, valid_versions[0])
     return valid_versions
 
 
@@ -205,11 +226,16 @@ def get_binary_path(config: UpdateTestConfig, **kwargs) -> str:
             )
             response.raise_for_status()
             product_details = response.json()
-            target_channel = (
-                "LATEST_FIREFOX_VERSION"
-                if config.release
-                else "LATEST_FIREFOX_RELEASED_DEVEL_VERSION"
-            )
+            if config.release_type == ReleaseType.beta:
+                target_channel = "LATEST_FIREFOX_RELEASED_DEVEL_VERSION"
+            elif config.release_type == ReleaseType.esr:
+                current_esr = product_details.get("FIREFOX_ESR").split(".")[0]
+                if config.esr_version == current_esr:
+                    target_channel = "FIREFOX_ESR"
+                else:
+                    target_channel = f"FIREFOX_ESR{config.esr_version}"
+            else:
+                target_channel = "LATEST_FIREFOX_VERSION"
 
             target_version = product_details.get(target_channel)
             config.target_version = target_version
@@ -268,6 +294,10 @@ def get_binary_path(config: UpdateTestConfig, **kwargs) -> str:
 )
 @CommandArgument("--source-locale", help="Firefox build locale to update from")
 @CommandArgument("--channel", default="release-localtest", help="Update channel to use")
+@CommandArgument(
+    "--esr-version",
+    help="ESR version, if set with --channel=esr, will only update within ESR major version",
+)
 @CommandArgument("--uv-config-file", help="Update Verify config file")
 def build(command_context, binary_path, **kwargs):
     config = UpdateTestConfig()
@@ -298,7 +328,7 @@ def build(command_context, binary_path, **kwargs):
 
     # Select update channel
     if kwargs.get("channel"):
-        config.set_channel(kwargs["channel"])
+        config.set_channel(kwargs["channel"], kwargs.get("esr_version"))
         # if (config.beta and not config.update_verify_config):
         #     logging.error("Non-release testing on local machines is not supported.")
         #     sys.exit(1)

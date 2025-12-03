@@ -1051,13 +1051,12 @@ function createItemsFromBookmarksTree(tree, restoring = false) {
   return createItem(tree, tree.parentGuid, tree.index);
 }
 
-/** ***************************************************************************
+/**
  * The Standard Places Transactions.
  *
  * See the documentation at the top of this file. The valid values for input
  * are also documented there.
  */
-
 var PT = PlacesTransactions;
 
 /**

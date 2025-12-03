@@ -407,7 +407,7 @@ newtab-wallpaper-abstract-purple-green = Dissoluziun da glisch violetta e verda
 newtab-wallpaper-abstract-blue-purple-waves = Furmas undegiadas blauas e violettas
 newtab-wallpaper-abstract-black-waves = Furmas nairas undegiadas
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotografias
 newtab-wallpaper-beach-at-sunrise = Splagia sin il far di
@@ -665,10 +665,6 @@ newtab-widget-timer-mode-focus =
     .label = Concentraziun
 newtab-widget-timer-mode-break =
     .label = Pausa
-newtab-widget-timer-play =
-    .title = Far ir
-newtab-widget-timer-pause =
-    .title = Pausa
 newtab-widget-timer-label-play =
     .label = Far ir
 newtab-widget-timer-label-pause =

@@ -5,7 +5,6 @@
 
 #include "nsLanguageAtomService.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/intl/Locale.h"
 #include "mozilla/intl/OSPreferences.h"

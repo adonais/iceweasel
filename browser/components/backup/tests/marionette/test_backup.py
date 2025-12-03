@@ -27,6 +27,11 @@ class BackupTest(MarionetteTestCase):
                 "browser.backup.log": True,
                 "browser.backup.archive.enabled": True,
                 "browser.backup.restore.enabled": True,
+                "browser.backup.archive.overridePlatformCheck": True,
+                "browser.backup.restore.overridePlatformCheck": True,
+                # Necessary to test Session Restore from backup, which relies on
+                # the crash restore mechanism.
+                "browser.sessionstore.resume_from_crash": True,
             }
         )
 
@@ -93,6 +98,11 @@ class BackupTest(MarionetteTestCase):
         # Restart the browser to force all of the test data we just added
         # to be flushed to disk and to be made ready for backup
         self.marionette.restart()
+
+        # We want to validate that TabState is flushed before serializing the
+        # backup, so run this test in the same browser instance we invoke the
+        # backup in.
+        self.add_test_sessionstore()
 
         # Put the OSKeyStore label back, since it would have been cleared
         # from memory during the restart.
@@ -163,11 +173,11 @@ class BackupTest(MarionetteTestCase):
 
         # Recover the created backup into a new profile directory. Also get out
         # the client ID of this profile, because we're going to want to make
-        # sure that this client ID is inherited by the recovered profile.
+        # sure that this client ID is not inherited from the intermediate profile.
         [
             newProfileName,
             newProfilePath,
-            expectedClientID,
+            intermediateClientID,
             osKeyStoreLabel,
         ] = self.marionette.execute_async_script(
             """
@@ -201,9 +211,9 @@ class BackupTest(MarionetteTestCase):
               throw new Error("Could not create recovery profile.");
             }
 
-            let expectedClientID = await ClientID.getClientID();
+            let intermediateClientID = await ClientID.getClientID();
 
-            return [newProfile.name, newProfile.rootDir.path, expectedClientID, OSKeyStore.STORE_LABEL];
+            return [newProfile.name, newProfile.rootDir.path, intermediateClientID, OSKeyStore.STORE_LABEL];
           })().then(outerResolve);
         """,
             script_args=[archivePath, recoveryCode, recoveryPath],
@@ -211,7 +221,7 @@ class BackupTest(MarionetteTestCase):
 
         print(f"Recovery name: {newProfileName}")
         print(f"Recovery path: {newProfilePath}")
-        print(f"Expected clientID: {expectedClientID}")
+        print(f"Intermediate clientID: {intermediateClientID}")
         print(f"Persisting fake OSKeyStore label: {osKeyStoreLabel}")
 
         self.marionette.quit()
@@ -254,6 +264,7 @@ class BackupTest(MarionetteTestCase):
         self.verify_recovered_preferences()
         self.verify_recovered_permissions()
         self.verify_recovered_payment_methods(osKeyStoreLabel)
+        self.verify_recovered_sessionstore()
 
         # Clean up the temporary OSKeyStore label
         self.marionette.execute_async_script(
@@ -270,8 +281,8 @@ class BackupTest(MarionetteTestCase):
             script_args=[osKeyStoreLabel],
         )
 
-        # Now also ensure that the recovered profile inherited the client ID
-        # from the profile that initiated recovery.
+        # Now also ensure that the recovered profile new client ID and not that
+        # one from the intermediate profile that initiated recovery.
         recoveredClientID = self.marionette.execute_async_script(
             """
           const { ClientID } = ChromeUtils.importESModule("resource://gre/modules/ClientID.sys.mjs");
@@ -281,7 +292,7 @@ class BackupTest(MarionetteTestCase):
           })().then(outerResolve);
         """
         )
-        self.assertEqual(recoveredClientID, expectedClientID)
+        self.assertNotEqual(recoveredClientID, intermediateClientID)
 
         self.marionette.quit()
         self.marionette.instance.profile = originalProfile
@@ -859,3 +870,26 @@ class BackupTest(MarionetteTestCase):
             script_args=[osKeyStoreLabel],
         )
         self.assertTrue(cardExists)
+
+    def add_test_sessionstore(self):
+        with self.marionette.using_context("content"):
+            self.marionette.navigate("about:mozilla")
+
+    def verify_recovered_sessionstore(self):
+        [tabCount, url] = self.marionette.execute_script(
+            """
+          const { SessionStore } = ChromeUtils.importESModule(
+            "resource:///modules/sessionstore/SessionStore.sys.mjs"
+          );
+          const session = SessionStore.getCurrentState(true);
+          const win = session.windows[0];
+          const tabLen = win.tabs.length;
+          const tab = win.tabs[0];
+          const entry = tab.entries[0];
+          const url = entry.url;
+          return [tabLen, url];
+        """
+        )
+
+        self.assertEqual(tabCount, 1)
+        self.assertEqual(url, "about:mozilla")

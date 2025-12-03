@@ -9,7 +9,6 @@
 
 #include "AsyncGtkClipboardRequest.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/ScopeExit.h"
 #include "prtime.h"
 
 #include <gtk/gtk.h>

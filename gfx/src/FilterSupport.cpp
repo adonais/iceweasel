@@ -771,15 +771,15 @@ static already_AddRefed<FilterNode> FilterNodeFromPrimitiveDescription(
       int32_t rx = radii.width;
       int32_t ry = radii.height;
 
-      // Is one of the radii zero or negative, return the input image
-      if (rx <= 0 || ry <= 0) {
+      // Are both of the radii zero or negative, return the input image
+      if (rx <= 0 && ry <= 0) {
         RefPtr<FilterNode> filter(mSources[0]);
         return filter.forget();
       }
 
       // Clamp radii to prevent completely insane values:
-      rx = std::min(rx, kMorphologyMaxRadius);
-      ry = std::min(ry, kMorphologyMaxRadius);
+      rx = std::clamp(rx, 0, kMorphologyMaxRadius);
+      ry = std::clamp(ry, 0, kMorphologyMaxRadius);
 
       MorphologyOperator op = aMorphology.mOperator == SVG_OPERATOR_ERODE
                                   ? MORPHOLOGY_OPERATOR_ERODE

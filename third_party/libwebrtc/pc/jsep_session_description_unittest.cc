@@ -10,9 +10,8 @@
 
 #include "api/jsep_session_description.h"
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
@@ -33,67 +32,65 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
+namespace webrtc {
+
 using ::testing::NotNull;
 using ::testing::Values;
-using webrtc::IceCandidate;
-using webrtc::IceCandidateCollection;
-using webrtc::IceCandidateType;
-using webrtc::JsepSessionDescription;
-using ::webrtc::MediaProtocolType;
-using webrtc::SdpType;
-using webrtc::SessionDescriptionInterface;
 
-static const char kCandidateUfrag[] = "ufrag";
-static const char kCandidatePwd[] = "pwd";
-static const char kCandidateUfragVoice[] = "ufrag_voice";
-static const char kCandidatePwdVoice[] = "pwd_voice";
-static const char kCandidateUfragVideo[] = "ufrag_video";
-static const char kCandidatePwdVideo[] = "pwd_video";
-static const char kCandidateFoundation[] = "a0+B/1";
-static const uint32_t kCandidatePriority = 2130706432U;  // pref = 1.0
-static const uint32_t kCandidateGeneration = 2;
+namespace {
+constexpr char kAudioMid[] = "audio";
+constexpr char kVideoMid[] = "video";
+constexpr char kCandidateUfrag[] = "ufrag";
+constexpr char kCandidatePwd[] = "pwd";
+constexpr char kCandidateUfragVoice[] = "ufrag_voice";
+constexpr char kCandidatePwdVoice[] = "pwd_voice";
+constexpr char kCandidateUfragVideo[] = "ufrag_video";
+constexpr char kCandidatePwdVideo[] = "pwd_video";
+constexpr char kCandidateFoundation[] = "a0+B/1";
+constexpr uint32_t kCandidatePriority = 2130706432U;  // pref = 1.0
+constexpr uint32_t kCandidateGeneration = 2;
 
 // This creates a session description with both audio and video media contents.
 // In SDP this is described by two m lines, one audio and one video.
-static std::unique_ptr<webrtc::SessionDescription>
-CreateCricketSessionDescription() {
-  auto desc = std::make_unique<webrtc::SessionDescription>();
+std::unique_ptr<SessionDescription> CreateCricketSessionDescription() {
+  auto desc = std::make_unique<SessionDescription>();
 
   // AudioContentDescription
-  auto audio = std::make_unique<webrtc::AudioContentDescription>();
+  auto audio = std::make_unique<AudioContentDescription>();
   // VideoContentDescription
-  auto video = std::make_unique<webrtc::VideoContentDescription>();
+  auto video = std::make_unique<VideoContentDescription>();
 
-  audio->AddCodec(webrtc::CreateAudioCodec(103, "ISAC", 16000, 0));
-  desc->AddContent(webrtc::CN_AUDIO, MediaProtocolType::kRtp, std::move(audio));
+  audio->AddCodec(CreateAudioCodec(103, "ISAC", 16000, 0));
+  desc->AddContent(kAudioMid, MediaProtocolType::kRtp, std::move(audio));
 
-  video->AddCodec(webrtc::CreateVideoCodec(120, "VP8"));
-  desc->AddContent(webrtc::CN_VIDEO, MediaProtocolType::kRtp, std::move(video));
+  video->AddCodec(CreateVideoCodec(120, "VP8"));
+  desc->AddContent(kVideoMid, MediaProtocolType::kRtp, std::move(video));
 
-  desc->AddTransportInfo(webrtc::TransportInfo(
-      webrtc::CN_AUDIO,
-      webrtc::TransportDescription(
-          std::vector<std::string>(), kCandidateUfragVoice, kCandidatePwdVoice,
-          webrtc::ICEMODE_FULL, webrtc::CONNECTIONROLE_NONE, nullptr)));
-  desc->AddTransportInfo(webrtc::TransportInfo(
-      webrtc::CN_VIDEO,
-      webrtc::TransportDescription(
-          std::vector<std::string>(), kCandidateUfragVideo, kCandidatePwdVideo,
-          webrtc::ICEMODE_FULL, webrtc::CONNECTIONROLE_NONE, nullptr)));
+  desc->AddTransportInfo(TransportInfo(
+      kAudioMid,
+      TransportDescription(std::vector<std::string>(), kCandidateUfragVoice,
+                           kCandidatePwdVoice, ICEMODE_FULL,
+                           CONNECTIONROLE_NONE, nullptr)));
+  desc->AddTransportInfo(TransportInfo(
+      kVideoMid,
+      TransportDescription(std::vector<std::string>(), kCandidateUfragVideo,
+                           kCandidatePwdVideo, ICEMODE_FULL,
+                           CONNECTIONROLE_NONE, nullptr)));
   return desc;
 }
+
+}  // namespace
 
 class JsepSessionDescriptionTest : public ::testing::Test {
  protected:
   void SetUp() override {
     int port = 1234;
-    webrtc::SocketAddress address("127.0.0.1", port++);
-    webrtc::Candidate candidate(webrtc::ICE_CANDIDATE_COMPONENT_RTP, "udp",
-                                address, 1, "", "", IceCandidateType::kHost, 0,
-                                "1");
+    SocketAddress address("127.0.0.1", port++);
+    Candidate candidate(ICE_CANDIDATE_COMPONENT_RTP, "udp", address, 1, "", "",
+                        IceCandidateType::kHost, 0, "1");
     candidate_ = candidate;
-    const std::string session_id = absl::StrCat(webrtc::CreateRandomId64());
-    const std::string session_version = absl::StrCat(webrtc::CreateRandomId());
+    const std::string session_id = absl::StrCat(CreateRandomId64());
+    const std::string session_version = absl::StrCat(CreateRandomId());
     jsep_desc_ = std::make_unique<JsepSessionDescription>(SdpType::kOffer);
     ASSERT_TRUE(jsep_desc_->Initialize(CreateCricketSessionDescription(),
                                        session_id, session_version));
@@ -109,11 +106,11 @@ class JsepSessionDescriptionTest : public ::testing::Test {
   std::unique_ptr<SessionDescriptionInterface> DeSerialize(
       const std::string& sdp) {
     auto jsep_desc = std::make_unique<JsepSessionDescription>(SdpType::kOffer);
-    EXPECT_TRUE(webrtc::SdpDeserialize(sdp, jsep_desc.get(), nullptr));
+    EXPECT_TRUE(SdpDeserialize(sdp, jsep_desc.get(), nullptr));
     return std::move(jsep_desc);
   }
 
-  webrtc::Candidate candidate_;
+  Candidate candidate_;
   std::unique_ptr<JsepSessionDescription> jsep_desc_;
 };
 
@@ -136,14 +133,14 @@ TEST_F(JsepSessionDescriptionTest, CloneRollback) {
 }
 
 TEST_F(JsepSessionDescriptionTest, CloneWithCandidates) {
-  webrtc::Candidate candidate_v4(
-      webrtc::ICE_CANDIDATE_COMPONENT_RTP, "udp",
-      webrtc::SocketAddress("192.168.1.5", 1234), kCandidatePriority, "", "",
-      IceCandidateType::kSrflx, kCandidateGeneration, kCandidateFoundation);
-  webrtc::Candidate candidate_v6(
-      webrtc::ICE_CANDIDATE_COMPONENT_RTP, "udp",
-      webrtc::SocketAddress("::1", 1234), kCandidatePriority, "", "",
-      IceCandidateType::kHost, kCandidateGeneration, kCandidateFoundation);
+  Candidate candidate_v4(ICE_CANDIDATE_COMPONENT_RTP, "udp",
+                         SocketAddress("192.168.1.5", 1234), kCandidatePriority,
+                         "", "", IceCandidateType::kSrflx, kCandidateGeneration,
+                         kCandidateFoundation);
+  Candidate candidate_v6(ICE_CANDIDATE_COMPONENT_RTP, "udp",
+                         SocketAddress("::1", 1234), kCandidatePriority, "", "",
+                         IceCandidateType::kHost, kCandidateGeneration,
+                         kCandidateFoundation);
 
   IceCandidate jice_v4("audio", 0, candidate_v4);
   IceCandidate jice_v6("audio", 0, candidate_v6);
@@ -166,6 +163,16 @@ TEST_F(JsepSessionDescriptionTest, CloneWithCandidates) {
 // a session description.
 TEST_F(JsepSessionDescriptionTest, CheckSessionDescription) {
   EXPECT_EQ(2u, jsep_desc_->number_of_mediasections());
+}
+
+TEST_F(JsepSessionDescriptionTest, IsValidMLineIndex) {
+  ASSERT_GT(jsep_desc_->number_of_mediasections(), 0u);
+  // Create a candidate with no mid and an illegal index.
+  IceCandidate ice_candidate("", -1, candidate_);
+  EXPECT_FALSE(jsep_desc_->AddCandidate(&ice_candidate));
+  IceCandidate ice_candidate2("", jsep_desc_->number_of_mediasections(),
+                              candidate_);
+  EXPECT_FALSE(jsep_desc_->AddCandidate(&ice_candidate2));
 }
 
 // Test that we can add a candidate to a session description without MID.
@@ -228,9 +235,7 @@ TEST_F(JsepSessionDescriptionTest, AddAndRemoveCandidatesWithMid) {
   // The mline index should have been updated according to mid.
   EXPECT_EQ(1, ice_candidate->sdp_mline_index());
 
-  std::vector<webrtc::Candidate> candidates(1, candidate_);
-  candidates[0].set_transport_name(mid);
-  EXPECT_EQ(1u, jsep_desc_->RemoveCandidates(candidates));
+  EXPECT_EQ(1u, jsep_desc_->RemoveCandidate(ice_candidate));
   EXPECT_EQ(0u, jsep_desc_->candidates(0)->count());
   EXPECT_EQ(0u, jsep_desc_->candidates(1)->count());
 }
@@ -287,10 +292,10 @@ TEST_F(JsepSessionDescriptionTest, AddCandidateDuplicates) {
 // Test that the connection address is set to a hostname address after adding a
 // hostname candidate.
 TEST_F(JsepSessionDescriptionTest, AddHostnameCandidate) {
-  webrtc::Candidate c;
-  c.set_component(webrtc::ICE_CANDIDATE_COMPONENT_RTP);
-  c.set_protocol(webrtc::UDP_PROTOCOL_NAME);
-  c.set_address(webrtc::SocketAddress("example.local", 1234));
+  Candidate c;
+  c.set_component(ICE_CANDIDATE_COMPONENT_RTP);
+  c.set_protocol(UDP_PROTOCOL_NAME);
+  c.set_address(SocketAddress("example.local", 1234));
   c.set_type(IceCandidateType::kHost);
   const size_t audio_index = 0;
   IceCandidate hostname_candidate("audio", audio_index, c);
@@ -318,10 +323,10 @@ TEST_F(JsepSessionDescriptionTest, SerializeDeserialize) {
 // is the default destination and deserialize it again. The connection address
 // in the deserialized description should be the dummy address 0.0.0.0:9.
 TEST_F(JsepSessionDescriptionTest, SerializeDeserializeWithHostnameCandidate) {
-  webrtc::Candidate c;
-  c.set_component(webrtc::ICE_CANDIDATE_COMPONENT_RTP);
-  c.set_protocol(webrtc::UDP_PROTOCOL_NAME);
-  c.set_address(webrtc::SocketAddress("example.local", 1234));
+  Candidate c;
+  c.set_component(ICE_CANDIDATE_COMPONENT_RTP);
+  c.set_protocol(UDP_PROTOCOL_NAME);
+  c.set_address(SocketAddress("example.local", 1234));
   c.set_type(IceCandidateType::kHost);
   const size_t audio_index = 0;
   const size_t video_index = 1;
@@ -371,14 +376,14 @@ TEST_F(JsepSessionDescriptionTest, SerializeDeserializeWithCandidates) {
 // is used as default address in c line according to preference.
 TEST_F(JsepSessionDescriptionTest, SerializeSessionDescriptionWithIPv6Only) {
   // Stun has a high preference than local host.
-  webrtc::Candidate candidate1(
-      webrtc::ICE_CANDIDATE_COMPONENT_RTP, "udp",
-      webrtc::SocketAddress("::1", 1234), kCandidatePriority, "", "",
-      IceCandidateType::kSrflx, kCandidateGeneration, kCandidateFoundation);
-  webrtc::Candidate candidate2(
-      webrtc::ICE_CANDIDATE_COMPONENT_RTP, "udp",
-      webrtc::SocketAddress("::2", 1235), kCandidatePriority, "", "",
-      IceCandidateType::kHost, kCandidateGeneration, kCandidateFoundation);
+  Candidate candidate1(ICE_CANDIDATE_COMPONENT_RTP, "udp",
+                       SocketAddress("::1", 1234), kCandidatePriority, "", "",
+                       IceCandidateType::kSrflx, kCandidateGeneration,
+                       kCandidateFoundation);
+  Candidate candidate2(ICE_CANDIDATE_COMPONENT_RTP, "udp",
+                       SocketAddress("::2", 1235), kCandidatePriority, "", "",
+                       IceCandidateType::kHost, kCandidateGeneration,
+                       kCandidateFoundation);
 
   IceCandidate jice1("audio", 0, candidate1);
   IceCandidate jice2("audio", 0, candidate2);
@@ -401,14 +406,14 @@ TEST_F(JsepSessionDescriptionTest, SerializeSessionDescriptionWithIPv6Only) {
 // preference of IPv4 is lower.
 TEST_F(JsepSessionDescriptionTest,
        SerializeSessionDescriptionWithBothIPFamilies) {
-  webrtc::Candidate candidate_v4(
-      webrtc::ICE_CANDIDATE_COMPONENT_RTP, "udp",
-      webrtc::SocketAddress("192.168.1.5", 1234), kCandidatePriority, "", "",
-      IceCandidateType::kSrflx, kCandidateGeneration, kCandidateFoundation);
-  webrtc::Candidate candidate_v6(
-      webrtc::ICE_CANDIDATE_COMPONENT_RTP, "udp",
-      webrtc::SocketAddress("::1", 1234), kCandidatePriority, "", "",
-      IceCandidateType::kHost, kCandidateGeneration, kCandidateFoundation);
+  Candidate candidate_v4(ICE_CANDIDATE_COMPONENT_RTP, "udp",
+                         SocketAddress("192.168.1.5", 1234), kCandidatePriority,
+                         "", "", IceCandidateType::kSrflx, kCandidateGeneration,
+                         kCandidateFoundation);
+  Candidate candidate_v6(ICE_CANDIDATE_COMPONENT_RTP, "udp",
+                         SocketAddress("::1", 1234), kCandidatePriority, "", "",
+                         IceCandidateType::kHost, kCandidateGeneration,
+                         kCandidateFoundation);
 
   IceCandidate jice_v4("audio", 0, candidate_v4);
   IceCandidate jice_v6("audio", 0, candidate_v6);
@@ -432,15 +437,14 @@ TEST_F(JsepSessionDescriptionTest,
 TEST_F(JsepSessionDescriptionTest,
        SerializeSessionDescriptionWithBothProtocols) {
   // Stun has a high preference than local host.
-  webrtc::Candidate candidate1(
-      webrtc::ICE_CANDIDATE_COMPONENT_RTP, "tcp",
-      webrtc::SocketAddress("::1", 1234), kCandidatePriority, "", "",
-      IceCandidateType::kSrflx, kCandidateGeneration, kCandidateFoundation);
-  webrtc::Candidate candidate2(
-      webrtc::ICE_CANDIDATE_COMPONENT_RTP, "udp",
-      webrtc::SocketAddress("fe80::1234:5678:abcd:ef12", 1235),
-      kCandidatePriority, "", "", IceCandidateType::kHost, kCandidateGeneration,
-      kCandidateFoundation);
+  Candidate candidate1(ICE_CANDIDATE_COMPONENT_RTP, "tcp",
+                       SocketAddress("::1", 1234), kCandidatePriority, "", "",
+                       IceCandidateType::kSrflx, kCandidateGeneration,
+                       kCandidateFoundation);
+  Candidate candidate2(ICE_CANDIDATE_COMPONENT_RTP, "udp",
+                       SocketAddress("fe80::1234:5678:abcd:ef12", 1235),
+                       kCandidatePriority, "", "", IceCandidateType::kHost,
+                       kCandidateGeneration, kCandidateFoundation);
 
   IceCandidate jice1("audio", 0, candidate1);
   IceCandidate jice2("audio", 0, candidate2);
@@ -463,14 +467,14 @@ TEST_F(JsepSessionDescriptionTest,
 // null IPv4 is used as default address in c line.
 TEST_F(JsepSessionDescriptionTest, SerializeSessionDescriptionWithTCPOnly) {
   // Stun has a high preference than local host.
-  webrtc::Candidate candidate1(
-      webrtc::ICE_CANDIDATE_COMPONENT_RTP, "tcp",
-      webrtc::SocketAddress("::1", 1234), kCandidatePriority, "", "",
-      IceCandidateType::kSrflx, kCandidateGeneration, kCandidateFoundation);
-  webrtc::Candidate candidate2(
-      webrtc::ICE_CANDIDATE_COMPONENT_RTP, "tcp",
-      webrtc::SocketAddress("::2", 1235), kCandidatePriority, "", "",
-      IceCandidateType::kHost, kCandidateGeneration, kCandidateFoundation);
+  Candidate candidate1(ICE_CANDIDATE_COMPONENT_RTP, "tcp",
+                       SocketAddress("::1", 1234), kCandidatePriority, "", "",
+                       IceCandidateType::kSrflx, kCandidateGeneration,
+                       kCandidateFoundation);
+  Candidate candidate2(ICE_CANDIDATE_COMPONENT_RTP, "tcp",
+                       SocketAddress("::2", 1235), kCandidatePriority, "", "",
+                       IceCandidateType::kHost, kCandidateGeneration,
+                       kCandidateFoundation);
 
   IceCandidate jice1("audio", 0, candidate1);
   IceCandidate jice2("audio", 0, candidate2);
@@ -490,24 +494,18 @@ TEST_F(JsepSessionDescriptionTest, SerializeSessionDescriptionWithTCPOnly) {
 // Tests that the connection address will be correctly set when the Candidate is
 // removed.
 TEST_F(JsepSessionDescriptionTest, RemoveCandidateAndSetConnectionAddress) {
-  webrtc::Candidate candidate1(
-      webrtc::ICE_CANDIDATE_COMPONENT_RTP, "udp",
-      webrtc::SocketAddress("::1", 1234), kCandidatePriority, "", "",
-      IceCandidateType::kHost, kCandidateGeneration, kCandidateFoundation);
-  candidate1.set_transport_name("audio");
-
-  webrtc::Candidate candidate2(
-      webrtc::ICE_CANDIDATE_COMPONENT_RTP, "tcp",
-      webrtc::SocketAddress("::2", 1235), kCandidatePriority, "", "",
-      IceCandidateType::kHost, kCandidateGeneration, kCandidateFoundation);
-  candidate2.set_transport_name("audio");
-
-  webrtc::Candidate candidate3(
-      webrtc::ICE_CANDIDATE_COMPONENT_RTP, "udp",
-      webrtc::SocketAddress("192.168.1.1", 1236), kCandidatePriority, "", "",
-      IceCandidateType::kHost, kCandidateGeneration, kCandidateFoundation);
-  candidate3.set_transport_name("audio");
-
+  Candidate candidate1(ICE_CANDIDATE_COMPONENT_RTP, "udp",
+                       SocketAddress("::1", 1234), kCandidatePriority, "", "",
+                       IceCandidateType::kHost, kCandidateGeneration,
+                       kCandidateFoundation);
+  Candidate candidate2(ICE_CANDIDATE_COMPONENT_RTP, "tcp",
+                       SocketAddress("::2", 1235), kCandidatePriority, "", "",
+                       IceCandidateType::kHost, kCandidateGeneration,
+                       kCandidateFoundation);
+  Candidate candidate3(ICE_CANDIDATE_COMPONENT_RTP, "udp",
+                       SocketAddress("192.168.1.1", 1236), kCandidatePriority,
+                       "", "", IceCandidateType::kHost, kCandidateGeneration,
+                       kCandidateFoundation);
   IceCandidate jice1("audio", 0, candidate1);
   IceCandidate jice2("audio", 0, candidate2);
   IceCandidate jice3("audio", 0, candidate3);
@@ -520,21 +518,15 @@ TEST_F(JsepSessionDescriptionTest, RemoveCandidateAndSetConnectionAddress) {
   ASSERT_TRUE(jsep_desc_->AddCandidate(&jice2));
   ASSERT_TRUE(jsep_desc_->AddCandidate(&jice3));
 
-  std::vector<webrtc::Candidate> candidates;
   EXPECT_EQ("192.168.1.1:1236", media_desc->connection_address().ToString());
 
-  candidates.push_back(candidate3);
-  ASSERT_TRUE(jsep_desc_->RemoveCandidates(candidates));
+  ASSERT_TRUE(jsep_desc_->RemoveCandidate(&jice3));
   EXPECT_EQ("[::1]:1234", media_desc->connection_address().ToString());
 
-  candidates.clear();
-  candidates.push_back(candidate2);
-  ASSERT_TRUE(jsep_desc_->RemoveCandidates(candidates));
+  ASSERT_TRUE(jsep_desc_->RemoveCandidate(&jice2));
   EXPECT_EQ("[::1]:1234", media_desc->connection_address().ToString());
 
-  candidates.clear();
-  candidates.push_back(candidate1);
-  ASSERT_TRUE(jsep_desc_->RemoveCandidates(candidates));
+  ASSERT_TRUE(jsep_desc_->RemoveCandidate(&jice1));
   EXPECT_EQ("0.0.0.0:9", media_desc->connection_address().ToString());
 }
 
@@ -545,8 +537,8 @@ class EnumerateAllSdpTypesTest : public ::testing::Test,
 TEST_P(EnumerateAllSdpTypesTest, TestIdentity) {
   SdpType type = GetParam();
 
-  const char* str = webrtc::SdpTypeToString(type);
-  EXPECT_EQ(type, webrtc::SdpTypeFromString(str));
+  const char* str = SdpTypeToString(type);
+  EXPECT_EQ(type, SdpTypeFromString(str));
 }
 
 INSTANTIATE_TEST_SUITE_P(JsepSessionDescriptionTest,
@@ -554,3 +546,5 @@ INSTANTIATE_TEST_SUITE_P(JsepSessionDescriptionTest,
                          Values(SdpType::kOffer,
                                 SdpType::kPrAnswer,
                                 SdpType::kAnswer));
+
+}  // namespace webrtc

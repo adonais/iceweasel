@@ -551,6 +551,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
    * Only those popups that pertain to the supplied aRefreshDriver are updated.
    */
   void UpdatePopupPositions(nsRefreshDriver* aRefreshDriver);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  void PaintPopups(nsRefreshDriver* aRefreshDriver);
 
   /**
    * Get the first nsMenuChainItem that is matched by the matching callback
@@ -628,20 +630,6 @@ class nsXULPopupManager final : public nsIDOMEventListener,
    * focused, or if it is a submenu of another menu that isn't open.
    */
   bool MayShowPopup(nsMenuPopupFrame* aFrame);
-
-  /**
-   * Indicate that the popup associated with aView has been moved to the
-   * specified device pixel coordinates.
-   */
-  void PopupMoved(nsIFrame* aFrame, const mozilla::LayoutDeviceIntPoint& aPoint,
-                  bool aByMoveToRect);
-
-  /**
-   * Indicate that the popup associated with aView has been resized to the
-   * given device pixel size aSize.
-   */
-  void PopupResized(nsIFrame* aFrame,
-                    const mozilla::LayoutDeviceIntSize& aSize);
 
   /**
    * Called when a popup frame is destroyed. In this case, just remove the

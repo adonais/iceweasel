@@ -164,6 +164,7 @@ EXPORTS.mozilla.net += [
     "Dashboard.h",
     "DashboardTypes.h",
     "DefaultURI.h",
+    "ExecuteIfOnMainThreadEventTarget.h",
     "InterceptionInfo.h",
     "IPv4Parser.h",
     "NetworkConnectivityService.h",
@@ -186,6 +187,7 @@ UNIFIED_SOURCES += [
     "Dashboard.cpp",
     "DefaultURI.cpp",
     "EventTokenBucket.cpp",
+    "ExecuteIfOnMainThreadEventTarget.cpp",
     "InterceptionInfo.cpp",
     "IPv4Parser.cpp",
     "LNAPermissionRequest.cpp",
@@ -284,10 +286,6 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     SOURCES += [
         "nsURLHelperWin.cpp",
         "ShutdownLayer.cpp",
-    ]
-elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
-    SOURCES += [
-        "nsURLHelperOSX.cpp",
     ]
 else:
     SOURCES += [

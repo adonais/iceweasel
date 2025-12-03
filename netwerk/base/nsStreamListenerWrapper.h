@@ -10,7 +10,6 @@
 #include "nsIStreamListener.h"
 #include "nsIThreadRetargetableStreamListener.h"
 #include "nsIMultiPartChannel.h"
-#include "mozilla/Attributes.h"
 
 namespace mozilla {
 namespace net {

@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.reviewprompt
 
+import mozilla.components.support.test.assertUnused
 import mozilla.components.support.test.ext.joinBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -374,9 +375,6 @@ class ReviewPromptMiddlewareTest {
             store.state,
         )
     }
-
-    private fun assertUnused(): Nothing =
-        throw AssertionError("Expected unused function, but was called here ")
 
     private class FakeNimbusMessagingHelperInterface(val evalJexlValue: Boolean) :
         NimbusMessagingHelperInterface {

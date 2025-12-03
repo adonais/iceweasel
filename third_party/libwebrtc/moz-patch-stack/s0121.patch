@@ -1,82 +1,29 @@
-From: Michael Froman <mjfroman@mac.com>
-Date: Mon, 15 Sep 2025 14:53:58 -0500
-Subject: Bug 1973648 - move applicable libwebrtc changes to our new
- libwebrtc_overrides location. r=ng
+From: Michael Froman <mfroman@mozilla.com>
+Date: Thu, 7 Aug 2025 11:37:00 -0500
+Subject: Bug 1980479 - (fix-50544d8dc4) add missing stub implementations for
+ SSLStreamAdapter static methods.
 
-Differential Revision: https://phabricator.services.mozilla.com/D258499
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/19164e58323d59c1f66f7fcf671b8d0b6366f708
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/8fee7e6d9736f8d1dfe78e9bc2c4676ca86d0405
 ---
- call/call.cc                     | 13 -------------
- call/call.h                      | 11 ++---------
- modules/desktop_capture/BUILD.gn |  5 +++++
- 3 files changed, 7 insertions(+), 22 deletions(-)
+ rtc_base/ssl_stream_adapter.h | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/call/call.cc b/call/call.cc
-index d6d0e4b2d3..bd3efab30c 100644
---- a/call/call.cc
-+++ b/call/call.cc
-@@ -514,19 +514,6 @@ class Call final : public webrtc::Call,
- };
- }  // namespace internal
+diff --git a/rtc_base/ssl_stream_adapter.h b/rtc_base/ssl_stream_adapter.h
+index ca2f6c48c4..24fc299b82 100644
+--- a/rtc_base/ssl_stream_adapter.h
++++ b/rtc_base/ssl_stream_adapter.h
+@@ -244,11 +244,12 @@ class SSLStreamAdapter : public StreamInterface {
+   static bool IsAcceptableCipher(int cipher, KeyType key_type);
+   static bool IsAcceptableCipher(absl::string_view cipher, KeyType key_type);
  
--std::string Call::Stats::ToString(int64_t time_ms) const {
--  char buf[1024];
--  SimpleStringBuilder ss(buf);
--  ss << "Call stats: " << time_ms << ", {";
--  ss << "send_bw_bps: " << send_bandwidth_bps << ", ";
--  ss << "recv_bw_bps: " << recv_bandwidth_bps << ", ";
--  ss << "max_pad_bps: " << max_padding_bitrate_bps << ", ";
--  ss << "pacer_delay_ms: " << pacer_delay_ms << ", ";
--  ss << "rtt_ms: " << rtt_ms;
--  ss << '}';
--  return ss.str();
--}
--
- std::unique_ptr<Call> Call::Create(CallConfig config) {
-   std::unique_ptr<RtpTransportControllerSendInterface> transport_send;
-   if (config.rtp_transport_controller_send_factory != nullptr) {
-diff --git a/call/call.h b/call/call.h
-index 87e1884583..420a754edd 100644
---- a/call/call.h
-+++ b/call/call.h
-@@ -25,6 +25,7 @@
- #include "api/transport/bitrate_settings.h"
- #include "call/audio_receive_stream.h"
- #include "call/audio_send_stream.h"
-+#include "call/call_basic_stats.h"
- #include "call/call_config.h"
- #include "call/flexfec_receive_stream.h"
- #include "call/packet_receiver.h"
-@@ -50,15 +51,7 @@ namespace webrtc {
+-  static std::set<uint16_t> GetSupportedEphemeralKeyExchangeCipherGroups();
++  static std::set<uint16_t> GetSupportedEphemeralKeyExchangeCipherGroups()
++      { return {}; }
+   static std::optional<std::string> GetEphemeralKeyExchangeCipherGroupName(
+       uint16_t group_id);
+   static std::vector<uint16_t> GetDefaultEphemeralKeyExchangeCipherGroups(
+-      const FieldTrialsView* field_trials);
++      const FieldTrialsView* field_trials) { return {}; }
  
- class Call {
-  public:
--  struct Stats {
--    std::string ToString(int64_t time_ms) const;
--
--    int send_bandwidth_bps = 0;       // Estimated available send bandwidth.
--    int max_padding_bitrate_bps = 0;  // Cumulative configured max padding.
--    int recv_bandwidth_bps = 0;       // Estimated available receive bandwidth.
--    int64_t pacer_delay_ms = 0;
--    int64_t rtt_ms = -1;
--  };
-+  using Stats = CallBasicStats;
- 
-   static std::unique_ptr<Call> Create(CallConfig config);
- 
-diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index 484a47894b..5c843cfc2b 100644
---- a/modules/desktop_capture/BUILD.gn
-+++ b/modules/desktop_capture/BUILD.gn
-@@ -390,6 +390,11 @@ rtc_library("desktop_capture") {
-     ]
-     if (build_with_mozilla) {
-       libs -= [ "Xtst" ]
-+      # Mozilla provides custom impl of x_error_trap.*
-+      sources -= [
-+        "linux/x11/x_error_trap.cc",
-+        "linux/x11/x_error_trap.h",
-+      ]
-     }
-   }
- 
+   ////////////////////////////////////////////////////////////////////////////
+   // Testing only member functions

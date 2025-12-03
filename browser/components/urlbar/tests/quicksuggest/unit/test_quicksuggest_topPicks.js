@@ -40,13 +40,12 @@ add_setup(async function init() {
 
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     merinoSuggestions: MERINO_SUGGESTIONS,
-    prefs: [["suggest.quicksuggest.nonsponsored", true]],
+    prefs: [["suggest.quicksuggest.all", true]],
   });
 });
 
-// When non-sponsored suggestions are disabled, navigational suggestions should
-// be disabled.
-add_task(async function nonsponsoredDisabled() {
+// When `all` is disabled, navigational suggestions should be disabled.
+add_task(async function allDisabled() {
   // Disable sponsored suggestions. Navigational suggestions are non-sponsored,
   // so doing this should not prevent them from being enabled.
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
@@ -67,7 +66,7 @@ add_task(async function nonsponsoredDisabled() {
   });
 
   // Now disable them.
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
+  UrlbarPrefs.set("suggest.quicksuggest.all", false);
   await check_results({
     context: createContext(SUGGESTION_SEARCH_STRING, {
       providers: [UrlbarProviderQuickSuggest.name],
@@ -76,7 +75,7 @@ add_task(async function nonsponsoredDisabled() {
     matches: [],
   });
 
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+  UrlbarPrefs.set("suggest.quicksuggest.all", true);
   UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
 });
 

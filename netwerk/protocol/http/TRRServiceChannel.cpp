@@ -13,7 +13,6 @@
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_network.h"
-#include "mozilla/Unused.h"
 #include "nsDNSPrefetch.h"
 #include "nsEscape.h"
 #include "nsHttpTransaction.h"
@@ -223,7 +222,7 @@ TRRServiceChannel::AsyncOpen(nsIStreamListener* aListener) {
 
   rv = MaybeResolveProxyAndBeginConnect();
   if (NS_FAILED(rv)) {
-    Unused << AsyncAbort(rv);
+    (void)AsyncAbort(rv);
   }
 
   return NS_OK;
@@ -247,7 +246,7 @@ nsresult TRRServiceChannel::MaybeResolveProxyAndBeginConnect() {
 
   rv = BeginConnect();
   if (NS_FAILED(rv)) {
-    Unused << AsyncAbort(rv);
+    (void)AsyncAbort(rv);
   }
 
   return NS_OK;
@@ -347,7 +346,7 @@ TRRServiceChannel::OnProxyAvailable(nsICancelable* request, nsIChannel* channel,
   }
 
   if (NS_FAILED(rv)) {
-    Unused << AsyncAbort(rv);
+    (void)AsyncAbort(rv);
   }
   return rv;
 }
@@ -371,7 +370,7 @@ nsresult TRRServiceChannel::BeginConnect() {
   }
 
   // Just a warning here because some nsIURIs do not implement this method.
-  Unused << NS_WARN_IF(NS_FAILED(mURI->GetUsername(mUsername)));
+  (void)NS_WARN_IF(NS_FAILED(mURI->GetUsername(mUsername)));
 
   // Reject the URL if it doesn't specify a host
   if (host.IsEmpty()) {
@@ -456,7 +455,7 @@ nsresult TRRServiceChannel::BeginConnect() {
   }
 
   // if this somehow fails we can go on without it
-  Unused << gHttpHandler->AddConnectionHeader(&mRequestHead, mCaps);
+  (void)gHttpHandler->AddConnectionHeader(&mRequestHead, mCaps);
 
   // Adjust mCaps according to our request headers:
   //  - If "Connection: close" is set as a request header, then do not bother
@@ -812,7 +811,7 @@ void TRRServiceChannel::AfterApplyContentConversions(
   }
 
   if (NS_FAILED(aResult)) {
-    Unused << AsyncAbort(aResult);
+    (void)AsyncAbort(aResult);
     return;
   }
 
@@ -848,7 +847,7 @@ void TRRServiceChannel::ProcessAltService(
   }
 
   nsCString altSvc;
-  Unused << mResponseHead->GetHeader(nsHttp::Alternate_Service, altSvc);
+  (void)mResponseHead->GetHeader(nsHttp::Alternate_Service, altSvc);
   if (altSvc.IsEmpty()) {
     return;
   }
@@ -1380,7 +1379,7 @@ TRRServiceChannel::ResumeAt(uint64_t aStartPos, const nsACString& aEntityID) {
 }
 
 void TRRServiceChannel::DoAsyncAbort(nsresult aStatus) {
-  Unused << AsyncAbort(aStatus);
+  (void)AsyncAbort(aStatus);
 }
 
 NS_IMETHODIMP

@@ -10,7 +10,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/IntegerTypeTraits.h"
-#include "mozilla/Range.h"
 #include "mozilla/UniquePtr.h"
 
 #include "jspubtd.h"

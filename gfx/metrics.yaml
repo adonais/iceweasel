@@ -1446,8 +1446,6 @@ gfx.hdr:
     expires: never
     unit: bitfield
     telemetry_mirror: GFX_HDR_WINDOWS_DISPLAY_COLORSPACE_BITFIELD
-    no_lint:
-      - UNIT_IN_NAME
 
 fontlist:
   initotherfamilynames:

@@ -9,7 +9,6 @@
 #include <cctype>
 
 #include "mozilla/ExpandedPrincipal.h"
-#include "mozilla/TextUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/intl/MozLocaleBindings.h"

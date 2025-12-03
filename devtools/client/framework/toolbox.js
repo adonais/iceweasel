@@ -248,6 +248,7 @@ const BOOLEAN_CONFIGURATION_PREFS = {
     name: "isTracerFeatureEnabled",
   },
 };
+exports.BOOLEAN_CONFIGURATION_PREFS = BOOLEAN_CONFIGURATION_PREFS;
 
 /**
  * A "Toolbox" is the component that holds all the tools for one specific
@@ -2827,12 +2828,6 @@ Toolbox.prototype = {
       gDevTools.emit(id + "-init", this, iframe);
       this.emit(id + "-init", iframe);
 
-      // If no parent yet, append the frame into default location.
-      if (!iframe.parentNode) {
-        const vbox = this.doc.getElementById("toolbox-panel-" + id);
-        vbox.appendChild(iframe);
-      }
-
       const onLoad = async () => {
         // Try to set the dir attribute as early as possible.
         this.setIframeDocumentDir(iframe);
@@ -2892,6 +2887,12 @@ Toolbox.prototype = {
       iframe.setAttribute("src", definition.url);
       if (definition.panelLabel) {
         iframe.setAttribute("aria-label", definition.panelLabel);
+      }
+
+      // If no parent yet, append the frame into default location.
+      if (!iframe.parentNode) {
+        const vbox = this.doc.getElementById("toolbox-panel-" + id);
+        vbox.appendChild(iframe);
       }
 
       // Depending on the host, iframe.contentWindow is not always

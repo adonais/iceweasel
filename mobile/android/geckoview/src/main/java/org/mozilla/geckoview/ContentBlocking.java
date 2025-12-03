@@ -78,6 +78,8 @@ public class ContentBlocking {
   public static final SafeBrowsingProvider GOOGLE_SAFE_BROWSING_V5_PROVIDER =
       SafeBrowsingProvider.withName("google5")
           .lists(
+              "goog-badbinurl-proto",
+              "goog-downloadwhite-proto",
               "goog-phish-proto",
               "googpub-phish-proto",
               "goog-malware-proto",
@@ -604,6 +606,41 @@ public class ContentBlocking {
         mSafeBrowsingProviders.put(provider.getName(), new SafeBrowsingProvider(this, provider));
       }
 
+      return this;
+    }
+
+    /**
+     * Get whether Safe Browsing V5 is enabled.
+     *
+     * @return Whether Safe Browsing V5 is enabled.
+     */
+    public @NonNull Boolean getSafeBrowsingV5Enabled() {
+      final SafeBrowsingProvider provider = mSafeBrowsingProviders.get("google5");
+      if (provider == null) {
+        return false;
+      }
+
+      final Boolean enabled = provider.getEnabled();
+      if (enabled == null) {
+        return false;
+      }
+
+      return enabled;
+    }
+
+    /**
+     * Set the value to control whether Safe Browsing V5 is enabled.
+     *
+     * @param enabled Whether we set the Safe Browsing V5 to enabled or disabled
+     * @return the {@link Settings} instance.
+     */
+    public @NonNull Settings setSafeBrowsingV5Enabled(final boolean enabled) {
+      final SafeBrowsingProvider provider = mSafeBrowsingProviders.get("google5");
+      if (provider == null) {
+        return this;
+      }
+
+      provider.mEnabled.commit(enabled);
       return this;
     }
 
@@ -1489,11 +1526,7 @@ public class ContentBlocking {
       mAdvisoryName = new Pref<>(ROOT + mName + ".advisoryName", null);
       mDataSharingUrl = new Pref<>(ROOT + mName + ".dataSharingURL", null);
       mDataSharingEnabled = new Pref<>(ROOT + mName + ".dataSharing.enabled", false);
-      if (mName.equals("google5")) {
-        mEnabled = new Pref<>(ROOT + mName + ".enabled", BuildConfig.NIGHTLY_BUILD);
-      } else {
-        mEnabled = new Pref<>(ROOT + mName + ".enabled", false);
-      }
+      mEnabled = new Pref<>(ROOT + mName + ".enabled", null);
 
       if (source != null) {
         updatePrefs(source);

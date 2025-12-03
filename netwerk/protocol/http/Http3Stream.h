@@ -9,7 +9,6 @@
 #include "nsAHttpTransaction.h"
 #include "ARefBase.h"
 #include "Http3StreamBase.h"
-#include "mozilla/WeakPtr.h"
 #include "nsIClassOfService.h"
 
 namespace mozilla {

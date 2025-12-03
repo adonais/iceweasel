@@ -9,7 +9,6 @@
 
 #include "js/RootingAPI.h"
 #include "mozilla/DOMEventTargetHelper.h"
-#include "mozilla/RefPtr.h"
 #include "transport/transportlayer.h"
 
 class nsPIDOMWindowInner;

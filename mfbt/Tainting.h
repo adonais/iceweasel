@@ -14,15 +14,15 @@
 #include <utility>
 #include "mozilla/MacroArgs.h"
 
+namespace IPC {
+template <typename P>
+struct ParamTraits;
+}
+
 namespace mozilla {
 
 template <typename T>
 class Tainted;
-
-namespace ipc {
-template <typename>
-struct IPDLParamTraits;
-}
 
 /*
  * The Tainted<> class allows data to be wrapped and considered 'tainted'; which
@@ -66,7 +66,7 @@ class Tainted {
   T& Coerce() { return this->mValue; }
   const T& Coerce() const { return this->mValue; }
 
-  friend struct mozilla::ipc::IPDLParamTraits<Tainted<T>>;
+  friend struct IPC::ParamTraits<Tainted<T>>;
 };
 
 // ====================================================================

@@ -9,6 +9,7 @@
 
 #include "PLDHashTable.h"                    // PLDHashEntryHdr
 #include "js/loader/LoadedScript.h"          // JS::loader::LoadedScript
+#include "js/loader/ScriptFetchOptions.h"    // JS::loader::ScriptFetchOptions
 #include "js/loader/ScriptKind.h"            // JS::loader::ScriptKind
 #include "js/loader/ScriptLoadRequest.h"     // JS::loader::ScriptLoadRequest
 #include "mozilla/CORSMode.h"                // mozilla::CORSMode
@@ -36,15 +37,15 @@ class ScriptHashKey : public PLDHashEntryHdr {
 
   explicit ScriptHashKey(const ScriptHashKey& aKey)
       : PLDHashEntryHdr(),
+        mKind(aKey.mKind),
+        mCORSMode(aKey.mCORSMode),
+        mIsLinkRelPreload(aKey.mIsLinkRelPreload),
         mURI(aKey.mURI),
         mLoaderPrincipal(aKey.mLoaderPrincipal),
         mPartitionPrincipal(aKey.mPartitionPrincipal),
-        mCORSMode(aKey.mCORSMode),
         mSRIMetadata(aKey.mSRIMetadata),
-        mKind(aKey.mKind),
         mNonce(aKey.mNonce),
-        mHintCharset(aKey.mHintCharset),
-        mIsLinkRelPreload(aKey.mIsLinkRelPreload) {
+        mHintCharset(aKey.mHintCharset) {
     MOZ_COUNT_CTOR(ScriptHashKey);
   }
 
@@ -52,20 +53,25 @@ class ScriptHashKey : public PLDHashEntryHdr {
 
   ScriptHashKey(ScriptHashKey&& aKey)
       : PLDHashEntryHdr(),
+        mKind(std::move(aKey.mKind)),
+        mCORSMode(std::move(aKey.mCORSMode)),
+        mIsLinkRelPreload(std::move(aKey.mIsLinkRelPreload)),
         mURI(std::move(aKey.mURI)),
         mLoaderPrincipal(std::move(aKey.mLoaderPrincipal)),
         mPartitionPrincipal(std::move(aKey.mPartitionPrincipal)),
-        mCORSMode(std::move(aKey.mCORSMode)),
         mSRIMetadata(std::move(aKey.mSRIMetadata)),
-        mKind(std::move(aKey.mKind)),
         mNonce(std::move(aKey.mNonce)),
-        mHintCharset(std::move(aKey.mHintCharset)),
-        mIsLinkRelPreload(std::move(aKey.mIsLinkRelPreload)) {
+        mHintCharset(std::move(aKey.mHintCharset)) {
     MOZ_COUNT_CTOR(ScriptHashKey);
   }
 
   ScriptHashKey(ScriptLoader* aLoader,
-                const JS::loader::ScriptLoadRequest* aRequest);
+                const JS::loader::ScriptLoadRequest* aRequest,
+                const JS::loader::LoadedScript* aLoadedScript);
+  ScriptHashKey(ScriptLoader* aLoader,
+                const JS::loader::ScriptLoadRequest* aRequest,
+                const JS::loader::ScriptFetchOptions* aFetchOptions,
+                const nsCOMPtr<nsIURI> aURI);
   explicit ScriptHashKey(const ScriptLoadData& aLoadData);
 
   MOZ_COUNTED_DTOR(ScriptHashKey)
@@ -92,12 +98,14 @@ class ScriptHashKey : public PLDHashEntryHdr {
   enum { ALLOW_MEMMOVE = true };
 
  protected:
+  const JS::loader::ScriptKind mKind;
+  const CORSMode mCORSMode;
+  const bool mIsLinkRelPreload;
+
   const nsCOMPtr<nsIURI> mURI;
   const nsCOMPtr<nsIPrincipal> mLoaderPrincipal;
   const nsCOMPtr<nsIPrincipal> mPartitionPrincipal;
-  const CORSMode mCORSMode;
   const SRIMetadata mSRIMetadata;
-  const JS::loader::ScriptKind mKind;
   const nsString mNonce;
 
   // charset attribute for classic script.
@@ -110,8 +118,6 @@ class ScriptHashKey : public PLDHashEntryHdr {
   // top-level document's host
   //   maybe part of principal?
   //   what if it's inside frame in different host?
-
-  const bool mIsLinkRelPreload;
 };
 
 class ScriptLoadData final
@@ -122,8 +128,8 @@ class ScriptLoadData final
   ~ScriptLoadData() {}
 
  public:
-  ScriptLoadData(ScriptLoader* aLoader,
-                 JS::loader::ScriptLoadRequest* aRequest);
+  ScriptLoadData(ScriptLoader* aLoader, JS::loader::ScriptLoadRequest* aRequest,
+                 JS::loader::LoadedScript* aLoadedScript);
 
   NS_DECL_ISUPPORTS
 
@@ -186,6 +192,9 @@ class SharedScriptCache final
 
   SharedScriptCache();
   void Init();
+
+  bool MaybeScheduleUpdateDiskCache();
+  void UpdateDiskCache();
 
   // This has to be static because it's also called for loaders that don't have
   // a sheet cache (loaders that are not owned by a document).

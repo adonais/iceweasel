@@ -3,6 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
+/**
+ * @import { MLEngineChild } from "./MLEngineChild.sys.mjs"
+ */
+
 const lazy = XPCOMUtils.declareLazy({
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   Utils: "resource://services-settings/Utils.sys.mjs",
@@ -227,10 +231,8 @@ export class MLEngineParent extends JSProcessActorParent {
       // Wait for the existing lock to resolve
       await MLEngineParent.engineLocks.get(engineId);
     }
-    let resolveLock;
-    const lockPromise = new Promise(resolve => {
-      resolveLock = resolve;
-    });
+    const { promise: lockPromise, resolve: resolveLock } =
+      Promise.withResolvers();
     MLEngineParent.engineLocks.set(engineId, lockPromise);
     MLEngineParent.engineCreationAbortSignal.set(engineId, abortSignal);
     try {
@@ -238,8 +240,7 @@ export class MLEngineParent extends JSProcessActorParent {
       if (currentEngine) {
         if (
           currentEngine.pipelineOptions.equals(pipelineOptions) &&
-          currentEngine.engineStatus !== "closed" &&
-          currentEngine.engineStatus !== "crashed"
+          currentEngine.engineStatus === "ready"
         ) {
           lazy.console.debug(`Reusing existing engine for ${engineId}`);
           return currentEngine;
@@ -494,7 +495,8 @@ export class MLEngineParent extends JSProcessActorParent {
     });
   }
 
-  /** Gets the wasm file from remote settings.
+  /**
+   * Gets the wasm file from remote settings.
    *
    * @param {RemoteSettingsClient} client
    * @param {string} backend - The ML engine for which the WASM buffer is requested.
@@ -783,10 +785,15 @@ export class MLEngineParent extends JSProcessActorParent {
   }
 
   /**
-   * Gets a status
+   * Goes through the engines and determines their status. This is used by about:inference
+   * to display debug information about the engines.
+   *
+   * @see MLEngineChild#getStatusByEngineId
+   *
+   * @returns {Promise<StatusByEngineId>}
    */
-  getStatus() {
-    return this.sendQuery("MLEngine:GetStatus");
+  getStatusByEngineId() {
+    return this.sendQuery("MLEngine:GetStatusByEngineId");
   }
 
   /**
@@ -910,13 +917,19 @@ class ResponseOrChunkResolvers {
  * potentially large amounts of memory to run models, with the speed and ease of running
  * the engine.
  *
- * @typedef {object} Request
+ * @typedef {object} EngineRunRequest
  * @property {?string} [id] - The identifier for tracking this request. If not provided, an id will be auto-generated. Each inference callback will reference this id.
  * @property {any[]} args - The arguments to pass to the pipeline. The required arguments depend on your model. See [Hugging Face Transformers documentation](https://huggingface.co/docs/transformers.js/en/api/models) for more details.
- * @property {?object} options - The generation options to pass to the model. Refer to the [GenerationConfigType documentation](https://huggingface.co/docs/transformers.js/en/api/utils/generation#module_utils/generation..GenerationConfigType) for available options.
+ * @property {?object} [options] - The generation options to pass to the model. Refer to the [GenerationConfigType documentation](https://huggingface.co/docs/transformers.js/en/api/utils/generation#module_utils/generation..GenerationConfigType) for available options.
  * @property {?Uint8Array} [data] - For the imagetoText model, this is the array containing the image data.
  *
- * @template Response
+ * @typedef {object} MLEntry
+ *
+ * @typedef {object} MetricsResponse
+ *   The metrics of the query
+ * @property {{name: string, when: number}[]} metrics
+ *
+ * @typedef {MLEntry[] & MetricsResponse} EngineRunResponse
  */
 export class MLEngine {
   /**
@@ -936,12 +949,12 @@ export class MLEngine {
   /**
    * Tie together a message id to a resolved response.
    *
-   * @type {Map<number, PromiseWithResolvers<Request>>}
+   * @type {Map<number, PromiseWithResolvers<EngineRunRequest>>}
    */
   #requests = new Map();
 
   /**
-   * @type {"uninitialized" | "ready" | "error" | "closed"}
+   * @type {"uninitialized" | "ready" | "error" | "closed" | "crashed"}
    */
   engineStatus = "uninitialized";
 
@@ -1420,6 +1433,11 @@ export class MLEngine {
    * @returns {Promise<null | { cpuTime: null | number, memory: null | number}>}
    */
   async getInferenceResources() {
+    // TODO(Greg): ask that question directly to the inference process *or* move your metrics down into the child process
+    // so you don't have to do any IPC at all.
+    // you can get the memory with ChromeUtils.currentProcessMemoryUsage and the CPU since start with ChromeUtils.cpuTimeSinceProcessStart
+    // theses call can be done anywhere in the inference process including the workers, which means you can Glean metrics in any place with
+    // no IPC
     try {
       const { children } = await ChromeUtils.requestProcInfo();
       const [inference] = children.filter(child => child.type == "inference");
@@ -1442,8 +1460,8 @@ export class MLEngine {
   /**
    * Run the inference request
    *
-   * @param {Request} request
-   * @returns {Promise<Response>}
+   * @param {EngineRunRequest} request
+   * @returns {Promise<EngineRunResponse>}
    */
   async run(request) {
     const resolvers = Promise.withResolvers();
@@ -1521,8 +1539,8 @@ export class MLEngine {
   /**
    * Run the inference request using an async generator function.
    *
-   * @param {Request} request - The inference request containing the input data.
-   * @returns {AsyncGenerator<Response, Response, unknown>} An async generator yielding chunks of generated responses.
+   * @param {EngineRunRequest} request - The inference request containing the input data.
+   * @returns {AsyncGenerator<EngineRunResponse, EngineRunResponse, unknown>} An async generator yielding chunks of generated responses.
    */
   runWithGenerator = async function* (request) {
     lazy.console.debug(`runWithGenerator called for request ${request}`);

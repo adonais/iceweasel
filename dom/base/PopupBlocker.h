@@ -9,7 +9,6 @@
 
 #include <stdint.h>
 
-#include "mozilla/Attributes.h"
 #include "mozilla/TimeStamp.h"
 
 class AutoPopupStatePusherInternal;

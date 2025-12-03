@@ -454,7 +454,7 @@ exports.isTemplateElement = isTemplateElement;
 const isShadowRoot = node => node.containingShadowRoot == node;
 exports.isShadowRoot = isShadowRoot;
 
-/*
+/**
  * Gets the shadow root mode (open or closed).
  *
  * @param {DOMNode} node

@@ -25,8 +25,8 @@ NullHttpChannel::NullHttpChannel(nsIHttpChannel* chan)
   nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
   ssm->GetChannelURIPrincipal(chan, getter_AddRefs(mResourcePrincipal));
 
-  Unused << chan->GetResponseHeader("Timing-Allow-Origin"_ns,
-                                    mTimingAllowOriginHeader);
+  (void)chan->GetResponseHeader("Timing-Allow-Origin"_ns,
+                                mTimingAllowOriginHeader);
   chan->GetURI(getter_AddRefs(mURI));
   chan->GetOriginalURI(getter_AddRefs(mOriginalURI));
 
@@ -230,11 +230,6 @@ NullHttpChannel::IsNoStoreResponse(bool* _retval) {
 
 NS_IMETHODIMP
 NullHttpChannel::IsNoCacheResponse(bool* _retval) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-NullHttpChannel::IsPrivateResponse(bool* _retval) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

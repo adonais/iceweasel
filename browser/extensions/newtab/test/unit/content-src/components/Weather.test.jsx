@@ -130,6 +130,33 @@ describe("<Weather>", () => {
       );
     });
 
+    it("should dispatch correct actions when user rejects weather opt-in", () => {
+      const store = createStore(combineReducers(reducers), optInMockState);
+      sinon.spy(store, "dispatch");
+
+      wrapper = mount(
+        <Provider store={store}>
+          <Weather />
+        </Provider>
+      );
+
+      const acceptBtn = wrapper.find("#reject-opt-in");
+      acceptBtn.simulate("click", { preventDefault() {} });
+
+      const dispatchedActions = store.dispatch
+        .getCalls()
+        .map(call => call.args[0]);
+
+      assert.ok(
+        dispatchedActions.some(
+          action =>
+            action.type === at.WEATHER_OPT_IN_PROMPT_SELECTION &&
+            action.data === "rejected opt-in"
+        ),
+        "Expected WEATHER_OPT_IN_PROMPT_SELECTION with rejected opt-in"
+      );
+    });
+
     it("should render a shorter context menu when system.showWeatherOptIn is enabled", () => {
       wrapper = mount(
         <WrapWithProvider state={optInMockState}>
@@ -160,6 +187,48 @@ describe("<Weather>", () => {
       ]);
     });
 
-    // TODO: Add test for "detect my location" telemetry once telemetry for that action is set up in another patch
+    it("should dispatch correct actions when 'Detect my location' option in context menu is clicked", () => {
+      const store = createStore(combineReducers(reducers), optInMockState);
+      sinon.spy(store, "dispatch");
+
+      wrapper = mount(
+        <Provider store={store}>
+          <Weather />
+        </Provider>
+      );
+
+      // find the inner _Weather component
+      const inner = wrapper.find("_Weather");
+      assert.ok(inner.exists(), "Inner _Weather component should exist");
+
+      // toggle context menu state on the real instance
+      inner.instance().setState({ showContextMenu: true });
+      wrapper.update();
+
+      const menu = wrapper.find(LinkMenu);
+      assert.ok(
+        menu.exists(),
+        "Expected LinkMenu to render when context menu opened"
+      );
+
+      const detectLocationBtn = wrapper.find(
+        '[data-l10n-id="newtab-weather-menu-detect-my-location"]'
+      );
+
+      assert.ok(detectLocationBtn.exists());
+
+      detectLocationBtn.simulate("click", { preventDefault() {} });
+
+      const dispatchedActions = store.dispatch
+        .getCalls()
+        .map(call => call.args[0]);
+
+      assert.ok(
+        dispatchedActions.some(
+          action => action.type === at.WEATHER_USER_OPT_IN_LOCATION
+        ),
+        "Expected WEATHER_USER_OPT_IN_LOCATION to be dispatched"
+      );
+    });
   });
 });

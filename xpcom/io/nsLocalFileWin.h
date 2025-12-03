@@ -17,8 +17,6 @@
 #include "nsWindowsHelpers.h"
 #include "prio.h"
 
-#include "mozilla/Attributes.h"
-
 #include <windows.h>
 #include <shlobj.h>
 

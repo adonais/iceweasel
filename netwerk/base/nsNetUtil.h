@@ -23,7 +23,6 @@
 #include "nsIURI.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/Services.h"
-#include "mozilla/Unused.h"
 #include "nsNetCID.h"
 #include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
@@ -661,12 +660,12 @@ inline void NS_QueryNotificationCallbacks(T* channel, const nsIID& iid,
   *result = nullptr;
 
   nsCOMPtr<nsIInterfaceRequestor> cbs;
-  mozilla::Unused << channel->GetNotificationCallbacks(getter_AddRefs(cbs));
+  (void)channel->GetNotificationCallbacks(getter_AddRefs(cbs));
   if (cbs) cbs->GetInterface(iid, result);
   if (!*result) {
     // try load group's notification callbacks...
     nsCOMPtr<nsILoadGroup> loadGroup;
-    mozilla::Unused << channel->GetLoadGroup(getter_AddRefs(loadGroup));
+    (void)channel->GetLoadGroup(getter_AddRefs(loadGroup));
     if (loadGroup) {
       loadGroup->GetNotificationCallbacks(getter_AddRefs(cbs));
       if (cbs) cbs->GetInterface(iid, result);

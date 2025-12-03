@@ -9,7 +9,7 @@ use crate::{DistributionData, ErrorType, TestGetValue};
 ///
 /// When changing this trait, make sure all the operations are
 /// implemented in the related type in `../metrics/`.
-pub trait CustomDistribution: TestGetValue<DistributionData> {
+pub trait CustomDistribution: TestGetValue<Output = DistributionData> {
     /// Accumulates the provided signed samples in the metric.
     ///
     /// This is required so that the platform-specific code can provide us with
@@ -24,8 +24,7 @@ pub trait CustomDistribution: TestGetValue<DistributionData> {
     /// ## Notes
     ///
     /// Discards any negative value in `samples` and report an
-    /// [`ErrorType::InvalidValue`](crate::ErrorType::InvalidValue) for each of
-    /// them.
+    /// [`ErrorType::InvalidValue`] for each of them.
     fn accumulate_samples_signed(&self, samples: Vec<i64>);
 
     /// Accumulates precisely one signed sample in the metric.
@@ -41,7 +40,7 @@ pub trait CustomDistribution: TestGetValue<DistributionData> {
     /// ## Notes
     ///
     /// Discards any negative value of `sample` and reports an
-    /// [`ErrorType::InvalidValue`](crate::ErrorType::InvalidValue).
+    /// [`ErrorType::InvalidValue`].
     fn accumulate_single_sample_signed(&self, sample: i64);
 
     /// **Exported for test purposes.**

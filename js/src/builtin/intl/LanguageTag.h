@@ -18,7 +18,6 @@
 
 struct JS_PUBLIC_API JSContext;
 class JSLinearString;
-class JS_PUBLIC_API JSString;
 class JS_PUBLIC_API JSTracer;
 
 namespace js {
@@ -67,7 +66,7 @@ namespace intl {
  * the input could not be parsed or the canonical form of the resulting language
  * tag contains more than a single language subtag.
  */
-JS::Result<JSString*> ParseStandaloneISO639LanguageTag(
+JS::Result<JSLinearString*> ParseStandaloneISO639LanguageTag(
     JSContext* cx, JS::Handle<JSLinearString*> str);
 
 class UnicodeExtensionKeyword final {

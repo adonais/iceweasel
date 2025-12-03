@@ -34,7 +34,18 @@ const tokenCSS = createTokenNamesArray([PROPERTY_NAME]);
 
 const ALLOW_LIST = createAllowList();
 
-const tokenFixMap = createRawValuesObject([PROPERTY_NAME]);
+const tokenFixMap = {
+  ...createRawValuesObject([PROPERTY_NAME]),
+  200: "var(--font-weight)",
+  300: "var(--font-weight)",
+  400: "var(--font-weight)",
+  lighter: "var(--font-weight)",
+  500: "var(--font-weight-semibold)",
+  510: "var(--font-weight-semibold)",
+  800: "var(--font-weight-bold)",
+  bold: "var(--font-weight-bold)",
+  bolder: "var(--font-weight-bold)",
+};
 
 const ruleFunction = primaryOption => {
   return (root, result) => {

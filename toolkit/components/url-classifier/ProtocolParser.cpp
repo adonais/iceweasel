@@ -1178,9 +1178,15 @@ nsresult ProtocolParserProtobufV5::ProcessOneResponse(
       rv = ProcessAddition4Bytes(*tuV4, aHashList.additions_four_bytes());
       break;
     case v5::HashList::kAdditionsEightBytes:
+      rv = ProcessAddition8Bytes(*tuV4, aHashList.additions_eight_bytes());
+      break;
     case v5::HashList::kAdditionsSixteenBytes:
+      rv = ProcessAddition16Bytes(*tuV4, aHashList.additions_sixteen_bytes());
+      break;
     case v5::HashList::kAdditionsThirtyTwoBytes:
-      return NS_ERROR_NOT_IMPLEMENTED;
+      rv =
+          ProcessAddition32Bytes(*tuV4, aHashList.additions_thirty_two_bytes());
+      break;
     case v5::HashList::COMPRESSED_ADDITIONS_NOT_SET:
       break;
   }
@@ -1239,6 +1245,121 @@ static nsresult DoRiceDeltaDecode4Bytes(
   return NS_OK;
 }
 
+static nsresult DoRiceDeltaDecode8Bytes(
+    const v5::RiceDeltaEncoded64Bit& aEncoding, nsTArray<uint64_t>& aDecoded) {
+  auto first_value = aEncoding.first_value();
+
+  PARSER_LOG(("* Encoding info for V5 8bytes encoding:"));
+  PARSER_LOG(("  - First value: %" PRIu64, first_value));
+  PARSER_LOG(("  - Num of entries: %d", aEncoding.entries_count()));
+  PARSER_LOG(("  - Rice parameter: %d", aEncoding.rice_parameter()));
+
+  // Set up the input buffer. Note that the bits should be read
+  // from LSB to MSB so that we in-place reverse the bits before
+  // feeding to the decoder.
+  auto encoded =
+      const_cast<v5::RiceDeltaEncoded64Bit&>(aEncoding).mutable_encoded_data();
+  RiceDeltaDecoder decoder((uint8_t*)encoded->c_str(), encoded->size());
+
+  // Setup the output buffer. The "first value" is included in
+  // the output buffer.
+  if (!aDecoded.SetLength(aEncoding.entries_count() + 1, mozilla::fallible)) {
+    NS_WARNING("Not enough memory to decode the RiceDelta input.");
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  // Decode!
+  bool rv = decoder.Decode64(
+      aEncoding.rice_parameter(), first_value,
+      aEncoding.entries_count(),  // # of entries (first value not included).
+      &aDecoded[0]);
+
+  NS_ENSURE_TRUE(rv, NS_ERROR_UC_PARSER_DECODE_FAILURE);
+
+  return NS_OK;
+}
+
+static nsresult DoRiceDeltaDecode16Bytes(
+    const v5::RiceDeltaEncoded128Bit& aEncoding, nsACString& aDecoded) {
+  auto first_value_hi = aEncoding.first_value_hi();
+  auto first_value_lo = aEncoding.first_value_lo();
+
+  PARSER_LOG(("* Encoding info for V5 16bytes encoding:"));
+  PARSER_LOG(("  - First value hi: %" PRIu64, first_value_hi));
+  PARSER_LOG(("  - First value lo: %" PRIu64, first_value_lo));
+  PARSER_LOG(("  - Num of entries: %d", aEncoding.entries_count()));
+  PARSER_LOG(("  - Rice parameter: %d", aEncoding.rice_parameter()));
+
+  // Set up the input buffer. Note that the bits should be read
+  // from LSB to MSB so that we in-place reverse the bits before
+  // feeding to the decoder.
+  auto encoded =
+      const_cast<v5::RiceDeltaEncoded128Bit&>(aEncoding).mutable_encoded_data();
+  RiceDeltaDecoder decoder((uint8_t*)encoded->c_str(), encoded->size());
+
+  // Setup the output buffer. The "first value" is included in
+  // the output buffer.
+  if (!aDecoded.SetCapacity(aEncoding.entries_count() * 16,
+                            mozilla::fallible)) {
+    NS_WARNING("Not enough memory to decode the RiceDelta input.");
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  // Decode!
+  bool rv = decoder.Decode128(
+      aEncoding.rice_parameter(), first_value_hi, first_value_lo,
+      aEncoding.entries_count(),  // # of entries (first value not included).
+      aDecoded);
+
+  NS_ENSURE_TRUE(rv, NS_ERROR_UC_PARSER_DECODE_FAILURE);
+
+  return NS_OK;
+}
+
+static nsresult DoRiceDeltaDecode32Bytes(
+    const v5::RiceDeltaEncoded256Bit& aEncoding, nsACString& aDecoded) {
+  auto first_value_first_part = aEncoding.first_value_first_part();
+  auto first_value_second_part = aEncoding.first_value_second_part();
+  auto first_value_third_part = aEncoding.first_value_third_part();
+  auto first_value_fourth_part = aEncoding.first_value_fourth_part();
+
+  PARSER_LOG(("* Encoding info for V5 32bytes encoding:"));
+  PARSER_LOG(("  - First value first part: %" PRIu64, first_value_first_part));
+  PARSER_LOG(
+      ("  - First value second part: %" PRIu64, first_value_second_part));
+  PARSER_LOG(("  - First value third part: %" PRIu64, first_value_third_part));
+  PARSER_LOG(
+      ("  - First value fourth part: %" PRIu64, first_value_fourth_part));
+  PARSER_LOG(("  - Num of entries: %d", aEncoding.entries_count()));
+  PARSER_LOG(("  - Rice parameter: %d", aEncoding.rice_parameter()));
+
+  // Set up the input buffer. Note that the bits should be read
+  // from LSB to MSB so that we in-place reverse the bits before
+  // feeding to the decoder.
+  auto encoded =
+      const_cast<v5::RiceDeltaEncoded256Bit&>(aEncoding).mutable_encoded_data();
+  RiceDeltaDecoder decoder((uint8_t*)encoded->c_str(), encoded->size());
+
+  // Setup the output buffer. The "first value" is included in
+  // the output buffer.
+  if (!aDecoded.SetCapacity((aEncoding.entries_count() + 1) * 32,
+                            mozilla::fallible)) {
+    NS_WARNING("Not enough memory to decode the RiceDelta input.");
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  // Decode!
+  bool rv = decoder.Decode256(
+      aEncoding.rice_parameter(), first_value_first_part,
+      first_value_second_part, first_value_third_part, first_value_fourth_part,
+      aEncoding.entries_count(),  // # of entries (first value not included).
+      aDecoded);
+
+  NS_ENSURE_TRUE(rv, NS_ERROR_UC_PARSER_DECODE_FAILURE);
+
+  return NS_OK;
+}
+
 nsresult ProtocolParserProtobufV5::ProcessAddition4Bytes(
     TableUpdateV4& aTableUpdate, const v5::RiceDeltaEncoded32Bit& aAddition) {
   nsTArray<uint32_t> decoded;
@@ -1260,10 +1381,92 @@ nsresult ProtocolParserProtobufV5::ProcessAddition4Bytes(
     // We need to swap the bytes to get the correct prefix.
     char p[4];
     NativeEndian::copyAndSwapToBigEndian(p, &decoded[i], 1);
+
     prefixes.Append(p, 4);
   }
 
   aTableUpdate.NewPrefixes(4, prefixes);
+  return NS_OK;
+}
+
+nsresult ProtocolParserProtobufV5::ProcessAddition8Bytes(
+    TableUpdateV4& aTableUpdate, const v5::RiceDeltaEncoded64Bit& aAddition) {
+  nsTArray<uint64_t> decoded;
+
+  nsresult rv = DoRiceDeltaDecode8Bytes(aAddition, decoded);
+  if (NS_FAILED(rv)) {
+    PARSER_LOG(("Failed to parse encoded prefixes."));
+    return rv;
+  }
+
+  nsCString prefixes;
+  if (!prefixes.SetCapacity(decoded.Length() * 8, mozilla::fallible)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  for (size_t i = 0; i < decoded.Length(); i++) {
+    char p[8];
+    NativeEndian::copyAndSwapToBigEndian(p, &decoded[i], 1);
+    prefixes.Append(p, 8);
+  }
+
+  aTableUpdate.NewPrefixes(8, prefixes);
+  return NS_OK;
+}
+
+nsresult ProtocolParserProtobufV5::ProcessAddition16Bytes(
+    TableUpdateV4& aTableUpdate, const v5::RiceDeltaEncoded128Bit& aAddition) {
+  nsAutoCString decoded;
+
+  nsresult rv = DoRiceDeltaDecode16Bytes(aAddition, decoded);
+  if (NS_FAILED(rv)) {
+    PARSER_LOG(("Failed to parse encoded prefixes."));
+    return rv;
+  }
+
+  nsCString prefixes;
+  if (!prefixes.SetCapacity(decoded.Length(), mozilla::fallible)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  for (size_t i = 0; i < decoded.Length() / 16; i++) {
+    // Swap the bytes to the correct endianness, the data is 128-bits long.
+    char p[16];
+    for (size_t j = 0; j < 16; j++) {
+      p[j] = decoded[i * 16 + (15 - j)];
+    }
+    prefixes.Append(p, 16);
+  }
+
+  aTableUpdate.NewPrefixes(16, prefixes);
+  return NS_OK;
+}
+
+nsresult ProtocolParserProtobufV5::ProcessAddition32Bytes(
+    TableUpdateV4& aTableUpdate, const v5::RiceDeltaEncoded256Bit& aAddition) {
+  nsAutoCString decoded;
+
+  nsresult rv = DoRiceDeltaDecode32Bytes(aAddition, decoded);
+  if (NS_FAILED(rv)) {
+    PARSER_LOG(("Failed to parse encoded prefixes."));
+    return rv;
+  }
+
+  nsCString prefixes;
+  if (!prefixes.SetCapacity(decoded.Length(), mozilla::fallible)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  for (size_t i = 0; i < decoded.Length() / 32; i++) {
+    // Swap the bytes to the correct endianness, the data is 256-bits long.
+    char p[32];
+    for (size_t j = 0; j < 32; j++) {
+      p[j] = decoded[i * 32 + (31 - j)];
+    }
+    prefixes.Append(p, 32);
+  }
+
+  aTableUpdate.NewPrefixes(32, prefixes);
   return NS_OK;
 }
 

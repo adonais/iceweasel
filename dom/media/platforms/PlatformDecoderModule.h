@@ -645,6 +645,31 @@ class MediaDataDecoder : public DecoderDoctorLifeLogger<MediaDataDecoder> {
   virtual ConversionRequired NeedsConversion() const {
     return ConversionRequired::kNeedNone;
   }
+
+  // Properties specific to platform decoders. They can be consulted by the
+  // client to improve playback smoothness. When not defined by the decoder, the
+  // client can choose its own.
+  // MaxNumVideoBuffers: some platform decoders have limited output buffers.
+  // This specifies how many (output) video buffers can be held at most by the
+  // client. Holding more will exhaust the deocder buffer pool and block further
+  // decoding.
+  // MinNumVideoBuffers: some platform decoders have decoding time longer than
+  // frame duration. To avoid frame dropping in this case, the client queues
+  // frames before starting to play. This value tells the client the least
+  // amount of frames it should queue.
+  // MaxNumCurrentImages: specifies how many (output) video buffers are current
+  // (renderable) at a time.
+  // The result is not accurated until Init() is resolved.
+  MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(PropertyName,
+                                                     (MaxNumVideoBuffers,
+                                                      MinNumVideoBuffers,
+                                                      MaxNumCurrentImages));
+  // Generic type for property values to avoid breaking existing client code in
+  // the future.
+  using PropertyValue = Variant<uint32_t>;
+  virtual Maybe<PropertyValue> GetDecodeProperty(PropertyName aName) const {
+    return Nothing();
+  }
 };
 
 }  // namespace mozilla

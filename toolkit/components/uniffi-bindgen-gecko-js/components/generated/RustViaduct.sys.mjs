@@ -889,6 +889,93 @@ export class NonTlsUrl extends ViaductError {
     }
 }
 
+/**
+ * OhttpChannelNotConfigured
+ */
+export class OhttpChannelNotConfigured extends ViaductError {
+
+    constructor(
+        v0,
+        ...params
+    ) {
+        const message = `v0: ${ v0 }`;
+        super(message, ...params);
+        this.v0 = v0;
+    }
+    toString() {
+        return `OhttpChannelNotConfigured: ${super.toString()}`
+    }
+}
+
+/**
+ * OhttpConfigFetchFailed
+ */
+export class OhttpConfigFetchFailed extends ViaductError {
+
+    constructor(
+        v0,
+        ...params
+    ) {
+        const message = `v0: ${ v0 }`;
+        super(message, ...params);
+        this.v0 = v0;
+    }
+    toString() {
+        return `OhttpConfigFetchFailed: ${super.toString()}`
+    }
+}
+
+/**
+ * OhttpRequestError
+ */
+export class OhttpRequestError extends ViaductError {
+
+    constructor(
+        v0,
+        ...params
+    ) {
+        const message = `v0: ${ v0 }`;
+        super(message, ...params);
+        this.v0 = v0;
+    }
+    toString() {
+        return `OhttpRequestError: ${super.toString()}`
+    }
+}
+
+/**
+ * OhttpResponseError
+ */
+export class OhttpResponseError extends ViaductError {
+
+    constructor(
+        v0,
+        ...params
+    ) {
+        const message = `v0: ${ v0 }`;
+        super(message, ...params);
+        this.v0 = v0;
+    }
+    toString() {
+        return `OhttpResponseError: ${super.toString()}`
+    }
+}
+
+/**
+ * OhttpNotSupported
+ */
+export class OhttpNotSupported extends ViaductError {
+
+    constructor(
+        ...params
+    ) {
+        super(...params);
+    }
+    toString() {
+        return `OhttpNotSupported: ${super.toString()}`
+    }
+}
+
 // Export the FFIConverter object to make external types work.
 export class FfiConverterTypeViaductError extends FfiConverterArrayBuffer {
     static read(dataStream) {
@@ -920,6 +1007,25 @@ export class FfiConverterTypeViaductError extends FfiConverterArrayBuffer {
                     );
             case 8:
                 return new NonTlsUrl(
+                    );
+            case 9:
+                return new OhttpChannelNotConfigured(
+                    FfiConverterString.read(dataStream)
+                    );
+            case 10:
+                return new OhttpConfigFetchFailed(
+                    FfiConverterString.read(dataStream)
+                    );
+            case 11:
+                return new OhttpRequestError(
+                    FfiConverterString.read(dataStream)
+                    );
+            case 12:
+                return new OhttpResponseError(
+                    FfiConverterString.read(dataStream)
+                    );
+            case 13:
+                return new OhttpNotSupported(
                     );
             default:
                 throw new UniFFITypeError("Unknown ViaductError variant");
@@ -954,6 +1060,25 @@ export class FfiConverterTypeViaductError extends FfiConverterArrayBuffer {
             return totalSize;
         }
         if (value instanceof NonTlsUrl) {
+            return totalSize;
+        }
+        if (value instanceof OhttpChannelNotConfigured) {
+            totalSize += FfiConverterString.computeSize(value.v0);
+            return totalSize;
+        }
+        if (value instanceof OhttpConfigFetchFailed) {
+            totalSize += FfiConverterString.computeSize(value.v0);
+            return totalSize;
+        }
+        if (value instanceof OhttpRequestError) {
+            totalSize += FfiConverterString.computeSize(value.v0);
+            return totalSize;
+        }
+        if (value instanceof OhttpResponseError) {
+            totalSize += FfiConverterString.computeSize(value.v0);
+            return totalSize;
+        }
+        if (value instanceof OhttpNotSupported) {
             return totalSize;
         }
         throw new UniFFITypeError("Unknown ViaductError variant");
@@ -993,6 +1118,30 @@ export class FfiConverterTypeViaductError extends FfiConverterArrayBuffer {
         }
         if (value instanceof NonTlsUrl) {
             dataStream.writeInt32(8);
+            return;
+        }
+        if (value instanceof OhttpChannelNotConfigured) {
+            dataStream.writeInt32(9);
+            FfiConverterString.write(dataStream, value.v0);
+            return;
+        }
+        if (value instanceof OhttpConfigFetchFailed) {
+            dataStream.writeInt32(10);
+            FfiConverterString.write(dataStream, value.v0);
+            return;
+        }
+        if (value instanceof OhttpRequestError) {
+            dataStream.writeInt32(11);
+            FfiConverterString.write(dataStream, value.v0);
+            return;
+        }
+        if (value instanceof OhttpResponseError) {
+            dataStream.writeInt32(12);
+            FfiConverterString.write(dataStream, value.v0);
+            return;
+        }
+        if (value instanceof OhttpNotSupported) {
+            dataStream.writeInt32(13);
             return;
         }
         throw new UniFFITypeError("Unknown ViaductError variant");

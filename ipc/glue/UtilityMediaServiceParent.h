@@ -8,7 +8,6 @@
 
 #include "mozilla/PRemoteMediaManagerParent.h"
 #include "mozilla/ProfilerMarkers.h"
-#include "mozilla/UniquePtr.h"
 
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/PUtilityMediaServiceParent.h"

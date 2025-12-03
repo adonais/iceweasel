@@ -14,7 +14,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=613662
 
 SimpleTest.expectAssertions(1);
 
-/** Test for Bug 613662 **/
+/** Test for Bug 613662 */
 function test() {
   function testPositions(node) {
     node.insertAdjacentHTML("beforeBegin", "\u003Cscript>ok(false, 'script should not have run');\u003C/script><i></i>");

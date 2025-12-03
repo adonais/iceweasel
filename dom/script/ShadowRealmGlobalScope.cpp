@@ -108,7 +108,10 @@ ModuleLoaderBase* ShadowRealmGlobalScope::GetModuleLoader(JSContext* aCx) {
     return nullptr;
   }
 
-  ScriptLoader* scriptLoader = doc->ScriptLoader();
+  ScriptLoader* scriptLoader = doc->GetScriptLoader();
+  if (!scriptLoader) {
+    return nullptr;
+  }
 
   mModuleLoader = new ModuleLoader(scriptLoader, this, ModuleLoader::Normal);
 

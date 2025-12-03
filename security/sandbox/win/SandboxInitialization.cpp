@@ -178,7 +178,7 @@ static sandbox::BrokerServices* InitializeBrokerServices() {
   // process because it will initialize the sandbox broker, which requires
   // the process to swap its window station. During this time all the UI
   // will be broken. This has to run before threads and windows are created.
-  Unused << brokerServices->CreateAlternateDesktop(
+  (void)brokerServices->CreateAlternateDesktop(
       sandbox::Desktop::kAlternateWinstation);
 
   // Ensure the relevant mitigations are enforced.

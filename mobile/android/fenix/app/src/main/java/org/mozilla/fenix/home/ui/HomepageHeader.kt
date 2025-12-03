@@ -19,6 +19,8 @@ import androidx.compose.material3.IconToggleButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
@@ -44,6 +46,8 @@ import mozilla.components.ui.icons.R as iconsR
  */
 @Composable
 fun HomepageHeader(
+    wordmarkTextColor: Color?,
+    privateBrowsingButtonColor: Color,
     browsingMode: BrowsingMode,
     browsingModeChanged: (BrowsingMode) -> Unit,
 ) {
@@ -56,11 +60,12 @@ fun HomepageHeader(
     ) {
         WordmarkLogo()
 
-        WordmarkText()
+        WordmarkText(wordmarkTextColor)
 
         Spacer(modifier = Modifier.weight(1f))
 
         PrivateBrowsingButton(
+            color = privateBrowsingButtonColor,
             browsingMode = browsingMode,
             browsingModeChanged = browsingModeChanged,
         )
@@ -83,7 +88,7 @@ private fun WordmarkLogo() {
 }
 
 @Composable
-private fun WordmarkText() {
+private fun WordmarkText(color: Color?) {
     Image(
         modifier = Modifier
             .semantics {
@@ -92,12 +97,14 @@ private fun WordmarkText() {
             }
             .height(dimensionResource(R.dimen.wordmark_text_height)),
         painter = painterResource(getAttr(R.attr.fenixWordmarkText)),
+        colorFilter = color?.let { ColorFilter.tint(it) },
         contentDescription = stringResource(R.string.app_name),
     )
 }
 
 @Composable
 private fun PrivateBrowsingButton(
+    color: Color,
     browsingMode: BrowsingMode,
     browsingModeChanged: (BrowsingMode) -> Unit,
 ) {
@@ -118,7 +125,7 @@ private fun PrivateBrowsingButton(
         },
     ) {
         Icon(
-            tint = colorResource(getAttr(iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color)),
+            tint = color,
             painter = painterResource(iconsR.drawable.mozac_ic_private_mode_24),
             contentDescription = stringResource(R.string.content_description_private_browsing),
         )
@@ -126,7 +133,7 @@ private fun PrivateBrowsingButton(
 }
 
 @Composable
-private fun getAttr(resId: Int): Int {
+internal fun getAttr(resId: Int): Int {
     val typedArray = LocalContext.current.obtainStyledAttributes(intArrayOf(resId))
     val newResId = typedArray.getResourceId(0, 0)
     typedArray.recycle()
@@ -140,6 +147,12 @@ private fun HomepageHeaderPreview() {
     FirefoxTheme {
         Row(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
             HomepageHeader(
+                wordmarkTextColor = null,
+                privateBrowsingButtonColor = colorResource(
+                    getAttr(
+                        iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color,
+                    ),
+                ),
                 browsingMode = BrowsingMode.Normal,
                 browsingModeChanged = {},
             )
@@ -153,6 +166,12 @@ private fun PrivateHomepageHeaderPreview() {
     FirefoxTheme(theme = Theme.Private) {
         Row(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
             HomepageHeader(
+                wordmarkTextColor = null,
+                privateBrowsingButtonColor = colorResource(
+                    getAttr(
+                        iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color,
+                    ),
+                ),
                 browsingMode = BrowsingMode.Private,
                 browsingModeChanged = {},
             )

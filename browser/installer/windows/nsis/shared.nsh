@@ -446,6 +446,31 @@ Function OnInstallDesktopLauncherHandler
   Pop $0
 FunctionEnd
 
+Function CreateDesktopShortcuts
+  SetShellVarContext all  ; Set $DESKTOP to All Users
+  ${Unless} ${FileExists} "$DESKTOP\${BrandShortName}.lnk"
+    CreateShortCut "$DESKTOP\${BrandShortName}.lnk" "$INSTDIR\${FileMainEXE}"
+    ${If} ${FileExists} "$DESKTOP\${BrandShortName}.lnk"
+      ShellLink::SetShortCutWorkingDirectory "$DESKTOP\${BrandShortName}.lnk" "$INSTDIR"
+      ${If} "$AppUserModelID" != ""
+        ApplicationID::Set "$DESKTOP\${BrandShortName}.lnk" "$AppUserModelID" "true"
+      ${EndIf}
+    ${Else}
+      SetShellVarContext current  ; Set $DESKTOP to the current user's desktop
+      ${Unless} ${FileExists} "$DESKTOP\${BrandShortName}.lnk"
+        CreateShortCut "$DESKTOP\${BrandShortName}.lnk" "$INSTDIR\${FileMainEXE}"
+        ${If} ${FileExists} "$DESKTOP\${BrandShortName}.lnk"
+          ShellLink::SetShortCutWorkingDirectory "$DESKTOP\${BrandShortName}.lnk" \
+                                                 "$INSTDIR"
+          ${If} "$AppUserModelID" != ""
+            ApplicationID::Set "$DESKTOP\${BrandShortName}.lnk" "$AppUserModelID" "true"
+          ${EndIf}
+        ${EndIf}
+      ${EndUnless}
+    ${EndIf}
+  ${EndUnless}
+FunctionEnd
+
 Function DeleteDesktopShortcut
   ${If} ${FileExists} "$DESKTOP\${BrandShortName}.lnk"
     Delete "$DESKTOP\${BrandShortName}.lnk"

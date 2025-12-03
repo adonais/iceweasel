@@ -38,7 +38,6 @@
 #if defined(XP_WIN)
 #  include "mozilla/gfx/DeviceManagerDx.h"
 #  include "mozilla/layers/TextureD3D11.h"
-#  include "mozilla/layers/VideoProcessorD3D11.h"
 #endif
 
 namespace mozilla {
@@ -50,19 +49,6 @@ UniquePtr<TextureData> CanvasTranslator::CreateTextureData(
   TextureAllocationFlags allocFlags =
       aClear ? ALLOC_CLEAR_BUFFER : ALLOC_DEFAULT;
   switch (mTextureType) {
-#ifdef XP_WIN
-    case TextureType::D3D11: {
-      // Prefer keyed mutex than D3D11Fence if remote canvas is enabled. See Bug
-      // 1966082
-      if (gfx::gfxVars::RemoteCanvasEnabled()) {
-        allocFlags =
-            (TextureAllocationFlags)(allocFlags | USE_D3D11_KEYED_MUTEX);
-      }
-      textureData =
-          D3D11TextureData::Create(aSize, aFormat, allocFlags, mDevice);
-      break;
-    }
-#endif
     case TextureType::Unknown:
       textureData = BufferTextureData::Create(
           aSize, aFormat, gfx::BackendType::SKIA, LayersBackend::LAYERS_WR,
@@ -81,11 +67,7 @@ UniquePtr<TextureData> CanvasTranslator::CreateTextureData(
 CanvasTranslator::CanvasTranslator(
     layers::SharedSurfacesHolder* aSharedSurfacesHolder,
     const dom::ContentParentId& aContentId, uint32_t aManagerId)
-    : mTranslationTaskQueue(gfx::CanvasRenderThread::CreateWorkerTaskQueue()),
-      mSharedSurfacesHolder(aSharedSurfacesHolder),
-#if defined(XP_WIN)
-      mVideoProcessorD3D11("CanvasTranslator::mVideoProcessorD3D11"),
-#endif
+    : mSharedSurfacesHolder(aSharedSurfacesHolder),
       mMaxSpinCount(StaticPrefs::gfx_canvas_remote_max_spin_count()),
       mContentId(aContentId),
       mManagerId(aManagerId),
@@ -99,17 +81,10 @@ CanvasTranslator::~CanvasTranslator() = default;
 
 void CanvasTranslator::DispatchToTaskQueue(
     already_AddRefed<nsIRunnable> aRunnable) {
-  if (mTranslationTaskQueue) {
-    MOZ_ALWAYS_SUCCEEDS(mTranslationTaskQueue->Dispatch(std::move(aRunnable)));
-  } else {
-    gfx::CanvasRenderThread::Dispatch(std::move(aRunnable));
-  }
+  gfx::CanvasRenderThread::Dispatch(std::move(aRunnable));
 }
 
 bool CanvasTranslator::IsInTaskQueue() const {
-  if (mTranslationTaskQueue) {
-    return mTranslationTaskQueue->IsCurrentThreadIn();
-  }
   return gfx::CanvasRenderThread::IsInCanvasRenderThread();
 }
 
@@ -177,8 +152,9 @@ mozilla::ipc::IPCResult CanvasTranslator::RecvInitTranslator(
   mReaderSemaphore.reset(CrossProcessSemaphore::Create(std::move(aReaderSem)));
   mReaderSemaphore->CloseHandle();
 
-  if (!CheckForFreshCanvasDevice(__LINE__)) {
+  if (!CreateReferenceTexture()) {
     gfxCriticalNote << "GFX: CanvasTranslator failed to get device";
+    Deactivate();
     return IPC_OK();
   }
 
@@ -488,35 +464,9 @@ void CanvasTranslator::ActorDestroy(ActorDestroyReason why) {
     mPendingCanvasTranslatorEvents.clear();
   }
 
-#if defined(XP_WIN)
-  {
-    auto lock = mVideoProcessorD3D11.Lock();
-    auto& videoProcessor = lock.ref();
-    videoProcessor = nullptr;
-  }
-#endif
-
   DispatchToTaskQueue(NewRunnableMethod("CanvasTranslator::ClearTextureInfo",
                                         this,
                                         &CanvasTranslator::ClearTextureInfo));
-
-  if (mTranslationTaskQueue) {
-    gfx::CanvasRenderThread::ShutdownWorkerTaskQueue(mTranslationTaskQueue);
-    return;
-  }
-}
-
-bool CanvasTranslator::CheckDeactivated() {
-  if (mDeactivated) {
-    return true;
-  }
-
-  if (NS_WARN_IF(!gfx::gfxVars::RemoteCanvasEnabled() &&
-                 !gfx::gfxVars::UseAcceleratedCanvas2D())) {
-    Deactivate();
-  }
-
-  return mDeactivated;
 }
 
 void CanvasTranslator::Deactivate() {
@@ -735,13 +685,7 @@ bool CanvasTranslator::TranslateRecording() {
     }
 
     if (!success && !HandleExtensionEvent(eventType)) {
-      if (mDeviceResetInProgress) {
-        // We've notified the recorder of a device change, so we are expecting
-        // failures. Log as a warning to prevent crash reporting being flooded.
-        gfxWarning() << "Failed to play canvas event type: " << eventType;
-      } else {
-        gfxCriticalNote << "Failed to play canvas event type: " << eventType;
-      }
+      gfxCriticalNote << "Failed to play canvas event type: " << eventType;
 
       if (!mCurrentMemReader.good()) {
         mHeader->readerState = State::Failed;
@@ -781,10 +725,7 @@ bool CanvasTranslator::TranslateRecording() {
 }
 
 bool CanvasTranslator::UsePendingCanvasTranslatorEvents() {
-  // XXX remove !mTranslationTaskQueue check.
-  return StaticPrefs::
-             gfx_canvas_remote_use_canvas_translator_event_AtStartup() &&
-         !mTranslationTaskQueue;
+  return StaticPrefs::gfx_canvas_remote_use_canvas_translator_event_AtStartup();
 }
 
 void CanvasTranslator::PostCanvasTranslatorEvents(
@@ -924,36 +865,18 @@ void CanvasTranslator::BeginTransaction() {
   mIsInTransaction = true;
 }
 
-void CanvasTranslator::Flush() {
-#if defined(XP_WIN)
-  // We can end up without a device, due to a reset and failure to re-create.
-  if (!mDevice) {
-    return;
-  }
-
-  gfx::AutoSerializeWithMoz2D serializeWithMoz2D(mBackendType);
-  RefPtr<ID3D11DeviceContext> deviceContext;
-  mDevice->GetImmediateContext(getter_AddRefs(deviceContext));
-  deviceContext->Flush();
-#endif
-}
+void CanvasTranslator::Flush() {}
 
 void CanvasTranslator::EndTransaction() {
   Flush();
-  // At the end of a transaction is a good time to check if a new canvas device
-  // has been created, even if a reset did not occur.
-  Unused << CheckForFreshCanvasDevice(__LINE__);
   mIsInTransaction = false;
 }
 
-void CanvasTranslator::DeviceChangeAcknowledged() {
-  mDeviceResetInProgress = false;
+void CanvasTranslator::DeviceResetAcknowledged() {
   if (mRemoteTextureOwner) {
     mRemoteTextureOwner->NotifyContextRestored();
   }
 }
-
-void CanvasTranslator::DeviceResetAcknowledged() { DeviceChangeAcknowledged(); }
 
 bool CanvasTranslator::CreateReferenceTexture() {
   if (mReferenceTextureData) {
@@ -966,94 +889,21 @@ bool CanvasTranslator::CreateReferenceTexture() {
   mReferenceTextureData =
       CreateTextureData(gfx::IntSize(1, 1), gfx::SurfaceFormat::B8G8R8A8, true);
   if (!mReferenceTextureData) {
-    Deactivate();
     return false;
   }
 
   if (NS_WARN_IF(!mReferenceTextureData->Lock(OpenMode::OPEN_READ_WRITE))) {
     gfxCriticalNote << "CanvasTranslator::CreateReferenceTexture lock failed";
     mReferenceTextureData.reset();
-    Deactivate();
     return false;
   }
 
   mBaseDT = mReferenceTextureData->BorrowDrawTarget();
-
   if (!mBaseDT) {
-    // We might get a null draw target due to a device failure, deactivate and
-    // return false so that we can recover.
-    Deactivate();
     return false;
   }
 
   return true;
-}
-
-bool CanvasTranslator::CheckForFreshCanvasDevice(int aLineNumber) {
-  // If not on D3D11, we are not dependent on a fresh device for DT creation if
-  // one already exists.
-  if (mBaseDT && mTextureType != TextureType::D3D11) {
-    return false;
-  }
-
-#if defined(XP_WIN)
-  // If a new device has already been created, use that one.
-  RefPtr<ID3D11Device> device = gfx::DeviceManagerDx::Get()->GetCanvasDevice();
-  if (device && device != mDevice) {
-    if (mDevice) {
-      // We already had a device, notify child of change.
-      NotifyDeviceChanged();
-    }
-    mDevice = device.forget();
-    return CreateReferenceTexture();
-  }
-
-  gfx::DeviceResetReason reason = gfx::DeviceResetReason::OTHER;
-
-  if (mDevice) {
-    const auto d3d11Reason = mDevice->GetDeviceRemovedReason();
-    reason = DXGIErrorToDeviceResetReason(d3d11Reason);
-    if (reason == gfx::DeviceResetReason::OK) {
-      return false;
-    }
-
-    gfxCriticalNote << "GFX: CanvasTranslator detected a device reset at "
-                    << aLineNumber;
-    NotifyDeviceChanged();
-  }
-
-  RefPtr<Runnable> runnable =
-      NS_NewRunnableFunction("CanvasTranslator NotifyDeviceReset", [reason]() {
-        gfx::GPUProcessManager::GPUProcessManager::NotifyDeviceReset(
-            reason, gfx::DeviceResetDetectPlace::CANVAS_TRANSLATOR);
-      });
-
-  // It is safe to wait here because only the Compositor thread waits on us and
-  // the main thread doesn't wait on the compositor thread in the GPU process.
-  SyncRunnable::DispatchToThread(GetMainThreadSerialEventTarget(), runnable,
-                                 /*aForceDispatch*/ true);
-
-  mDevice = gfx::DeviceManagerDx::Get()->GetCanvasDevice();
-  if (!mDevice) {
-    // We don't have a canvas device, we need to deactivate.
-    Deactivate();
-    return false;
-  }
-#endif
-
-  return CreateReferenceTexture();
-}
-
-void CanvasTranslator::NotifyDeviceChanged() {
-  // Clear out any old recycled texture datas with the wrong device.
-  if (mRemoteTextureOwner) {
-    mRemoteTextureOwner->NotifyContextLost();
-    mRemoteTextureOwner->ClearRecycledTextures();
-  }
-  mDeviceResetInProgress = true;
-  gfx::CanvasRenderThread::Dispatch(
-      NewRunnableMethod("CanvasTranslator::SendNotifyDeviceChanged", this,
-                        &CanvasTranslator::SendNotifyDeviceChanged));
 }
 
 void CanvasTranslator::NotifyDeviceReset(const RemoteTextureOwnerIdSet& aIds) {
@@ -1096,7 +946,7 @@ void CanvasTranslator::NotifyRequiresRefresh(
   }
 
   if (mTextureInfo.find(aTextureOwnerId) != mTextureInfo.end()) {
-    Unused << SendNotifyRequiresRefresh(aTextureOwnerId);
+    (void)SendNotifyRequiresRefresh(aTextureOwnerId);
   }
 }
 
@@ -1218,33 +1068,31 @@ static const OpenMode kInitMode = OpenMode::OPEN_READ_WRITE;
 already_AddRefed<gfx::DrawTarget> CanvasTranslator::CreateFallbackDrawTarget(
     gfx::ReferencePtr aRefPtr, const RemoteTextureOwnerId aTextureOwnerId,
     const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat) {
-  RefPtr<gfx::DrawTarget> dt;
-  do {
-    UniquePtr<TextureData> textureData =
-        CreateOrRecycleTextureData(aSize, aFormat);
-    if (NS_WARN_IF(!textureData)) {
-      continue;
-    }
+  UniquePtr<TextureData> textureData =
+      CreateOrRecycleTextureData(aSize, aFormat);
+  if (NS_WARN_IF(!textureData)) {
+    return nullptr;
+  }
 
-    if (NS_WARN_IF(!textureData->Lock(kInitMode))) {
-      gfxCriticalNote << "CanvasTranslator::CreateDrawTarget lock failed";
-      continue;
-    }
+  if (NS_WARN_IF(!textureData->Lock(kInitMode))) {
+    gfxCriticalNote << "CanvasTranslator::CreateDrawTarget lock failed";
+    return nullptr;
+  }
 
-    dt = textureData->BorrowDrawTarget();
-    if (NS_WARN_IF(!dt)) {
-      textureData->Unlock();
-      continue;
-    }
-    // Recycled buffer contents may be uninitialized.
-    dt->ClearRect(gfx::Rect(dt->GetRect()));
+  RefPtr<gfx::DrawTarget> dt = textureData->BorrowDrawTarget();
+  if (NS_WARN_IF(!dt)) {
+    textureData->Unlock();
+    return nullptr;
+  }
+  // Recycled buffer contents may be uninitialized.
+  dt->ClearRect(gfx::Rect(dt->GetRect()));
 
-    TextureInfo& info = mTextureInfo[aTextureOwnerId];
-    info.mRefPtr = aRefPtr;
-    info.mFallbackDrawTarget = dt;
-    info.mTextureData = std::move(textureData);
-    info.mTextureLockMode = kInitMode;
-  } while (!dt && CheckForFreshCanvasDevice(__LINE__));
+  TextureInfo& info = mTextureInfo[aTextureOwnerId];
+  info.mRefPtr = aRefPtr;
+  info.mFallbackDrawTarget = dt;
+  info.mTextureData = std::move(textureData);
+  info.mTextureLockMode = kInitMode;
+
   return dt.forget();
 }
 
@@ -1319,7 +1167,7 @@ void CanvasTranslator::NotifyTextureDestruction(
   if (mIPDLClosed) {
     return;
   }
-  Unused << SendNotifyTextureDestruction(aTextureOwnerId);
+  (void)SendNotifyTextureDestruction(aTextureOwnerId);
 }
 
 void CanvasTranslator::AddTextureKeepAlive(const RemoteTextureOwnerId& aId) {
@@ -1490,12 +1338,10 @@ bool CanvasTranslator::PushRemoteTexture(
     const RemoteTextureOwnerId aTextureOwnerId, TextureData* aData,
     RemoteTextureId aId, RemoteTextureOwnerId aOwnerId) {
   EnsureRemoteTextureOwner(aOwnerId);
-  UniquePtr<TextureData> dstData;
-  if (!mDeviceResetInProgress) {
-    TextureData::Info info;
-    aData->FillInfo(info);
-    dstData = CreateOrRecycleTextureData(info.size, info.format);
-  }
+  TextureData::Info info;
+  aData->FillInfo(info);
+  UniquePtr<TextureData> dstData =
+      CreateOrRecycleTextureData(info.size, info.format);
   bool success = false;
   // Source data is already locked.
   if (dstData) {
@@ -1558,10 +1404,6 @@ void CanvasTranslator::ClearTextureInfo() {
   if (mRemoteTextureOwner) {
     mRemoteTextureOwner->UnregisterAllTextureOwners();
     mRemoteTextureOwner = nullptr;
-  }
-  if (mTranslationTaskQueue) {
-    gfx::CanvasRenderThread::FinishShutdownWorkerTaskQueue(
-        mTranslationTaskQueue);
   }
 }
 
@@ -1688,8 +1530,12 @@ CanvasTranslator::LookupSourceSurfaceFromSurfaceDescriptor(
 
     // TODO reuse DataSourceSurface if no update.
 
-    usedSurf =
-        textureHostD3D11->GetAsSurfaceWithDevice(mDevice, mVideoProcessorD3D11);
+    if (RefPtr<ID3D11Device> device =
+            gfx::DeviceManagerDx::Get()->GetCanvasDevice()) {
+      usedSurf = textureHostD3D11->GetAsSurfaceWithDevice(device);
+    } else {
+      usedSurf = nullptr;
+    }
     if (!usedSurf) {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
       usedDescriptor = Nothing();

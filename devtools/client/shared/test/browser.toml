@@ -112,7 +112,6 @@ skip-if = ["verify"] # Bug 1975963
 ["browser_filter-editor-06.js"]
 
 ["browser_filter-editor-07.js"]
-fail-if = ["os == 'linux' && os_version == '18.04' && processor == 'x86_64' && a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 
 ["browser_filter-editor-08.js"]
@@ -131,7 +130,6 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && d
 
 ["browser_html_tooltip-02.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bug 1721159
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1721159
 ]
 
@@ -165,7 +163,6 @@ skip-if = [
 
 ["browser_html_tooltip_variable-height.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bug 1721159
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1721159
 ]
 
@@ -257,9 +254,7 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && d
 ["browser_treeWidget_basic.js"]
 
 ["browser_treeWidget_keyboard_interaction.js"]
-fail-if = ["os == 'linux' && os_version == '18.04' && processor == 'x86_64' && a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 
 ["browser_treeWidget_mouse_interaction.js"]
-fail-if = ["os == 'linux' && os_version == '18.04' && processor == 'x86_64' && a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled

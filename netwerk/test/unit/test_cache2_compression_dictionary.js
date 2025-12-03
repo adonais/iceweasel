@@ -89,10 +89,6 @@ add_setup(async function () {
   }
 });
 
-registerCleanupFunction(async () => {
-  Services.prefs.clearUserPref("network.http.dictionaries.enable");
-});
-
 add_task(async function test_resource_without_dictionary() {
   let uri = `${server.origin()}${resourcePath}`;
   let chan = makeChan(uri);

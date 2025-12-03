@@ -382,7 +382,7 @@ newtab-wallpaper-abstract-purple-green = Gradiente roxo e verde claro
 newtab-wallpaper-abstract-blue-purple-waves = Formas onduladas azuis e roxas
 newtab-wallpaper-abstract-black-waves = Formas onduladas pretas
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotografias
 newtab-wallpaper-beach-at-sunrise = Praia ao nascer do sol

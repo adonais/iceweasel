@@ -21,7 +21,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
 });
 XPCOMUtils.defineLazyServiceGetters(lazy, {
-  AlertsService: ["@mozilla.org/alerts-service;1", "nsIAlertsService"],
+  AlertsService: ["@mozilla.org/alerts-service;1", Ci.nsIAlertsService],
 });
 ChromeUtils.defineLazyGetter(lazy, "log", () => {
   let { ConsoleAPI } = ChromeUtils.importESModule(

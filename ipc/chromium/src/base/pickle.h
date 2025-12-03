@@ -13,7 +13,6 @@
 #include "base/logging.h"
 #include "base/string16.h"
 
-#include "mozilla/Attributes.h"
 #include "mozilla/BufferList.h"
 #include "mozilla/mozalloc.h"
 #include "mozilla/TimeStamp.h"

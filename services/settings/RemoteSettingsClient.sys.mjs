@@ -1067,7 +1067,11 @@ export class RemoteSettingsClient extends EventEmitter {
    *   The collection metadata, that contains the signature payload.
    */
   async validateCollectionSignature(records, timestamp, metadata) {
-    if (!metadata?.signature) {
+    if (
+      !metadata?.signatures ||
+      !Array.isArray(metadata.signatures) ||
+      metadata.signatures.length === 0
+    ) {
       throw new MissingSignatureError(this.identifier);
     }
 
@@ -1077,29 +1081,48 @@ export class RemoteSettingsClient extends EventEmitter {
       ].createInstance(Ci.nsIContentSignatureVerifier);
     }
 
-    // This is a content-signature field from an autograph response.
-    const {
-      signature: { x5u, signature },
-    } = metadata;
-    const certChain = await (await lazy.Utils.fetch(x5u)).text();
     // Merge remote records with local ones and serialize as canonical JSON.
     const serialized = await lazy.RemoteSettingsWorker.canonicalStringify(
       records,
       timestamp
     );
 
-    lazy.console.debug(`${this.identifier} verify signature using ${x5u}`);
-    if (
-      !(await this._verifier.asyncVerifyContentSignature(
-        serialized,
-        "p384ecdsa=" + signature,
-        certChain,
-        this.signerName,
-        lazy.Utils.CERT_CHAIN_ROOT_IDENTIFIER
-      ))
-    ) {
-      throw new InvalidSignatureError(this.identifier, x5u, this.signerName);
+    // Iterate over the list of signatures until we find a valid one.
+    const thrownErrors = [];
+    const { signatures } = metadata;
+    for (const sig of signatures) {
+      // This is a content-signature field from an autograph response.
+      const { x5u, signature, mode } = sig;
+      if (!x5u || !signature || (mode && mode !== "p384ecdsa")) {
+        lazy.console.warn(
+          `${this.identifier} ignore unsupported signature entry in metadata`
+        );
+        continue;
+      }
+      const certChain = await (await lazy.Utils.fetch(x5u)).text();
+      lazy.console.debug(`${this.identifier} verify signature using ${x5u}`);
+
+      if (
+        await this._verifier.asyncVerifyContentSignature(
+          serialized,
+          "p384ecdsa=" + signature,
+          certChain,
+          this.signerName,
+          lazy.Utils.CERT_CHAIN_ROOT_IDENTIFIER
+        )
+      ) {
+        // Signature is valid, exit!
+        return;
+      }
+      // Try next signature.
+      thrownErrors.push(
+        new InvalidSignatureError(this.identifier, x5u, this.signerName)
+      );
     }
+
+    // We now that the list of signature is not empty, so if we are here
+    // it means that none was valid.
+    throw thrownErrors[0];
   }
 
   /**

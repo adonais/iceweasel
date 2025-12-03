@@ -21,7 +21,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/OperatorNewExtensions.h"
-#include "mozilla/PodOperations.h"
 #include "mozilla/fallible.h"
 #include "nsPointerHashKeys.h"
 #include "nsTArrayForwardDeclare.h"
@@ -810,7 +809,7 @@ class nsTHashtable<nsPtrHashKey<T>>
     return reinterpret_cast<EntryType*>(Base::GetEntry(aKey));
   }
 
-  bool Contains(T* aKey) const { return Base::Contains(aKey); }
+  bool Contains(const T* aKey) const { return Base::Contains(aKey); }
 
   EntryType* PutEntry(T* aKey) {
     return reinterpret_cast<EntryType*>(Base::PutEntry(aKey));

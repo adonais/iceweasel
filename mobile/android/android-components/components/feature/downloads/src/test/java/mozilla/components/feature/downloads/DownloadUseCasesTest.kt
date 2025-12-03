@@ -16,7 +16,7 @@ class DownloadUseCasesTest {
     @Test
     fun consumeDownloadUseCase() {
         val store: BrowserStore = mock()
-        val useCases = DownloadsUseCases(store)
+        val useCases = DownloadsUseCases(store, mock())
 
         useCases.consumeDownload("tabId", "downloadId")
         verify(store).dispatch(ContentAction.ConsumeDownloadAction("tabId", "downloadId"))
@@ -25,7 +25,7 @@ class DownloadUseCasesTest {
     @Test
     fun restoreDownloadsUseCase() {
         val store: BrowserStore = mock()
-        val useCases = DownloadsUseCases(store)
+        val useCases = DownloadsUseCases(store, mock())
 
         useCases.restoreDownloads()
         verify(store).dispatch(DownloadAction.RestoreDownloadsStateAction)
@@ -34,7 +34,7 @@ class DownloadUseCasesTest {
     @Test
     fun removeDownloadUseCase() {
         val store: BrowserStore = mock()
-        val useCases = DownloadsUseCases(store)
+        val useCases = DownloadsUseCases(store, mock())
 
         useCases.removeDownload("downloadId")
         verify(store).dispatch(DownloadAction.RemoveDownloadAction("downloadId"))
@@ -43,7 +43,7 @@ class DownloadUseCasesTest {
     @Test
     fun removeAllDownloadsUseCase() {
         val store: BrowserStore = mock()
-        val useCases = DownloadsUseCases(store)
+        val useCases = DownloadsUseCases(store, mock())
 
         useCases.removeAllDownloads()
         verify(store).dispatch(DownloadAction.RemoveAllDownloadsAction)

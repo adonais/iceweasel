@@ -4,11 +4,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/** Document Zoom Management Code
+/**
+ * Document Zoom Management Code
  *
  * To use this, you'll need to have a global gBrowser variable
  * or use the methods that accept a browser to be modified.
- **/
+ */
 
 var ZoomManager = {
   set useFullZoom(aVal) {

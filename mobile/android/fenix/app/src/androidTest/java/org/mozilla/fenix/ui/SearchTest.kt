@@ -37,7 +37,7 @@ import org.mozilla.fenix.helpers.MockBrowserDataHelper.createBookmarkItem
 import org.mozilla.fenix.helpers.MockBrowserDataHelper.createTabItem
 import org.mozilla.fenix.helpers.MockBrowserDataHelper.setCustomSearchEngine
 import org.mozilla.fenix.helpers.SearchDispatcher
-import org.mozilla.fenix.helpers.TestAssetHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.helpers.TestHelper.clickSnackbarButton
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
@@ -195,6 +195,8 @@ class SearchTest : TestSetup() {
 
         homeScreen {
         }.openSearch {
+            waitForAppWindowToBeUpdated()
+            verifySearchView()
             clickScanButton()
             denyPermission()
             clickScanButton()
@@ -296,8 +298,8 @@ class SearchTest : TestSetup() {
     @SmokeTest
     @Test
     fun searchResultsOpenedInNewTabsGenerateSearchGroupsTest() {
-        val firstPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 1).url
-        val secondPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 2).url
+        val firstPageUrl = searchMockServer.getGenericAsset(1).url
+        val secondPageUrl = searchMockServer.getGenericAsset(2).url
         val searchEngineName = "TestSearchEngine"
         // setting our custom mockWebServer search URL
         setCustomSearchEngine(searchMockServer, searchEngineName)
@@ -326,8 +328,8 @@ class SearchTest : TestSetup() {
     @Ignore("disabled - https://bugzilla.mozilla.org/show_bug.cgi?id=1989405")
     @Test
     fun verifyAPageIsAddedToASearchGroupOnlyOnceTest() {
-        val firstPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 1).url
-        val secondPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 2).url
+        val firstPageUrl = searchMockServer.getGenericAsset(1).url
+        val secondPageUrl = searchMockServer.getGenericAsset(2).url
         val originPageUrl =
             "http://localhost:${searchMockServer.port}/pages/searchResults.html?search=firefox".toUri()
         val searchEngineName = "TestSearchEngine"
@@ -430,8 +432,8 @@ class SearchTest : TestSetup() {
     @SmokeTest
     @Test
     fun deleteIndividualHistoryItemsFromSearchGroupTest() {
-        val firstPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 1).url
-        val secondPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 2).url
+        val firstPageUrl = searchMockServer.getGenericAsset(1).url
+        val secondPageUrl = searchMockServer.getGenericAsset(2).url
         // setting our custom mockWebServer search URL
         val searchEngineName = "TestSearchEngine"
         setCustomSearchEngine(searchMockServer, searchEngineName)
@@ -474,8 +476,8 @@ class SearchTest : TestSetup() {
     @Ignore("disabled - https://bugzilla.mozilla.org/show_bug.cgi?id=1989405")
     @Test
     fun deleteSearchGroupFromHomeScreenTest() {
-        val firstPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 1).url
-        val secondPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 2).url
+        val firstPageUrl = searchMockServer.getGenericAsset(1).url
+        val secondPageUrl = searchMockServer.getGenericAsset(2).url
         // setting our custom mockWebServer search URL
         val searchEngineName = "TestSearchEngine"
         setCustomSearchEngine(searchMockServer, searchEngineName)
@@ -516,8 +518,8 @@ class SearchTest : TestSetup() {
     @Ignore("disabled - https://bugzilla.mozilla.org/show_bug.cgi?id=1989405")
     @Test
     fun openAPageFromHomeScreenSearchGroupTest() {
-        val firstPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 1).url
-        val secondPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 2).url
+        val firstPageUrl = searchMockServer.getGenericAsset(1).url
+        val secondPageUrl = searchMockServer.getGenericAsset(2).url
 
         // setting our custom mockWebServer search URL
         val searchEngineName = "TestSearchEngine"
@@ -566,8 +568,8 @@ class SearchTest : TestSetup() {
     @Ignore("disabled - https://bugzilla.mozilla.org/show_bug.cgi?id=1989405")
     @Test
     fun shareAPageFromHomeScreenSearchGroupTest() {
-        val firstPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 1).url
-        val secondPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 2).url
+        val firstPageUrl = searchMockServer.getGenericAsset(1).url
+        val secondPageUrl = searchMockServer.getGenericAsset(2).url
         // setting our custom mockWebServer search URL
         val searchEngineName = "TestSearchEngine"
         setCustomSearchEngine(searchMockServer, searchEngineName)
@@ -687,8 +689,8 @@ class SearchTest : TestSetup() {
     // Test that verifies the Firefox Suggest results in a general search context
     @Test
     fun verifyFirefoxSuggestHeaderForBrowsingDataSuggestionsTest() {
-        val firstPage = TestAssetHelper.getGenericAsset(searchMockServer, 1)
-        val secondPage = TestAssetHelper.getGenericAsset(searchMockServer, 2)
+        val firstPage = searchMockServer.getGenericAsset(1)
+        val secondPage = searchMockServer.getGenericAsset(2)
 
         createTabItem(firstPage.url.toString())
         createBookmarkItem(secondPage.url.toString(), secondPage.title, 1u)
@@ -711,8 +713,8 @@ class SearchTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyHistorySearchWithBrowsingHistoryTest() {
-        val firstPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 1)
-        val secondPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 2)
+        val firstPageUrl = searchMockServer.getGenericAsset(1)
+        val secondPageUrl = searchMockServer.getGenericAsset(2)
 
         MockBrowserDataHelper.createHistoryItem(firstPageUrl.url.toString())
         MockBrowserDataHelper.createHistoryItem(secondPageUrl.url.toString())
@@ -771,8 +773,8 @@ class SearchTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyTabsSearchWithOpenTabsTest() {
-        val firstPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 1)
-        val secondPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 2)
+        val firstPageUrl = searchMockServer.getGenericAsset(1)
+        val secondPageUrl = searchMockServer.getGenericAsset(2)
 
         createTabItem(firstPageUrl.url.toString())
         createTabItem(secondPageUrl.url.toString())
@@ -889,7 +891,7 @@ class SearchTest : TestSetup() {
     fun searchHistoryNotRememberedInPrivateBrowsingTest() {
         TestHelper.appContext.settings().shouldShowSearchSuggestionsInPrivate = true
 
-        val firstPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 1)
+        val firstPageUrl = searchMockServer.getGenericAsset(1)
         val searchEngineName = "TestSearchEngine"
 
         setCustomSearchEngine(searchMockServer, searchEngineName)

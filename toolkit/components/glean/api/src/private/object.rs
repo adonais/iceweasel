@@ -167,7 +167,9 @@ impl<K: ObjectSerialize + Clone> ObjectMetric<K> {
 }
 
 #[inherent]
-impl<K> glean::TestGetValue<serde_json::Value> for ObjectMetric<K> {
+impl<K> glean::TestGetValue for ObjectMetric<K> {
+    type Output = serde_json::Value;
+
     pub fn test_get_value(&self, ping_name: Option<String>) -> Option<serde_json::Value> {
         match self {
             ObjectMetric::Parent { inner, .. } => inner.test_get_value(ping_name),

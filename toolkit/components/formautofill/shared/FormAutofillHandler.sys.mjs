@@ -1115,7 +1115,8 @@ export class FormAutofillHandler {
   }
 }
 
-/** Apply some transformations to the fields on the profile based
+/**
+ * Apply some transformations to the fields on the profile based
  *  on the fields that appear in the form. The original values are
  *  saved and used if the transformer is used again.
  */

@@ -23,7 +23,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Buffer.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/Result.h"
 #include "mozilla/Vector.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/ScriptSettings.h"

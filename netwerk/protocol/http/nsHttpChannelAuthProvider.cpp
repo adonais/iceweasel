@@ -260,7 +260,7 @@ nsHttpChannelAuthProvider::CheckForSuperfluousAuth() {
   if (!ConfirmAuth("SuperfluousAuth", true)) {
     // calling cancel here sets our mStatus and aborts the HTTP
     // transaction, which prevents OnDataAvailable events.
-    Unused << mAuthChannel->Cancel(NS_ERROR_SUPERFLUOS_AUTH);
+    (void)mAuthChannel->Cancel(NS_ERROR_SUPERFLUOS_AUTH);
     return NS_ERROR_SUPERFLUOS_AUTH;
   }
   return NS_OK;
@@ -601,9 +601,9 @@ nsresult nsHttpChannelAuthProvider::GetCredentials(
     ac.rank = Rank(ac.challenge);
     if (StringBeginsWith(ac.challenge, "Digest"_ns,
                          nsCaseInsensitiveCStringComparator)) {
-      Unused << nsHttpDigestAuth::ParseChallenge(ac.challenge, realm, domain,
-                                                 nonce, opaque, &stale,
-                                                 &ac.algorithm, &qop);
+      (void)nsHttpDigestAuth::ParseChallenge(ac.challenge, realm, domain, nonce,
+                                             opaque, &stale, &ac.algorithm,
+                                             &qop);
     }
     cc.AppendElement(ac);
   }
@@ -850,8 +850,8 @@ nsresult nsHttpChannelAuthProvider::GetCredentialsForChallenge(
   // try instead.
   //
   nsHttpAuthEntry* entry = nullptr;
-  Unused << authCache->GetAuthEntryForDomain(scheme, host, port, realm, suffix,
-                                             &entry);
+  (void)authCache->GetAuthEntryForDomain(scheme, host, port, realm, suffix,
+                                         &entry);
 
   // hold reference to the auth session state (in case we clear our
   // reference to the entry).
@@ -1056,7 +1056,7 @@ bool nsHttpChannelAuthProvider::BlockPrompt(bool proxyAuth) {
 
   if (!topDoc && !xhr) {
     nsCOMPtr<nsIURI> topURI;
-    Unused << chanInternal->GetTopWindowURI(getter_AddRefs(topURI));
+    (void)chanInternal->GetTopWindowURI(getter_AddRefs(topURI));
     if (topURI) {
       mCrossOrigin = !NS_SecurityCompareURIs(topURI, mURI, true);
     } else {
@@ -1430,8 +1430,8 @@ NS_IMETHODIMP nsHttpChannelAuthProvider::OnAuthAvailable(
 
   nsHttpAuthCache* authCache = gHttpHandler->AuthCache(mIsPrivate);
   nsHttpAuthEntry* entry = nullptr;
-  Unused << authCache->GetAuthEntryForDomain(scheme, host, port, realm, suffix,
-                                             &entry);
+  (void)authCache->GetAuthEntryForDomain(scheme, host, port, realm, suffix,
+                                         &entry);
 
   nsCOMPtr<nsISupports> sessionStateGrip;
   if (entry) sessionStateGrip = entry->mMetaData;
@@ -1484,7 +1484,7 @@ NS_IMETHODIMP nsHttpChannelAuthProvider::OnAuthCancelled(nsISupports* aContext,
   nsCOMPtr<nsIChannel> channel = do_QueryInterface(mAuthChannel);
   if (channel) {
     nsresult status;
-    Unused << channel->GetStatus(&status);
+    (void)channel->GetStatus(&status);
     if (NS_FAILED(status)) {
       // If the channel is already cancelled, there is no need to deal with the
       // rest challenges.
@@ -1605,7 +1605,7 @@ nsresult nsHttpChannelAuthProvider::ContinueOnAuthAvailable(
   // authentication it'll respond with failure and resend the challenge list
   mRemainingChallenges.Truncate();
 
-  Unused << mAuthChannel->OnAuthAvailable();
+  (void)mAuthChannel->OnAuthAvailable();
 
   return NS_OK;
 }

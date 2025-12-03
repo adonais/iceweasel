@@ -99,7 +99,7 @@ class VideoConduitTest : public Test {
 
   ~VideoConduitTest() override {
     mVideoFrameConverter->RemoveSink(mVideoSink.get());
-    mozilla::Unused << WaitFor(mVideoConduit->Shutdown());
+    (void)WaitFor(mVideoConduit->Shutdown());
     mCallWrapper->Destroy();
   }
 
@@ -2327,7 +2327,7 @@ TEST_F(VideoConduitTest, TestExternalRemoteSsrcCollision) {
   EXPECT_TRUE(Call()->mVideoReceiveConfig);
   EXPECT_EQ(Call()->mVideoReceiveConfig->rtp.remote_ssrc, 1U);
 
-  mozilla::Unused << WaitFor(InvokeAsync(
+  (void)WaitFor(InvokeAsync(
       GetCurrentSerialEventTarget(), __func__, [wrapper = mCallWrapper] {
         wrapper->UnsetRemoteSSRC(1);
         return GenericPromise::CreateAndResolve(true, __func__);

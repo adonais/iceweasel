@@ -17,7 +17,6 @@
 #include "PLDHashTable.h"
 #include "jsfriendapi.h"
 #include "mozilla/ContentIterator.h"
-#include "mozilla/Likely.h"
 #include "mozilla/MruCache.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/Document.h"

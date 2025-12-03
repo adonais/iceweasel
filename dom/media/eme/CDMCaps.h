@@ -8,7 +8,6 @@
 #define CDMCaps_h_
 
 #include "SamplesWaitingForKey.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/dom/BindingDeclarations.h"       // For Optional
 #include "mozilla/dom/MediaKeyStatusMapBinding.h"  // For MediaKeyStatus

@@ -8,7 +8,6 @@
 
 #include "nsIProtocolHandler.h"
 #include "nsNetUtil.h"
-#include "mozilla/Attributes.h"
 
 class nsILoadInfo;
 

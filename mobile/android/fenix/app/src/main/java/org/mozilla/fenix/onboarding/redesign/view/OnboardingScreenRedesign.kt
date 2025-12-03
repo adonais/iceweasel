@@ -6,8 +6,10 @@ package org.mozilla.fenix.onboarding.redesign.view
 
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Column
@@ -33,13 +35,13 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -72,7 +74,30 @@ import org.mozilla.fenix.onboarding.view.mapToOnboardingPageState
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.isLargeScreenSize
 
+/**
+ * The small device max height. The value comes from [org.mozilla.fenix.ext.isTallWindow].
+ */
+private val SMALL_SCREEN_MAX_HEIGHT = 480.dp
 private val logger: Logger = Logger("OnboardingScreenRedesign")
+
+/**
+ * The colors used for the gradient background.
+ */
+private object GradientColors {
+    val nonDarkMode = listOf(
+        Color(0xFFF5C1BD), // light pink (top)
+        Color(0xFFED8043), // orange
+        Color(0xFFEB691D), // deeper orange-red
+        Color(0xFFE00B1D), // strong red (bottom)
+    )
+
+    val darkMode = listOf(
+        Color(0xFF9B7AE0), // soft violet (top)
+        Color(0xFF7B4FC9), // medium purple
+        Color(0xFF4A289A), // deep purple
+        Color(0xFF2E1468), // darkest purple (bottom)
+    )
+}
 
 /**
  * A screen for displaying onboarding.
@@ -271,22 +296,19 @@ private fun OnboardingContent(
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val boxWithConstraintsScope = this
+        val isSmallPhoneScreen = boxWithConstraintsScope.maxHeight <= SMALL_SCREEN_MAX_HEIGHT
 
         val isLargeScreen = LocalContext.current.isLargeScreenSize()
         val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-        val pagerWidth = pageContentWidth(boxWithConstraintsScope, isLargeScreen, isLandscape)
-        val pagerHeight = pageContentHeight(boxWithConstraintsScope, isLargeScreen, isLandscape)
+        val pagerWidth = pageContentWidth(boxWithConstraintsScope, isLargeScreen, isSmallPhoneScreen, isLandscape)
+        val pagerHeight = pageContentHeight(boxWithConstraintsScope, isLargeScreen, isSmallPhoneScreen, isLandscape)
 
         val pagePeekWidth = ((maxWidth - pagerWidth) / 2).coerceAtLeast(8.dp)
         val paddingValue = if (!isLargeScreen && isLandscape) 0.dp else pagePeekWidth
 
         if (!isNonLargeScreenLandscape(isLargeScreen, isLandscape)) {
-            Image(
-                painter = painterResource(onboardingRedesignBackground(isLandscape)),
-                contentDescription = null, // Decorative image only.
-                contentScale = ContentScale.FillWidth,
-            )
+            GradientBackground()
         }
 
         Column(verticalArrangement = Arrangement.Center) {
@@ -301,7 +323,7 @@ private fun OnboardingContent(
                 contentPadding = PaddingValues(horizontal = paddingValue),
                 pageSize = PageSize.Fill,
                 beyondViewportPageCount = 2,
-                pageSpacing = pageSpacing(isLargeScreen, pagePeekWidth),
+                pageSpacing = pageSpacing(isLargeScreen, isSmallPhoneScreen, pagePeekWidth),
                 key = { pagesToDisplay[it].type },
                 overscrollEffect = null,
             ) { pageIndex ->
@@ -333,17 +355,30 @@ private fun OnboardingContent(
 
             Spacer(Modifier.weight(1f))
 
-            PagerIndicator(
-                pagerState = pagerState,
-                activeColor = FirefoxTheme.colors.actionPrimary,
-                inactiveColor = FirefoxTheme.colors.actionSecondary,
-                leaveTrail = true,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(bottom = 16.dp),
-            )
+            if (!isSmallPhoneScreen) {
+                PagerIndicator(
+                    pagerState = pagerState,
+                    activeColor = FirefoxTheme.colors.actionPrimary,
+                    inactiveColor = FirefoxTheme.colors.actionSecondary,
+                    leaveTrail = true,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(bottom = 16.dp),
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun GradientBackground() {
+    val colors = if (isSystemInDarkTheme()) GradientColors.darkMode else GradientColors.nonDarkMode
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(brush = Brush.verticalGradient(colors = colors)),
+    )
 }
 
 @Composable
@@ -411,6 +446,8 @@ private fun OnboardingPageForType(
 private object PageContentLayout {
     val MIN_HEIGHT_DP = 650.dp
     val MIN_WIDTH_DP = 360.dp
+    val MIN_HEIGHT_SMALL_SCREEN_DP = 430.dp
+    val MIN_WIDTH_SMALL_SCREEN_DP = 300.dp
     val MIN_HEIGHT_TABLET_DP = 620.dp
     val MIN_WIDTH_TABLET_DP = 440.dp
     const val HEIGHT_RATIO = 0.8f
@@ -419,54 +456,79 @@ private object PageContentLayout {
     const val TABLET_HEIGHT_RATIO = 0.50f
     const val HEIGHT_RATIO_LANDSCAPE_NON_LARGE_SCREEN = 1f
     const val WIDTH_RATIO_LANDSCAPE_NON_LARGE_SCREEN = 1f
+    const val HEIGHT_RATIO_SMALL_SCREEN = 0.9f
+    const val WIDTH_RATIO_SMALL_SCREEN = 0.9f
 }
 
 private fun pageContentHeight(
     scope: BoxWithConstraintsScope,
     isLargeScreen: Boolean,
+    isSmallScreen: Boolean,
     isLandscape: Boolean,
 ): Dp {
-    val minHeight =
-        if (isLargeScreen) PageContentLayout.MIN_HEIGHT_TABLET_DP else PageContentLayout.MIN_HEIGHT_DP
-    val heightRatio =
-        when {
-            isLargeScreen -> PageContentLayout.TABLET_HEIGHT_RATIO
-            !isLargeScreen && isLandscape -> PageContentLayout.HEIGHT_RATIO_LANDSCAPE_NON_LARGE_SCREEN
-            else -> PageContentLayout.HEIGHT_RATIO
-        }
+    val minHeight = minHeight(isLargeScreen, isSmallScreen)
+    val heightRatio = heightRatio(isLargeScreen, isSmallScreen, isLandscape)
 
     return scope.maxHeight.times(heightRatio).coerceAtLeast(minHeight)
+}
+
+private fun minHeight(
+    isLargeScreen: Boolean,
+    isSmallScreen: Boolean,
+): Dp = when {
+    isLargeScreen -> PageContentLayout.MIN_HEIGHT_TABLET_DP
+    isSmallScreen -> PageContentLayout.MIN_HEIGHT_SMALL_SCREEN_DP
+    else -> PageContentLayout.MIN_HEIGHT_DP
+}
+
+private fun heightRatio(
+    isLargeScreen: Boolean,
+    isSmallScreen: Boolean,
+    isLandscape: Boolean,
+): Float = when {
+    isLargeScreen -> PageContentLayout.TABLET_HEIGHT_RATIO
+    isSmallScreen -> PageContentLayout.HEIGHT_RATIO_SMALL_SCREEN
+    !isLargeScreen && isLandscape -> PageContentLayout.HEIGHT_RATIO_LANDSCAPE_NON_LARGE_SCREEN
+    else -> PageContentLayout.HEIGHT_RATIO
 }
 
 private fun pageContentWidth(
     scope: BoxWithConstraintsScope,
     isLargeScreen: Boolean,
+    isSmallScreen: Boolean,
     isLandscape: Boolean,
 ): Dp {
-    val minWidth =
-        if (isLargeScreen) PageContentLayout.MIN_WIDTH_TABLET_DP else PageContentLayout.MIN_WIDTH_DP
-    val widthRatio =
-        when {
-            isLargeScreen -> PageContentLayout.TABLET_WIDTH_RATIO
-            !isLargeScreen && isLandscape -> PageContentLayout.WIDTH_RATIO_LANDSCAPE_NON_LARGE_SCREEN
-            else -> PageContentLayout.WIDTH_RATIO
-        }
+    val minWidth = minWidth(isLargeScreen, isSmallScreen)
+    val widthRatio = widthRatio(isLargeScreen, isSmallScreen, isLandscape)
 
     return scope.maxWidth.times(widthRatio).coerceAtLeast(minWidth)
 }
 
-private fun onboardingRedesignBackground(isLandscape: Boolean) =
-    if (isLandscape) {
-        R.drawable.onboarding_redesign_background_landscape
-    } else {
-        R.drawable.onboarding_redesign_background
-    }
+private fun widthRatio(
+    isLargeScreen: Boolean,
+    isSmallScreen: Boolean,
+    isLandscape: Boolean,
+): Float = when {
+    isLargeScreen -> PageContentLayout.TABLET_WIDTH_RATIO
+    isSmallScreen -> PageContentLayout.WIDTH_RATIO_SMALL_SCREEN
+    !isLargeScreen && isLandscape -> PageContentLayout.WIDTH_RATIO_LANDSCAPE_NON_LARGE_SCREEN
+    else -> PageContentLayout.WIDTH_RATIO
+}
+
+private fun minWidth(
+    isLargeScreen: Boolean,
+    isSmallScreen: Boolean,
+): Dp = when {
+    isLargeScreen -> PageContentLayout.MIN_WIDTH_TABLET_DP
+    isSmallScreen -> PageContentLayout.MIN_WIDTH_SMALL_SCREEN_DP
+    else -> PageContentLayout.MIN_WIDTH_DP
+}
 
 private fun isNonLargeScreenLandscape(isLargeScreen: Boolean, isLandscape: Boolean) =
     (isLandscape && !isLargeScreen)
 
-private fun pageSpacing(isLargeScreen: Boolean, pagePeekWidth: Dp) =
-    if (isLargeScreen) pagePeekWidth else 8.dp
+private fun pageSpacing(isLargeScreen: Boolean, isSmallScreen: Boolean, pagePeekWidth: Dp) =
+    if (isLargeScreen || isSmallScreen) pagePeekWidth else 8.dp
 
 private class DisableForwardSwipeNestedScrollConnection(
     private val pagerState: PagerState,

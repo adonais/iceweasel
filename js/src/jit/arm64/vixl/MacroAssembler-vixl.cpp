@@ -480,19 +480,7 @@ void MacroAssembler::Mov(const Register& rd,
     EmitExtendShift(rd, operand.reg(), operand.extend(),
                     operand.shift_amount());
   } else {
-    // Otherwise, emit a register move only if the registers are distinct, or
-    // if they are not X registers.
-    //
-    // Note that mov(w0, w0) is not a no-op because it clears the top word of
-    // x0. A flag is provided (kDiscardForSameWReg) if a move between the same W
-    // registers is not required to clear the top word of the X register. In
-    // this case, the instruction is discarded.
-    //
-    // If the sp is an operand, add #0 is emitted, otherwise, orr #0.
-    if (!rd.Is(operand.reg()) || (rd.Is32Bits() &&
-                                  (discard_mode == kDontDiscardForSameWReg))) {
-      mov(rd, operand.reg());
-    }
+    Mov(rd, operand.reg(), discard_mode);
   }
 }
 

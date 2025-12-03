@@ -159,6 +159,9 @@ class Inspector extends EventEmitter {
     this.onSidebarSelect = this.onSidebarSelect.bind(this);
     this.onSidebarShown = this.onSidebarShown.bind(this);
     this.onSidebarToggle = this.onSidebarToggle.bind(this);
+    this.addNode = this.addNode.bind(this);
+    this.onEyeDropperDone = this.onEyeDropperDone.bind(this);
+    this.onEyeDropperButtonClicked = this.onEyeDropperButtonClicked.bind(this);
 
     this.prefObserver = new PrefObserver("devtools.");
     this.prefObserver.on(
@@ -1496,7 +1499,6 @@ class Inspector extends EventEmitter {
     this.#teardownToolbar();
 
     // Setup the add-node button.
-    this.addNode = this.addNode.bind(this);
     this.addNodeButton = this.panelDoc.getElementById(
       "inspector-element-add-button"
     );
@@ -1512,9 +1514,6 @@ class Inspector extends EventEmitter {
     }
 
     if (canShowEyeDropper) {
-      this.onEyeDropperDone = this.onEyeDropperDone.bind(this);
-      this.onEyeDropperButtonClicked =
-        this.onEyeDropperButtonClicked.bind(this);
       this.eyeDropperButton = this.panelDoc.getElementById(
         "inspector-eyedropper-toggle"
       );

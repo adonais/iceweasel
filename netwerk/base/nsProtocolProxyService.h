@@ -17,7 +17,6 @@
 #include "nsHashKeys.h"
 #include "nsITimer.h"
 #include "prio.h"
-#include "mozilla/Attributes.h"
 
 class nsIPrefBranch;
 class nsISystemProxySettings;
@@ -198,8 +197,8 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
    *        The proxy host name (UTF-8 ok).
    * @param port
    *        The proxy port number.
-   * @param pathTemplate
-   *        The PathTemplate.
+   * @param masqueTemplate
+   *        The MasqueTemplate.
    * @param username
    *        The username for the proxy (ASCII). May be "", but not null.
    * @param password
@@ -216,7 +215,7 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
    *        The resulting nsIProxyInfo object.
    */
   nsresult NewProxyInfo_Internal(const char* type, const nsACString& host,
-                                 int32_t port, const nsACString& pathTemplate,
+                                 int32_t port, const nsACString& masqueTemplate,
                                  const nsACString& username,
                                  const nsACString& password,
                                  const nsACString& aProxyAuthorizationHeader,

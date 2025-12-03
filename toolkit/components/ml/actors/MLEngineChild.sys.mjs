@@ -2,23 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// @ts-check
+
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 /**
- * @typedef {import("../../promiseworker/PromiseWorker.sys.mjs").BasePromiseWorker} BasePromiseWorker
+ * @import { BasePromiseWorker } from "resource://gre/modules/PromiseWorker.sys.mjs"
+ * @import { PipelineOptions } from "chrome://global/content/ml/EngineProcess.sys.mjs"
+ * @import { EngineStatus, EngineId, StatusByEngineId } from "../ml.d.ts"
+ * @import { ProgressAndStatusCallbackParams } from "chrome://global/content/ml/Utils.sys.mjs"
  */
 
-/**
- * @typedef {object} Lazy
- * @typedef {import("../content/Utils.sys.mjs").ProgressAndStatusCallbackParams} ProgressAndStatusCallbackParams
- * @property {typeof import("../../promiseworker/PromiseWorker.sys.mjs").BasePromiseWorker} BasePromiseWorker
- * @property {typeof setTimeout} setTimeout
- * @property {typeof clearTimeout} clearTimeout
- */
-
-/** @type {Lazy} */
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   BasePromiseWorker: "resource://gre/modules/PromiseWorker.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -27,44 +22,23 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DEFAULT_MODELS: "chrome://global/content/ml/EngineProcess.sys.mjs",
   WASM_BACKENDS: "chrome://global/content/ml/EngineProcess.sys.mjs",
   BACKENDS: "chrome://global/content/ml/EngineProcess.sys.mjs",
+  console: () =>
+    console.createInstance({
+      maxLogLevelPref: "browser.ml.logLevel",
+      prefix: "GeckoMLEngineChild",
+    }),
+  // Prefs:
+  CACHE_TIMEOUT_MS: { pref: "browser.ml.modelCacheTimeout" },
+  MODEL_HUB_ROOT_URL: { pref: "browser.ml.modelHubRootUrl" },
+  MODEL_HUB_URL_TEMPLATE: { pref: "browser.ml.modelHubUrlTemplate" },
+  LOG_LEVEL: { pref: "browser.ml.logLevel" },
+  PIPELINE_OVERRIDE_OPTIONS: {
+    pref: "browser.ml.overridePipelineOptions",
+    default: "{}",
+  },
+  // Services
+  mlUtils: { service: "@mozilla.org/ml-utils;1", iid: Ci.nsIMLUtils },
 });
-
-ChromeUtils.defineLazyGetter(lazy, "console", () => {
-  return console.createInstance({
-    maxLogLevelPref: "browser.ml.logLevel",
-    prefix: "GeckoMLEngineChild",
-  });
-});
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "CACHE_TIMEOUT_MS",
-  "browser.ml.modelCacheTimeout"
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "MODEL_HUB_ROOT_URL",
-  "browser.ml.modelHubRootUrl"
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "MODEL_HUB_URL_TEMPLATE",
-  "browser.ml.modelHubUrlTemplate"
-);
-XPCOMUtils.defineLazyPreferenceGetter(lazy, "LOG_LEVEL", "browser.ml.logLevel");
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
-  "mlUtils",
-  "@mozilla.org/ml-utils;1",
-  "nsIMLUtils"
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "PIPELINE_OVERRIDE_OPTIONS",
-  "browser.ml.overridePipelineOptions",
-  "{}"
-);
 
 const SAFE_OVERRIDE_OPTIONS = [
   "dtype",
@@ -89,11 +63,11 @@ export class MLEngineChild extends JSProcessActorChild {
   #engineDispatchers = new Map();
 
   /**
-   * Engine statuses
+   * Tracks that an engine is present, even if the dispatcher is not present yet.
    *
-   * @type {Map<string, string>}
+   * @type {Map<EngineId, PipelineOptions>}
    */
-  #engineStatuses = new Map();
+  #enginesPresent = new Map();
 
   // eslint-disable-next-line consistent-return
   async receiveMessage({ name, data }) {
@@ -102,8 +76,8 @@ export class MLEngineChild extends JSProcessActorChild {
         await this.#onNewPortCreated(data);
         break;
       }
-      case "MLEngine:GetStatus": {
-        return this.getStatus();
+      case "MLEngine:GetStatusByEngineId": {
+        return this.getStatusByEngineId();
       }
       case "MLEngine:ForceShutdown": {
         for (const engineDispatcher of this.#engineDispatchers.values()) {
@@ -141,7 +115,7 @@ export class MLEngineChild extends JSProcessActorChild {
         this.getUpdatedPipelineOptions(pipelineOptions);
       options.updateOptions(updatedPipelineOptions);
       const engineId = options.engineId;
-      this.#engineStatuses.set(engineId, "INITIALIZING");
+      this.#enginesPresent.set(engineId, options);
 
       // Check if we already have an engine under this id.
       if (this.#engineDispatchers.has(engineId)) {
@@ -153,8 +127,6 @@ export class MLEngineChild extends JSProcessActorChild {
             type: "EnginePort:EngineReady",
             error: null,
           });
-          this.#engineStatuses.set(engineId, "READY");
-
           return;
         }
 
@@ -166,8 +138,6 @@ export class MLEngineChild extends JSProcessActorChild {
         this.#engineDispatchers.delete(engineId);
       }
 
-      this.#engineStatuses.set(engineId, "CREATING");
-
       const dispatcher = new EngineDispatcher(this, port, options);
       this.#engineDispatchers.set(engineId, dispatcher);
 
@@ -178,10 +148,9 @@ export class MLEngineChild extends JSProcessActorChild {
       // NOTE: This is done after adding to #engineDispatchers to ensure other
       // async calls see the new dispatcher.
       if (!lazy.PipelineOptions.isMocked(pipelineOptions)) {
-        await dispatcher.ensureInferenceEngineIsReady();
+        await dispatcher.isReady();
       }
 
-      this.#engineStatuses.set(engineId, "READY");
       port.postMessage({
         type: "EnginePort:EngineReady",
         error: null,
@@ -260,12 +229,12 @@ export class MLEngineChild extends JSProcessActorChild {
    * Removes an engine by its ID. Optionally shuts down if no engines remain.
    *
    * @param {string} engineId - The ID of the engine to remove.
-   * @param {boolean} [shutDownIfEmpty] - If true, shuts down the engine process if no engines remain.
+   * @param {boolean} shutDownIfEmpty - If true, shuts down the engine process if no engines remain.
    * @param {boolean} replacement - Flag indicating whether the engine is being replaced.
    */
   removeEngine(engineId, shutDownIfEmpty, replacement) {
     this.#engineDispatchers.delete(engineId);
-    this.#engineStatuses.delete(engineId);
+    this.#enginesPresent.delete(engineId);
 
     try {
       this.sendAsyncMessage("MLEngine:Removed", {
@@ -289,19 +258,26 @@ export class MLEngineChild extends JSProcessActorChild {
     }
   }
 
-  /*
+  /**
    * Collects information about the current status.
+   *
+   * @returns {StatusByEngineId}
    */
-  async getStatus() {
+  getStatusByEngineId() {
+    /** @type {StatusByEngineId} */
     const statusMap = new Map();
 
-    for (const [key, value] of this.#engineStatuses) {
-      if (this.#engineDispatchers.has(key)) {
-        statusMap.set(key, this.#engineDispatchers.get(key).getStatus());
-      } else {
-        // The engine is probably being created
-        statusMap.set(key, { status: value });
+    for (let [engineId, options] of this.#enginesPresent) {
+      const dispatcher = this.#engineDispatchers.get(engineId);
+      let status = dispatcher.getStatus();
+      if (!status) {
+        // This engine doesn't have a dispatcher yet.
+        status = {
+          status: "SHUTTING_DOWN_PREVIOUS_ENGINE",
+          options,
+        };
       }
+      statusMap.set(engineId, status);
     }
     return statusMap;
   }
@@ -335,14 +311,14 @@ class EngineDispatcher {
   /** @type {MessagePort | null} */
   #port = null;
 
-  /** @type {TimeoutID | null} */
+  /** @type {number | null} */
   #keepAliveTimeout = null;
 
   /** @type {PromiseWithResolvers} */
   #modelRequest;
 
-  /** @type {Promise<Engine> | null} */
-  #engine = null;
+  /** @type {Promise<InferenceEngine>} */
+  #engine;
 
   /** @type {string} */
   #taskName;
@@ -356,7 +332,7 @@ class EngineDispatcher {
   /** @type {PipelineOptions | null} */
   pipelineOptions = null;
 
-  /** @type {string} */
+  /** @type {EngineStatus} */
   #status;
 
   /**
@@ -371,7 +347,7 @@ class EngineDispatcher {
    *
    * @param {PipelineOptions} pipelineOptions
    * @param {?function(ProgressAndStatusCallbackParams):void} notificationsCallback The callback to call for updating about notifications such as dowload progress status.
-   * @returns {Promise<Engine>}
+   * @returns {Promise<InferenceEngine>}
    */
   async initializeInferenceEngine(pipelineOptions, notificationsCallback) {
     let remoteSettingsOptions = await this.mlEngineChild.getInferenceOptions(
@@ -441,7 +417,8 @@ class EngineDispatcher {
    * @param {PipelineOptions} pipelineOptions
    */
   constructor(mlEngineChild, port, pipelineOptions) {
-    this.#status = "CREATED";
+    this.#status = "INITIALIZING";
+    /** @type {MLEngineChild} */
     this.mlEngineChild = mlEngineChild;
     this.#featureId = pipelineOptions.featureId;
     this.#taskName = pipelineOptions.taskName;
@@ -455,9 +432,12 @@ class EngineDispatcher {
       }
     );
 
-    // Trigger the keep alive timer.
     this.#engine
-      .then(() => void this.keepAlive())
+      .then(() => {
+        this.#status = "IDLE";
+        // Trigger the keep alive timer.
+        void this.keepAlive();
+      })
       .catch(error => {
         if (
           // Ignore errors from tests intentionally causing errors.
@@ -477,16 +457,7 @@ class EngineDispatcher {
     return {
       status: this.#status,
       options: this.pipelineOptions,
-      engineId: this.#engineId,
     };
-  }
-
-  /**
-   * Resolves the engine to fully initialize it.
-   */
-  async ensureInferenceEngineIsReady() {
-    this.#engine = await this.#engine;
-    this.#status = "READY";
   }
 
   handleInitProgressStatus(port, notificationsData) {
@@ -534,11 +505,20 @@ class EngineDispatcher {
   }
 
   /**
+   * Wait for the engine to be ready.
+   */
+  async isReady() {
+    await this.#engine;
+  }
+
+  /**
    * @param {MessagePort} port
    */
   #setupMessageHandler(port) {
     this.#port = port;
-    port.onmessage = async ({ data }) => {
+    port.onmessage = async event => {
+      const { data } = /** @type {any} */ (event);
+
       switch (data.type) {
         case "EnginePort:Discard": {
           port.close();
@@ -568,7 +548,7 @@ class EngineDispatcher {
         case "EnginePort:Run": {
           const { requestId, request, engineRunOptions } = data;
           try {
-            await this.ensureInferenceEngineIsReady();
+            await this.isReady();
           } catch (error) {
             port.postMessage({
               type: "EnginePort:RunResponse",
@@ -589,15 +569,12 @@ class EngineDispatcher {
           this.keepAlive();
 
           this.#status = "RUNNING";
+          const engine = await this.#engine;
           try {
             port.postMessage({
               type: "EnginePort:RunResponse",
               requestId,
-              response: await this.#engine.run(
-                request,
-                requestId,
-                engineRunOptions
-              ),
+              response: await engine.run(request, requestId, engineRunOptions),
               error: null,
             });
           } catch (error) {
@@ -608,7 +585,7 @@ class EngineDispatcher {
               error,
             });
           }
-          this.#status = "IDLING";
+          this.#status = "IDLE";
           break;
         }
         default:
@@ -710,7 +687,7 @@ class InferenceEngine {
    * @param {?function(ProgressAndStatusCallbackParams):void} config.notificationsCallback The callback to call for updating about notifications such as dowload progress status.
    * @param {?function(object):Promise<[string, object]>} config.getModelFileFn - A function that actually retrieves the model and headers.
    * @param {?function(object):Promise<void>} config.notifyModelDownloadCompleteFn - A function to notify that all files needing downloads are completed.
-   * @returns {InferenceEngine}
+   * @returns {Promise<InferenceEngine>}
    */
   static async create({
     workerUrl,

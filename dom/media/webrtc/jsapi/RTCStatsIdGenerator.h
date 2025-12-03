@@ -9,7 +9,6 @@
 
 #include <map>
 
-#include "mozilla/Atomics.h"
 #include "mozilla/UniquePtr.h"
 #include "nsISupportsImpl.h"
 #include "nsString.h"

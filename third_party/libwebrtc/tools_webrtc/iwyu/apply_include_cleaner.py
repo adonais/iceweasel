@@ -40,6 +40,7 @@
 import argparse
 import re
 import pathlib
+import os
 import subprocess
 import sys
 from typing import Tuple
@@ -54,10 +55,12 @@ _EXTRA_ARGS = [
 _GTEST_KEY = '"gtest/gtest.h"'
 _GTEST_VALUE = '"test/gtest.h"'
 _IWYU_MAPPING = {
+    # Literal matches not followed e.g. by IWYU pragma.
     '"gmock/gmock.h"': '"test/gmock.h"',
     _GTEST_KEY: _GTEST_VALUE,
     '<sys/socket.h>': '"rtc_base/net_helpers.h"',
-
+}
+_IWYU_THIRD_PARTY = {
     # IWYU does not refer to the complete third_party/ path.
     '"libyuv/': '"third_party/libyuv/include/libyuv/',
     '"aom/': '"third_party/libaom/source/libaom/aom/',
@@ -67,13 +70,40 @@ _IWYU_MAPPING = {
 # Supported file suffices.
 _SUFFICES = [".cc", ".h"]
 
-# Ignored headers, used with `clang-include-cleaner --ignore-headers=`
+# Ignored headers, regexps used with `clang-include-cleaner --ignore-headers=`
 _IGNORED_HEADERS = [
-    ".pb.h",  # generated protobuf files.
-    "pipewire/.*.h",  # pipewire.
-    "spa/.*.h",  # pipewire.
-    "openssl/.*.h",  # openssl/boringssl.
+    "\\.pb\\.h",  # generated protobuf files.
+    "pipewire\\/.*\\.h",  # pipewire.
+    "spa\\/.*\\.h",  # pipewire.
+    "glib\\.h",  # glib.
+    "glibconfig\\.h",  # glib.
+    "glib-object\\.h",  # glib.
+    "gio\\/.*\\.h",  # glib.
+    "openssl\\/.*\\.h",  # openssl/boringssl.
+    "alsa\\/.*\\.h",  # ALSA.
+    "pulse\\/.*\\.h",  # PulseAudio.
+    "bits\\/.*\\.h",  # pthreads.
+    "jpeglibmangler\\.h",  # libjpeg.
+    "libavcodec\\/.*\\.h",  # ffmpeg.
+    "libavutil\\/.*\\.h",  # ffmpeg.
 ]
+
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_SRC_DIR = os.path.abspath(os.path.join(_SCRIPT_DIR, os.pardir, os.pardir))
+sys.path.append(os.path.join(_SRC_DIR, "build"))
+import find_depot_tools
+
+_GN_BINARY_PATH = os.path.join(find_depot_tools.DEPOT_TOOLS_PATH, "gn.py")
+
+
+# Check that the file is part of a build target on this platform.
+def _is_built(filename, work_dir):
+    gn_cmd = (_GN_BINARY_PATH, "refs", "-C", work_dir, filename)
+    gn_result = subprocess.run(gn_cmd,
+                               capture_output=True,
+                               text=True,
+                               check=False)
+    return gn_result.returncode == 0
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -184,12 +214,17 @@ def _modified_content(content: str) -> str:
                                   modified_content,
                                   flags=re.MULTILINE)
     for key, value in _IWYU_MAPPING.items():
+        # These must be exact matches, e.g. not having a trailing IWYU pragma.
+        modified_content = re.sub(rf'^#include {re.escape(key)}$',
+                                  f'#include {value}',
+                                  modified_content,
+                                  flags=re.MULTILINE)
+    for key, value in _IWYU_THIRD_PARTY.items():
         modified_content = re.sub(rf'^#include {re.escape(key)}',
                                   f'#include {value}',
                                   modified_content,
                                   flags=re.MULTILINE)
     return modified_content
-
 
 
 # Transitioning the cmd type to tuple to prevent modification of
@@ -265,6 +300,10 @@ def main() -> None:
     # do `cleaner foo.cc bar.cc`
     for file in args.files:
         if not file.suffix in _SUFFICES:
+            continue
+        if not _is_built(file, args.work_dir):
+            print(
+                f"Skipping include cleaner as {file} is not referenced by GN.")
             continue
         changes_generated = bool(
             apply_include_cleaner_to_file(file, should_modify, tuple(cmd))

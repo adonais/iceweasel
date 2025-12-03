@@ -17,7 +17,6 @@
 #  include "MediaTimer.h"
 #  include "SeekJob.h"
 #  include "mozilla/Atomics.h"
-#  include "mozilla/Attributes.h"
 #  include "mozilla/ReentrantMonitor.h"
 #  include "mozilla/StateMirroring.h"
 #  include "nsThreadUtils.h"

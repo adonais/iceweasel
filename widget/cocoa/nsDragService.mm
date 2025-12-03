@@ -24,7 +24,6 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "nsIContent.h"
-#include "nsView.h"
 #include "nsCocoaUtils.h"
 #include "mozilla/gfx/2D.h"
 #include "gfxPlatform.h"

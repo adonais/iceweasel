@@ -18,56 +18,56 @@ object SettingsSelectors {
         strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
         value = "General",
         description = "the General heading",
-        groups = listOf("requiredForPage", "generalSettingsSection"),
+        groups = listOf("generalSettingsSection"),
     )
 
     val SEARCH_BUTTON = Selector(
         strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
         value = "Search",
         description = "the Search button",
-        groups = listOf("requiredForPage", "generalSettingsSection"),
+        groups = listOf("generalSettingsSection"),
     )
 
     val TABS_BUTTON = Selector(
         strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
         value = "Tabs",
         description = "the Tabs button",
-        groups = listOf("requiredForPage", "generalSettingsSection"),
+        groups = listOf("generalSettingsSection"),
     )
 
     val ACCESSIBILITY_BUTTON = Selector(
         strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
         value = "Accessibility",
         description = "the Accessibility button",
-        groups = listOf("requiredForPage", "generalSettingsSection"),
+        groups = listOf("generalSettingsSection"),
     )
 
     val AUTOFILL_BUTTON = Selector(
         strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
         value = "Autofill",
         description = "the Autofill button",
-        groups = listOf("requiredForPage", "generalSettingsSection"),
+        groups = listOf("generalSettingsSection"),
     )
 
     val CUSTOMIZE_BUTTON = Selector(
         strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
         value = "Customize",
         description = "the Customize button",
-        groups = listOf("requiredForPage", "generalSettingsSection"),
+        groups = listOf("generalSettingsSection"),
     )
 
     val HOMEPAGE_BUTTON = Selector(
         strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
         value = "Homepage",
         description = "the Homepage button",
-        groups = listOf("requiredForPage", "generalSettingsSection"),
+        groups = listOf("generalSettingsSection"),
     )
 
     val PASSWORDS_BUTTON = Selector(
         strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
         value = "Passwords",
         description = "the Passwords button",
-        groups = listOf("requiredForPage", "generalSettingsSection"),
+        groups = listOf("generalSettingsSection"),
     )
 
     val ABOUT_BUTTON = Selector(
@@ -78,35 +78,35 @@ object SettingsSelectors {
     )
 
     val DATA_COLLECTION_BUTTON = Selector(
-        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+        strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
         value = "Data collection",
         description = "the Data Collection button",
         groups = listOf("privacyAndSecuritySettingsSection"),
     )
 
     val DELETE_BROWSING_DATA_ON_QUIT_BUTTON = Selector(
-        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+        strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
         value = "Delete browsing data on quit",
         description = "the Delete browsing data on quit button",
         groups = listOf("privacyAndSecuritySettingsSection"),
     )
 
     val DELETE_BROWSING_DATA_BUTTON = Selector(
-        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+        strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
         value = "Delete browsing data",
         description = "the Delete browsing data button",
         groups = listOf("privacyAndSecuritySettingsSection"),
     )
 
     val ENHANCED_TRACKING_PROTECTION_BUTTON = Selector(
-        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+        strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
         value = "Enhanced Tracking Protection",
         description = "the Enhanced tracking protection button",
         groups = listOf("privacyAndSecuritySettingsSection"),
     )
 
     val HTTPS_ONLY_MODE_BUTTON = Selector(
-        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+        strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
         value = getStringResource(R.string.preferences_https_only_title),
         description = "the HTTPS only mode button",
         groups = listOf("privacyAndSecuritySettingsSection"),
@@ -116,7 +116,7 @@ object SettingsSelectors {
         strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
         value = getStringResource(R.string.preferences_language),
         description = "the Language button",
-        groups = listOf("requiredForPage", "generalSettingsSection"),
+        groups = listOf("generalSettingsSection"),
     )
 
     val OPEN_LINKS_IN_APPS_BUTTON = Selector(
@@ -127,14 +127,14 @@ object SettingsSelectors {
     )
 
     val PRIVATE_BROWSING_BUTTON = Selector(
-        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+        strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
         value = "Private browsing",
         description = "the Private browsing button",
         groups = listOf("privacyAndSecuritySettingsSection"),
     )
 
     val TRANSLATIONS_BUTTON = Selector(
-        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+        strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
         value = "Translations",
         description = "the Private browsing button",
         groups = listOf("generalSettingsSection"),
@@ -144,11 +144,11 @@ object SettingsSelectors {
         strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
         value = "Sign in",
         description = "the Sign in button",
-        groups = listOf("requiredForPage"),
+        groups = listOf("sync"),
     )
 
     val NOTIFICATIONS_BUTTON = Selector(
-        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+        strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
         value = "Notifications",
         description = "the Notifications button",
         groups = listOf("privacyAndSecuritySettingsSection"),
@@ -162,10 +162,31 @@ object SettingsSelectors {
     )
 
     val SITE_SETTINGS_BUTTON = Selector(
-        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+        strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
         value = "Site settings",
         description = "the Site settings button",
         groups = listOf("privacyAndSecuritySettingsSection"),
+    )
+
+    val ABOUT_SECTION_TITLE = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
+        value = "About",
+        description = "The About Section Title",
+        groups = listOf("aboutSection", "requiresScroll"),
+    )
+
+    val RATE_ON_GOOGLE_PLAY_BUTTON = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+        value = "Google Play",
+        description = "The Rate on Google Play Button",
+        groups = listOf("aboutSection", "requiresScroll", "googlePlay"),
+    )
+
+    val ABOUT_FIREFOX_BUTTON = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+        value = "About Firefox",
+        description = "The About Firefox Title",
+        groups = listOf("aboutSection", "aboutFirefox", "requiresScroll"),
     )
 
     val all = listOf(
@@ -192,5 +213,8 @@ object SettingsSelectors {
         NOTIFICATIONS_BUTTON,
         EXPERIMENTS_BUTTON,
         SITE_SETTINGS_BUTTON,
+        ABOUT_FIREFOX_BUTTON,
+        ABOUT_SECTION_TITLE,
+        RATE_ON_GOOGLE_PLAY_BUTTON,
     )
 }

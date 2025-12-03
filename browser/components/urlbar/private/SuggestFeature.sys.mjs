@@ -55,8 +55,8 @@ export class SuggestFeature {
    *   include the feature's `featureGate` pref.
    *
    *   These prefs should control this feature specifically, so they should
-   *   never include `suggest.quicksuggest.sponsored` or
-   *   `suggest.quicksuggest.nonsponsored`. If the feature has no such prefs,
+   *   never include `suggest.quicksuggest.all` or
+   *   `suggest.quicksuggest.sponsored`. If the feature has no such prefs,
    *   this getter should return an empty array.
    */
   get primaryUserControlledPreferences() {

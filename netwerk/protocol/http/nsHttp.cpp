@@ -12,7 +12,6 @@
 #include "CacheControlParser.h"
 #include "PLDHashTable.h"
 #include "mozilla/DataMutex.h"
-#include "mozilla/HashFunctions.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_network.h"
@@ -76,7 +75,7 @@ nsresult CreateAtomTable(
     return NS_OK;
   }
   for (const auto* atom : atoms) {
-    Unused << base.PutEntry(atom->val(), fallible);
+    (void)base.PutEntry(atom->val(), fallible);
   }
 
   LOG(("Added static atoms to atomTable"));

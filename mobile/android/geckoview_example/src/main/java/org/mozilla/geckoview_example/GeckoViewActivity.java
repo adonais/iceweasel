@@ -501,19 +501,14 @@ public class GeckoViewActivity extends AppCompatActivity
   private HashMap<Integer, GeckoResult<Intent>> mPendingActivityResult = new HashMap<>();
 
   private boolean supportsPip() {
-    return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-        && getPackageManager().hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE);
+    return getPackageManager().hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE);
   }
 
   private boolean maybeEnterPip() {
     if (!supportsPip()) return false;
     if (!mPipFullscreenMedia || !mPipIsPlaying) return false;
     try {
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        enterPictureInPictureMode(new PictureInPictureParams.Builder().build());
-      } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-        enterPictureInPictureMode();
-      }
+      enterPictureInPictureMode(new PictureInPictureParams.Builder().build());
       return true;
     } catch (IllegalStateException e) {
       return false;
@@ -974,60 +969,57 @@ public class GeckoViewActivity extends AppCompatActivity
             }
           });
 
-      // `getSystemService` call requires API level 23
-      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-        sGeckoRuntime.setWebNotificationDelegate(
-            new WebNotificationDelegate() {
-              NotificationManager notificationManager = getSystemService(NotificationManager.class);
+      sGeckoRuntime.setWebNotificationDelegate(
+          new WebNotificationDelegate() {
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
 
-              @Override
-              public void onShowNotification(@NonNull WebNotification notification) {
-                Intent clickIntent = new Intent(GeckoViewActivity.this, GeckoViewActivity.class);
-                clickIntent.putExtra("onClick", notification);
-                PendingIntent dismissIntent =
-                    PendingIntent.getActivity(
-                        GeckoViewActivity.this, mLastID, clickIntent, PendingIntent.FLAG_IMMUTABLE);
+            @Override
+            public void onShowNotification(@NonNull WebNotification notification) {
+              Intent clickIntent = new Intent(GeckoViewActivity.this, GeckoViewActivity.class);
+              clickIntent.putExtra("onClick", notification);
+              PendingIntent dismissIntent =
+                  PendingIntent.getActivity(
+                      GeckoViewActivity.this, mLastID, clickIntent, PendingIntent.FLAG_IMMUTABLE);
 
-                NotificationCompat.Builder builder =
-                    new NotificationCompat.Builder(GeckoViewActivity.this, CHANNEL_ID)
-                        .setContentTitle(notification.title)
-                        .setContentText(notification.text)
-                        .setSmallIcon(R.drawable.ic_status_logo)
-                        .setContentIntent(dismissIntent)
-                        .setAutoCancel(true);
+              NotificationCompat.Builder builder =
+                  new NotificationCompat.Builder(GeckoViewActivity.this, CHANNEL_ID)
+                      .setContentTitle(notification.title)
+                      .setContentText(notification.text)
+                      .setSmallIcon(R.drawable.ic_status_logo)
+                      .setContentIntent(dismissIntent)
+                      .setAutoCancel(true);
 
-                mNotificationIDMap.put(notification.tag, mLastID);
+              mNotificationIDMap.put(notification.tag, mLastID);
 
-                if (notification.imageUrl != null && notification.imageUrl.length() > 0) {
-                  final GeckoWebExecutor executor = new GeckoWebExecutor(sGeckoRuntime);
+              if (notification.imageUrl != null && notification.imageUrl.length() > 0) {
+                final GeckoWebExecutor executor = new GeckoWebExecutor(sGeckoRuntime);
 
-                  GeckoResult<WebResponse> response =
-                      executor.fetch(
-                          new WebRequest.Builder(notification.imageUrl)
-                              .addHeader("Accept", "image")
-                              .build());
-                  response.accept(
-                      value -> {
-                        Bitmap bitmap = BitmapFactory.decodeStream(value.body);
-                        builder.setLargeIcon(bitmap);
-                        notificationManager.notify(mLastID++, builder.build());
-                      });
-                } else {
-                  notificationManager.notify(mLastID++, builder.build());
-                }
-                notification.show();
+                GeckoResult<WebResponse> response =
+                    executor.fetch(
+                        new WebRequest.Builder(notification.imageUrl)
+                            .addHeader("Accept", "image")
+                            .build());
+                response.accept(
+                    value -> {
+                      Bitmap bitmap = BitmapFactory.decodeStream(value.body);
+                      builder.setLargeIcon(bitmap);
+                      notificationManager.notify(mLastID++, builder.build());
+                    });
+              } else {
+                notificationManager.notify(mLastID++, builder.build());
               }
+              notification.show();
+            }
 
-              @Override
-              public void onCloseNotification(@NonNull WebNotification notification) {
-                if (mNotificationIDMap.containsKey(notification.tag)) {
-                  int id = mNotificationIDMap.get(notification.tag);
-                  notificationManager.cancel(id);
-                  mNotificationIDMap.remove(notification.tag);
-                }
+            @Override
+            public void onCloseNotification(@NonNull WebNotification notification) {
+              if (mNotificationIDMap.containsKey(notification.tag)) {
+                int id = mNotificationIDMap.get(notification.tag);
+                notificationManager.cancel(id);
+                mNotificationIDMap.remove(notification.tag);
               }
-            });
-      }
+            }
+          });
 
       sGeckoRuntime.setDelegate(
           () -> {
@@ -1178,19 +1170,15 @@ public class GeckoViewActivity extends AppCompatActivity
   }
 
   private void createNotificationChannel() {
-    // Create the NotificationChannel, but only on API 26+ because
-    // the NotificationChannel class is new and not in the support library
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      CharSequence name = getString(R.string.app_name);
-      String description = getString(R.string.activity_label);
-      int importance = NotificationManager.IMPORTANCE_DEFAULT;
-      NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-      channel.setDescription(description);
-      // Register the channel with the system; you can't change the importance
-      // or other notification behaviors after this
-      NotificationManager notificationManager = getSystemService(NotificationManager.class);
-      notificationManager.createNotificationChannel(channel);
-    }
+    CharSequence name = getString(R.string.app_name);
+    String description = getString(R.string.activity_label);
+    int importance = NotificationManager.IMPORTANCE_DEFAULT;
+    NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+    channel.setDescription(description);
+    // Register the channel with the system; you can't change the importance
+    // or other notification behaviors after this
+    NotificationManager notificationManager = getSystemService(NotificationManager.class);
+    notificationManager.createNotificationChannel(channel);
   }
 
   private TabSession createSession(final @Nullable String cookieStoreId) {
@@ -1519,9 +1507,7 @@ public class GeckoViewActivity extends AppCompatActivity
             supportedLanguages -> {
               // Just a check if sorting is working on the Language object by reversing, Languages
               // should generally come from the API in the display order.
-              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                Collections.reverse(supportedLanguages.fromLanguages);
-              }
+              Collections.reverse(supportedLanguages.fromLanguages);
               ArrayAdapter<TranslationsController.Language> fromData =
                   new ArrayAdapter<TranslationsController.Language>(
                       this.getBaseContext(),
@@ -2383,13 +2369,8 @@ public class GeckoViewActivity extends AppCompatActivity
     @Override
     public void onAndroidPermissionsRequest(
         final GeckoSession session, final String[] permissions, final Callback callback) {
-      if (Build.VERSION.SDK_INT >= 23) {
-        // requestPermissions was introduced in API 23.
-        mCallback = callback;
-        requestPermissions(permissions, androidPermissionRequestCode);
-      } else {
-        callback.grant();
-      }
+      mCallback = callback;
+      requestPermissions(permissions, androidPermissionRequestCode);
     }
 
     @Override

@@ -229,7 +229,7 @@ class _InteractionsBlocklist {
     try {
       regex = new RegExp(regexToAdd, "i");
     } catch (ex) {
-      this.logConsole.warn("Invalid regex passed to addRegexToBlocklist.");
+      lazy.logConsole.warn("Invalid regex passed to addRegexToBlocklist.");
       return;
     }
 
@@ -256,7 +256,7 @@ class _InteractionsBlocklist {
     try {
       regex = new RegExp(regexToRemove, "i");
     } catch (ex) {
-      this.logConsole.warn("Invalid regex passed to addRegexToBlocklist.");
+      lazy.logConsole.warn("Invalid regex passed to addRegexToBlocklist.");
       return;
     }
 

@@ -115,7 +115,7 @@ nsresult PrototypeDocumentContentSink::Init(Document* aDoc, nsIURI* aURI,
   nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(mDocumentURI));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mScriptLoader = mDocument->ScriptLoader();
+  mScriptLoader = mDocument->GetScriptLoader();
 
   return NS_OK;
 }
@@ -152,6 +152,10 @@ nsISupports* PrototypeDocumentContentSink::GetTarget() {
 }
 
 bool PrototypeDocumentContentSink::IsScriptExecuting() {
+  if (!mScriptLoader) {
+    MOZ_ASSERT(false, "Can't load prototype docs as data");
+    return false;
+  }
   return !!mScriptLoader->GetCurrentScript();
 }
 
@@ -1052,7 +1056,7 @@ nsresult PrototypeDocumentContentSink::ExecuteScript(
   // On failure, ~AutoScriptEntry will handle exceptions, so
   // there is no need to manually check the return value.
   JS::Rooted<JS::Value> rval(cx);
-  Unused << JS_ExecuteScript(cx, scriptObject, &rval);
+  (void)JS_ExecuteScript(cx, scriptObject, &rval);
 
   return NS_OK;
 }

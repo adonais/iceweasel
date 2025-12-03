@@ -95,7 +95,7 @@ FRAME_CLASSES = [
     Frame("nsMathMLmtrFrame", "TableRow", TABLE_PART | MATHML),
     Frame("nsMathMLmunderoverFrame", "None", MATHML_CONTAINER),
     Frame("nsMathMLTokenFrame", "None", MATHML_CONTAINER),
-    Frame("nsMenuPopupFrame", "MenuPopup", BLOCK | MAY_HAVE_VIEW),
+    Frame("nsMenuPopupFrame", "MenuPopup", BLOCK),
     Frame("nsNumberControlFrame", "TextInput", REPLACED | LEAF),
     Frame("nsPageBreakFrame", "PageBreak", COMMON | LEAF),
     Frame("nsPageContentFrame", "PageContent", BLOCK),

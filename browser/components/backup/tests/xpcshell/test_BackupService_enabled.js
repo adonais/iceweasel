@@ -10,6 +10,16 @@ const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
 
+const BACKUP_DIR_PREF_NAME = "browser.backup.location";
+const BACKUP_ARCHIVE_ENABLED_PREF_NAME = "browser.backup.archive.enabled";
+const BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME =
+  "browser.backup.archive.overridePlatformCheck";
+const BACKUP_RESTORE_ENABLED_PREF_NAME = "browser.backup.restore.enabled";
+const BACKUP_RESTORE_ENABLED_OVERRIDE_PREF_NAME =
+  "browser.backup.restore.overridePlatformCheck";
+const SANITIZE_ON_SHUTDOWN_PREF_NAME = "privacy.sanitize.sanitizeOnShutdown";
+const SELECTABLE_PROFILES_CREATED_PREF_NAME = "browser.profiles.created";
+
 add_setup(async () => {
   setupProfile();
 
@@ -25,7 +35,7 @@ add_setup(async () => {
   );
 
   // Use temporary directory for backups.
-  Services.prefs.setStringPref("browser.backup.location", backupDir);
+  Services.prefs.setStringPref(BACKUP_DIR_PREF_NAME, backupDir);
 
   registerCleanupFunction(async () => {
     const nimbusCleanupPromise = nimbusCleanup();
@@ -35,51 +45,274 @@ add_setup(async () => {
 
     await Promise.all([nimbusCleanupPromise, backupDirCleanupPromise]);
 
-    Services.prefs.clearUserPref("browser.backup.location");
+    Services.prefs.clearUserPref(BACKUP_DIR_PREF_NAME);
   });
-
-  BackupService.init();
 });
 
 add_task(async function test_archive_killswitch_enrollment() {
-  const bs = BackupService.get();
+  let cleanupExperiment;
+  const savedPref = Services.prefs.getBoolPref(
+    BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME,
+    false
+  );
+  await archiveTemplate({
+    internalReason: "nimbus",
+    async disable() {
+      Services.prefs.setBoolPref(
+        BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME,
+        false
+      );
+      cleanupExperiment = await NimbusTestUtils.enrollWithFeatureConfig({
+        featureId: "backupService",
+        value: { archiveKillswitch: true },
+      });
+    },
+    async enable() {
+      Services.prefs.setBoolPref(
+        BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME,
+        savedPref
+      );
+      await cleanupExperiment();
+    },
+    // Nimbus calls onUpdate if any experiments are running, meaning that the
+    // observer service will be notified twice, i.e. one spurious call.
+    startup: 0,
+  });
+});
 
+add_task(async function test_archive_enabled_pref() {
+  await archiveTemplate({
+    internalReason: "pref",
+    async disable() {
+      Services.prefs.unlockPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME);
+      Services.prefs.setBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME, false);
+    },
+    async enable() {
+      Services.prefs.setBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME, true);
+    },
+  });
+});
+
+add_task(async function test_archive_policy() {
+  let storedDefault;
+  await archiveTemplate({
+    internalReason: "policy",
+    disable: () => {
+      Services.prefs.unlockPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME);
+      const defaults = Services.prefs.getDefaultBranch("");
+      storedDefault = defaults.getBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME);
+      defaults.setBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME, false);
+      defaults.lockPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME);
+      return 0;
+    },
+    enable: () => {
+      const defaults = Services.prefs.getDefaultBranch("");
+      defaults.setBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME, storedDefault);
+      Services.prefs.unlockPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME);
+      Services.prefs.setBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME, true);
+      return 0;
+    },
+    // At startup, there wouldn't have been a spurious call.
+    startup: 0,
+  });
+});
+
+add_task(async function test_archive_sanitize_on_shutdown() {
+  await archiveTemplate({
+    internalReason: "sanitizeOnShutdown",
+    async disable() {
+      Services.prefs.setBoolPref(SANITIZE_ON_SHUTDOWN_PREF_NAME, true);
+    },
+    async enable() {
+      Services.prefs.setBoolPref(SANITIZE_ON_SHUTDOWN_PREF_NAME, false);
+    },
+  });
+});
+
+add_task(async function test_archive_selectable_profiles() {
+  await archiveTemplate({
+    internalReason: "selectable profiles",
+    async disable() {
+      Services.prefs.setBoolPref(SELECTABLE_PROFILES_CREATED_PREF_NAME, true);
+    },
+    async enable() {
+      Services.prefs.setBoolPref(SELECTABLE_PROFILES_CREATED_PREF_NAME, false);
+    },
+  });
+});
+
+add_task(async function test_archive_disabled_unsupported_os() {
+  const sandbox = sinon.createSandbox();
+  const archiveWasEnabled = Services.prefs.getBoolPref(
+    BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME,
+    false
+  );
+  Services.prefs.setBoolPref(BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME, false);
+  sandbox.stub(BackupService, "checkOsSupportsBackup").returns(false);
   const cleanupExperiment = await NimbusTestUtils.enrollWithFeatureConfig({
     featureId: "backupService",
-    value: { archiveKillswitch: true },
+    value: { archiveKillswitch: false },
   });
 
-  Assert.ok(
-    !bs.archiveEnabledStatus.enabled,
-    "The backup service should report that archiving is disabled when the archive killswitch is active."
-  );
+  try {
+    const bs = new BackupService();
+    const status = bs.archiveEnabledStatus;
+    Assert.equal(false, status.enabled);
+    Assert.equal("os version", status.internalReason);
+  } finally {
+    sandbox.restore();
+    Services.prefs.setBoolPref(
+      BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME,
+      archiveWasEnabled
+    );
+    await cleanupExperiment();
+  }
+});
 
-  Assert.equal(
-    bs.archiveEnabledStatus.reason,
-    "Archiving a profile disabled remotely.",
-    "`archiveEnabledStatus` should report that it is disabled by the archive killswitch."
+add_task(async function test_archive_enabled_supported_os() {
+  const sandbox = sinon.createSandbox();
+  const archiveWasEnabled = Services.prefs.getBoolPref(
+    BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME,
+    false
   );
+  Services.prefs.setBoolPref(BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME, false);
+  sandbox.stub(BackupService, "checkOsSupportsBackup").returns(true);
+  const cleanupExperiment = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: "backupService",
+    value: { archiveKillswitch: false },
+  });
+  try {
+    const bs = new BackupService();
+    const status = bs.archiveEnabledStatus;
+    Assert.equal(true, status.enabled);
+  } finally {
+    sandbox.restore();
+    Services.prefs.setBoolPref(
+      BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME,
+      archiveWasEnabled
+    );
+    await cleanupExperiment();
+  }
+});
 
+add_task(async function test_restore_killswitch_enrollment() {
+  let cleanupExperiment;
+  const savedPref = Services.prefs.getBoolPref(
+    BACKUP_RESTORE_ENABLED_OVERRIDE_PREF_NAME,
+    false
+  );
+  await restoreTemplate({
+    internalReason: "nimbus",
+    async disable() {
+      Services.prefs.setBoolPref(
+        BACKUP_RESTORE_ENABLED_OVERRIDE_PREF_NAME,
+        false
+      );
+      cleanupExperiment = await NimbusTestUtils.enrollWithFeatureConfig({
+        featureId: "backupService",
+        value: { restoreKillswitch: true },
+      });
+    },
+    async enable() {
+      Services.prefs.setBoolPref(
+        BACKUP_RESTORE_ENABLED_OVERRIDE_PREF_NAME,
+        savedPref
+      );
+      await cleanupExperiment();
+    },
+    // Nimbus calls onUpdate if any experiments are running, meaning that the
+    // observer service will be notified twice, i.e. one spurious call.
+    startup: 0,
+  });
+});
+
+add_task(async function test_restore_enabled_pref() {
+  await restoreTemplate({
+    internalReason: "pref",
+    async disable() {
+      Services.prefs.setBoolPref(BACKUP_RESTORE_ENABLED_PREF_NAME, false);
+    },
+    async enable() {
+      Services.prefs.setBoolPref(BACKUP_RESTORE_ENABLED_PREF_NAME, true);
+    },
+  });
+});
+
+add_task(async function test_restore_policy() {
+  let storedDefault;
+  await restoreTemplate({
+    internalReason: "policy",
+    async disable() {
+      const defaults = Services.prefs.getDefaultBranch("");
+      storedDefault = defaults.getBoolPref(BACKUP_RESTORE_ENABLED_PREF_NAME);
+      defaults.setBoolPref(BACKUP_RESTORE_ENABLED_PREF_NAME, false);
+      Services.prefs.lockPref(BACKUP_RESTORE_ENABLED_PREF_NAME);
+      return 0;
+    },
+    async enable() {
+      Services.prefs.unlockPref(BACKUP_RESTORE_ENABLED_PREF_NAME);
+      const defaults = Services.prefs.getDefaultBranch("");
+      defaults.setBoolPref(BACKUP_RESTORE_ENABLED_PREF_NAME, storedDefault);
+      return 0;
+    },
+    // At startup, there wouldn't have been a spurious call.
+    startup: 0,
+  });
+});
+
+add_task(async function test_restore_sanitize_on_shutdown() {
+  await restoreTemplate({
+    internalReason: "sanitizeOnShutdown",
+    async disable() {
+      Services.prefs.setBoolPref(SANITIZE_ON_SHUTDOWN_PREF_NAME, true);
+    },
+    async enable() {
+      Services.prefs.setBoolPref(SANITIZE_ON_SHUTDOWN_PREF_NAME, false);
+    },
+  });
+});
+
+add_task(async function test_restore_selectable_profiles() {
+  await restoreTemplate({
+    internalReason: "selectable profiles",
+    async disable() {
+      Services.prefs.setBoolPref(SELECTABLE_PROFILES_CREATED_PREF_NAME, true);
+    },
+    async enable() {
+      Services.prefs.setBoolPref(SELECTABLE_PROFILES_CREATED_PREF_NAME, false);
+    },
+  });
+});
+
+async function archiveTemplate({ internalReason, disable, enable, startup }) {
+  Services.telemetry.clearScalars();
   Services.fog.testResetFOG();
+
+  let bs = new BackupService();
+  bs.initStatusObservers();
+  assertStatus("archive", bs.archiveEnabledStatus, true, null);
+
+  let calledCount = 0;
+  let callback = () => calledCount++;
+  Services.obs.addObserver(callback, "backup-service-status-updated");
+
+  let spurious = (await disable()) ?? 0;
+  Assert.equal(calledCount, 1 + spurious, "Observers were notified on disable");
+  assertStatus("archive", bs.archiveEnabledStatus, false, internalReason);
+
   let backup = await bs.createBackup();
   Assert.ok(
     !backup,
-    "Creating a backup should fail when the archive killswitch is active."
+    "Creating a backup should fail when archiving is disabled."
   );
-  let telemetry = Glean.browserBackup.backupDisabledReason.testGetValue();
+
+  spurious += (await enable()) ?? 0;
   Assert.equal(
-    telemetry,
-    "nimbus",
-    "Telemetry identifies the backup is disabled by Nimbus."
+    calledCount,
+    2 + spurious,
+    "Observers were notified on re-enable"
   );
-
-  // End the experiment.
-  await cleanupExperiment();
-
-  Assert.ok(
-    bs.archiveEnabledStatus.enabled,
-    "The backup service should report that archiving is enabled once the archive killswitch experiment ends."
-  );
+  assertStatus("archive", bs.archiveEnabledStatus, true, "reenabled");
 
   backup = await bs.createBackup();
   ok(
@@ -91,42 +324,46 @@ add_task(async function test_archive_killswitch_enrollment() {
     "Archive file should exist on disk."
   );
 
-  telemetry = Glean.browserBackup.backupDisabledReason.testGetValue();
-  Assert.equal(
-    telemetry,
-    "reenabled",
-    "Telemetry identifies the backup was re-enabled."
-  );
-});
+  await IOUtils.remove(backup.archivePath);
+  bs.uninitStatusObservers();
 
-add_task(async function test_restore_killswitch_enrollment() {
-  const bs = BackupService.get();
+  // Also check that it works at startup.
+  spurious += (startup ?? 0) + ((await disable()) ?? 0);
+  bs = new BackupService();
+  bs.initStatusObservers();
+  Assert.equal(calledCount, 3 + spurious, "Observers were notified at startup");
+  assertStatus("archive", bs.archiveEnabledStatus, false, internalReason);
+  await enable();
+  bs.uninitStatusObservers();
+
+  Services.obs.removeObserver(callback, "backup-service-status-updated");
+}
+
+async function restoreTemplate({ internalReason, disable, enable, startup }) {
+  Services.telemetry.clearScalars();
+  Services.fog.testResetFOG();
+
+  let bs = new BackupService();
+  bs.initStatusObservers();
+  assertStatus("restore", bs.restoreEnabledStatus, true, null);
+
   const backup = await bs.createBackup();
-
   Assert.ok(
     backup && backup.archivePath,
     "Archive should have been created on disk."
   );
 
-  let cleanupExperiment = await NimbusTestUtils.enrollWithFeatureConfig({
-    featureId: "backupService",
-    value: { restoreKillswitch: true },
-  });
+  let calledCount = 0;
+  let callback = () => calledCount++;
+  Services.obs.addObserver(callback, "backup-service-status-updated");
+
+  let spurious = (await disable()) ?? 0;
+  Assert.equal(calledCount, 1 + spurious, "Observers were notified on disable");
+  assertStatus("restore", bs.restoreEnabledStatus, false, internalReason);
 
   const recoveryDir = await IOUtils.createUniqueDirectory(
     PathUtils.profileDir,
     "recovered-profiles"
-  );
-
-  Assert.ok(
-    !bs.restoreEnabledStatus.enabled,
-    "The backup service should report that restoring is disabled when the restore killswitch is active."
-  );
-
-  Assert.equal(
-    bs.restoreEnabledStatus.reason,
-    "Restore from backup disabled remotely.",
-    "`restoreEnabledStatus` should report that it is disabled by the restore killswitch."
   );
 
   await Assert.rejects(
@@ -137,17 +374,17 @@ add_task(async function test_restore_killswitch_enrollment() {
       PathUtils.profileDir,
       recoveryDir
     ),
-    /Restore from backup disabled remotely\./,
-    "Recovery should throw when the restore killswitch is active."
+    /.*disabled.*/,
+    "Recovery should throw when the restore is disabled."
   );
 
-  // End the experiment.
-  await cleanupExperiment();
-
-  Assert.ok(
-    bs.restoreEnabledStatus.enabled,
-    "The backup service should report that restoring is enabled once the restore killswitch experiment ends."
+  spurious += (await enable()) ?? 0;
+  Assert.equal(
+    calledCount,
+    2 + spurious,
+    "Observers were notified on re-enable"
   );
+  assertStatus("restore", bs.restoreEnabledStatus, true, "reenabled");
 
   let recoveredProfile = await bs.recoverFromBackupArchive(
     backup.archivePath,
@@ -158,10 +395,68 @@ add_task(async function test_restore_killswitch_enrollment() {
   );
   Assert.ok(
     recoveredProfile,
-    "Recovery should succeed once the restore killswitch experiment ends."
+    "Recovery should succeed once restore is re-enabled."
   );
   Assert.ok(
     await IOUtils.exists(recoveredProfile.rootDir.path),
     "Recovered profile directory should exist on disk."
   );
-});
+
+  bs.uninitStatusObservers();
+
+  // Also check that it works at startup.
+  spurious += (startup ?? 0) + ((await disable()) ?? 0);
+  bs = new BackupService();
+  bs.initStatusObservers();
+  Assert.equal(calledCount, 3 + spurious, "Observers were notified at startup");
+  assertStatus("restore", bs.restoreEnabledStatus, false, internalReason);
+  await enable();
+  bs.uninitStatusObservers();
+
+  Services.obs.removeObserver(callback, "backup-service-status-updated");
+}
+
+/**
+ * Checks that the status object matches the expected values, and that the
+ * telemetry matches the object.
+ *
+ * @param {string} kind
+ *   The kind of status object.
+ * @param {string} status
+ *   The status object given.
+ * @param {boolean} enabled
+ *   Whether the feature should be enabled or disabled.
+ * @param {string?} internalReason
+ *   The internal reason that should be given.
+ */
+function assertStatus(kind, status, enabled, internalReason) {
+  Assert.equal(
+    status.enabled,
+    enabled,
+    `${kind} status is ${enabled ? "" : "not "}enabled.`
+  );
+  Assert.equal(
+    status.internalReason ?? null,
+    // 'reenabled' is only for telemetry, the status is null
+    internalReason == "reenabled" ? null : internalReason,
+    `${kind} status has the expected internal reason.`
+  );
+
+  Assert.equal(
+    Glean.browserBackup[kind + "Enabled"].testGetValue(),
+    enabled,
+    `Glean ${kind}_enabled metric should be ${enabled}.`
+  );
+  TelemetryTestUtils.assertScalar(
+    TelemetryTestUtils.getProcessScalars("parent", false, true),
+    `browser.backup.${kind}_enabled`,
+    enabled,
+    `Legacy ${kind}_enabled metric should be ${enabled}.`
+  );
+
+  Assert.equal(
+    Glean.browserBackup[kind + "DisabledReason"].testGetValue(),
+    internalReason,
+    `Glean ${kind}_disabled_reason metric is ${internalReason}.`
+  );
+}

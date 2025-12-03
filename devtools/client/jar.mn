@@ -258,7 +258,6 @@ devtools.jar:
     content/debugger/images/sources/angular.svg (debugger/images/sources/angular.svg)
     content/debugger/images/sources/babel.svg (debugger/images/sources/babel.svg)
     content/debugger/images/sources/backbone.svg (debugger/images/sources/backbone.svg)
-    content/debugger/images/sources/choo.svg (debugger/images/sources/choo.svg)
     content/debugger/images/sources/coffeescript.svg (debugger/images/sources/coffeescript.svg)
     content/debugger/images/sources/dojo.svg (debugger/images/sources/dojo.svg)
     content/debugger/images/sources/ember.svg (debugger/images/sources/ember.svg)

@@ -574,7 +574,8 @@ async function showSummarizeWarning(length) {
   });
 }
 
-/** Expose Sidebar entry for new prompt
+/**
+ * Expose Sidebar entry for new prompt
  *
  * @param {object} opt for new prompt
  * @param {boolean} [opt.show]

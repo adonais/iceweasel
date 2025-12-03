@@ -18,7 +18,6 @@
 #include "nsPrintfCString.h"
 #include "nsServiceManagerUtils.h"
 #include "mozilla/GUniquePtr.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "nsImportModule.h"
 #include "nsIOpenTabsProvider.h"
 #include "imgIContainer.h"

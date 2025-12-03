@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// TODO: Bug 1994968 - Fix most TypeScript issues in this file. Currently there
+// are lots of errors that may show up in an editor due to our TypeScript
+// configuration. Skip this for now, until these are resolved.
+
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
@@ -86,7 +90,7 @@ window.addEventListener(
 /**
  * @implements {nsIBrowser}
  */
-class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
+export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
   static get observedAttributes() {
     return ["remote"];
   }
@@ -263,6 +267,14 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
       }
     });
   }
+
+  /**
+   * The browser's permanent key. This was added temporarily for Session Store,
+   * and will be removed in bug 1716788.
+   *
+   * @type {any}
+   */
+  permanentKey;
 
   resetFields() {
     if (this.observer) {

@@ -11,7 +11,6 @@
 #include "nsCOMPtr.h"
 #include "prio.h"
 #include "prproces.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtrExtensions.h"
 
 /**

@@ -8,7 +8,6 @@
 
 #include "ObjectModel.h"
 #include "js/Value.h"
-#include "mozilla/WeakPtr.h"
 #include "nsIGlobalObject.h"
 #include "nsString.h"
 

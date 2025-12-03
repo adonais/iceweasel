@@ -214,10 +214,6 @@ var allowlist = [
     platforms: ["linux", "win"],
   },
   {
-    file: "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/intl.properties",
-    platforms: ["linux", "win"],
-  },
-  {
     file: "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/platformKeys.properties",
     platforms: ["linux", "win"],
   },
@@ -226,19 +222,11 @@ var allowlist = [
     platforms: ["macosx", "win"],
   },
   {
-    file: "resource://gre/chrome/en-US/locale/en-US/global-platform/unix/intl.properties",
-    platforms: ["macosx", "win"],
-  },
-  {
     file: "resource://gre/chrome/en-US/locale/en-US/global-platform/unix/platformKeys.properties",
     platforms: ["macosx", "win"],
   },
   {
     file: "resource://gre/chrome/en-US/locale/en-US/global-platform/win/accessible.properties",
-    platforms: ["linux", "macosx"],
-  },
-  {
-    file: "resource://gre/chrome/en-US/locale/en-US/global-platform/win/intl.properties",
     platforms: ["linux", "macosx"],
   },
   {

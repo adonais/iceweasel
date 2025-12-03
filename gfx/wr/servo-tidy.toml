@@ -59,6 +59,10 @@ packages = [
     "windows_aarch64_msvc",
     "windows_i686_msvc",
     "windows_aarch64_gnullvm",
+    "miniz_oxide",
+    "mio",
+    "socket2",
+    "windows-link",
 ]
 
 # Files that are ignored for all tidy and lint checks.

@@ -8,14 +8,18 @@ add_virtual_authenticator();
 
 let expectSecurityError = expectError("Security");
 
-async function test_webauthn_with_cert_override(
+async function test_webauthn_with_cert_override({
   aTestDomain,
-  aExpectSecurityError
-) {
+  aExpectSecurityError = false,
+  aFeltPrivacyV1 = false,
+}) {
   let certOverrideService = Cc[
     "@mozilla.org/security/certoverride;1"
   ].getService(Ci.nsICertOverrideService);
-
+  Services.prefs.setBoolPref(
+    "security.certerrors.felt-privacy-v1",
+    aFeltPrivacyV1
+  );
   let testURL = "https://" + aTestDomain;
   let certErrorLoaded;
   let tab = await BrowserTestUtils.openNewForegroundTab(
@@ -33,28 +37,42 @@ async function test_webauthn_with_cert_override(
   let loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   info("Adding certificate error override.");
-  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
-    const doc = content.document;
-    const netErrorCard = doc.querySelector("net-error-card").wrappedJSObject;
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [aFeltPrivacyV1],
+    async function (aFeltPrivacyV1) {
+      const doc = content.document;
 
-    await netErrorCard.getUpdateComplete();
-    await EventUtils.synthesizeMouseAtCenter(
-      netErrorCard.advancedButton,
-      {},
-      content
-    );
-    await ContentTaskUtils.waitForCondition(() => {
-      return (
-        netErrorCard.exceptionButton && !netErrorCard.exceptionButton.disabled
-      );
-    }, "Waiting for exception button");
-    netErrorCard.exceptionButton.scrollIntoView();
-    EventUtils.synthesizeMouseAtCenter(
-      netErrorCard.exceptionButton,
-      {},
-      content
-    );
-  });
+      if (!aFeltPrivacyV1) {
+        info("Using old cert error page flow.");
+        let doc = content.document;
+        let exceptionButton = doc.getElementById("exceptionDialogButton");
+        exceptionButton.click();
+      } else {
+        info("Using felt-privacy-v1 cert error page flow.");
+        const netErrorCard =
+          doc.querySelector("net-error-card").wrappedJSObject;
+        await netErrorCard.getUpdateComplete();
+        await EventUtils.synthesizeMouseAtCenter(
+          netErrorCard.advancedButton,
+          {},
+          content
+        );
+        await ContentTaskUtils.waitForCondition(() => {
+          return (
+            netErrorCard.exceptionButton &&
+            !netErrorCard.exceptionButton.disabled
+          );
+        }, "Waiting for exception button");
+        netErrorCard.exceptionButton.scrollIntoView();
+        EventUtils.synthesizeMouseAtCenter(
+          netErrorCard.exceptionButton,
+          {},
+          content
+        );
+      }
+    }
+  );
 
   info("Waiting for page load.");
   await loaded;
@@ -67,16 +85,22 @@ async function test_webauthn_with_cert_override(
     );
   });
 
-  let makeCredPromise = promiseWebAuthnMakeCredential(tab, "none", "preferred");
-  if (aExpectSecurityError) {
-    await makeCredPromise.then(arrivingHereIsBad).catch(expectSecurityError);
-    ok(
-      true,
-      "Calling navigator.credentials.create() results in a security error"
+  if (!aFeltPrivacyV1) {
+    let makeCredPromise = promiseWebAuthnMakeCredential(
+      tab,
+      "none",
+      "preferred"
     );
-  } else {
-    await makeCredPromise.catch(arrivingHereIsBad);
-    ok(true, "Calling navigator.credentials.create() is allowed");
+    if (aExpectSecurityError) {
+      await makeCredPromise.then(arrivingHereIsBad).catch(expectSecurityError);
+      ok(
+        true,
+        "Calling navigator.credentials.create() results in a security error"
+      );
+    } else {
+      await makeCredPromise.catch(arrivingHereIsBad);
+      ok(true, "Calling navigator.credentials.create() is allowed");
+    }
   }
 
   let getAssertionPromise = promiseWebAuthnGetAssertionDiscoverable(tab);
@@ -97,10 +121,52 @@ async function test_webauthn_with_cert_override(
   await loaded;
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  Services.prefs.clearUserPref("security.certerrors.felt-privacy-v1");
 }
 
-add_task(() => test_webauthn_with_cert_override("expired.example.com", false));
-add_task(() => test_webauthn_with_cert_override("untrusted.example.com", true));
 add_task(() =>
-  test_webauthn_with_cert_override("no-subject-alt-name.example.com", true)
+  test_webauthn_with_cert_override({
+    aTestDomain: "expired.example.com",
+    aExpectSecurityError: false,
+    aFeltPrivacyV1: false,
+  })
+);
+
+add_task(() =>
+  test_webauthn_with_cert_override({
+    aTestDomain: "untrusted.example.com",
+    aExpectSecurityError: true,
+    aFeltPrivacyV1: false,
+  })
+);
+add_task(() =>
+  test_webauthn_with_cert_override({
+    aTestDomain: "no-subject-alt-name.example.com",
+    aExpectSecurityError: true,
+    aFeltPrivacyV1: false,
+  })
+);
+
+/* Testing for felt-privacy-v1 enabled reuses the same
+ * webauthn certificates created in the first three tests. */
+add_task(() =>
+  test_webauthn_with_cert_override({
+    aTestDomain: "expired.example.com",
+    aExpectSecurityError: false,
+    aFeltPrivacyV1: true,
+  })
+);
+add_task(() =>
+  test_webauthn_with_cert_override({
+    aTestDomain: "untrusted.example.com",
+    aExpectSecurityError: true,
+    aFeltPrivacyV1: true,
+  })
+);
+add_task(() =>
+  test_webauthn_with_cert_override({
+    aTestDomain: "no-subject-alt-name.example.com",
+    aExpectSecurityError: true,
+    aFeltPrivacyV1: false,
+  })
 );

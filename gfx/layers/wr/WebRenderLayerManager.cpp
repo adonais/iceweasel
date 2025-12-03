@@ -341,7 +341,7 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
     nsDisplayList* aDisplayList, nsDisplayListBuilder* aDisplayListBuilder,
     WrFiltersHolder&& aFilters, WebRenderBackgroundData* aBackground,
     const double aGeckoDLBuildTime, bool aRenderOffscreen) {
-  AUTO_PROFILER_TRACING_MARKER("Paint", "WrDisplayList", GRAPHICS);
+  AUTO_PROFILER_MARKER("WrDisplayList", GRAPHICS);
 
   auto clearTarget = MakeScopeExit([&] { mTarget = nullptr; });
 
@@ -473,7 +473,7 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
   GetCompositorBridgeChild()->EndCanvasTransaction();
 
   {
-    AUTO_PROFILER_TRACING_MARKER("Paint", "ForwardDPTransaction", GRAPHICS);
+    AUTO_PROFILER_MARKER("ForwardDPTransaction", GRAPHICS);
     DisplayListData dlData;
     diplayListBuilder->End(dlData);
     resourceUpdates.Flush(dlData.mResourceUpdates, dlData.mSmallShmems,

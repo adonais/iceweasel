@@ -12,7 +12,6 @@
 
 #include "ErrorList.h"
 #include "js/RootingAPI.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"

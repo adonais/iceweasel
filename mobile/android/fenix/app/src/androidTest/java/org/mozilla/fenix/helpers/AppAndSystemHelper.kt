@@ -160,7 +160,7 @@ object AppAndSystemHelper {
                         "clearDownloadsFolder: Before cleanup: Downloads storage contains: ${files.size} file(s).",
                     )
                     // Delete all files in the folder
-                    for (file in files!!) {
+                    for (file in files) {
                         Log.i(
                             TAG,
                             "clearDownloadsFolder: Trying to delete $file from \"DOWNLOADS\" folder.",
@@ -488,16 +488,14 @@ object AppAndSystemHelper {
                     .className("android.widget.Button"),
             )
 
-        if (Build.VERSION.SDK_INT >= 23) {
-            if (whileUsingTheAppPermissionButton.waitForExists(waitingTimeShort)) {
-                Log.i(TAG, "grantSystemPermission: Trying to click the \"While using the app\" button.")
-                whileUsingTheAppPermissionButton.click()
-                Log.i(TAG, "grantSystemPermission: Clicked the \"While using the app\" button.")
-            } else if (allowPermissionButton.waitForExists(waitingTimeShort)) {
-                Log.i(TAG, "grantSystemPermission: Trying to click the \"Allow\" button.")
-                allowPermissionButton.click()
-                Log.i(TAG, "grantSystemPermission: Clicked the \"Allow\" button.")
-            }
+        if (whileUsingTheAppPermissionButton.waitForExists(waitingTimeShort)) {
+            Log.i(TAG, "grantSystemPermission: Trying to click the \"While using the app\" button.")
+            whileUsingTheAppPermissionButton.click()
+            Log.i(TAG, "grantSystemPermission: Clicked the \"While using the app\" button.")
+        } else if (allowPermissionButton.waitForExists(waitingTimeShort)) {
+            Log.i(TAG, "grantSystemPermission: Trying to click the \"Allow\" button.")
+            allowPermissionButton.click()
+            Log.i(TAG, "grantSystemPermission: Clicked the \"Allow\" button.")
         }
     }
 

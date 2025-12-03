@@ -408,7 +408,7 @@ newtab-wallpaper-abstract-purple-green = Sfumadure di lûs viole e verde
 newtab-wallpaper-abstract-blue-purple-waves = Formis ondadis blu e viole
 newtab-wallpaper-abstract-black-waves = Formis ondadis neris
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotografiis
 newtab-wallpaper-beach-at-sunrise = Splaze al cricâ dal dì
@@ -437,6 +437,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -677,10 +681,6 @@ newtab-widget-timer-mode-focus =
     .label = Concentrazion
 newtab-widget-timer-mode-break =
     .label = Pause
-newtab-widget-timer-play =
-    .title = Invie
-newtab-widget-timer-pause =
-    .title = Met in pause
 newtab-widget-timer-label-play =
     .label = Invie
 newtab-widget-timer-label-pause =

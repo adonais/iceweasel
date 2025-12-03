@@ -12,6 +12,9 @@ macro_rules! include_proto {
 }
 
 pub mod opentelemetry {
+    // Third party code is included here, and we want its warnings to be
+    // ignored similarly to other third party code.
+    #[allow(warnings)]
     pub mod proto {
         pub mod common {
             pub mod v1 {

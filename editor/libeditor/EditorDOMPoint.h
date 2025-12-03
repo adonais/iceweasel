@@ -11,7 +11,6 @@
 #include "mozilla/EditorForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RangeBoundary.h"
-#include "mozilla/ToString.h"
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"  // for Selection::InterlinePosition
@@ -53,18 +52,18 @@ namespace mozilla {
  *
  * EditorDOMPoint pointA(container1, childNode1);
  * EditorDOMPoint pointB(container1, childNode1);
- * Unused << pointA.Offset(); // The offset is computed now.
+ * (void)pointA.Offset(); // The offset is computed now.
  * container1->RemoveChild(childNode1->GetPreviousSibling());
- * Unused << pointB.Offset(); // Now, pointB.Offset() equals pointA.Offset() - 1
+ * (void)pointB.Offset(); // Now, pointB.Offset() equals pointA.Offset() - 1
  *
  * similarly:
  *
  * EditorDOMPoint pointA(container1, 5);
  * EditorDOMPoint pointB(container1, 5);
- * Unused << pointA.GetChild(); // The child is computed now.
+ * (void)pointA.GetChild(); // The child is computed now.
  * container1->RemoveChild(childNode1->GetFirstChild());
- * Unused << pointB.GetChild(); // Now, pointB.GetChild() equals
- *                              // pointA.GetChild()->GetPreviousSibling().
+ * (void)pointB.GetChild(); // Now, pointB.GetChild() equals
+ *                          // pointA.GetChild()->GetPreviousSibling().
  *
  * So, when you initialize an instance only with one information, you need to
  * be careful when you access the other information after changing the DOM tree.
@@ -1864,7 +1863,7 @@ class MOZ_STACK_CLASS AutoEditorDOMPointChildInvalidator final {
   explicit AutoEditorDOMPointChildInvalidator(EditorDOMPoint& aPoint)
       : mPoint(aPoint), mCanceled(false) {
     MOZ_ASSERT(aPoint.IsSetAndValid());
-    Unused << mPoint.Offset();
+    (void)mPoint.Offset();
   }
 
   ~AutoEditorDOMPointChildInvalidator() {

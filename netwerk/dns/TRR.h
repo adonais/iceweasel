@@ -8,7 +8,6 @@
 #define mozilla_net_TRR_h
 
 #include "mozilla/net/DNSByTypeRecord.h"
-#include "mozilla/Assertions.h"
 #include "nsClassHashtable.h"
 #include "nsIChannel.h"
 #include "nsIInterfaceRequestor.h"

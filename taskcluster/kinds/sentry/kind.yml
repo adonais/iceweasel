@@ -9,6 +9,9 @@ transforms:
     - gecko_taskgraph.transforms.job:transforms
     - gecko_taskgraph.transforms.task:transforms
 
+task-defaults:
+    run-on-repo-type: [hg]
+
 tasks:
     mach-release:
         description: Inform Sentry of new revisions (aka Mach releases)

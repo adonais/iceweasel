@@ -7,7 +7,6 @@
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Dafsa.h"
-#include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsIDataStorage.h"
 #include "nsISiteSecurityService.h"

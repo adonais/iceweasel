@@ -5,7 +5,6 @@
 
 #include "EditorCommands.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/EditorBase.h"
 #include "mozilla/FlushType.h"

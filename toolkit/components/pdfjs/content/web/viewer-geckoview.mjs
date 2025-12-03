@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.4.322
- * pdfjsBuild = 657a18d7a
+ * pdfjsVersion = 5.4.396
+ * pdfjsBuild = 0a2680bca
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -1462,6 +1462,7 @@ class BaseExternalServices {
   updateFindMatchesCount(data) {}
   initPassiveLoading() {}
   reportTelemetry(data) {}
+  reportText(data) {}
   async createL10n() {
     throw new Error("Not implemented: createL10n");
   }
@@ -2208,6 +2209,9 @@ class ExternalServices extends BaseExternalServices {
   }
   reportTelemetry(data) {
     FirefoxCom.request("reportTelemetry", data);
+  }
+  reportText(data) {
+    FirefoxCom.request("reportText", data);
   }
   updateEditorStates(data) {
     FirefoxCom.request("updateEditorStates", data);
@@ -5718,6 +5722,51 @@ class PDFScriptingManager {
   }
 }
 
+;// ./web/pdf_text_extractor.js
+class PdfTextExtractor {
+  #pdfViewer;
+  #externalServices;
+  #textPromise;
+  #pendingRequests = new Set();
+  constructor(externalServices) {
+    this.#externalServices = externalServices;
+    window.addEventListener("requestTextContent", ({
+      detail
+    }) => {
+      this.extractTextContent(detail.requestId);
+    });
+  }
+  setViewer(pdfViewer) {
+    this.#pdfViewer = pdfViewer;
+    if (this.#pdfViewer && this.#pendingRequests.size) {
+      for (const pendingRequest of this.#pendingRequests) {
+        this.extractTextContent(pendingRequest);
+      }
+      this.#pendingRequests.clear();
+    }
+  }
+  async extractTextContent(requestId) {
+    if (!this.#pdfViewer) {
+      this.#pendingRequests.add(requestId);
+      return;
+    }
+    if (!this.#textPromise) {
+      const textPromise = this.#textPromise = this.#pdfViewer.getAllText();
+      textPromise.then(() => {
+        setTimeout(() => {
+          if (this.#textPromise === textPromise) {
+            this.#textPromise = null;
+          }
+        }, 5000);
+      });
+    }
+    this.#externalServices.reportText({
+      text: await this.#textPromise,
+      requestId
+    });
+  }
+}
+
 ;// ./web/annotation_editor_layer_builder.js
 
 
@@ -6615,6 +6664,7 @@ class PDFPageDetailView extends BasePDFPageView {
 
 ;// ./web/struct_tree_layer_builder.js
 
+
 const PDF_ROLE_TO_HTML_ROLE = {
   Document: null,
   DocumentFragment: null,
@@ -6657,6 +6707,24 @@ const PDF_ROLE_TO_HTML_ROLE = {
   Formula: null,
   Artifact: null
 };
+const MathMLElements = new Set(["math", "merror", "mfrac", "mi", "mmultiscripts", "mn", "mo", "mover", "mpadded", "mprescripts", "mroot", "mrow", "ms", "mspace", "msqrt", "mstyle", "msub", "msubsup", "msup", "mtable", "mtd", "mtext", "mtr", "munder", "munderover", "semantics"]);
+const MathMLNamespace = "http://www.w3.org/1998/Math/MathML";
+class MathMLSanitizer {
+  static get sanitizer() {
+    return shadow(this, "sanitizer", FeatureTest.isSanitizerSupported ? new Sanitizer({
+      elements: [...MathMLElements].map(name => ({
+        name,
+        namespace: MathMLNamespace
+      })),
+      replaceWithChildrenElements: [{
+        name: "maction",
+        namespace: MathMLNamespace
+      }],
+      attributes: ["dir", "displaystyle", "mathbackground", "mathcolor", "mathsize", "scriptlevel", "encoding", "display", "linethickness", "intent", "arg", "form", "fence", "separator", "lspace", "rspace", "stretchy", "symmetric", "maxsize", "minsize", "largeop", "movablelimits", "width", "height", "depth", "voffset", "accent", "accentunder", "columnspan", "rowspan"],
+      comments: false
+    }) : null);
+  }
+}
 const HEADING_PATTERN = /^H(\d+)$/;
 class StructTreeLayerBuilder {
   #promise;
@@ -6787,11 +6855,12 @@ class StructTreeLayerBuilder {
     if (!node) {
       return null;
     }
-    const element = document.createElement("span");
+    let element;
     if ("role" in node) {
       const {
         role
       } = node;
+      element = MathMLElements.has(role) ? document.createElementNS(MathMLNamespace, role) : document.createElement("span");
       const match = role.match(HEADING_PATTERN);
       if (match) {
         element.setAttribute("role", "heading");
@@ -6802,7 +6871,18 @@ class StructTreeLayerBuilder {
       if (role === "Figure" && this.#addImageInTextLayer(node, element)) {
         return element;
       }
+      if (role === "Formula") {
+        if (node.mathML && MathMLSanitizer.sanitizer) {
+          element.setHTML(node.mathML, {
+            sanitizer: MathMLSanitizer.sanitizer
+          });
+        }
+        if (!node.mathML && node.children.length === 1 && node.children[0].role !== "math") {
+          element = document.createElementNS(MathMLNamespace, "math");
+        }
+      }
     }
+    element ||= document.createElement("span");
     this.#setAttributes(node, element);
     if (node.children) {
       if (node.children.length === 1 && "id" in node.children[0]) {
@@ -6948,21 +7028,19 @@ class TextAccessibilityManager {
     const parent = child.parentNode;
     return parent?.classList.contains("markedContent") ? parent.id : null;
   }
-  moveElementInDOM(container, element, contentElement, isRemovable, filter, inserter) {
+  moveElementInDOM(container, element, contentElement, isRemovable) {
     const id = this.addPointerInTextLayer(contentElement, isRemovable);
     if (!container.hasChildNodes()) {
       container.append(element);
       return id;
     }
-    const children = Array.from(container.childNodes).filter(node => node !== element && (!filter || filter(node)));
+    const children = Array.from(container.childNodes).filter(node => node !== element);
     if (children.length === 0) {
       return id;
     }
     const index = binarySearchFirstItem(children, node => TextAccessibilityManager.#compareElementPositions(element, node) < 0);
     if (index === 0) {
       children[0].before(element);
-    } else if (inserter) {
-      inserter(children[index - 1], element);
     } else {
       children[index - 1].after(element);
     }
@@ -8222,7 +8300,7 @@ class PDFViewer {
   #textLayerMode = TextLayerMode.ENABLE;
   #viewerAlert = null;
   constructor(options) {
-    const viewerVersion = "5.4.322";
+    const viewerVersion = "5.4.396";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -9940,6 +10018,7 @@ class ViewHistory {
 
 
 
+
 const FORCE_PAGES_LOADED_TIMEOUT = 10000;
 const ViewOnLoad = {
   UNKNOWN: -1,
@@ -9962,6 +10041,7 @@ const PDFViewerApplication = {
   pdfPresentationMode: null,
   pdfDocumentProperties: null,
   pdfLinkService: null,
+  pdfTextExtractor: null,
   pdfHistory: null,
   pdfSidebar: null,
   pdfOutlineViewer: null,
@@ -10042,6 +10122,7 @@ const PDFViewerApplication = {
       AppOptions.set("externalLinkTarget", LinkTarget.TOP);
     }
     await this._initializeViewerComponents();
+    this.pdfTextExtractor = new PdfTextExtractor(this.externalServices);
     this.bindEvents();
     this.bindWindowEvents();
     this._initializedCapability.settled = true;
@@ -10539,6 +10620,7 @@ const PDFViewerApplication = {
       this.pdfViewer.setDocument(null);
       this.pdfLinkService.setDocument(null);
       this.pdfDocumentProperties?.setDocument(null);
+      this.pdfTextExtractor?.setViewer(null);
     }
     this.pdfLinkService.externalLinkEnabled = true;
     this.store = null;
@@ -10729,6 +10811,7 @@ const PDFViewerApplication = {
     this.pdfDocumentProperties?.setDocument(pdfDocument);
     const pdfViewer = this.pdfViewer;
     pdfViewer.setDocument(pdfDocument);
+    this.pdfTextExtractor.setViewer(pdfViewer);
     const {
       firstPagePromise,
       onePageRendered,
@@ -10926,12 +11009,6 @@ const PDFViewerApplication = {
     } = await pdfDocument.getMetadata();
     if (pdfDocument !== this.pdfDocument) {
       return;
-    }
-    if (info.collectedSignatureCertificates) {
-      this.externalServices.reportTelemetry({
-        type: "signatureCertificates",
-        data: info.collectedSignatureCertificates
-      });
     }
     this.documentInfo = info;
     this.metadata = metadata;

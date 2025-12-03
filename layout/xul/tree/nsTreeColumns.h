@@ -7,7 +7,6 @@
 #ifndef nsTreeColumns_h__
 #define nsTreeColumns_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
 #include "nsCoord.h"
 #include "nsCycleCollectionParticipant.h"

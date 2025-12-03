@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_HTMLTrackElement_h
 #define mozilla_dom_HTMLTrackElement_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/TextTrack.h"
 #include "nsCycleCollectionParticipant.h"

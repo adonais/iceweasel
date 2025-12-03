@@ -48,6 +48,7 @@
 #   }
 ---
 version: 1
+reporting: checks-v1
 tasks:
     # NOTE: support for actions in ci-admin requires that the `tasks` property be an array *before* JSON-e rendering
     # takes place.
@@ -101,7 +102,7 @@ tasks:
                                 description: 'Created by a [cron task](https://firefox-ci-tc.services.mozilla.com/tasks/${cron.task_id}) (${treeherder_link})'
 
               provisionerId: "${trustDomain}-${repository.level}"
-              workerType: "decision-gcp"
+              workerType: "decision"
 
               tags:
                   $if: 'tasks_for == "hg-push"'
@@ -242,7 +243,13 @@ tasks:
                       - bash
                       - -cx
                       - $let:
-                            extraArgs: {$if: 'tasks_for == "cron"', then: '${cron.quoted_args}', else: ''}
+                            extraArgs:
+                                $if: 'tasks_for == "cron"'
+                                then: '${cron.quoted_args}'
+                                else:
+                                    $if: 'repository.project in ["autoland", "try"]'
+                                    then: '--no-verify'
+                                    else: ''
                         in:
                             $if: 'tasks_for == "action"'
                             then: >
@@ -330,3 +337,132 @@ tasks:
                                     - $if: 'repository.project == "mozilla-central"'
                                       then:
                                           matrixBody: "${repository.project} push notification: https://treeherder.mozilla.org/#/jobs?repo=${repository.project}&revision=${push.revision}"
+    # Decision task for events originating from Github
+    - $if: 'tasks_for in ["github-push"]'
+      then:
+          $let:
+              trustDomain: gecko
+              level: 1
+              ownerEmail: '${event.pusher.email}'
+              baseRepoUrl: '${event.repository.html_url}'
+              repoUrl: '${event.repository.html_url}'
+              project: '${event.repository.name}'
+              head_branch: ${event.ref}
+              head_ref: '${event.ref}'
+              base_sha: '${event.before}'
+              head_sha: '${event.after}'
+              ownTaskId: {$eval: as_slugid("decision_task")}
+          in:
+              $if: >
+                tasks_for == "github-push" && head_branch == "refs/heads/main"
+              then:
+                  $let:
+                      short_head_ref:
+                          $if: 'head_ref[:10] == "refs/tags/"'
+                          then: {$eval: 'head_ref[10:]'}
+                          else:
+                              $if: 'head_ref[:11] == "refs/heads/"'
+                              then: {$eval: 'head_ref[11:]'}
+                              else: ${head_ref}
+                  in:
+                      taskId: '${ownTaskId}'
+                      taskGroupId: '${ownTaskId}'  # same as taskId; this is how automation identifies a decision task
+                      schedulerId: '${trustDomain}-level-${level}'
+
+                      created: {$fromNow: ''}
+                      deadline: {$fromNow: '1 day'}
+                      expires: {$fromNow: '1 year 1 second'}  # 1 second so artifacts expire first
+                      metadata:
+                          owner: "${ownerEmail}"
+                          source: "${repoUrl}/raw/${head_sha}/.taskcluster.yml"
+                          name: "Decision Task (Push)"
+                          description: 'The task that creates all of the other tasks in the task graph'
+
+                      provisionerId: "${trustDomain}-${level}"
+                      workerType: "decision-gcp"
+
+                      tags:
+                          createdForUser: "${ownerEmail}"
+                          kind: decision-task
+
+                      routes:
+                          - checks
+                      scopes:
+                          - 'assume:repo:${repoUrl[8:]}:branch:${short_head_ref}'
+                      dependencies: []
+                      requires: all-completed
+                      priority: very-low
+                      retries: 5
+
+                      payload:
+                          env:
+                              GECKO_BASE_REPOSITORY: '${baseRepoUrl}'
+                              GECKO_BASE_REV: '${base_sha}'
+                              GECKO_HEAD_REPOSITORY: '${repoUrl}'
+                              GECKO_HEAD_REF: '${head_ref}'
+                              GECKO_HEAD_REV: '${head_sha}'
+                              GECKO_REPOSITORY_TYPE: git
+                              REPOSITORIES: {$json: {gecko: "Mozilla Firefox"}}
+                              TASKCLUSTER_CACHES: /builds/worker/checkouts
+                              TASKCLUSTER_VOLUMES: /builds/worker/artifacts
+                              MOZ_UPLOAD_DIR: /builds/worker/artifacts
+                              MOZ_AUTOMATION: '1'
+                              # mach generates pyc files when reading `mach_commands.py`
+                              # This causes cached_task digest generation to be random for
+                              # some tasks. Disable bytecode generation to work around that.
+                              PYTHONDONTWRITEBYTECODE: '1'
+                              MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: 'system'
+                          cache:
+                              "${trustDomain}-level-${level}-checkouts-git-v1": /builds/worker/checkouts
+
+                          features:
+                              taskclusterProxy: true
+                              chainOfTrust: true
+
+                          image: mozillareleases/taskgraph:run-task-latest
+                          maxRunTime: 1800
+                          command:
+                              - run-task
+                              - '--gecko-checkout=/builds/worker/checkouts/gecko'
+                              - '--gecko-shallow-clone'
+                              - '--'
+                              - bash
+                              - -cx
+                              - >
+                                  cd /builds/worker/checkouts/gecko &&
+                                  ln -s /builds/worker/artifacts artifacts &&
+                                  ./mach --log-no-times taskgraph decision \
+                                   --pushlog-id='0' \
+                                   --pushdate='0' \
+                                   --project='${project}' \
+                                   --owner='${ownerEmail}' \
+                                   --level='${level}' \
+                                   --repository-type=git \
+                                   --tasks-for='${tasks_for}' \
+                                   --base-repository='${baseRepoUrl}' \
+                                   --base-rev='${base_sha}' \
+                                   --head-repository='${repoUrl}' \
+                                   --head-ref='${head_ref}' \
+                                   --head-rev='${head_sha}'
+
+                          artifacts:
+                              'public':
+                                  type: 'directory'
+                                  path: '/builds/worker/artifacts'
+                                  expires: {$fromNow: '1 year'}
+                              'public/docker-contexts':
+                                  type: 'directory'
+                                  path: '/builds/worker/checkouts/gecko/docker-contexts'
+                                  # This needs to be at least the deadline of the
+                                  # decision task + the docker-image task deadlines.
+                                  # It is set to a week to allow for some time for
+                                  # debugging, but they are not useful long-term.
+                                  expires: {$fromNow: '7 day'}
+
+                      extra:
+                          $merge:
+                              - treeherder:
+                                    machine:
+                                        platform: gecko-decision
+                                        symbol: D
+                              - tasks_for: '${tasks_for}'

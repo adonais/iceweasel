@@ -44,7 +44,6 @@ import android.widget.FrameLayout;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
 import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.WindowInsetsCompat;
@@ -82,6 +81,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONObject;
+import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.geckoview.AllowOrDeny;
 import org.mozilla.geckoview.Autocomplete;
 import org.mozilla.geckoview.Autofill;
@@ -191,6 +191,31 @@ package org.mozilla.geckoview {
     ctor public Hint();
     field public static final int INSECURE_FORM = 2;
     field public static final int NONE = 0;
+  }
+
+  public static class Autocomplete.AddressStructure {
+    method @AnyThread @NonNull public static GeckoResult<List<Autocomplete.AddressStructure.Field>> getAddressStructure(@NonNull String);
+  }
+
+  public static interface Autocomplete.AddressStructure.Field {
+    method @AnyThread @NonNull default public String getId();
+    method @AnyThread @NonNull default public String getLocalizationKey();
+  }
+
+  public static class Autocomplete.AddressStructure.Field.SelectField implements Autocomplete.AddressStructure.Field {
+    ctor public SelectField(String, String, @NonNull String, @NonNull List<Autocomplete.AddressStructure.Field.SelectField.Option>);
+    field @NonNull public final String defaultValue;
+    field @NonNull public final List<Autocomplete.AddressStructure.Field.SelectField.Option> options;
+  }
+
+  public static class Autocomplete.AddressStructure.Field.SelectField.Option {
+    ctor public Option(@NonNull String, @NonNull String);
+    field @NonNull public final String key;
+    field @NonNull public final String value;
+  }
+
+  public static final class Autocomplete.AddressStructure.Field.TextField implements Autocomplete.AddressStructure.Field {
+    ctor public TextField(String, String);
   }
 
   public static class Autocomplete.CreditCard {
@@ -376,8 +401,8 @@ package org.mozilla.geckoview {
   public static final class Autofill.Session {
     method @UiThread public void autofill(@NonNull SparseArray<CharSequence>);
     method @NonNull @UiThread public Autofill.NodeData dataFor(@NonNull Autofill.Node);
-    method @RequiresApi(value=23) @UiThread public void fillViewStructure(@NonNull View, @NonNull ViewStructure, int);
-    method @RequiresApi(value=23) @UiThread public void fillViewStructure(@NonNull Autofill.Node, @NonNull View, @NonNull ViewStructure, int);
+    method @UiThread public void fillViewStructure(@NonNull View, @NonNull ViewStructure, int);
+    method @UiThread public void fillViewStructure(@NonNull Autofill.Node, @NonNull View, @NonNull ViewStructure, int);
     method @NonNull @UiThread public Rect getDefaultDimensions();
     method @Nullable @UiThread public Autofill.Node getFocused();
     method @Nullable @UiThread public Autofill.NodeData getFocusedData();
@@ -583,6 +608,7 @@ package org.mozilla.geckoview {
     method @NonNull public String[] getSafeBrowsingMalwareTable();
     method @NonNull public String[] getSafeBrowsingPhishingTable();
     method @NonNull public Collection<ContentBlocking.SafeBrowsingProvider> getSafeBrowsingProviders();
+    method @NonNull public Boolean getSafeBrowsingV5Enabled();
     method public boolean getStrictSocialTrackingProtection();
     method @NonNull public ContentBlocking.Settings setAllowListBaselineTrackingProtection(boolean);
     method @NonNull public ContentBlocking.Settings setAllowListConvenienceTrackingProtection(boolean);
@@ -607,6 +633,7 @@ package org.mozilla.geckoview {
     method @NonNull public ContentBlocking.Settings setSafeBrowsingMalwareTable(@NonNull String...);
     method @NonNull public ContentBlocking.Settings setSafeBrowsingPhishingTable(@NonNull String...);
     method @NonNull public ContentBlocking.Settings setSafeBrowsingProviders(@NonNull ContentBlocking.SafeBrowsingProvider...);
+    method @NonNull public ContentBlocking.Settings setSafeBrowsingV5Enabled(boolean);
     method @NonNull public ContentBlocking.Settings setStrictSocialTrackingProtection(boolean);
     field public static final Parcelable.Creator<ContentBlocking.Settings> CREATOR;
   }
@@ -967,6 +994,7 @@ package org.mozilla.geckoview {
   @AnyThread public final class GeckoRuntimeSettings extends RuntimeSettings {
     method public boolean getAboutConfigEnabled();
     method public int getAllowInsecureConnections();
+    method public boolean getAppZygoteProcessEnabled();
     method @NonNull public String[] getArguments();
     method public boolean getAutomaticFontSizeAdjustment();
     method @NonNull public String getBannedPorts();
@@ -1103,6 +1131,7 @@ package org.mozilla.geckoview {
     ctor public Builder();
     method @NonNull public GeckoRuntimeSettings.Builder aboutConfigEnabled(boolean);
     method @NonNull public GeckoRuntimeSettings.Builder allowInsecureConnections(int);
+    method @NonNull public GeckoRuntimeSettings.Builder appZygoteProcessEnabled(boolean);
     method @NonNull public GeckoRuntimeSettings.Builder arguments(@NonNull String[]);
     method @NonNull public GeckoRuntimeSettings.Builder automaticFontSizeAdjustment(boolean);
     method @NonNull public GeckoRuntimeSettings.Builder configFilePath(@Nullable String);
@@ -1302,7 +1331,7 @@ package org.mozilla.geckoview {
     method @UiThread default public void onKill(@NonNull GeckoSession);
     method @UiThread default public void onMetaViewportFitChange(@NonNull GeckoSession, @NonNull String);
     method @UiThread default public void onPaintStatusReset(@NonNull GeckoSession);
-    method @RequiresApi(value=24) @UiThread default public void onPointerIconChange(@NonNull GeckoSession, @NonNull PointerIcon);
+    method @UiThread default public void onPointerIconChange(@NonNull GeckoSession, @NonNull PointerIcon);
     method @UiThread default public void onPreviewImage(@NonNull GeckoSession, @NonNull String);
     method @UiThread default public void onShowDynamicToolbar(@NonNull GeckoSession);
     method @Nullable @UiThread default public GeckoResult<SlowScriptResponse> onSlowScript(@NonNull GeckoSession, @NonNull String);
@@ -2083,7 +2112,7 @@ package org.mozilla.geckoview {
     method public void coverUntilFirstPaint(int);
     method public void dispatchDraw(@Nullable Canvas);
     method @Nullable public GeckoView.ActivityContextDelegate getActivityContextDelegate();
-    method @RequiresApi(value=26) public boolean getAutofillEnabled();
+    method public boolean getAutofillEnabled();
     method @NonNull public PanZoomController getPanZoomController();
     method @Nullable public GeckoSession.PrintDelegate getPrintDelegate();
     method public void getPrintDelegate(@Nullable GeckoSession.PrintDelegate);
@@ -2094,7 +2123,7 @@ package org.mozilla.geckoview {
     method @Nullable @UiThread public GeckoSession releaseSession();
     method @UiThread public void removeWindowInsetsListener(@NonNull String);
     method public void setActivityContextDelegate(@Nullable GeckoView.ActivityContextDelegate);
-    method @RequiresApi(value=26) public void setAutofillEnabled(boolean);
+    method public void setAutofillEnabled(boolean);
     method public void setDynamicToolbarMaxHeight(int);
     method @UiThread public void setSession(@NonNull GeckoSession);
     method public void setVerticalClipping(int);

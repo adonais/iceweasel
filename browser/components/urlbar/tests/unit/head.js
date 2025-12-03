@@ -57,6 +57,14 @@ ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
   return module;
 });
 
+ChromeUtils.defineLazyGetter(this, "GeolocationTestUtils", () => {
+  const { GeolocationTestUtils: module } = ChromeUtils.importESModule(
+    "resource://testing-common/GeolocationTestUtils.sys.mjs"
+  );
+  module.init(this);
+  return module;
+});
+
 ChromeUtils.defineLazyGetter(this, "PlacesFrecencyRecalculator", () => {
   return Cc["@mozilla.org/places/frecency-recalculator;1"].getService(
     Ci.nsIObserver
@@ -121,12 +129,14 @@ function createContext(searchString = "foo", properties = {}) {
         allowAutofill: UrlbarPrefs.get("autoFill"),
         isPrivate: true,
         maxResults: UrlbarPrefs.get("maxRichResults"),
+        sapName: "urlbar",
         searchString,
       },
       properties
     )
   );
-  UrlbarTokenizer.tokenize(context);
+  let tokens = UrlbarTokenizer.tokenize(context);
+  context.tokens = tokens;
   return context;
 }
 
@@ -1005,7 +1015,6 @@ async function check_results({
 
   const controller = UrlbarTestUtils.newMockController({
     input: {
-      isAddressbar: true,
       isPrivate: context.isPrivate,
       onFirstResult() {
         return false;

@@ -65,6 +65,12 @@ skip-if = [
 
 ["browser_commands_from_url.js"]
 
+["browser_destroying_iframes.js"]
+skip-if = [
+  "asan", # Getting random unhandled exceptions which aren't crashing DevTools
+  "tsan",
+]
+
 ["browser_devtools_api_destroy.js"]
 
 ["browser_dynamic_tool_enabling.js"]
@@ -97,13 +103,11 @@ skip-if = [
 
 ["browser_source_map-no-race.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1829298
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 
 ["browser_source_map-pub-sub.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1829298
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 
@@ -113,7 +117,6 @@ skip-if = [
 
 ["browser_tab_descriptor_fission.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1966872
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && asan", # Bug 1966872
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1966872
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && asan", # Bug 1966872
@@ -131,7 +134,6 @@ skip-if = [
 
 ["browser_target_parents.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1897912
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1897912
 ]
 
@@ -149,7 +151,6 @@ skip-if = [
 
 ["browser_toolbox_connecting_with_frozen_process.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan",
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan",
 ]
 
@@ -184,7 +185,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_toolbox_keyboard_navigation_notification_box.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1829298
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 
@@ -203,7 +203,6 @@ run-if = ["os != 'win'"] # Content process killing throws on Window
 
 ["browser_toolbox_options_disable_cache-03.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1829298
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 
@@ -211,8 +210,6 @@ skip-if = [
 
 ["browser_toolbox_options_enable_serviceworkers_testing.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1829298
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1986611
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 
@@ -304,7 +301,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_toolbox_window_global_debugging.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1950845
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1950845
 ]
 

@@ -13,7 +13,6 @@
 #include "SVGAttrTearoffTable.h"
 #include "SVGOrientSMILType.h"
 #include "mozAutoDocUpdate.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/SMILValue.h"
 #include "mozilla/dom/SVGMarkerElement.h"

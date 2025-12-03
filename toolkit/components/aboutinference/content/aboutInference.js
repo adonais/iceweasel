@@ -6,6 +6,11 @@
 "use strict";
 
 /**
+ * @import { MLEngineParent } from "resource://gre/actors/MLEngineParent.sys.mjs"
+ * @import { StatusByEngineId } from "../../ml/ml.d.ts"
+ */
+
+/**
  * Imports necessary modules from ChromeUtils.
  */
 const lazy = {};
@@ -75,6 +80,7 @@ function getNumThreadsArray() {
   );
 }
 
+/** @type {MLEngineParent | null} */
 let engineParent = null;
 
 const TINY_ARTICLE =
@@ -460,25 +466,30 @@ function ts2str(ts) {
  */
 
 async function updateStatus() {
+  const engineParent = await getEngineParent();
   if (!engineParent) {
+    // The engine parent is not available.
     return;
   }
 
-  let info;
+  /**
+   * @type {StatusByEngineId}
+   */
+  let statusByEngineId;
 
   // Fetch the engine status info
   try {
-    info = await engineParent.getStatus();
-  } catch (e) {
-    engineParent = null; // let's re-create it on errors.
-    info = new Map();
+    statusByEngineId = await engineParent.getStatusByEngineId();
+  } catch (error) {
+    console.error("Failed to get the engine status", error);
+    statusByEngineId = new Map();
   }
 
   // Get the container where the table will be displayed
   let tableContainer = document.getElementById("statusTableContainer");
 
   // Clear the container if the map is empty
-  if (info.size === 0) {
+  if (statusByEngineId.size === 0) {
     tableContainer.innerHTML = ""; // Clear any existing table
     if (updateStatusInterval) {
       clearInterval(updateStatusInterval); // Clear the interval if it exists
@@ -520,7 +531,7 @@ async function updateStatus() {
   let tbody = document.createElement("tbody");
 
   // Iterate over the info map
-  for (let [engineId, engineInfo] of info.entries()) {
+  for (let [engineId, { status, options }] of statusByEngineId.entries()) {
     let row = document.createElement("tr");
 
     // Create a cell for each piece of data
@@ -529,23 +540,23 @@ async function updateStatus() {
     row.appendChild(engineIdCell);
 
     let statusCell = document.createElement("td");
-    statusCell.textContent = engineInfo.status;
+    statusCell.textContent = status;
     row.appendChild(statusCell);
 
     let modelIdCell = document.createElement("td");
-    modelIdCell.textContent = engineInfo.options?.modelId || "N/A";
+    modelIdCell.textContent = options?.modelId || "N/A";
     row.appendChild(modelIdCell);
 
     let dtypeCell = document.createElement("td");
-    dtypeCell.textContent = engineInfo.options?.dtype || "N/A";
+    dtypeCell.textContent = options?.dtype || "N/A";
     row.appendChild(dtypeCell);
 
     let deviceCell = document.createElement("td");
-    deviceCell.textContent = engineInfo.options?.device || "N/A";
+    deviceCell.textContent = options?.device || "N/A";
     row.appendChild(deviceCell);
 
     let timeoutCell = document.createElement("td");
-    timeoutCell.textContent = engineInfo.options?.timeoutMS || "N/A";
+    timeoutCell.textContent = options?.timeoutMS || "N/A";
     row.appendChild(timeoutCell);
 
     // Append the row to the table body
@@ -1133,9 +1144,16 @@ function showTab(button) {
   button.setAttribute("selected", "true");
 }
 
+/**
+ * @returns {Promise<MLEngineParent | null>}
+ */
 async function getEngineParent() {
   if (!engineParent) {
-    engineParent = await EngineProcess.getMLEngineParent();
+    try {
+      engineParent = await EngineProcess.getMLEngineParent();
+    } catch (error) {
+      return null;
+    }
   }
   return engineParent;
 }

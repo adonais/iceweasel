@@ -62,7 +62,7 @@ add_setup(async function () {
   });
 
   // Disable Merino so we trigger only remote settings suggestions.
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("quicksuggest.online.enabled", false);
 
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.suggest.engines", false]],
@@ -287,7 +287,10 @@ add_task(async function resultMenu_manage_nonSponsored() {
 add_task(async function resultMenu_manage_navigational() {
   // Enable Merino.
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.quicksuggest.dataCollection.enabled", true]],
+    set: [
+      ["browser.urlbar.quicksuggest.online.available", true],
+      ["browser.urlbar.quicksuggest.online.enabled", true],
+    ],
   });
 
   MerinoTestUtils.server.response.body.suggestions = [
@@ -306,7 +309,10 @@ add_task(async function resultMenu_manage_navigational() {
 add_task(async function resultMenu_manage_dynamicWikipedia() {
   // Enable Merino.
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.quicksuggest.dataCollection.enabled", true]],
+    set: [
+      ["browser.urlbar.quicksuggest.online.available", true],
+      ["browser.urlbar.quicksuggest.online.enabled", true],
+    ],
   });
   MerinoTestUtils.server.response.body.suggestions = [
     MERINO_DYNAMIC_WIKIPEDIA_SUGGESTION,

@@ -8,7 +8,6 @@
 
 #include "SVGGeometryProperty.h"
 #include "imgINotificationObserver.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/FetchPriority.h"
 #include "mozilla/dom/SVGImageElementBinding.h"

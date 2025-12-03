@@ -348,7 +348,7 @@ nsCSPContext::EnsureIPCPoliciesRead() {
     for (auto& policy : mIPCPolicies) {
       rv = AppendPolicy(policy.policy(), policy.reportOnlyFlag(),
                         policy.deliveredViaMetaTagFlag());
-      Unused << NS_WARN_IF(NS_FAILED(rv));
+      (void)NS_WARN_IF(NS_FAILED(rv));
     }
     mIPCPolicies.Clear();
   }
@@ -1568,7 +1568,7 @@ nsresult nsCSPContext::FireViolationEvent(
             WindowGlobalParent::GetByInnerWindowId(mInnerWindowID)) {
       nsAutoString json;
       if (aViolationEventInit.ToJSON(json)) {
-        Unused << parent->SendDispatchSecurityPolicyViolation(json);
+        (void)parent->SendDispatchSecurityPolicyViolation(json);
       }
     }
     return NS_OK;

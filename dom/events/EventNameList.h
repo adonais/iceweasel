@@ -268,11 +268,6 @@ EVENT(cut, eCut, EventNameType_HTMLXUL | EventNameType_SVGGraphic,
       eClipboardEventClass)
 EVENT(paste, ePaste, EventNameType_HTMLXUL | EventNameType_SVGGraphic,
       eClipboardEventClass)
-// Gecko-specific extensions that apply to elements
-EVENT(beforescriptexecute, eBeforeScriptExecute, EventNameType_HTMLXUL,
-      eBasicEventClass)
-EVENT(afterscriptexecute, eAfterScriptExecute, EventNameType_HTMLXUL,
-      eBasicEventClass)
 
 FORWARDED_EVENT(blur, eBlur, EventNameType_HTMLXUL, eFocusEventClass)
 ERROR_EVENT(error, eLoadError, EventNameType_All, eBasicEventClass)

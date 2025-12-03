@@ -22,7 +22,6 @@
 #include "js/friend/WindowProxy.h"  // js::IsWindow, js::IsWindowProxy, js::ToWindowProxyIfWindow
 #include "jsfriendapi.h"
 #include "mozilla/Array.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/DeferredFinalize.h"
 #include "mozilla/EnumTypeTraits.h"
@@ -1467,7 +1466,7 @@ inline bool WrapNewBindingNonWrapperCachedObject(
     }
 
     // JS object took ownership
-    Unused << value.release();
+    (void)value.release();
   }
 
   return FinishWrapping(cx, obj, rval);

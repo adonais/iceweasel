@@ -1427,6 +1427,31 @@ function do_get_profile(notifyProfileAfterChange = false) {
         "profile-after-change",
         "xpcshell-do-get-profile"
       );
+
+      // The "profile-after-change" dispatch above does not reach services that
+      // listen for the message via nsICategoryManager. These services register
+      // their observer via `components.conf`. The message for these services
+      // gets dispatched separately. So we have to do the same in testing.
+
+      // TODO: Bug 1995259: Not all tests / services expect this behavior yet,
+      // use an allow-list to determine which services to initialize on
+      // synthetic PAC.
+      let filterServices = new Set([
+        "@mozilla.org/profile-after-change-gate;1",
+      ]);
+
+      for (let entry of Services.catMan.enumerateCategory(
+        "profile-after-change"
+      )) {
+        if (!filterServices.has(entry.value)) {
+          continue;
+        }
+        try {
+          Cc[entry.value]
+            ?.getService(Ci.nsIObserver)
+            ?.observe(null, "profile-after-change", "");
+        } catch (e) {}
+      }
     }
   }
 

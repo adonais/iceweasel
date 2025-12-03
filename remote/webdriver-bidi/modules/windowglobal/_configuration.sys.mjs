@@ -214,10 +214,6 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
       }
     }
 
-    let userAgentOverrideGlobal = null;
-    let userAgentOverridePerUserContext = null;
-    let userAgentOverridePerContext = null;
-
     // The following overrides apply only to top-level traversables.
     if (
       (category === "geolocation-override" ||
@@ -228,6 +224,16 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
         category === "user-agent-override") &&
       !this.messageHandler.context.parent
     ) {
+      let localeOverridePerContext = null;
+      let localeOverridePerUserContext = null;
+
+      let timezoneOverridePerContext = null;
+      let timezoneOverridePerUserContext = null;
+
+      let userAgentOverrideGlobal = null;
+      let userAgentOverridePerUserContext = null;
+      let userAgentOverridePerContext = null;
+
       for (const { contextDescriptor, value } of sessionData) {
         if (!this.messageHandler.matchesContext(contextDescriptor)) {
           continue;
@@ -252,7 +258,16 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
             break;
           }
           case "locale-override": {
-            this.#localeOverride = value;
+            switch (contextDescriptor.type) {
+              case lazy.ContextDescriptorType.TopBrowsingContext: {
+                localeOverridePerContext = value;
+                break;
+              }
+              case lazy.ContextDescriptorType.UserContext: {
+                localeOverridePerUserContext = value;
+                break;
+              }
+            }
             break;
           }
           case "screen-orientation-override": {
@@ -260,7 +275,16 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
             break;
           }
           case "timezone-override": {
-            this.#timezoneOverride = value;
+            switch (contextDescriptor.type) {
+              case lazy.ContextDescriptorType.TopBrowsingContext: {
+                timezoneOverridePerContext = value;
+                break;
+              }
+              case lazy.ContextDescriptorType.UserContext: {
+                timezoneOverridePerUserContext = value;
+                break;
+              }
+            }
             break;
           }
           case "user-agent-override": {
@@ -281,13 +305,34 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
           }
         }
       }
-    }
 
-    this.#userAgentOverride = this.#findCorrectOverrideValue(
-      userAgentOverridePerContext,
-      userAgentOverridePerUserContext,
-      userAgentOverrideGlobal
-    );
+      switch (category) {
+        case "locale-override": {
+          this.#localeOverride = this.#findCorrectOverrideValue(
+            localeOverridePerContext,
+            localeOverridePerUserContext
+          );
+          break;
+        }
+        case "timezone-override": {
+          this.#timezoneOverride = this.#findCorrectOverrideValue(
+            timezoneOverridePerContext,
+            timezoneOverridePerUserContext
+          );
+
+          break;
+        }
+        case "user-agent-override": {
+          this.#userAgentOverride = this.#findCorrectOverrideValue(
+            userAgentOverridePerContext,
+            userAgentOverridePerUserContext,
+            userAgentOverrideGlobal
+          );
+
+          break;
+        }
+      }
+    }
   }
 
   // For some emulations a value set per a browsing context overrides

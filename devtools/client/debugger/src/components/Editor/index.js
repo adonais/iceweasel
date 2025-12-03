@@ -678,11 +678,9 @@ class Editor extends PureComponent {
       this.showErrorMessage(value);
       return;
     }
-
-    await editor.setText(
-      selectedSourceTextContent.value.value,
-      selectedSource.id
-    );
+    await editor.setText(selectedSourceTextContent.value.value, {
+      documentId: selectedSource.id,
+    });
   }
 
   showErrorMessage(msg) {

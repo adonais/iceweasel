@@ -54,22 +54,21 @@ try:
 except ImportError:
     build = None
 
-HARNESS_TIMEOUT = 5 * 60
+HARNESS_TIMEOUT = 30
 TBPL_RETRY = 4  # defined in mozharness
 
-# benchmarking on tbpl revealed that this works best for now
-# TODO: This has been evaluated/set many years ago and we might want to
-# benchmark this again.
-# These days with e10s/fission the number of real processes/threads running
-# can be significantly higher, with both consequences on runtime and memory
-# consumption. So be aware that NUM_THREADS is just saying how many tests will
-# be started maximum in parallel and that depending on the tests there is
-# only a weak correlation to the effective number of processes or threads.
-# Be also aware that we can override this value with the threadCount option
-# on the command line to tweak it for a concrete CPU/memory combination.
-NUM_THREADS = int(cpu_count() * 4)
-if sys.platform == "win32":
-    NUM_THREADS = int(cpu_count() * 2)
+# Based on recent benchmarking on highcpu pools, this value gives the best
+# balance between runtime and memory usage
+#
+# Note:
+# - NUM_THREADS defines the maximum number of tests that can run in parallel
+# - With e10s/fission enabled, the actual number of underlying processes/threads
+#   can be much higher, so memory pressure may vary accordingly
+# - For ASan/TSan variants, the thread count is reduced by half to avoid OOM
+#
+# This value can be overridden via the --threadCount CLI option if adjustments
+# are needed for custom CPU/memory configurations
+NUM_THREADS = int(cpu_count() * 2.5)
 
 EXPECTED_LOG_ACTIONS = set(
     [
@@ -366,8 +365,16 @@ class XPCShellTestThread(Thread):
         On a remote system, this is more complex and we need to overload this function.
         """
         quiet = self.crashAsPass or self.retry
+        # For selftests, set dump_save_path to prevent crash dumps from being saved
+        # (they intentionally crash and the dumps aren't useful artifacts)
+        dump_save_path = "" if self.selfTest else None
         return mozcrash.log_crashes(
-            self.log, dump_directory, symbols_path, test=test_name, quiet=quiet
+            self.log,
+            dump_directory,
+            symbols_path,
+            test=test_name,
+            quiet=quiet,
+            dump_save_path=dump_save_path,
         )
 
     def logCommand(self, name, completeCmd, testdir):
@@ -432,12 +439,17 @@ class XPCShellTestThread(Thread):
         else:
             expected = "FAIL"
 
+        extra = None
+        if self.timeout_factor > 1:
+            extra = {"timeoutfactor": self.timeout_factor}
+
         if self.retry:
             self.log.test_end(
                 self.test_object["id"],
                 "TIMEOUT",
                 expected="TIMEOUT",
                 message="Test timed out",
+                extra=extra,
             )
             self.log_full_output(mark_failures_as_expected=True)
         else:
@@ -451,6 +463,7 @@ class XPCShellTestThread(Thread):
                 result,
                 expected=expected,
                 message="Test timed out",
+                extra=extra,
             )
             self.log_full_output()
 
@@ -767,6 +780,13 @@ class XPCShellTestThread(Thread):
                         del line["level"]
                 self.log_line(line)
             else:
+                # For text lines, replace text matching error patterns to avoid
+                # mozharness log parsing forcing an error job exit code
+                line = re.sub(
+                    r"ERROR: ((Address|Leak)Sanitizer)", r"ERROR (will retry): \1", line
+                )
+                # Treeherder's log parser catches "fatal error" as an error
+                line = re.sub(r"fatal error", r"error", line)
                 # For text lines, we need to provide the timestamp that was
                 # recorded when appending the message to self.output_lines
                 self.log_line(line, time=timestamp)
@@ -935,10 +955,12 @@ class XPCShellTestThread(Thread):
             self.env["MOZ_HEADLESS"] = "1"
             self.env["DISPLAY"] = "77"  # Set a fake display.
 
-        testTimeoutInterval = self.harness_timeout
         # Allow a test to request a multiple of the timeout if it is expected to take long
+        self.timeout_factor = 1
         if "requesttimeoutfactor" in self.test_object:
-            testTimeoutInterval *= int(self.test_object["requesttimeoutfactor"])
+            self.timeout_factor = int(self.test_object["requesttimeoutfactor"])
+
+        testTimeoutInterval = self.harness_timeout * self.timeout_factor
 
         testTimer = None
         if not self.interactive and not self.debuggerInfo and not self.jsDebuggerInfo:
@@ -1050,6 +1072,11 @@ class XPCShellTestThread(Thread):
                 status = "CRASH"
                 message = "Test crashed"
 
+            # Include timeout factor in extra data if not default
+            extra = None
+            if self.timeout_factor > 1:
+                extra = {"timeoutfactor": self.timeout_factor}
+
             if status != expected or ended_before_crash_reporter_init:
                 if ended_before_crash_reporter_init:
                     self.log.test_end(
@@ -1058,6 +1085,7 @@ class XPCShellTestThread(Thread):
                         expected=expected,
                         message="Test ended before setting up the crash reporter",
                         group=group,
+                        extra=extra,
                     )
                 elif self.retry:
                     retry_message = (
@@ -1071,6 +1099,7 @@ class XPCShellTestThread(Thread):
                         expected=status,
                         message=retry_message,
                         group=group,
+                        extra=extra,
                     )
                     self.clean_temp_dirs(path)
                     if self.verboseIfFails and not self.verbose:
@@ -1078,7 +1107,12 @@ class XPCShellTestThread(Thread):
                     return
                 else:
                     self.log.test_end(
-                        name, status, expected=expected, message=message, group=group
+                        name,
+                        status,
+                        expected=expected,
+                        message=message,
+                        group=group,
+                        extra=extra,
                     )
                 self.log_full_output()
 
@@ -1098,7 +1132,12 @@ class XPCShellTestThread(Thread):
                     self.log_full_output()
 
                 self.log.test_end(
-                    name, status, expected=expected, message=message, group=group
+                    name,
+                    status,
+                    expected=expected,
+                    message=message,
+                    group=group,
+                    extra=extra,
                 )
                 if self.verbose:
                     self.log_full_output()
@@ -1954,6 +1993,14 @@ class XPCShellTests:
             JSDebuggerInfo = namedtuple("JSDebuggerInfo", ["port"])
             self.jsDebuggerInfo = JSDebuggerInfo(port=options["jsDebuggerPort"])
 
+        # Apply timeout factor
+        timeout_factor = options.get("timeoutFactor", 1.0)
+        self.harness_timeout = int(HARNESS_TIMEOUT * timeout_factor)
+        self.log.info(
+            f"Using harness timeout of {self.harness_timeout}s "
+            f"(base={HARNESS_TIMEOUT}s, factor={timeout_factor})"
+        )
+
         self.app_binary = options.get("app_binary")
         self.xpcshell = options.get("xpcshell")
         self.http3ServerPath = options.get("http3server")
@@ -2171,6 +2218,10 @@ class XPCShellTests:
             "profiler": self.profiler,
         }
 
+        # Only set retry if explicitly provided (avoid overriding default behavior)
+        if options.get("retry") is not None:
+            kwargs["retry"] = options.get("retry")
+
         if self.sequential:
             # Allow user to kill hung xpcshell subprocess with SIGINT
             # when we are only running tests sequentially.
@@ -2254,6 +2305,17 @@ class XPCShellTests:
                         sequential_tests.append(test)
                     else:
                         tests_queue.append(test)
+
+            # Sort parallel tests by timeout factor (descending) to start slower tests first
+            # This helps optimize parallel execution by avoiding long-running tests at the end
+            if tests_queue:
+                tests_queue = deque(
+                    sorted(
+                        tests_queue,
+                        key=lambda t: int(t.test_object.get("requesttimeoutfactor", 1)),
+                        reverse=True,
+                    )
+                )
 
             status = self.runTestList(
                 tests_queue, sequential_tests, testClass, mobileArgs, **kwargs

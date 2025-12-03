@@ -10,7 +10,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.os.Build;
 import android.os.IBinder;
 import android.os.StrictMode;
 import android.util.Log;
@@ -54,9 +53,7 @@ public class ExampleCrashHandler extends Service {
       String id = createNotificationChannel();
 
       int intentFlag = 0;
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        intentFlag = PendingIntent.FLAG_IMMUTABLE;
-      }
+      intentFlag = PendingIntent.FLAG_IMMUTABLE;
 
       PendingIntent reportIntent =
           PendingIntent.getService(
@@ -124,15 +121,11 @@ public class ExampleCrashHandler extends Service {
   }
 
   private String createNotificationChannel() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      NotificationChannel channel =
-          new NotificationChannel(
-              CHANNEL_ID, "GeckoView Example Crashes", NotificationManager.IMPORTANCE_LOW);
-      NotificationManager notificationManager = getSystemService(NotificationManager.class);
-      notificationManager.createNotificationChannel(channel);
-      return CHANNEL_ID;
-    }
-
-    return "";
+    NotificationChannel channel =
+        new NotificationChannel(
+            CHANNEL_ID, "GeckoView Example Crashes", NotificationManager.IMPORTANCE_LOW);
+    NotificationManager notificationManager = getSystemService(NotificationManager.class);
+    notificationManager.createNotificationChannel(channel);
+    return CHANNEL_ID;
   }
 }

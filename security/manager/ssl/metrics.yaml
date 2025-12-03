@@ -251,7 +251,7 @@ pkcs11:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1905453
     notification_emails:
       - haftandilian@mozilla.com
-    expires: 147
+    expires: 159
     extra_keys:
       filename:
         type: string
@@ -276,7 +276,7 @@ pkcs11:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1905453
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1905453
-    expires: 147
+    expires: 159
 
   external_trust_anchor_module_loaded:
     type: boolean

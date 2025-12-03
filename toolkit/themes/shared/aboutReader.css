@@ -499,7 +499,7 @@ button:disabled {
 
   h2 {
     font-size: var(--font-size-large);
-    font-weight: var(--font-weight-bold);
+    font-weight: var(--heading-font-weight);
     color: var(--popup-foreground);
     margin-block: var(--space-small);
   }
@@ -668,7 +668,7 @@ body.hcm .color-scheme-buttons {
     background-color: var(--popup-button-background);
     color: var(--popup-button-foreground);
     font-size: inherit;
-    font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-semibold);
     padding-inline: var(--space-large) var(--space-xxlarge);
     text-overflow: ellipsis;
     background-image: url("chrome://global/skin/icons/arrow-down.svg");
@@ -964,6 +964,7 @@ div[name="customtheme"] {
  * must be added to CLASSES_TO_PRESERVE in ReaderMode.sys.mjs, so that
  * Readability.js doesn't strip them out */
 
+/* Variables in .container are for user customization and should not be replaced with design tokens */
 .container {
   margin: 0 auto;
   font-size: var(--font-size);
@@ -972,6 +973,7 @@ div[name="customtheme"] {
   text-align: var(--text-alignment);
   word-spacing: var(--word-spacing);
   letter-spacing: var(--letter-spacing);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-font-weight-tokens */
   font-weight: var(--font-weight);
 
   .header {
@@ -980,7 +982,11 @@ div[name="customtheme"] {
 }
 
 pre {
-  font-family: inherit;
+  font-family: monospace;
+
+  .plain-text-doc & {
+    font-family: inherit;
+  }
 }
 
 .moz-reader-content {
@@ -1006,7 +1012,7 @@ pre {
 .moz-reader-content h1,
 .moz-reader-content h2,
 .moz-reader-content h3 {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .moz-reader-content h1 {

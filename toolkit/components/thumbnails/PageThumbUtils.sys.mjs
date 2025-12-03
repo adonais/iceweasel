@@ -74,7 +74,7 @@ export var PageThumbUtils = {
       let windowScale = aWindow ? aWindow.devicePixelRatio : primaryScale;
       let scale = Math.max(primaryScale, windowScale);
 
-      /** *
+      /**
        * THESE VALUES ARE DEFINED IN newtab.css and hard coded.
        * If you change these values from the prefs,
        * ALSO CHANGE THEM IN newtab.css
@@ -103,7 +103,7 @@ export var PageThumbUtils = {
     return [this._thumbnailWidth, this._thumbnailHeight];
   },
 
-  /** *
+  /**
    * Given a browser window, return the size of the content
    * minus the scroll bars.
    */

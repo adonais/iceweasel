@@ -168,7 +168,7 @@ async function toggleBreakpointsInBlackboxedSources({
   }
 }
 
-/*
+/**
  * Blackboxes a group of sources together
  *
  * @param {Array} sourcesToBlackBox - The list of sources to blackbox

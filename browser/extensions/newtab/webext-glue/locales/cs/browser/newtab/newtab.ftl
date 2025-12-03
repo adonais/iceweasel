@@ -383,7 +383,7 @@ newtab-wallpaper-light-fox-anniversary = Liška na louce se zamlženou horskou k
 
 ## Solid Colors
 
-newtab-wallpaper-category-title-colors = Plné barvy
+newtab-wallpaper-category-title-colors = Jednobarevné
 newtab-wallpaper-blue = Modrá
 newtab-wallpaper-light-blue = Světle modrá
 newtab-wallpaper-light-purple = Světle fialová
@@ -414,7 +414,7 @@ newtab-wallpaper-abstract-purple-green = Přechod fialové a zelené barvy
 newtab-wallpaper-abstract-blue-purple-waves = Modré a fialové zvlněné tvary
 newtab-wallpaper-abstract-black-waves = Černé zvlněné tvary
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotografie
 newtab-wallpaper-beach-at-sunrise = Pláž při východu slunce
@@ -443,6 +443,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -656,7 +660,7 @@ newtab-trending-searches-title = Trendy ve vyhledávání
 ## Strings for task / to-do list productivity widget
 
 # "Add one" means adding a new task to the list (e.g., "Walk the dog")
-newtab-widget-lists-empty-cta = Možnosti jsou nekonečné. Přidejte si svoji.
+newtab-widget-lists-empty-cta = Možnosti jsou nekonečné. Přidejte si svůj.
 # A simple label next to the default list name letting users know this is a new / beta feature
 newtab-widget-lists-label-new =
     .label = Nový
@@ -703,12 +707,8 @@ newtab-widget-timer-mode-focus =
     .label = Soustředění
 newtab-widget-timer-mode-break =
     .label = Přestávka
-newtab-widget-timer-play =
-    .title = Přehrát
-newtab-widget-timer-pause =
-    .title = Pozastavit
 newtab-widget-timer-label-play =
-    .label = Přehrát
+    .label = Spustit
 newtab-widget-timer-label-pause =
     .label = Pozastavit
 newtab-widget-timer-reset =

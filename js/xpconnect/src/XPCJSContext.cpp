@@ -70,9 +70,7 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/SystemPrincipal.h"
 #include "mozilla/TaskController.h"
-#include "mozilla/ThreadLocal.h"
 #include "mozilla/UniquePtrExtensions.h"
-#include "mozilla/Unused.h"
 #include "AccessCheck.h"
 #include "nsGlobalWindowInner.h"
 #include "nsAboutProtocolUtils.h"
@@ -207,7 +205,7 @@ class Watchdog {
       // instantiate a new service, and even when it is, we don't want fault in
       // extra pages if we can avoid it.
       nsCOMPtr<nsIDebug2> dbg = do_GetService("@mozilla.org/xpcom/debug;1");
-      Unused << dbg;
+      (void)dbg;
     }
 
     {
@@ -528,7 +526,7 @@ static void WatchdogMain(void* arg) {
   AUTO_PROFILER_REGISTER_THREAD("JS Watchdog");
   // Create an nsThread wrapper for the thread and register it with the thread
   // manager.
-  Unused << NS_GetCurrentThread();
+  (void)NS_GetCurrentThread();
   NS_SetCurrentThreadName("JS Watchdog");
 
   Watchdog* self = static_cast<Watchdog*>(arg);
@@ -1018,15 +1016,6 @@ static void ReloadPrefsCallback(const char* pref, void* aXpccx) {
 
   auto& contextOptions = JS::ContextOptionsRef(cx);
   SetPrefableContextOptions(contextOptions);
-
-  JS_SetGlobalJitCompilerOption(
-      cx, JSJITCOMPILER_REGEXP_DUPLICATE_NAMED_GROUPS,
-      StaticPrefs::
-          javascript_options_experimental_regexp_duplicate_named_groups());
-
-  JS_SetGlobalJitCompilerOption(
-      cx, JSJITCOMPILER_REGEXP_MODIFIERS,
-      StaticPrefs::javascript_options_experimental_regexp_modifiers());
 
   // Set options not shared with workers.
   contextOptions

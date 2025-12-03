@@ -12,8 +12,8 @@ const { NimbusTestUtils } = ChromeUtils.importESModule(
 const { ExperimentAPI } = ChromeUtils.importESModule(
   "resource://nimbus/ExperimentAPI.sys.mjs"
 );
-const { RemoteSettingsExperimentLoader } = ChromeUtils.importESModule(
-  "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs"
+const { FirefoxLabs } = ChromeUtils.importESModule(
+  "resource://nimbus/FirefoxLabs.sys.mjs"
 );
 
 const { NormandyTestUtils } = ChromeUtils.importESModule(
@@ -866,7 +866,7 @@ add_task(async function test_forceEnroll() {
     }
   );
 
-  NimbusTestUtils.assert.storeIsEmpty(ExperimentAPI.manager.store);
+  await NimbusTestUtils.assert.storeIsEmpty(ExperimentAPI.manager.store);
   sandbox.restore();
 });
 
@@ -954,5 +954,53 @@ add_task(async function test_inactive_rollouts_under_completed_studies() {
   );
 
   // Cleanup for multiple test runs
+  await NimbusTestUtils.assert.storeIsEmpty(ExperimentAPI.manager.store);
+});
+
+add_task(async function testFirefoxLabs() {
+  const study = NimbusTestUtils.factories.recipe("study");
+  await ExperimentAPI.manager.enroll(study, "rs-loader");
+
+  const optin = NimbusTestUtils.factories.recipe("optin", {
+    isRollout: true,
+    isFirefoxLabsOptIn: true,
+    firefoxLabsTitle: "title",
+    firefoxLabsDescription: "description",
+    firefoxLabsGroup: "group",
+    requiresRestart: false,
+  });
+
+  ExperimentAPI.manager.optInRecipes.push(optin);
+
+  const labs = await FirefoxLabs.create();
+  await labs.enroll("optin", "control");
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:studies" },
+    async browser => {
+      const nimbusItems = await SpecialPowers.spawn(browser, [], async () => {
+        await ContentTaskUtils.waitForCondition(
+          () => content.document.querySelector(".nimbus .remove-button"),
+          "waiting for page to load"
+        );
+
+        return Array.from(
+          content.document.querySelectorAll(".nimbus"),
+          el => el.dataset.studySlug
+        );
+      });
+
+      Assert.deepEqual(
+        nimbusItems,
+        ["study"],
+        "Firefox Labs opt-in not present"
+      );
+    }
+  );
+
+  await labs.unenroll("optin", "control");
+  await ExperimentAPI.manager.unenroll("study");
+  ExperimentAPI.manager.optInRecipes.pop();
+
   await NimbusTestUtils.assert.storeIsEmpty(ExperimentAPI.manager.store);
 });

@@ -57,6 +57,8 @@ class LayerUserData;
 class WebRenderLayerManager final : public WindowRenderer {
   typedef nsTHashSet<RefPtr<WebRenderUserData>> WebRenderUserDataRefTable;
 
+  NS_INLINE_DECL_REFCOUNTING(WebRenderLayerManager, final)
+
  public:
   explicit WebRenderLayerManager(nsIWidget* aWidget);
   bool Initialize(PCompositorBridgeChild* aCBChild, wr::PipelineId aLayersId,

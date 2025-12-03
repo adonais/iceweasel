@@ -24,7 +24,6 @@
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "mozilla/AppShutdown.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "nsIObserverService.h"
@@ -341,14 +340,6 @@ static void NotifyCanvasDeviceChanged() {
   if (obs) {
     obs->NotifyObservers(nullptr, "canvas-device-reset", nullptr);
   }
-}
-
-ipc::IPCResult CanvasChild::RecvNotifyDeviceChanged() {
-  NS_ASSERT_OWNINGTHREAD(CanvasChild);
-
-  NotifyCanvasDeviceChanged();
-  mRecorder->RecordEvent(RecordedDeviceChangeAcknowledged());
-  return IPC_OK();
 }
 
 ipc::IPCResult CanvasChild::RecvNotifyDeviceReset(

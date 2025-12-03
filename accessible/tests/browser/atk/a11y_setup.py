@@ -2,8 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""Python environment for ATK a11y browser tests.
-"""
+"""Python environment for ATK a11y browser tests."""
 
 import os
 import subprocess
@@ -13,19 +12,23 @@ import psutil
 
 # pyatspi can't be installed using pip. Rely on the system installation.
 # Get the path to the system installation of pyatspi.
-pyatspiFile = subprocess.check_output(
-    (
-        os.path.join(sys.base_prefix, "bin", "python3"),
-        "-c",
-        "import pyatspi; print(pyatspi.__file__)",
-    ),
-    encoding="utf-8",
-).rstrip()
-sys.path.append(os.path.dirname(os.path.dirname(pyatspiFile)))
+# Some systems have pyatspi and gi in different locations, so get both.
+extraPaths = eval(
+    subprocess.check_output(
+        (
+            os.path.join(sys.base_prefix, "bin", "python3"),
+            "-c",
+            "import pyatspi, gi; print(repr([pyatspi.__file__, gi.__file__]))",
+        ),
+        encoding="utf-8",
+    ).rstrip()
+)
+
+sys.path += [os.path.dirname(os.path.dirname(p)) for p in extraPaths]
 import pyatspi
 
-sys.path.pop()
-del pyatspiFile
+del sys.path[-len(extraPaths) :]
+del extraPaths
 
 
 def setup():

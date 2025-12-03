@@ -6,7 +6,6 @@
 #ifndef mozilla_dom_HTMLTableSectionElement_h
 #define mozilla_dom_HTMLTableSectionElement_h
 
-#include "mozilla/Attributes.h"
 #include "nsContentList.h"  // For ctor.
 #include "nsGenericHTMLElement.h"
 

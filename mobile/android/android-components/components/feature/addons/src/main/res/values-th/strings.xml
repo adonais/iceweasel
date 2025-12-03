@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this file,
+  You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
   <string name="mozac_feature_addons_permissions_one_site_description">เข้าถึงข้อมูลของคุณสำหรับ %1$s</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
@@ -25,7 +32,7 @@
   -->
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">เข้าถึงข้อมูลของคุณในโดเมนอื่น</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
-  <string name="mozac_feature_addons_permissions_all_domain_count_description" tools:ignore="PluralsCandidate">เข้าถึงข้อมูลของคุณสำหรับไซต์ในโดเมน %1$d</string>
+  <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">เข้าถึงข้อมูลของคุณสำหรับไซต์ในโดเมน %1$d</string>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d จาก %3$d</string>
   <!-- Description for the "privacy" WebExtensions API permission. -->
@@ -365,7 +372,7 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">ไม่สามารถติดตั้ง %1$s ได้ เนื่องจากต้องติดตั้งโดยองค์กรที่ใช้นโยบายขององค์กรเท่านั้น ซึ่งไม่รองรับในแพลตฟอร์มนี้</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1">%1$s ละเมิดนโยบายของ Mozilla และไม่สามารถติดตั้งบน %2$s ได้</string>
+  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s ละเมิดนโยบายของ Mozilla และไม่สามารถติดตั้งบน %2$s ได้</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">ไม่สามารถเปิดใช้งาน %1$s ได้</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -409,9 +416,9 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">ส่วนขยายนี้ถูกปิดกั้นเนื่องจากละเมิดนโยบายของ Mozilla และถูกปิดใช้งานแล้ว</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1">ส่วนขยายนี้ถูกจำกัดเนื่องจากละเมิดนโยบายของ Mozilla และถูกปิดใช้งานแล้ว คุณสามารถเปิดใช้งานได้ แต่อาจมีความเสี่ยง</string>
+  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">ส่วนขยายนี้ถูกจำกัดเนื่องจากละเมิดนโยบายของ Mozilla และถูกปิดใช้งานแล้ว คุณสามารถเปิดใช้งานได้ แต่อาจมีความเสี่ยง</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled">ส่วนขยายนี้ละเมิดนโยบายของ Mozilla การใช้ส่วนขยายนี้อาจมีความเสี่ยง</string>
+  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">ส่วนขยายนี้ละเมิดนโยบายของ Mozilla การใช้ส่วนขยายนี้อาจมีความเสี่ยง</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">%1$s ไม่สามารถยืนยันได้ว่าปลอดภัยและได้ถูกปิดใช้งาน</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

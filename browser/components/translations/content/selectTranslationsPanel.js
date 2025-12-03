@@ -21,14 +21,14 @@ XPCOMUtils.defineLazyServiceGetter(
   this,
   "ClipboardHelper",
   "@mozilla.org/widget/clipboardhelper;1",
-  "nsIClipboardHelper"
+  Ci.nsIClipboardHelper
 );
 
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "GfxInfo",
   "@mozilla.org/gfx/info;1",
-  "nsIGfxInfo"
+  Ci.nsIGfxInfo
 );
 
 /**

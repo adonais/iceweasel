@@ -830,10 +830,14 @@ MOZ_GLOBINIT struct TestCase {
     // Passing NoStubAddressCheck as the following testcases return
     // a trampoline address instead of the original destination.
     TestCase("NearJump", NoStubAddressCheck),
+    TestCase("NearJump2", NoStubAddressCheck),
+    TestCase("JumpWith8BitOffset", NoStubAddressCheck),
     TestCase("OpcodeFF", NoStubAddressCheck),
     TestCase("IndirectCall", NoStubAddressCheck),
     TestCase("MovImm64", NoStubAddressCheck),
     TestCase("RexCmpRipRelativeBytePtr", NoStubAddressCheck),
+    TestCase("JmpInsideEarlyBytes", ExpectedFail),
+    TestCase("CallInsideEarlyBytes", ExpectedFail),
 #  elif defined(_M_IX86)
     // Skip the stub address check as we always generate a trampoline for x86.
     TestCase("PushRet", NoStubAddressCheck,
@@ -844,10 +848,10 @@ MOZ_GLOBINIT struct TestCase {
     TestCase("LockPrefix", NoStubAddressCheck),
     TestCase("LooksLikeLockPrefix", NoStubAddressCheck),
 #  endif
-#  if !defined(DEBUG)
+#  if !defined(_M_ARM64) && !defined(DEBUG)
     // Skip on Debug build because it hits MOZ_ASSERT_UNREACHABLE.
     TestCase("UnsupportedOp", ExpectedFail),
-#  endif  // !defined(DEBUG)
+#  endif  // !defined(_M_ARM64) && !defined(DEBUG)
 #endif    // defined(__clang__)
 };
 
@@ -888,7 +892,9 @@ bool TestAssemblyFunctions() {
           DetourResultCode::DETOUR_PATCHER_CREATE_TRAMPOLINE_ERROR) {
         printf(
             "TEST-FAILED | WindowsDllInterceptor | "
-            "A wrong detour errorcode was set on detour error.\n");
+            "A wrong detour errorcode was set on detour error for %s. (got "
+            "%d)\n",
+            testCase.mFunctionName, maybeError.ref().mErrorCode);
         return false;
       }
 #endif  // defined(NIGHTLY_BUILD)

@@ -67,6 +67,7 @@ class SRICheckDataVerifier final {
                   nsIConsoleReportCollector* aReporter);
 
   bool IsComplete() const { return mComplete; }
+  bool IsInvalid() const { return mInvalidMetadata; }
 
   // Report the length of the computed hash and its type, such that we can
   // reserve the space for encoding it in a vector.

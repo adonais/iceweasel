@@ -28,7 +28,6 @@
 #include "mozilla/StorageAccess.h"
 #include "mozilla/TargetShutdownTaskSet.h"
 #include "mozilla/ThreadBound.h"
-#include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UseCounter.h"
 #include "mozilla/dom/ClientSource.h"

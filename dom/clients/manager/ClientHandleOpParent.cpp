@@ -36,7 +36,7 @@ void ClientHandleOpParent::Init(ClientOpConstructorArgs&& aArgs) {
             if (!source) {
               CopyableErrorResult rv;
               rv.ThrowAbortError("Client has been destroyed");
-              Unused << PClientHandleOpParent::Send__delete__(this, rv);
+              (void)PClientHandleOpParent::Send__delete__(this, rv);
               return;
             }
             RefPtr<ClientOpPromise> p;
@@ -58,7 +58,7 @@ void ClientHandleOpParent::Init(ClientOpConstructorArgs&& aArgs) {
               if (!data.BuildClonedMessageData(rebuild.clonedData())) {
                 CopyableErrorResult rv;
                 rv.ThrowAbortError("Aborting client operation");
-                Unused << PClientHandleOpParent::Send__delete__(this, rv);
+                (void)PClientHandleOpParent::Send__delete__(this, rv);
                 return;
               }
 
@@ -77,18 +77,17 @@ void ClientHandleOpParent::Init(ClientOpConstructorArgs&& aArgs) {
                  GetCurrentSerialEventTarget(), __func__,
                  [this](const ClientOpResult& aResult) {
                    mPromiseRequestHolder.Complete();
-                   Unused << PClientHandleOpParent::Send__delete__(this,
-                                                                   aResult);
+                   (void)PClientHandleOpParent::Send__delete__(this, aResult);
                  },
                  [this](const CopyableErrorResult& aRv) {
                    mPromiseRequestHolder.Complete();
-                   Unused << PClientHandleOpParent::Send__delete__(this, aRv);
+                   (void)PClientHandleOpParent::Send__delete__(this, aRv);
                  })
                 ->Track(mPromiseRequestHolder);
           },
           [=](const CopyableErrorResult& failure) {
             mSourcePromiseRequestHolder.Complete();
-            Unused << PClientHandleOpParent::Send__delete__(this, failure);
+            (void)PClientHandleOpParent::Send__delete__(this, failure);
             return;
           })
       ->Track(mSourcePromiseRequestHolder);

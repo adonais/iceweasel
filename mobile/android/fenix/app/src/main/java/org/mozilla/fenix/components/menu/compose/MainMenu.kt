@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -59,6 +60,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.theme.surfaceDimVariant
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.ui.displayName
 import mozilla.components.feature.addons.ui.summary
@@ -207,40 +209,40 @@ fun MainMenu(
         header = {
             if (accessPoint != MenuAccessPoint.Home && !isBottomToolbar && !isExpandedToolbarEnabled) {
                 MenuNavigation(
-                    state = MenuItemState.ENABLED,
-                    goBackState = if (canGoBack) MenuItemState.ENABLED else MenuItemState.DISABLED,
-                    goForwardState = if (canGoForward) MenuItemState.ENABLED else MenuItemState.DISABLED,
                     isSiteLoading = isSiteLoading,
+                    isExtensionsExpanded = isExtensionsExpanded,
+                    isMoreMenuExpanded = isMoreMenuExpanded,
                     onBackButtonClick = onBackButtonClick,
                     onForwardButtonClick = onForwardButtonClick,
                     onRefreshButtonClick = onRefreshButtonClick,
                     onStopButtonClick = onStopButtonClick,
                     onShareButtonClick = onShareButtonClick,
-                    isExtensionsExpanded = isExtensionsExpanded,
-                    isMoreMenuExpanded = isMoreMenuExpanded,
+                    goBackState = if (canGoBack) MenuItemState.ENABLED else MenuItemState.DISABLED,
+                    goForwardState = if (canGoForward) MenuItemState.ENABLED else MenuItemState.DISABLED,
                 )
+
                 if (scrollState.canScrollBackward) {
-                    HorizontalDivider(color = FirefoxTheme.colors.borderPrimary)
+                    HorizontalDivider()
                 }
             }
         },
         footer = {
             if (accessPoint != MenuAccessPoint.Home && (isBottomToolbar || isExpandedToolbarEnabled)) {
                 if (scrollState.canScrollBackward) {
-                    HorizontalDivider(color = FirefoxTheme.colors.borderPrimary)
+                    HorizontalDivider()
                 }
+
                 MenuNavigation(
-                    state = MenuItemState.ENABLED,
-                    goBackState = if (canGoBack) MenuItemState.ENABLED else MenuItemState.DISABLED,
-                    goForwardState = if (canGoForward) MenuItemState.ENABLED else MenuItemState.DISABLED,
                     isSiteLoading = isSiteLoading,
+                    isExtensionsExpanded = isExtensionsExpanded,
+                    isMoreMenuExpanded = isMoreMenuExpanded,
                     onBackButtonClick = onBackButtonClick,
                     onForwardButtonClick = onForwardButtonClick,
                     onRefreshButtonClick = onRefreshButtonClick,
                     onStopButtonClick = onStopButtonClick,
                     onShareButtonClick = onShareButtonClick,
-                    isExtensionsExpanded = isExtensionsExpanded,
-                    isMoreMenuExpanded = isMoreMenuExpanded,
+                    goBackState = if (canGoBack) MenuItemState.ENABLED else MenuItemState.DISABLED,
+                    goForwardState = if (canGoForward) MenuItemState.ENABLED else MenuItemState.DISABLED,
                 )
             }
         },
@@ -394,7 +396,7 @@ private fun ExtensionsMenuItem(
                 Icon(
                     painter = painterResource(id = iconsR.drawable.mozac_ic_settings_24),
                     contentDescription = null,
-                    tint = FirefoxTheme.colors.iconPrimary,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
                 return@MenuItem
             }
@@ -402,7 +404,7 @@ private fun ExtensionsMenuItem(
             Row(
                 modifier = Modifier
                     .background(
-                        color = FirefoxTheme.colors.layer2,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
                         shape = RoundedCornerShape(16.dp),
                     )
                     .padding(start = leftPadding, top = 2.dp, bottom = 2.dp, end = 2.dp),
@@ -412,7 +414,7 @@ private fun ExtensionsMenuItem(
                 if (webExtensionMenuCount > 0) {
                     Text(
                         text = webExtensionMenuCount.toString(),
-                        color = FirefoxTheme.colors.textPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         overflow = TextOverflow.Ellipsis,
                         style = FirefoxTheme.typography.caption,
                         maxLines = 1,
@@ -426,7 +428,7 @@ private fun ExtensionsMenuItem(
                         painterResource(id = iconsR.drawable.mozac_ic_chevron_down_20)
                     },
                     contentDescription = null,
-                    tint = FirefoxTheme.colors.iconPrimary,
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.semantics {
                         testTagsAsResourceId = true
                         testTag = EXTENSIONS_OPTION_CHEVRON
@@ -520,7 +522,7 @@ private fun ToolsAndActionsMenuGroup(
     moreSettingsSubmenu: @Composable ColumnScope.() -> Unit,
     extensionSubmenu: @Composable ColumnScope.() -> Unit,
     extensionsMenuItemDescription: String?,
-    ) {
+) {
     MenuGroup {
         val labelId = R.string.browser_menu_desktop_site
         val badgeText: String
@@ -529,11 +531,11 @@ private fun ToolsAndActionsMenuGroup(
 
         if (isDesktopMode) {
             badgeText = stringResource(id = R.string.browser_feature_desktop_site_on)
-            badgeBackgroundColor = FirefoxTheme.colors.badgeActive
+            badgeBackgroundColor = MaterialTheme.colorScheme.primaryContainer
             menuItemState = if (isPdf) MenuItemState.DISABLED else MenuItemState.ACTIVE
         } else {
             badgeText = stringResource(id = R.string.browser_feature_desktop_site_off)
-            badgeBackgroundColor = FirefoxTheme.colors.layer2
+            badgeBackgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
             menuItemState = if (isPdf) MenuItemState.DISABLED else MenuItemState.ENABLED
         }
 
@@ -623,7 +625,7 @@ private fun MoreMenuButtonGroup(
         Row(
             modifier = Modifier
                 .background(
-                    color = FirefoxTheme.colors.layer2,
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
                     shape = RoundedCornerShape(16.dp),
                 )
                 .padding(2.dp),
@@ -633,7 +635,7 @@ private fun MoreMenuButtonGroup(
             Icon(
                 painter = painterResource(id = iconsR.drawable.mozac_ic_chevron_down_20),
                 contentDescription = null,
-                tint = FirefoxTheme.colors.iconPrimary,
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.semantics {
                     testTagsAsResourceId = true
                     testTag = MORE_OPTION_CHEVRON
@@ -884,8 +886,8 @@ private fun WebExtensionMenuItems(
                 }
                     ?: painterResource(iconsR.drawable.mozac_ic_web_extension_default_icon),
                 iconTint = when (webExtensionMenuItem.icon) {
-                    null -> FirefoxTheme.colors.iconPrimary
-                    else -> null
+                    null -> MaterialTheme.colorScheme.onSurface
+                    else -> Color.Unspecified
                 },
                 enabled = webExtensionMenuItem.enabled,
                 badgeText = webExtensionMenuItem.badgeText,
@@ -921,7 +923,7 @@ private fun MoreExtensionsMenuItem(
             .wrapContentSize()
             .clip(shape = RoundedCornerShape(4.dp))
             .background(
-                color = FirefoxTheme.colors.layer3,
+                color = MaterialTheme.colorScheme.surfaceDimVariant,
             ),
     ) {
         MenuTextItem(
@@ -938,7 +940,7 @@ private fun MenuDialogPreview() {
     FirefoxTheme {
         Column(
             modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer1),
+                .background(color = MaterialTheme.colorScheme.surface),
         ) {
             MainMenu(
                 accessPoint = MenuAccessPoint.Browser,
@@ -1002,7 +1004,7 @@ private fun MenuDialogPrivatePreview(
     FirefoxTheme(theme = Theme.Private) {
         Column(
             modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer1),
+                .background(color = MaterialTheme.colorScheme.surface),
         ) {
             MainMenu(
                 accessPoint = MenuAccessPoint.Home,

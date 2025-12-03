@@ -806,6 +806,8 @@ static MOZ_ALWAYS_INLINE Zone* GetStringZone(JSString* str) {
 
 extern JS_PUBLIC_API Zone* GetObjectZone(JSObject* obj);
 
+// Check whether a GC thing is gray. If the gray marking state is unknown
+// (e.g. due to OOM during gray unmarking) this returns false.
 static MOZ_ALWAYS_INLINE bool GCThingIsMarkedGray(GCCellPtr thing) {
   js::gc::Cell* cell = thing.asCell();
   if (IsInsideNursery(cell)) {
@@ -825,13 +827,8 @@ static MOZ_ALWAYS_INLINE bool GCThingIsMarkedGrayInCC(GCCellPtr thing) {
   }
 
   auto* tenuredCell = reinterpret_cast<js::gc::TenuredCell*>(cell);
-  if (!js::gc::detail::TenuredCellIsMarkedGray(tenuredCell)) {
-    return false;
-  }
-
   MOZ_ASSERT(js::gc::detail::CanCheckGrayBits(tenuredCell));
-
-  return true;
+  return js::gc::detail::TenuredCellIsMarkedGray(tenuredCell);
 }
 
 extern JS_PUBLIC_API JS::TraceKind GCThingTraceKind(void* thing);

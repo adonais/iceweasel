@@ -7,7 +7,6 @@
 #ifndef nsInProcessBrowserChildGlobal_h
 #define nsInProcessBrowserChildGlobal_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/ContentFrameMessageManager.h"

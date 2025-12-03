@@ -284,6 +284,14 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   void NotifyAnchorRemoved(mozilla::PresShell* aPresShell, nsIFrame* aFrame);
 
   /**
+   * Notify accessibility that an anchor positioned frame has
+   * been marked for reflow because of a scroll change for one of its
+   * anchors. A fallback anchor may be activated or deactivated.
+   */
+  void NotifyAnchorPositionedScrollUpdate(mozilla::PresShell* aPresShell,
+                                          nsIFrame* aFrame);
+
+  /**
    * Notify accessibility that an element explicitly set for an attribute is
    * about to change. See dom::Element::ExplicitlySetAttrElement.
    */

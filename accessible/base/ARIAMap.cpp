@@ -1447,6 +1447,7 @@ struct AttrCharacteristics {
 
 static const AttrCharacteristics gWAIUnivAttrMap[] = {
     // clang-format off
+  {nsGkAtoms::aria_actions,           ATTR_BYPASSOBJ                 | ATTR_GLOBAL | ATTR_REFLECT_ELEMENTS },
   {nsGkAtoms::aria_activedescendant,  ATTR_BYPASSOBJ                               },
   {nsGkAtoms::aria_atomic,   ATTR_BYPASSOBJ_IF_FALSE | ATTR_VALTOKEN | ATTR_GLOBAL },
   {nsGkAtoms::aria_busy,                               ATTR_VALTOKEN | ATTR_GLOBAL },

@@ -7,7 +7,6 @@
 
 #include <urlhist.h>
 
-#include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 #include "nsIWritablePropertyBag2.h"
 #include "nsSimpleEnumerator.h"

@@ -12,7 +12,6 @@
 
 #include "mozilla/dom/NodeInfo.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/dom/Document.h"
@@ -171,8 +170,7 @@ bool NodeInfo::NamespaceEquals(const nsAString& aNamespaceURI) const {
 
 void NodeInfo::DeleteCycleCollectable() {
   RefPtr<nsNodeInfoManager> kungFuDeathGrip = mOwnerManager;
-  mozilla::Unused
-      << kungFuDeathGrip;  // Just keeping value alive for longer than this
+  (void)kungFuDeathGrip;  // Just keeping value alive for longer than this
   delete this;
 }
 

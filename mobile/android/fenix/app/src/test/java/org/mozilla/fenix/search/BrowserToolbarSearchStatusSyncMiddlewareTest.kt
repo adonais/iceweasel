@@ -28,6 +28,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
@@ -43,6 +45,7 @@ class BrowserToolbarSearchStatusSyncMiddlewareTest {
 
     private val appStore = AppStore()
     private val lifecycleOwner: LifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
+    private val browsingModeManager: BrowsingModeManager = mockk(relaxed = true)
     private lateinit var fragment: Fragment
 
     @Before
@@ -93,13 +96,28 @@ class BrowserToolbarSearchStatusSyncMiddlewareTest {
     }
 
     @Test
-    fun `WHEN search starts in the application THEN put the toolbar in search mode also`() = runTest {
+    fun `GIVEN in private browsing mode WHEN search starts in the application THEN put the toolbar in search mode also`() = runTest {
+        every { browsingModeManager.mode } returns BrowsingMode.Private
         val (_, toolbarStore) = buildMiddlewareAndAddToSearchStore()
 
         appStore.dispatch(SearchStarted()).joinBlocking()
         mainLooperRule.idle()
 
         assertTrue(toolbarStore.state.isEditMode())
+        assertTrue(toolbarStore.state.editState.isQueryPrivate)
+        assertTrue(appStore.state.searchState.isSearchActive)
+    }
+
+    @Test
+    fun `GIVEN in normal browsing mode WHEN search starts in the application THEN put the toolbar in search mode also`() = runTest {
+        every { browsingModeManager.mode } returns BrowsingMode.Normal
+        val (_, toolbarStore) = buildMiddlewareAndAddToSearchStore()
+
+        appStore.dispatch(SearchStarted()).joinBlocking()
+        mainLooperRule.idle()
+
+        assertTrue(toolbarStore.state.isEditMode())
+        assertFalse(toolbarStore.state.editState.isQueryPrivate)
         assertTrue(appStore.state.searchState.isSearchActive)
     }
 
@@ -130,7 +148,7 @@ class BrowserToolbarSearchStatusSyncMiddlewareTest {
                         context = testContext,
                         navController = mockk(),
                         fragment = fragment,
-                        browsingModeManager = mockk(),
+                        browsingModeManager = browsingModeManager,
                     ),
                 ),
             )

@@ -120,7 +120,7 @@
 }
 
 #prefs > tr.has-user-value {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 #prefs > tr.locked {

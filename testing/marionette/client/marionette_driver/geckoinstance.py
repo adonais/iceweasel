@@ -203,6 +203,7 @@ class GeckoInstance:
         profile=None,
         addons=None,
         app_args=None,
+        debugger_info=None,
         symbols_path=None,
         gecko_log=None,
         prefs=None,
@@ -212,6 +213,7 @@ class GeckoInstance:
     ):
         self.runner_class = Runner
         self.app_args = app_args or []
+        self.debugger_info = debugger_info
         self.runner = None
         self.symbols_path = symbols_path
         self.binary = bin
@@ -380,7 +382,16 @@ class GeckoInstance:
     def start(self):
         self._update_profile(self.profile)
         self.runner = self.runner_class(**self._get_runner_args())
-        self.runner.start()
+
+        # debugger information
+        debug_args = None
+        interactive = False
+
+        if self.debugger_info:
+            debug_args = [self.debugger_info.path] + self.debugger_info.args
+            interactive = self.debugger_info.interactive
+
+        self.runner.start(debug_args, interactive)
 
     def _get_runner_args(self):
         process_args = {
@@ -633,6 +644,8 @@ class DesktopInstance(GeckoInstance):
         "browser.download.panel.shown": True,
         # Do not show the EULA notification which can interfer with tests
         "browser.EULA.override": True,
+        # Disable all machine learning features by default
+        "browser.ml.enable": False,
         # Disable Activity Stream telemetry pings
         "browser.newtabpage.activity-stream.telemetry": False,
         # Always display a blank page

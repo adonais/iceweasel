@@ -1337,7 +1337,12 @@ onboarding-aw-finish-setup-button =
 
 onboarding-checklist-button-label = Finish setup
 
-## The urlbar trust panel
+## The urlbar trust icon & panel
+
+# LOCALIZATION NOTE (trustpanel-urlbar-notsecure-label):
+# Keep this string as short as possible, this is displayed in the URL bar
+# use a synonym for "safe" or "private" if "secure" is too long.
+urlbar-trust-icon-notsecure-label = Not Secure
 
 trustpanel-etp-label-enabled = Enhanced Tracking Protection is on
 trustpanel-etp-label-disabled = Enhanced Tracking Protection is off

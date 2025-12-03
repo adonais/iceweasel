@@ -14,7 +14,6 @@
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/widget/WindowSurface.h"
 #include "Units.h"
-#include "mozilla/ScopeExit.h"
 
 #ifdef MOZ_X11
 #  include <X11/Xlib.h>  // for Window, Display, Visual, etc.

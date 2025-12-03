@@ -19,6 +19,7 @@ development process and source code documentation.
    data-review
    jujutsu
    searchfox/searchfox_search
+   ai-coding
 
 
 .. toctree::

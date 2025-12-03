@@ -304,7 +304,7 @@ newtab-wallpaper-dark-purple = بنفش تیره
 newtab-wallpaper-dark-green = سبز تیره
 newtab-wallpaper-brown = قهوه‌ای
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-white-mountains = کوه‌های سفید
 

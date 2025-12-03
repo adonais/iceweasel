@@ -21,6 +21,7 @@ skip-if = ["os == 'android'"] # Non-extension add-ons are not supported on Andro
 ["test_AddonRepository_appIsShuttingDown.js"]
 
 ["test_AddonRepository_cache.js"]
+requesttimeoutfactor = 2  # Slow on Windows
 skip-if = ["os == 'android'"] # Non-extension add-ons are not supported on Android, but test installs static theme.
 
 ["test_AddonRepository_cache_locale.js"]

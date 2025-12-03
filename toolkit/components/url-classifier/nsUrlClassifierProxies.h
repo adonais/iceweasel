@@ -10,7 +10,6 @@
 #include "nsUrlClassifierDBService.h"
 #include "nsProxyRelease.h"
 #include "nsThreadUtils.h"
-#include "mozilla/Attributes.h"
 #include "nsIPrincipal.h"
 #include "LookupCache.h"
 

@@ -84,7 +84,7 @@ class AboutCompatBroker {
                   if (active) {
                     await this._interventions?.disableIntervention(what);
                   } else {
-                    await this._interventions?.enableIntervention(what);
+                    await this._interventions?.enableIntervention(what, true);
                   }
                   break;
                 }

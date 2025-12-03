@@ -157,11 +157,6 @@ class IceCandidateCollection final {
   // Removes the candidate that has a matching address and protocol.
   //
   // Returns the number of candidates that were removed.
-  size_t remove(const Candidate& candidate);
-
-  // Removes the candidate that has a matching address and protocol.
-  //
-  // Returns the number of candidates that were removed.
   size_t remove(const IceCandidate* candidate);
 
   const std::vector<std::unique_ptr<IceCandidate>>& candidates() const {
@@ -197,6 +192,11 @@ enum class SdpType {
 // Returns the string form of the given SDP type. String forms are defined in
 // SessionDescriptionInterface.
 RTC_EXPORT const char* SdpTypeToString(SdpType type);
+
+template <typename Sink>
+void AbslStringify(Sink& sink, SdpType sdp_type) {
+  sink.Append(SdpTypeToString(sdp_type));
+}
 
 // Returns the SdpType from its string form. The string form can be one of the
 // constants defined in SessionDescriptionInterface. Passing in any other string
@@ -263,13 +263,6 @@ class RTC_EXPORT SessionDescriptionInterface {
   // Returns false if no matching candidate was found (and removed).
   virtual bool RemoveCandidate(const IceCandidate* candidate) = 0;
 
-  // Removes the candidates from the description, if found.
-  //
-  // Returns the number of candidates removed.
-  // TODO: webrtc:42233526 - Deprecate and eventually remove this method in
-  // favor of the IceCandidate version.
-  virtual size_t RemoveCandidates(const std::vector<Candidate>& candidates);
-
   // Returns the number of m= sections in the session description.
   virtual size_t number_of_mediasections() const = 0;
 
@@ -283,7 +276,7 @@ class RTC_EXPORT SessionDescriptionInterface {
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const SessionDescriptionInterface& p) {
     sink.Append("\n--- BEGIN SDP ");
-    sink.Append(SdpTypeToString(p.GetType()));
+    absl::Format(&sink, "%v", p.GetType());
     sink.Append(" ---\n");
     std::string temp;
     if (p.ToString(&temp)) {

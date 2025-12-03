@@ -20,7 +20,6 @@
 #include "ImageLogging.h"
 #include "ReferrerInfo.h"
 #include "imgRequestProxy.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ChaosMode.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -929,12 +928,14 @@ static nsresult NewImageChannel(
   } else {
     // either we are loading something inside a document, in which case
     // we should always have a requestingNode, or we are loading something
-    // outside a document, in which case the triggeringPrincipal and
-    // triggeringPrincipal should always be the systemPrincipal.
-    // However, there are exceptions: one is Notifications which create a
-    // channel in the parent process in which case we can't get a
-    // requestingNode.
-    rv = NS_NewChannel(aResult, aURI, nsContentUtils::GetSystemPrincipal(),
+    // outside a document, in which case the triggeringPrincipal should be the
+    // systemPrincipal. However, there are exceptions: one is Notifications
+    // which create a channel in the parent process in which case we can't get a
+    // requestingNode though we might have a valid triggeringPrincipal.
+    rv = NS_NewChannel(aResult, aURI,
+                       aTriggeringPrincipal
+                           ? aTriggeringPrincipal
+                           : nsContentUtils::GetSystemPrincipal(),
                        securityFlags, aPolicyType,
                        nullptr,  // nsICookieJarSettings
                        nullptr,  // PerformanceStorage
@@ -1432,8 +1433,8 @@ nsresult imgLoader::ClearCache(
     const mozilla::Maybe<nsCString>& aURL /* = mozilla::Nothing() */) {
   if (XRE_IsParentProcess()) {
     for (auto* cp : ContentParent::AllProcesses(ContentParent::eLive)) {
-      Unused << cp->SendClearImageCache(aPrivateLoader, aChrome, aPrincipal,
-                                        aSchemelessSite, aPattern, aURL);
+      (void)cp->SendClearImageCache(aPrivateLoader, aChrome, aPrincipal,
+                                    aSchemelessSite, aPattern, aURL);
     }
   }
 
@@ -2541,7 +2542,7 @@ nsresult imgLoader::LoadImage(
                            nsIClassOfService::Tail);
         nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(newChannel));
         if (httpChannel) {
-          Unused << httpChannel->SetRequestContextID(aRequestContextID);
+          (void)httpChannel->SetRequestContextID(aRequestContextID);
         }
       }
     }

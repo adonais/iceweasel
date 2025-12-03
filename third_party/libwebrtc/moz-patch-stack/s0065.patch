@@ -11,10 +11,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/8ff886a4d366b4be3
  3 files changed, 8 insertions(+), 3 deletions(-)
 
 diff --git a/modules/video_capture/BUILD.gn b/modules/video_capture/BUILD.gn
-index a525311157..7cc8f5df17 100644
+index 93743554a9..0aec2d94c7 100644
 --- a/modules/video_capture/BUILD.gn
 +++ b/modules/video_capture/BUILD.gn
-@@ -114,6 +114,10 @@ if (!build_with_chromium || is_linux || is_chromeos) {
+@@ -116,6 +116,10 @@ if (!build_with_chromium || is_linux || is_chromeos) {
            "../../media:rtc_media_base",
            "../portal",
          ]
@@ -26,10 +26,10 @@ index a525311157..7cc8f5df17 100644
      }
      if (is_win) {
 diff --git a/modules/video_capture/linux/device_info_pipewire.cc b/modules/video_capture/linux/device_info_pipewire.cc
-index 0ec0da3933..b802fe580c 100644
+index 7eaf5fbd70..7748fcf08f 100644
 --- a/modules/video_capture/linux/device_info_pipewire.cc
 +++ b/modules/video_capture/linux/device_info_pipewire.cc
-@@ -49,9 +49,9 @@ int32_t DeviceInfoPipeWire::GetDeviceName(uint32_t deviceNumber,
+@@ -43,9 +43,9 @@ int32_t DeviceInfoPipeWire::GetDeviceName(uint32_t deviceNumber,
                                            char* deviceUniqueIdUTF8,
                                            uint32_t deviceUniqueIdUTF8Length,
                                            char* productUniqueIdUTF8,
@@ -42,10 +42,10 @@ index 0ec0da3933..b802fe580c 100644
      return -1;
  
 diff --git a/modules/video_capture/linux/device_info_pipewire.h b/modules/video_capture/linux/device_info_pipewire.h
-index 0187e47e5f..1e75f35909 100644
+index 5d0fc6740a..b3e6de6fee 100644
 --- a/modules/video_capture/linux/device_info_pipewire.h
 +++ b/modules/video_capture/linux/device_info_pipewire.h
-@@ -29,7 +29,8 @@ class DeviceInfoPipeWire : public DeviceInfoImpl {
+@@ -31,7 +31,8 @@ class DeviceInfoPipeWire : public DeviceInfoImpl {
                          char* deviceUniqueIdUTF8,
                          uint32_t deviceUniqueIdUTF8Length,
                          char* productUniqueIdUTF8 = nullptr,

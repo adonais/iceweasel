@@ -93,6 +93,8 @@ subsuite = "mozbuild"
 
 ["test_jarmaker.py"]
 
+["test_legacy_test.py"]
+
 ["test_licenses.py"]
 
 ["test_line_endings.py"]

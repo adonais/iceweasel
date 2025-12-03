@@ -121,7 +121,7 @@ export var PlacesTestUtils = Object.freeze({
     }
   },
 
-  /*
+  /**
    * Add Favicons
    *
    * @param {Map} faviconURLs  keys are page URLs, values are their
@@ -153,16 +153,17 @@ export var PlacesTestUtils = Object.freeze({
     await Promise.all(faviconPromises);
   },
 
-  /*
+  /**
    * Helper function to call PlacesUtils.favicons.setFaviconForPage() and waits
    * finishing setting. This function throws an error if the status of
    * PlacesUtils.favicons.setFaviconForPage() is not success.
    *
-   * @param {string or nsIURI} pageURI
-   * @param {string or nsIURI} faviconURI
-   * @param {string or nsIURI} faviconDataURL
-   * @param {Number} [optional] expiration
-   * @return {Promise} waits for finishing setting
+   * @param {string|nsIURI} pageURI
+   * @param {string|nsIURI} faviconURI
+   * @param {string|nsIURI} faviconDataURL
+   * @param {number} [expiration]
+   * @param {boolean} [isRichIcon]
+   * @returns {Promise<void>} waits for finishing setting
    */
   setFaviconForPage(
     pageURI,

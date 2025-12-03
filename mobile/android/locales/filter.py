@@ -19,7 +19,6 @@ def test(mod, path, entity=None):
         # keep this file list in sync with jar.mn
         if path in (
             "chrome/global/commonDialogs.properties",
-            "chrome/global/intl.properties",
             "chrome/global/intl.css",
             "toolkit/branding/brandings.ftl",
             "toolkit/global/processTypes.ftl",

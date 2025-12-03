@@ -103,7 +103,8 @@ RTCDataChannel::RTCDataChannel(const nsACString& aLabel,
       mNegotiated(aNegotiated),
       mDataChannel(aDataChannel),
       mEventTarget(GetCurrentSerialEventTarget()) {
-  DC_INFO(("%p: RTCDataChannel created on main", this));
+  DC_INFO(("%p: RTCDataChannel created on main (necko channel %p)", this,
+           mDataChannel.get()));
   mDataChannel->SetMainthreadDomDataChannel(this);
 }
 
@@ -529,7 +530,7 @@ void RTCDataChannel::GracefulClose() {
         // closed.
         if (!mBufferedAmount && mReadyState != RTCDataChannelState::Closed &&
             mDataChannel) {
-          mDataChannel->FinishClose();
+          mDataChannel->EndOfStream();
         }
       }));
 }
@@ -643,7 +644,7 @@ void RTCDataChannel::DecrementBufferedAmount(size_t aSize) {
     if (mReadyState == RTCDataChannelState::Closing) {
       if (mDataChannel) {
         // We're done sending
-        mDataChannel->FinishClose();
+        mDataChannel->EndOfStream();
       }
     }
   }

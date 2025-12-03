@@ -18,10 +18,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b046a1446cee5ab48
  1 file changed, 2 insertions(+)
 
 diff --git a/modules/video_capture/linux/video_capture_v4l2.cc b/modules/video_capture/linux/video_capture_v4l2.cc
-index 16efad9825..b56a06f14b 100644
+index cc295fd60b..fa354dd994 100644
 --- a/modules/video_capture/linux/video_capture_v4l2.cc
 +++ b/modules/video_capture/linux/video_capture_v4l2.cc
-@@ -129,6 +129,7 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
+@@ -133,6 +133,7 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
      }
    }
  
@@ -29,7 +29,7 @@ index 16efad9825..b56a06f14b 100644
    // We don't want members above to be guarded by capture_checker_ as
    // it's meant to be for members that are accessed on the API thread
    // only when we are not capturing. The code above can be called many
-@@ -296,6 +297,7 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
+@@ -300,6 +301,7 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
    _requestedCapability = capability;
    _captureStarted = true;
    _streaming = true;

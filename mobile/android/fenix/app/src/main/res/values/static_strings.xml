@@ -86,11 +86,15 @@
     <!-- Label for enabling the redesigned toolbar options -->
     <string name="preferences_debug_settings_toolbar_redesign" translatable="false">Enable Redesigned Toolbar Options</string>
     <!-- Label for enabling the redesigned simple toolbar -->
-    <string name="preferences_debug_settings_simple_toolbar_customization">Enable simple toolbar customization</string>
+    <string name="preferences_debug_settings_simple_toolbar_customization" tools:ignore="UnusedResources" moz:removedIn="145">Enable simple toolbar customization</string>
     <!-- Label for enabling the redesigned expanded toolbar -->
-    <string name="preferences_debug_settings_expanded_toolbar_customization">Enable expanded toolbar customization</string>
+    <string name="preferences_debug_settings_expanded_toolbar_customization" tools:ignore="UnusedResources" moz:removedIn="145">Enable expanded toolbar customization</string>
+    <!-- Label for enabling the redesigned toolbar -->
+    <string name="preferences_debug_settings_toolbar_customization">Enable Toolbar Customization</string>
     <!-- Label for a longer description of the redesigned toolbar depending on the composable toolbar feature -->
     <string name="preferences_debug_settings_toolbar_redesign_summary" translatable="false">This needs the Composable Toolbar feature enabled</string>
+    <!-- Label for a longer description of the redesigned toolbar depending on the redesigned toolbar options feature -->
+    <string name="preferences_debug_settings_toolbar_customization_summary" translatable="false">This needs the Redesigned Toolbar Options feature enabled</string>
     <!-- Label for toggling Remote Crash Pull -->
     <string name="preferences_crash_pull_never_show_again" translatable="false">Never show Crash Pull</string>
     <!-- Label for enabling the Debug Drawer -->
@@ -101,14 +105,8 @@
     <string name="preferences_debug_settings_microsurvey_feature" translatable="false">Enable Microsurvey Feature</string>
     <!-- Label for enabling Unified Trust Panel -->
     <string name="preferences_debug_settings_unified_trust_panel" translatable="false">Enable Unified Trust Panel</string>
-    <!-- Label for enabling Trending Searches -->
-    <string name="preferences_debug_settings_trending_searches" translatable="false">Enable Trending Searches</string>
     <!-- Label for enabling remote search configuration -->
     <string name="preferences_debug_settings_remote_search_configuration" translatable="false">Enable Remote Search Configuration (requires restart)</string>
-    <!-- Label for enabling Recent Searches -->
-    <string name="preferences_debug_settings_recent_searches" translatable="false">Enable Recent Searches</string>
-    <!-- Label for enabling Shortcut Suggestions -->
-    <string name="preferences_debug_settings_shortcuts_suggestions" translatable="false">Enable Shortcut Suggestions</string>
     <!-- Label for enabling Address Sync -->
     <string name="preferences_debug_settings_address_sync" translatable="false">Enable Address Sync for supported regions</string>
     <!-- Label for enabling Settings Search-->
@@ -118,6 +116,8 @@
 
     <!-- Label for toggling the Tab Manager enhancements -->
     <string name="preferences_tab_manager_enhancements" translatable="false">Enable Tab Manager enhancements</string>
+    <!-- Label for toggling the Tab Manager opening animation -->
+    <string name="preferences_tab_manager_opening_animation" translatable="false">Enable Tab Manager opening animation</string>
 
     <string name="preferences_terms_of_use_accepted" translatable="false">Terms of Use accepted</string>
     <string name="preferences_terms_of_use_debug_timer" translatable="false">30s ToU timer enabled</string>
@@ -127,6 +127,7 @@
 
     <!-- Label for enabling isolated content processes in secret settings. -->
     <string name="preferences_debug_settings_isolated_process" translatable="false">Enable Isolated Content Process (requires restart)</string>
+    <string name="preferences_debug_settings_app_zygote" translatable="false">Enable Isolated Processes with Zygote Preloading (requires restart)</string>
 
     <!-- A secret menu option in the tabs tray for making a tab inactive for testing. -->
     <string name="inactive_tabs_menu_item">Make inactive</string>
@@ -238,10 +239,16 @@
     <string name="crash_debug_deferral_button">Reset deferral settings</string>
     <!-- Subtitle warning text for crash button -->
     <string name="crash_debug_crash_app_warning">This will crash the app to start crash reporting flow. Please also ensure that the crash report option is set to "Ask before sending" in the data collections settings if you want the dialog to pop up.</string>
-    <!-- Subtitle warning text for crash button -->
-    <string name="crash_debug_startup_crash_warning">This will set the flag that a startup crash was detected and crash the app to enter the startup crash flow on next startup.</string>
-    <!-- Button text to set app to crash during next startup -->
-    <string name="crash_debug_crash_on_next_startup">Set startup crash flag and crash app</string>
     <!-- Timer text for deferral period %s is the timer string -->
     <string name="crash_debug_deferral_timer">Current deferral period: %s</string>
+
+    <!-- Button text for enabling screen capture on private screens -->
+    <string name="autofill_debug_enable_screen_capture">Enable screen capture on secure screens</string>
+    <!-- Button text to show startup crash screen -->
+    <string name="crash_debug_show_startup_crash_screen">Show startup crash screen</string>
+    <!-- Subtitle warning text for crash button -->
+    <string name="crash_debug_startup_crash_warning">This will start the startup crash activity in a new process and terminate the current process.</string>
+
+    <!-- Label for enabling Relay email masks -->
+    <string name="preferences_enable_relay_email_masks">Enable Relay email masks</string>
 </resources>

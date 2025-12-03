@@ -108,11 +108,14 @@ add_task(async function testInvalidPageProxyState() {
       await synthesizeKeyAndWaitForFocus(gURLBar, "l", { accelKey: true });
     }
     is(document.activeElement, gURLBar.inputField, "urlbar should be focused");
-    await synthesizeKeyAndWaitForFocus(
-      document.getElementById("home-button"),
-      "VK_TAB",
-      { shiftKey: true }
+    let nextElement = document.getElementById(
+      Services.prefs.getBoolPref("sidebar.revamp", true)
+        ? "sidebar-button"
+        : "home-button"
     );
+    await synthesizeKeyAndWaitForFocus(nextElement, "VK_TAB", {
+      shiftKey: true,
+    });
     await synthesizeKeyAndWaitForFocus(
       document.getElementById("tabs-newtab-button"),
       "VK_TAB",

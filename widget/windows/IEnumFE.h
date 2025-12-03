@@ -13,7 +13,6 @@
 #include <ole2.h>
 
 #include "nsTArray.h"
-#include "mozilla/Attributes.h"
 
 // FORMATETC container
 class FormatEtc {

@@ -923,7 +923,9 @@ export const kFeatureNameInfo =
   'subgroups': {},
   'core-features-and-limits': {},
   'texture-formats-tier1': {},
-  'texture-formats-tier2': {}
+  'texture-formats-tier2': {},
+  'primitive-index': {},
+  'texture-component-swizzle': {}
 };
 /** List of all GPUFeatureName values. */
 export const kFeatureNames = keysOf(kFeatureNameInfo);
@@ -933,4 +935,5 @@ export const kKnownWGSLLanguageFeatures = [
 'readonly_and_readwrite_storage_textures',
 'packed_4x8_integer_dot_product',
 'unrestricted_pointer_parameters',
-'pointer_composite_access'];
+'pointer_composite_access',
+'uniform_buffer_standard_layout'];

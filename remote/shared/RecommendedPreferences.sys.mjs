@@ -122,6 +122,9 @@ const COMMON_PREFERENCES = new Map([
   // Make sure error page is not shown for blank pages with 4xx or 5xx response code
   ["browser.http.blank_page_with_error_response.enabled", true],
 
+  // Disable all machine learning features by default
+  ["browser.ml.enable", false],
+
   // Disable CFR features for automated tests.
   ["browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", false],
 

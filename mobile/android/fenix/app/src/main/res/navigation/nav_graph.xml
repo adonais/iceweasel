@@ -574,6 +574,18 @@
             android:defaultValue="@null"
             app:argType="string"
             app:nullable="true" />
+        <argument
+            android:name="search_in_progress"
+            android:defaultValue="false"
+            app:argType="boolean" />
+        <action
+            android:id="@+id/action_settingsFragment_to_settingsSearchFragment"
+            app:destination="@id/settingsSearchFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"
+            app:popUpTo="@id/settingsFragment" />
         <action
             android:id="@+id/action_settingsFragment_to_dataChoicesFragment"
             app:destination="@id/dataChoicesFragment"
@@ -802,13 +814,28 @@
         android:name="org.mozilla.fenix.perf.ProfilerStopDialogFragment">
     </dialog>
     <fragment
+        android:id="@+id/settingsSearchFragment"
+        android:name="org.mozilla.fenix.settings.settingssearch.SettingsSearchFragment"
+        android:label="@string/settings_search_title" />
+    <fragment
         android:id="@+id/tabsSettingsFragment"
         android:name="org.mozilla.fenix.settings.TabsSettingsFragment"
-        android:label="@string/preferences_tabs" />
+        android:label="@string/preferences_tabs" >
+        <argument
+            android:name="preference_to_scroll_to"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
     <fragment
         android:id="@+id/homeSettingsFragment"
         android:name="org.mozilla.fenix.settings.HomeSettingsFragment"
         android:label="@string/preferences_home_2">
+        <argument
+            android:name="preference_to_scroll_to"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
         <action
             android:id="@+id/action_homeSettingsFragment_to_wallpaperSettingsFragment"
             app:destination="@id/wallpaperSettingsFragment"
@@ -842,6 +869,11 @@
         android:id="@+id/sitePermissionsFragment"
         android:name="org.mozilla.fenix.settings.sitepermissions.SiteSettingsFragment"
         android:label="@string/preferences_site_settings">
+        <argument
+            android:name="preference_to_scroll_to"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
         <action
             android:id="@+id/action_site_permissions_to_manage_phone_features"
             app:destination="@id/SitePermissionsManagePhoneFeature"
@@ -863,11 +895,23 @@
     <fragment
         android:id="@+id/accessibilityFragment"
         android:name="org.mozilla.fenix.settings.AccessibilityFragment"
-        android:label="@string/preferences_accessibility" />
+        android:label="@string/preferences_accessibility" >
+        <argument
+            android:name="preference_to_scroll_to"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+
     <fragment
         android:id="@+id/accountSettingsFragment"
         android:name="org.mozilla.fenix.settings.account.AccountSettingsFragment"
         android:label="@string/preferences_account_settings">
+        <argument
+            android:name="preference_to_scroll_to"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
         <action
             android:id="@+id/action_accountSettingsFragment_to_signOutFragment"
             app:destination="@id/signOutFragment" />
@@ -939,6 +983,11 @@
         android:id="@+id/customizationFragment"
         android:name="org.mozilla.fenix.settings.CustomizationFragment"
         android:label="@string/preferences_customize">
+        <argument
+            android:name="preference_to_scroll_to"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
         <action
             android:id="@+id/action_customizationFragment_appIconSelectionFragment"
             app:destination="@+id/appIconSelectionFragment"
@@ -950,7 +999,13 @@
     <fragment
         android:id="@+id/privateBrowsingFragment"
         android:name="org.mozilla.fenix.settings.PrivateBrowsingFragment"
-        android:label="@string/preferences_private_browsing_options" />
+        android:label="@string/preferences_private_browsing_options" >
+        <argument
+            android:name="preference_to_scroll_to"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
     <fragment
         android:id="@+id/httpsOnlyFragment"
         android:name="org.mozilla.fenix.settings.HttpsOnlyFragment"
@@ -958,10 +1013,21 @@
     <fragment
         android:id="@+id/sponsoredStoriesSettings"
         android:name="org.mozilla.fenix.settings.SponsoredStoriesSettingsFragment"
-        android:label="@string/preferences_debug_settings_custom_sponsored_stories_parameters" />
+        android:label="@string/preferences_debug_settings_custom_sponsored_stories_parameters" >
+        <argument
+            android:name="preference_to_scroll_to"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
     <fragment
         android:id="@+id/trackingProtectionFragment"
         android:name="org.mozilla.fenix.settings.TrackingProtectionFragment">
+        <argument
+            android:name="preference_to_scroll_to"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
         <action
             android:id="@+id/action_trackingProtectionFragment_to_exceptionsFragment"
             app:destination="@id/trackingProtectionExceptionsFragment"
@@ -979,10 +1045,22 @@
     </fragment>
     <fragment
         android:id="@+id/openLinksInAppsFragment"
-        android:name="org.mozilla.fenix.settings.OpenLinksInAppsFragment" />
+        android:name="org.mozilla.fenix.settings.OpenLinksInAppsFragment" >
+        <argument
+            android:name="preference_to_scroll_to"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
     <fragment
         android:id="@+id/openDownloadsSettingsFragment"
-        android:name="org.mozilla.fenix.settings.DownloadsSettingsFragment" />
+        android:name="org.mozilla.fenix.settings.DownloadsSettingsFragment">
+        <argument
+            android:name="preference_to_scroll_to"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
     <fragment
         android:id="@+id/linkSharingFragment"
         android:name="org.mozilla.fenix.settings.LinkSharingFragment" />

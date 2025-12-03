@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_PerformanceServerTiming_h
 #define mozilla_dom_PerformanceServerTiming_h
 
-#include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 #include "nsDOMNavigationTiming.h"
 #include "nsString.h"

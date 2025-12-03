@@ -30,7 +30,6 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/Telemetry.h"
-#include "mozilla/Unused.h"
 #include "mozilla/glean/IpcMetrics.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIObserverService.h"
@@ -94,7 +93,7 @@ GMPParent::~GMPParent() {
 
 void GMPParent::CloneFrom(const GMPParent* aOther) {
   MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
-  MOZ_ASSERT(aOther->mDirectory && aOther->mService, "null plugin directory");
+  MOZ_ASSERT(aOther->mService);
 
   mService = aOther->mService;
   mDirectory = aOther->mDirectory;
@@ -165,6 +164,29 @@ nsresult GMPParent::GetPluginFileArch(nsIFile* aPluginDir,
   return NS_OK;
 }
 #endif  // defined(XP_WIN) || defined(XP_MACOSX)
+
+#ifdef MOZ_WIDGET_ANDROID
+void GMPParent::InitForClearkey(GeckoMediaPluginServiceParent* aService) {
+  MOZ_ASSERT(aService);
+  MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
+
+  mService = aService;
+  mName = u"clearkey"_ns;
+  mDisplayName = "clearkey"_ns;
+  mVersion = "0.1"_ns;
+  mDescription = "ClearKey Gecko Media Plugin"_ns;
+  mPluginType = GMPPluginType::Clearkey;
+  mAdapter = u"chromium"_ns;
+
+  mCapabilities.SetCapacity(1);
+  auto& video = *mCapabilities.AppendElement();
+  video.mAPIName = nsLiteralCString(CHROMIUM_CDM_API);
+  video.mAPITags.SetCapacity(2);
+  video.mAPITags.AppendElement(nsCString{kClearKeyKeySystemName});
+  video.mAPITags.AppendElement(
+      nsCString{kClearKeyWithProtectionQueryKeySystemName});
+}
+#endif
 
 RefPtr<GenericPromise> GMPParent::Init(GeckoMediaPluginServiceParent* aService,
                                        nsIFile* aPluginDir) {
@@ -285,7 +307,7 @@ RefPtr<GenericPromise> GMPParent::Init(GeckoMediaPluginServiceParent* aService,
 
 void GMPParent::Crash() {
   if (mState != GMPState::NotLoaded) {
-    Unused << SendCrashPluginNow();
+    (void)SendCrashPluginNow();
   }
 }
 
@@ -343,7 +365,6 @@ class NotifyGMPProcessLoadedTask : public Runnable {
 };
 
 nsresult GMPParent::LoadProcess() {
-  MOZ_ASSERT(mDirectory, "Plugin directory cannot be NULL!");
   MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
   MOZ_ASSERT(mState == GMPState::NotLoaded);
 
@@ -354,9 +375,16 @@ nsresult GMPParent::LoadProcess() {
   }
 
   nsAutoString path;
-  if (NS_WARN_IF(NS_FAILED(mDirectory->GetPath(path)))) {
+#ifdef MOZ_WIDGET_ANDROID
+  // We need to bundle any CDMs with the APK, so we can just supply the library
+  // name to the child process.
+  path = mName;
+#else
+  if (NS_WARN_IF(!mDirectory) ||
+      NS_WARN_IF(NS_FAILED(mDirectory->GetPath(path)))) {
     return NS_ERROR_FAILURE;
   }
+#endif
   GMP_PARENT_LOG_DEBUG("%s: for %s", __FUNCTION__,
                        NS_ConvertUTF16toUTF8(path).get());
 
@@ -441,7 +469,7 @@ void GMPParent::OnPreferenceChange(const mozilla::dom::Pref& aPref) {
     return;
   }
 
-  Unused << SendPreferenceUpdate(aPref);
+  (void)SendPreferenceUpdate(aPref);
 }
 
 mozilla::ipc::IPCResult GMPParent::RecvPGMPContentChildDestroyed() {
@@ -536,7 +564,7 @@ void GMPParent::CloseActive(bool aDieWhenUnloaded) {
     mState = GMPState::Unloading;
   }
   if (mState != GMPState::NotLoaded && IsUsed()) {
-    Unused << SendCloseActive();
+    (void)SendCloseActive();
     CloseIfUnused();
   }
 }

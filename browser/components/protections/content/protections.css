@@ -67,7 +67,7 @@ body[focuseddatatype="cryptominer"] {
 }
 
 h2 {
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--heading-font-weight);
 }
 
 #report-title {
@@ -333,7 +333,7 @@ a.hidden,
 }
 
 #graph-week-summary {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 #graph-wrapper {
@@ -563,7 +563,7 @@ label:hover {
 }
 
 .tab-content .content-title {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .tab-content p {
@@ -666,7 +666,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
   border-radius: var(--border-radius-small);
   text-align: center;
   font-size: 1.125em;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   color: #fff;
   padding: 7px;
   line-height: 18px;
@@ -785,7 +785,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 }
 
 #monitor-partial-breaches-motivation-title {
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   grid-area: 1 / 1 / 1 / 7;
   margin-inline-end: 15px;
 }
@@ -819,7 +819,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 }
 
 #monitor-breaches-title {
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
 }
 
 #monitor-breaches-title,
@@ -938,7 +938,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 .monitor-stat {
   display: flex;
   font-size: 1.75em;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   margin-block-end: 5px;
   word-break: break-all;
   justify-content: center;
@@ -989,7 +989,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
   border-radius: var(--border-radius-small);
   text-decoration: none;
   color: var(--button-text-color-primary);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 #manage-protections:hover,

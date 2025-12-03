@@ -8,11 +8,13 @@
 import copy
 import json
 import os
+import platform
 import warnings
 from abc import ABCMeta, abstractmethod
 from collections.abc import Iterable
 
 import filters
+from cmdline import ANDROID_APPS
 from logger.logger import RaptorLogger
 from utils import flatten
 
@@ -55,6 +57,8 @@ class PerftestOutput(metaclass=ABCMeta):
         self.subtest_alert_on = subtest_alert_on
         self.browser_name = None
         self.browser_version = None
+        self.os_name = platform.system()
+        self.os_platform_version = None
         self.extra_summary_methods = extra_summary_methods
 
     @abstractmethod
@@ -65,6 +69,14 @@ class PerftestOutput(metaclass=ABCMeta):
         # sets the browser metadata for the perfherder data
         self.browser_name = browser_name
         self.browser_version = browser_version
+
+    def _set_platform_version(self):
+        if self.os_name == "Windows":
+            self.os_platform_version = platform.uname().version
+        elif self.os_name == "Darwin":
+            self.os_platform_version = platform.mac_ver()[0]
+        else:  # Linux
+            self.os_platform_version = platform.release()
 
     def summarize_supporting_data(self):
         """
@@ -186,6 +198,13 @@ class PerftestOutput(metaclass=ABCMeta):
                 data["application"] = {"name": self.browser_name}
                 if self.browser_version:
                     data["application"]["version"] = self.browser_version
+
+            # Add os info only for desktop
+            if self.app not in ANDROID_APPS and self.os_name:
+                data["os"] = {"name": self.os_name}
+                self._set_platform_version()
+                if self.os_platform_version:
+                    self.data["os"]["platform_version"] = self.os_platform_version
             self.summarized_supporting_data.append(data)
 
         return
@@ -272,6 +291,15 @@ class PerftestOutput(metaclass=ABCMeta):
             self.summarized_results["application"] = {"name": self.browser_name}
             if self.browser_version:
                 self.summarized_results["application"]["version"] = self.browser_version
+
+        # Add os info only for desktop
+        if self.app not in ANDROID_APPS and self.os_name:
+            self.summarized_results["os"] = {"name": self.os_name}
+            self._set_platform_version()
+            if self.os_platform_version:
+                self.summarized_results["os"][
+                    "platform_version"
+                ] = self.os_platform_version
 
         total_perfdata = 0
         if output_perf_data:

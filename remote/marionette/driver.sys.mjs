@@ -27,6 +27,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Marionette: "chrome://remote/content/components/Marionette.sys.mjs",
   MarionettePrefs: "chrome://remote/content/marionette/prefs.sys.mjs",
   modal: "chrome://remote/content/shared/Prompt.sys.mjs",
+  NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   navigate: "chrome://remote/content/marionette/navigate.sys.mjs",
   permissions: "chrome://remote/content/shared/Permissions.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
@@ -960,8 +961,10 @@ GeckoDriver.prototype.getContext = function () {
  *     If an {@link Error} was thrown whilst evaluating the script.
  * @throws {NoSuchElementError}
  *     If an element that was passed as part of <var>args</var> is unknown.
+ * @throws {NoSuchFrameError}
+ *     Child browsing context has been discarded.
  * @throws {NoSuchWindowError}
- *     Browsing context has been discarded.
+ *     Top-level browsing context has been discarded.
  * @throws {ScriptTimeoutError}
  *     If the script was interrupted due to reaching the session's
  *     script timeout.
@@ -1033,8 +1036,10 @@ GeckoDriver.prototype.executeScript = function (cmd) {
  *     If an Error was thrown whilst evaluating the script.
  * @throws {NoSuchElementError}
  *     If an element that was passed as part of <var>args</var> is unknown.
+ * @throws {NoSuchFrameError}
+ *     Child browsing context has been discarded.
  * @throws {NoSuchWindowError}
- *     Browsing context has been discarded.
+ *     Top-level browsing context has been discarded.
  * @throws {ScriptTimeoutError}
  *     If the script was interrupted due to reaching the session's
  *     script timeout.
@@ -1357,7 +1362,8 @@ GeckoDriver.prototype.getWindowHandle = function () {
   if (this.context == lazy.Context.Chrome) {
     return lazy.windowManager.getIdForWindow(this.curBrowser.window);
   }
-  return lazy.TabManager.getIdForBrowser(this.curBrowser.contentBrowser);
+
+  return this.curBrowser.contentBrowserId;
 };
 
 /**
@@ -1378,7 +1384,10 @@ GeckoDriver.prototype.getWindowHandles = function () {
   if (this.context == lazy.Context.Chrome) {
     return lazy.windowManager.chromeWindowHandles.map(String);
   }
-  return lazy.TabManager.allBrowserUniqueIds.map(String);
+
+  return lazy.TabManager.getBrowsers({ unloaded: true }).map(browser =>
+    lazy.NavigableManager.getIdForBrowser(browser)
+  );
 };
 
 /**
@@ -2706,7 +2715,7 @@ GeckoDriver.prototype.newWindow = async function (cmd) {
     }
   );
 
-  const id = lazy.TabManager.getIdForBrowser(contentBrowser);
+  const id = lazy.NavigableManager.getIdForBrowser(contentBrowser);
 
   return { handle: id.toString(), type };
 };
@@ -2747,7 +2756,9 @@ GeckoDriver.prototype.close = async function () {
   await this.curBrowser.closeTab();
   this.currentSession.contentBrowsingContext = null;
 
-  return lazy.TabManager.allBrowserUniqueIds.map(String);
+  return lazy.TabManager.getBrowsers({ unloaded: true }).map(browser =>
+    lazy.NavigableManager.getIdForBrowser(browser)
+  );
 };
 
 /**
@@ -3608,6 +3619,25 @@ GeckoDriver.prototype.print = async function (cmd) {
   return btoa(binaryString);
 };
 
+GeckoDriver.prototype.getGlobalPrivacyControl = function () {
+  const gpc = Services.prefs.getBoolPref(
+    "privacy.globalprivacycontrol.enabled",
+    true
+  );
+  return { gpc };
+};
+
+GeckoDriver.prototype.setGlobalPrivacyControl = function (cmd) {
+  const { gpc } = cmd.parameters;
+  if (typeof gpc != "boolean") {
+    throw new lazy.error.InvalidArgumentError(
+      "Value of `gpc` should be of type 'boolean'"
+    );
+  }
+  Services.prefs.setBoolPref("privacy.globalprivacycontrol.enabled", gpc);
+  return { gpc };
+};
+
 GeckoDriver.prototype.addVirtualAuthenticator = function (cmd) {
   const {
     protocol,
@@ -3947,6 +3977,10 @@ GeckoDriver.prototype.commands = {
   "WebDriver:SwitchToParentFrame": GeckoDriver.prototype.switchToParentFrame,
   "WebDriver:SwitchToWindow": GeckoDriver.prototype.switchToWindow,
   "WebDriver:TakeScreenshot": GeckoDriver.prototype.takeScreenshot,
+  "WebDriver:GetGlobalPrivacyControl":
+    GeckoDriver.prototype.getGlobalPrivacyControl,
+  "WebDriver:SetGlobalPrivacyControl":
+    GeckoDriver.prototype.setGlobalPrivacyControl,
 
   // WebAuthn
   "WebAuthn:AddVirtualAuthenticator":

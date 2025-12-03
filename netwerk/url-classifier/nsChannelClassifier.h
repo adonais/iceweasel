@@ -8,7 +8,6 @@
 #include "nsIObserver.h"
 #include "nsIURIClassifier.h"
 #include "nsCOMPtr.h"
-#include "mozilla/Attributes.h"
 
 #include <functional>
 

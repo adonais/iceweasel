@@ -43,9 +43,9 @@ class ProviderQuickActions extends ActionsProvider {
     return "ActionsProviderQuickActions";
   }
 
-  isActive(queryContext, controller) {
+  isActive(queryContext) {
     return (
-      controller?.input.isAddressbar &&
+      queryContext.sapName == "urlbar" &&
       lazy.UrlbarPrefs.get(ENABLED_PREF) &&
       !queryContext.searchMode &&
       queryContext.trimmedSearchString.length < 50 &&
@@ -56,7 +56,7 @@ class ProviderQuickActions extends ActionsProvider {
 
   async queryActions(queryContext) {
     let input = queryContext.trimmedLowerCaseSearchString;
-    let results = await this.getActions(input);
+    let results = await this.getActions({ input });
 
     if (lazy.UrlbarPrefs.get(MATCH_IN_PHRASE_PREF)) {
       for (let [keyword, keys] of this.#keywords) {
@@ -93,9 +93,17 @@ class ProviderQuickActions extends ActionsProvider {
     });
   }
 
-  async getActions(prefix) {
+  async getActions({ input, includesExactMatch = false }) {
     await lazy.QuickActionsLoaderDefault.ensureLoaded();
-    return this.#prefixes.get(prefix) ?? new Set();
+
+    let results = this.#prefixes.get(input) ?? new Set();
+
+    if (includesExactMatch) {
+      let actions = this.#keywords.get(input);
+      actions?.forEach(action => results.add(action));
+    }
+
+    return results;
   }
 
   getAction(key) {

@@ -5,6 +5,7 @@
 package org.mozilla.fenix.settings
 
 import android.os.Bundle
+import androidx.navigation.fragment.navArgs
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 import org.mozilla.fenix.R
@@ -19,6 +20,9 @@ import org.mozilla.fenix.ext.showToolbar
  * When turned off, the font sizing can be controlled manually within the app.
  */
 class AccessibilityFragment : PreferenceFragmentCompat() {
+
+    private val args by navArgs<AccessibilityFragmentArgs>()
+
     override fun onResume() {
         super.onResume()
         showToolbar(getString(R.string.preferences_accessibility))
@@ -80,6 +84,10 @@ class AccessibilityFragment : PreferenceFragmentCompat() {
             // Reload the current session to reflect the new text scale
             components.useCases.sessionUseCases.reload()
             true
+        }
+
+        args.preferenceToScrollTo?.let {
+            scrollToPreference(it)
         }
     }
 

@@ -1486,10 +1486,10 @@ let httpServer = http.createServer((req, res) => {
         return;
       }
 
+      let messageId = makeid(6);
       new Promise((resolve, reject) => {
-        forked.resolve = resolve;
-        forked.reject = reject;
-        forked.send({ code });
+        forked.messageHandlers[messageId] = { resolve, reject };
+        forked.send({ code, messageId });
       })
         .then(x => sendBackResponse(x))
         .catch(e => computeAndSendBackResponse(undefined, e));
@@ -1538,11 +1538,13 @@ function forkProcess() {
 function forkProcessInternal(forked) {
   let id = makeid(6);
   forked.errors = "";
+  forked.messageHandlers = {};
   globalObjects[id] = forked;
   forked.on("message", msg => {
-    if (forked.resolve) {
-      forked.resolve(msg);
-      forked.resolve = null;
+    if (msg.messageId && forked.messageHandlers[msg.messageId]) {
+      let handler = forked.messageHandlers[msg.messageId];
+      delete forked.messageHandlers[msg.messageId];
+      handler.resolve(msg);
     } else {
       console.log(
         `forked process without handler sent: ${JSON.stringify(msg)}`
@@ -1561,22 +1563,30 @@ function forkProcessInternal(forked) {
       return;
     }
 
-    if (!forked.reject) {
+    let errorMsg = `child process exit closing code: ${code} signal: ${signal}`;
+    if (forked.errors != "") {
+      errorMsg = forked.errors;
+      forked.errors = "";
+    }
+
+    // Handle /kill/ case where forked.reject is set
+    if (forked.reject) {
+      forked.reject(errorMsg);
+      forked.reject = null;
+      forked.resolve = null;
+    }
+
+    if (Object.keys(forked.messageHandlers).length === 0) {
       console.log(
         `child process ${id} closing code: ${code} signal: ${signal}`
       );
       return;
     }
 
-    if (forked.errors != "") {
-      forked.reject(forked.errors);
-      forked.errors = "";
-      forked.reject = null;
-      return;
+    for (let messageId in forked.messageHandlers) {
+      forked.messageHandlers[messageId].reject(errorMsg);
     }
-
-    forked.reject(`child process exit closing code: ${code} signal: ${signal}`);
-    forked.reject = null;
+    forked.messageHandlers = {};
   };
 
   forked.on("error", exitFunction);

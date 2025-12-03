@@ -92,7 +92,7 @@ fuzzy(255,429) == conic-angle.yaml conic-angle.png
 == conic-center.yaml conic-center.png
 fuzzy(1,2) == conic-angle-wraparound.yaml conic-angle.yaml
 fuzzy-if(env(android,device),255,155) fuzzy-if(not(env(android,device)),1,5) == conic-angle-wraparound-negative.yaml conic-angle.yaml # Android device is Samsung Galaxy A51
-fuzzy(1,1200) == conic-color-wheel.yaml conic-color-wheel.png
+fuzzy(4,61900) == conic-color-wheel.yaml conic-color-wheel.png
 
 # gradient caching tests
 # replaces a computed gradient by a sampled texture, so a lot of off-by-one

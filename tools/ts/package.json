@@ -1,11 +1,11 @@
 {
   "devDependencies": {
-    "@mdn/browser-compat-data": "^6.0.4",
+    "@mdn/browser-compat-data": "7.1.17",
     "@types/webidl2": "24.4.3",
     "@typescript/dom-lib-generator": "github:microsoft/TypeScript-DOM-lib-generator#@types/web@0.0.257",
-    "bcd-idl-mapper": "3.0.0",
+    "bcd-idl-mapper": "3.0.1",
     "kdljs": "0.3.0",
-    "jest": "30.0.5",
+    "jest": "30.2.0",
     "peggy": "5.0.6",
     "print-diff": "2.0.0"
   },

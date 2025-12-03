@@ -287,12 +287,12 @@ void RTPSenderVideoFrameTransformerDelegate::Reset() {
   }
   // Wait until all pending tasks are executed, to ensure that the last ref
   // standing is not on the transformation queue.
-  rtc::Event flush;
+  Event flush;
   transformation_queue_->PostTask([this, &flush]() {
     RTC_DCHECK_RUN_ON(transformation_queue_.get());
     flush.Set();
   });
-  flush.Wait(rtc::Event::kForever);
+  flush.Wait(Event::kForever);
 }
 
 std::unique_ptr<TransformableVideoFrameInterface> CloneSenderVideoFrame(

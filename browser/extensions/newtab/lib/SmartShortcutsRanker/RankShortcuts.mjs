@@ -60,6 +60,7 @@ const FEATURES = ["frec", "thom", "bias"];
 const SHORTCUT_POSITIVE_PRIOR = 1;
 const SHORTCUT_NEGATIVE_PRIOR = 1000;
 const STICKY_NUMIMPS = 0;
+const SMART_TELEM = false;
 
 const lazy = {};
 
@@ -72,6 +73,25 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 import { sortKeysValues } from "resource://newtab/lib/SmartShortcutsRanker/ThomSample.mjs";
+
+// helper for lowering precision of numbers, save space in telemetry
+// longest string i can come up with out of this function:
+//               -0.000009999 which is 12 characters
+export const roundNum = (x, sig = 4, eps = 1e-6) => {
+  if (typeof x !== "number" || !isFinite(x)) {
+    return x;
+  }
+
+  // clip very small absolute values to zero
+  if (Math.abs(x) < eps) {
+    return 0;
+  }
+
+  const n = Number(x.toPrecision(sig));
+
+  // normalize -0 to 0
+  return Object.is(n, -0) ? 0 : n;
+};
 
 /**
  * For each guid, look at its last 10 shortcut interactions and, if a click occurred,
@@ -1013,6 +1033,33 @@ export class RankShortcutsProvider {
     }
     // grab topsites without guid
     const combined = sortedSites.concat(withoutGuid);
+
+    // tack weights and scores so they can pass through to telemetry
+    if (prefValues?.trainhopConfig?.smartShortcuts?.telem || SMART_TELEM) {
+      // store a version of weights that is rounded
+      const roundWeights = Object.fromEntries(
+        Object.entries(weights ?? {}).map(([key, v]) => [
+          key,
+          typeof v === "number" && isFinite(v) ? roundNum(v) : (v ?? null),
+        ])
+      );
+      // do the tacking
+      combined.forEach(s => {
+        const raw = output?.score_map?.[s.guid];
+        s.scores =
+          raw && typeof raw === "object"
+            ? Object.fromEntries(
+                Object.entries(raw).map(([k, v]) => [
+                  k,
+                  typeof v === "number" && isFinite(v)
+                    ? roundNum(v)
+                    : (v ?? null),
+                ])
+              )
+            : null;
+        s.weights = roundWeights;
+      });
+    }
     return combined;
   }
 }

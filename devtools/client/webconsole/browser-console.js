@@ -35,7 +35,7 @@ class BrowserConsole extends WebConsole {
   #bcInitializer = null;
   #bcDestroyer = null;
   #telemetry;
-  /*
+  /**
    * @constructor
    * @param object commands
    *        The commands object with all interfaces defined from devtools/shared/commands/

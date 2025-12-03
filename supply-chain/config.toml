@@ -270,6 +270,8 @@ notes = "This is a first-party crate which is also published to crates.io. We ce
 
 [policy.webrender]
 audit-as-crates-io = false
+dependency-criteria = { hyper = "safe-to-run", tokio = "safe-to-run" }
+notes = "the hyper and tokio dependencies are only enabled in local debug builds, and are not shipped to users"
 
 [policy.webrender_api]
 audit-as-crates-io = false

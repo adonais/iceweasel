@@ -7,7 +7,6 @@
 #define mozilla_layers_SurfacePool_h
 
 #include "mozilla/Maybe.h"
-#include "mozilla/ThreadSafeWeakPtr.h"
 
 #include "GLTypes.h"
 #include "nsISupportsImpl.h"

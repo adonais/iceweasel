@@ -52,8 +52,8 @@ class CollectionTest : TestSetup() {
     @SmokeTest
     @Test
     fun createFirstCollectionUsingHomeScreenButtonTest() {
-        val firstWebPage = getGenericAsset(mockWebServer, 1)
-        val secondWebPage = getGenericAsset(mockWebServer, 2)
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.getGenericAsset(2)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(firstWebPage.url) {
@@ -85,7 +85,7 @@ class CollectionTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2283299
     @Test
     fun createFirstCollectionFromMainMenuTest() {
-        val defaultWebPage = getGenericAsset(mockWebServer, 1)
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
@@ -101,8 +101,8 @@ class CollectionTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyExpandedCollectionItemsTest() {
-        val webPage = getGenericAsset(mockWebServer, 1)
-        val webPage2 = getGenericAsset(mockWebServer, 2)
+        val webPage = mockWebServer.getGenericAsset(1)
+        val webPage2 = mockWebServer.getGenericAsset(2)
         val webPageUrl = webPage.url.host.toString()
 
         MockBrowserDataHelper
@@ -153,8 +153,8 @@ class CollectionTest : TestSetup() {
     @SmokeTest
     @Test
     fun openAllTabsFromACollectionTest() {
-        val firstTestPage = getGenericAsset(mockWebServer, 1)
-        val secondTestPage = getGenericAsset(mockWebServer, 2)
+        val firstTestPage = mockWebServer.getGenericAsset(1)
+        val secondTestPage = mockWebServer.getGenericAsset(2)
 
         MockBrowserDataHelper
             .createCollection(
@@ -178,8 +178,8 @@ class CollectionTest : TestSetup() {
     @SmokeTest
     @Test
     fun shareAllTabsFromACollectionTest() {
-        val firstWebsite = getGenericAsset(mockWebServer, 1)
-        val secondWebsite = getGenericAsset(mockWebServer, 2)
+        val firstWebsite = mockWebServer.getGenericAsset(1)
+        val secondWebsite = mockWebServer.getGenericAsset(2)
         val sharingApp = "Gmail"
         val urlString = "${secondWebsite.url}\n\n${firstWebsite.url}"
 
@@ -205,7 +205,7 @@ class CollectionTest : TestSetup() {
     @SmokeTest
     @Test
     fun deleteCollectionTest() {
-        val webPage = getGenericAsset(mockWebServer, 1)
+        val webPage = mockWebServer.getGenericAsset(1)
 
         MockBrowserDataHelper
             .createCollection(
@@ -228,8 +228,8 @@ class CollectionTest : TestSetup() {
     // open a webpage, and add currently opened tab to existing collection
     @Test
     fun saveTabToExistingCollectionFromMainMenuTest() {
-        val firstWebPage = getGenericAsset(mockWebServer, 1)
-        val secondWebPage = getGenericAsset(mockWebServer, 2)
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.getGenericAsset(2)
 
         MockBrowserDataHelper
             .createCollection(
@@ -255,8 +255,8 @@ class CollectionTest : TestSetup() {
     // Testrail link: https://mozilla.testrail.io/index.php?/cases/view/343423
     @Test
     fun saveTabToExistingCollectionUsingTheAddTabButtonTest() {
-        val firstWebPage = getGenericAsset(mockWebServer, 1)
-        val secondWebPage = getGenericAsset(mockWebServer, 2)
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.getGenericAsset(2)
 
         MockBrowserDataHelper
             .createCollection(
@@ -281,7 +281,7 @@ class CollectionTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/343424
     @Test
     fun renameCollectionTest() {
-        val webPage = getGenericAsset(mockWebServer, 1)
+        val webPage = mockWebServer.getGenericAsset(1)
 
         MockBrowserDataHelper
             .createCollection(
@@ -304,8 +304,8 @@ class CollectionTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/991248
     @Test
     fun createCollectionUsingSelectTabsButtonTest() {
-        val firstWebPage = getGenericAsset(mockWebServer, 1)
-        val secondWebPage = getGenericAsset(mockWebServer, 2)
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.getGenericAsset(2)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(firstWebPage.url) {
@@ -328,7 +328,7 @@ class CollectionTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2319455
     @Test
     fun removeTabFromCollectionUsingTheCloseButtonTest() {
-        val webPage = getGenericAsset(mockWebServer, 1)
+        val webPage = mockWebServer.getGenericAsset(1)
 
         MockBrowserDataHelper
             .createCollection(
@@ -350,8 +350,8 @@ class CollectionTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/343427
     @Test
     fun removeTabFromCollectionUsingSwipeLeftActionTest() {
-        val testPage1 = getGenericAsset(mockWebServer, 1)
-        val testPage2 = getGenericAsset(mockWebServer, 2)
+        val testPage1 = mockWebServer.getGenericAsset(1)
+        val testPage2 = mockWebServer.getGenericAsset(2)
 
         MockBrowserDataHelper
             .createCollection(
@@ -373,8 +373,8 @@ class CollectionTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/991278
     @Test
     fun removeTabFromCollectionUsingSwipeRightActionTest() {
-        val testPage1 = getGenericAsset(mockWebServer, 1)
-        val testPage2 = getGenericAsset(mockWebServer, 2)
+        val testPage1 = mockWebServer.getGenericAsset(1)
+        val testPage2 = mockWebServer.getGenericAsset(2)
 
         MockBrowserDataHelper
             .createCollection(
@@ -396,7 +396,7 @@ class CollectionTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080080
     @Test
     fun removeLastTabFromCollectionUsingSwipeActionTest() {
-        val testPage = getGenericAsset(mockWebServer, 1)
+        val testPage = mockWebServer.getGenericAsset(1)
 
         MockBrowserDataHelper
             .createCollection(
@@ -419,8 +419,8 @@ class CollectionTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/991276
     @Test
     fun createCollectionByLongPressingOpenTabsTest() {
-        val firstWebPage = getGenericAsset(mockWebServer, 1)
-        val secondWebPage = getGenericAsset(mockWebServer, 2)
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.getGenericAsset(2)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(firstWebPage.url) {
@@ -454,7 +454,7 @@ class CollectionTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/344897
     @Test
     fun navigateBackInCollectionFlowTest() {
-        val webPage = getGenericAsset(mockWebServer, 1)
+        val webPage = mockWebServer.getGenericAsset(1)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(webPage.url) {

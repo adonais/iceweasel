@@ -6,7 +6,6 @@
 
 #include "mozilla/dom/EndpointForReportParent.h"
 
-#include "mozilla/Unused.h"
 #include "mozilla/dom/ReportingHeader.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsIThread.h"
@@ -36,7 +35,7 @@ void EndpointForReportParent::Run(
         self->mPBackgroundThread->Dispatch(NS_NewRunnableFunction(
             "EndpointForReportParent::Answer", [self, uri]() {
               if (self->mActive) {
-                Unused << self->Send__delete__(self, uri);
+                (void)self->Send__delete__(self, uri);
               }
             }));
       }));

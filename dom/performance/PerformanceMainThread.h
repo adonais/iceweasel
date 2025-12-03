@@ -153,7 +153,7 @@ class PerformanceMainThread final : public Performance,
   DOMHighResTimeStamp GetPerformanceTimingFromString(
       const nsAString& aTimingName) override;
 
-  void DispatchBufferFullEvent() override;
+  void DispatchResourceTimingBufferFullEvent() override;
 
   RefPtr<PerformanceNavigationTiming> mDocEntry;
   RefPtr<nsDOMNavigationTiming> mDOMTiming;

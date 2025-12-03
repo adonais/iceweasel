@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "CompositableHost.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/layers/RemoteTextureMap.h"
 #include "mozilla/layers/TextureHost.h"

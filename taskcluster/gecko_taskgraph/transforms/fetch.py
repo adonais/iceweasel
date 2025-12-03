@@ -19,6 +19,7 @@ from taskgraph.util.treeherder import join_symbol
 from voluptuous import Any, Extra, Optional, Required
 
 import gecko_taskgraph
+from gecko_taskgraph.transforms.task import task_description_schema
 
 from ..util.cached_tasks import add_optimization
 
@@ -45,6 +46,7 @@ FETCH_SCHEMA = Schema(
             "`public/` the artifact will require scopes to access.",
         ): str,
         Optional("attributes"): {str: object},
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
         Required("fetch"): {
             Required("type"): str,
             Extra: object,
@@ -137,6 +139,7 @@ def make_task(config, jobs):
             "expires-after": task_expires,
             "label": "fetch-%s" % name,
             "run-on-projects": [],
+            "run-on-repo-type": job.get("run-on-repo-type", ["git", "hg"]),
             "treeherder": {
                 "symbol": join_symbol("Fetch", name),
                 "kind": "build",

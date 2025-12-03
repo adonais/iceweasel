@@ -10,7 +10,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "dragService",
   "@mozilla.org/widget/dragservice;1",
-  "nsIDragService"
+  Ci.nsIDragService
 );
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";

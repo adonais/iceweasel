@@ -8,7 +8,6 @@
 #define nsXULTooltipListener_h__
 
 #include "Units.h"
-#include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 #include "nsIDOMEventListener.h"
 #include "nsITimer.h"

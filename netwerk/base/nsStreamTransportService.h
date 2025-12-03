@@ -11,7 +11,6 @@
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/Mutex.h"
 

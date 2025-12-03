@@ -59,16 +59,20 @@ fn crash_annotations() {
     };
 
     let mut ping_annotations = phf_codegen::Set::new();
-    let mut report_annotations = phf_codegen::Set::new();
+    let mut annotations = phf_codegen::Set::new();
 
     for (k, v) in entries {
         let scope = v["scope"].as_str().unwrap_or("client");
         match scope {
-            "ping" => {
+            "ping-only" => {
                 ping_annotations.entry(k.into_string().unwrap());
             }
+            "ping" => {
+                ping_annotations.entry(k.clone().into_string().unwrap());
+                annotations.entry(k.into_string().unwrap());
+            }
             "report" => {
-                report_annotations.entry(k.into_string().unwrap());
+                annotations.entry(k.into_string().unwrap());
             }
             _ => (),
         }
@@ -83,8 +87,8 @@ fn crash_annotations() {
     .unwrap();
     writeln!(
         &mut file,
-        "static REPORT_ANNOTATIONS: phf::Set<&'static str> = {};",
-        report_annotations.build(),
+        "static ALL_REPORT_ANNOTATIONS: phf::Set<&'static str> = {};",
+        annotations.build(),
     )
     .unwrap();
 }

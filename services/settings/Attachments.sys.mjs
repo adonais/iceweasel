@@ -67,7 +67,7 @@ class LazyRecordAndBuffer {
 
   /**
    * @returns {object} The attachment record, if found. null otherwise.
-   **/
+   */
   async getRecord() {
     try {
       return (await this._ensureRecordAndLazyBuffer()).record;
@@ -79,7 +79,7 @@ class LazyRecordAndBuffer {
   /**
    * @param {object} requestedRecord An attachment record
    * @returns {boolean} Whether the requested record matches this record.
-   **/
+   */
   async isMatchingRequestedRecord(requestedRecord) {
     const record = await this.getRecord();
     return (
@@ -97,7 +97,7 @@ class LazyRecordAndBuffer {
    * @returns {Object} An object with two properties:
    *   buffer: ArrayBuffer with the file content.
    *   record: Record associated with the bytes.
-   **/
+   */
   async getResult() {
     const { record, readBuffer } = await this._ensureRecordAndLazyBuffer();
     if (!this.bufferPromise) {

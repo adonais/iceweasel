@@ -224,7 +224,7 @@ TEST(DOM_IndexedDB_SimpleFileInfo, Invalidate_CreateFileInfo)
     fileManager->Invalidate();
 
     const auto fileInfo = fileManager->CreateFileInfo();
-    Unused << fileInfo;
+    (void)fileInfo;
 
     ASSERT_EQ(nullptr, fileInfo);
   }
@@ -241,7 +241,7 @@ TEST(DOM_IndexedDB_SimpleFileInfo, Invalidate_Release)
     const auto fileManager = MakeSafeRefPtr<SimpleFileManager>(&stats);
 
     const auto fileInfo = fileManager->CreateFileInfo();
-    Unused << fileInfo;
+    (void)fileInfo;
 
     fileManager->Invalidate();
 

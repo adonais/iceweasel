@@ -25,12 +25,16 @@ browser.jar:
    content/browser/preferences/web-appearance-dark.svg
    content/browser/preferences/web-appearance-light.svg
    content/browser/preferences/widgets/dialog-button.mjs                (widgets/dialog-button/dialog-button.mjs)
+   content/browser/preferences/widgets/placeholder-message.mjs          (widgets/placeholder-message/placeholder-message.mjs)
+   content/browser/preferences/widgets/placeholder-message.css          (widgets/placeholder-message/placeholder-message.css)
    content/browser/preferences/widgets/nav-notice.mjs                   (widgets/nav-notice/nav-notice.mjs)
    content/browser/preferences/widgets/nav-notice.css                   (widgets/nav-notice/nav-notice.css)
    content/browser/preferences/widgets/setting-control.css              (widgets/setting-control/setting-control.css)
    content/browser/preferences/widgets/setting-control.mjs              (widgets/setting-control/setting-control.mjs)
    content/browser/preferences/widgets/setting-group.mjs                (widgets/setting-group/setting-group.mjs)
    content/browser/preferences/widgets/setting-group.css                (widgets/setting-group/setting-group.css)
+   content/browser/preferences/widgets/setting-element.mjs              (widgets/setting-element/setting-element.mjs)
    content/browser/preferences/widgets/setting-pane.mjs                 (widgets/setting-pane/setting-pane.mjs)
    content/browser/preferences/widgets/security-privacy-card.mjs        (widgets/security-privacy/security-privacy-card/security-privacy-card.mjs)
    content/browser/preferences/widgets/security-privacy-card.css        (widgets/security-privacy/security-privacy-card/security-privacy-card.css)
+   content/browser/preferences/widgets/sync-device-name.mjs          (widgets/sync-device-name/sync-device-name.mjs)

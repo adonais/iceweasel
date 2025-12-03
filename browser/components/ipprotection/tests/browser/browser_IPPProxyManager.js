@@ -7,6 +7,9 @@
 const { IPPProxyManager } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPPProxyManager.sys.mjs"
 );
+const { IPProtectionServerlist } = ChromeUtils.importESModule(
+  "resource:///modules/ipprotection/IPProtectionServerlist.sys.mjs"
+);
 
 // Don't add an experiment so we can test adding and removing it.
 DEFAULT_EXPERIMENT = null;
@@ -19,6 +22,8 @@ add_task(async function test_IPPProxyManager_handleProxyErrorEvent() {
   let cleanupAlpha = await setupExperiment({ enabled: true, variant: "alpha" });
 
   let proxyManager = new IPPProxyManager(IPProtectionService.guardian);
+
+  await IPProtectionServerlist.maybeFetchList();
 
   await proxyManager.start();
 

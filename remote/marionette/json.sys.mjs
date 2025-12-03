@@ -10,9 +10,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   dom: "chrome://remote/content/shared/DOM.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
+  NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
   ShadowRoot: "chrome://remote/content/marionette/web-reference.sys.mjs",
-  TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
   WebElement: "chrome://remote/content/marionette/web-reference.sys.mjs",
   WebFrame: "chrome://remote/content/marionette/web-reference.sys.mjs",
   WebReference: "chrome://remote/content/marionette/web-reference.sys.mjs",
@@ -230,6 +230,10 @@ json.clone = function (value, nodeCache) {
  *
  * @throws {NoSuchElementError}
  *     If the WebElement reference has not been seen before.
+ * @throws {NoSuchFrameError}
+ *     Child browsing context has been discarded.
+ * @throws {NoSuchWindowError}
+ *     Top-level browsing context has been discarded.
  * @throws {StaleElementReferenceError}
  *     If the element is stale, indicating it is no longer attached to the DOM.
  */
@@ -267,7 +271,7 @@ json.deserialize = function (value, nodeCache, browsingContext) {
             const browsingContext = BrowsingContext.get(webRef.uuid);
 
             if (browsingContext === null || browsingContext.parent === null) {
-              throw new lazy.error.NoSuchWindowError(
+              throw new lazy.error.NoSuchFrameError(
                 `Unable to locate frame with id: ${webRef.uuid}`
               );
             }
@@ -312,7 +316,7 @@ json.mapFromNavigableIds = function (serializedData) {
       const webRef = lazy.WebReference.fromJSON(data);
 
       if (webRef instanceof lazy.WebWindow) {
-        const browser = lazy.TabManager.getBrowserById(webRef.uuid);
+        const browser = lazy.NavigableManager.getBrowserById(webRef.uuid);
         if (browser) {
           webRef.uuid = browser?.browserId.toString();
           data = webRef.toJSON();
@@ -348,7 +352,8 @@ json.mapToNavigableIds = function (serializedData) {
           webRef.uuid
         );
 
-        webRef.uuid = lazy.TabManager.getIdForBrowsingContext(browsingContext);
+        webRef.uuid =
+          lazy.NavigableManager.getIdForBrowsingContext(browsingContext);
         data = webRef.toJSON();
       }
     } else if (typeof data == "object") {

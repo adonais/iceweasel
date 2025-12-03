@@ -13,7 +13,7 @@ export const PREFERENCES_LOADED_EVENT = "home-pane-loaded";
 // SectionsManager to construct the preferences view.
 const PREFS_FOR_SETTINGS = () => [
   {
-    id: "search",
+    id: "web-search",
     pref: {
       feed: "showSearch",
       titleString: "home-prefs-search-header",
@@ -66,18 +66,6 @@ const PREFS_FOR_SETTINGS = () => [
       feed: "feeds.topsites",
       titleString: "home-prefs-shortcuts-header",
       descString: "home-prefs-shortcuts-description",
-      nestedPrefs: [
-        {
-          name: "showSponsoredTopSites",
-          titleString: "home-prefs-shortcuts-by-option-sponsored",
-          eventSource: "SPONSORED_TOP_SITES",
-          // Hide this nested pref if "Support Firefox" checkbox is enabled
-          shouldHidePref: Services.prefs.getBoolPref(
-            "browser.newtabpage.activity-stream.system.showSponsoredCheckboxes",
-            false
-          ),
-        },
-      ],
     },
     maxRows: 4,
     rowsPref: "topSitesRows",
@@ -93,26 +81,6 @@ const PREFS_FOR_SETTINGS = () => [
       descString: {
         id: "home-prefs-recommended-by-description-generic",
       },
-      nestedPrefs: [
-        ...(Services.prefs.getBoolPref(
-          "browser.newtabpage.activity-stream.system.showSponsored",
-          true
-        ) && // Hide this nested pref if "Support Firefox" checkbox is enabled
-        !Services.prefs.getBoolPref(
-          "browser.newtabpage.activity-stream.system.showSponsoredCheckboxes",
-          false
-        )
-          ? [
-              {
-                name: "showSponsored",
-                titleString:
-                  "home-prefs-recommended-by-option-sponsored-stories",
-                icon: "icon-info",
-                eventSource: "POCKET_SPOCS",
-              },
-            ]
-          : []),
-      ],
     },
     shouldHidePref: !Services.prefs.getBoolPref(
       "browser.newtabpage.activity-stream.feeds.system.topstories",
@@ -146,10 +114,6 @@ const PREFS_FOR_SETTINGS = () => [
         },
       ],
     },
-    shouldHidePref: !Services.prefs.getBoolPref(
-      "browser.newtabpage.activity-stream.system.showSponsoredCheckboxes",
-      false
-    ),
   },
 ];
 
@@ -224,9 +188,25 @@ export class AboutPreferences {
    * @param document
    * @param Preferences
    */
+
+  /**
+   * @backward-compat { version 146 }
+   *
+   * The `web-search` DOM node will not exist until Fx146+ so we have
+   * to fall back to the `search` DOM node. Adding this shim causes
+   * renderPreferenceSection to have too many statements. We can remove
+   * this eslint exception once we are in Fx146+.
+   */
+  // eslint-disable-next-line max-statements
   renderPreferenceSection(sectionData, document, Preferences) {
+    /**
+     * @backward-compat { version 146 }
+     *
+     * We have to potentially re-assign the `id` if it is `web-search`.
+     * We should restore `id` back to a const after Fx146+.
+     */
+    let { id } = sectionData;
     const {
-      id,
       pref: prefData,
       maxRows,
       rowsPref,
@@ -253,6 +233,19 @@ export class AboutPreferences {
     // Don't show any sections that we don't want to expose in preferences UI
     if (shouldHidePref) {
       return;
+    }
+
+    /**
+     * @backward-compat { version 146 }
+     *
+     * The `web-search` DOM node will not exist until Fx146+ so fall
+     * back to the `search` DOM node until then.
+     */
+    if (id === "web-search") {
+      let webSearchBox = document.getElementById(id);
+      if (!webSearchBox) {
+        id = "search";
+      }
     }
 
     // Add the main preference for turning on/off a section

@@ -45,6 +45,7 @@ import android.os.Debug;
 import android.os.LocaleList;
 import android.os.Looper;
 import android.os.PowerManager;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
@@ -64,7 +65,6 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.Locale;
 import java.util.StringTokenizer;
 import org.jetbrains.annotations.NotNull;
 import org.mozilla.gecko.annotation.RobocopTarget;
@@ -202,12 +202,12 @@ public class GeckoAppShell {
   private static boolean sUseMaxScreenDepth;
   private static Float sScreenRefreshRate;
 
-  /* Is the value in sVibrationEndTime valid? */
-  private static boolean sVibrationMaybePlaying;
-
-  /* Time (in System.nanoTime() units) when the currently-playing vibration
-   * is scheduled to end.  This value is valid only when
-   * sVibrationMaybePlaying is true. */
+  /*
+   * Time (in System.nanoTime() units) when the currently-playing vibration
+   * is scheduled to end. This value could be zero when the vibration is
+   * cancelled. `System.nanoTime() > sVibrationEndTime` means there is not a
+   * playing vibration now.
+   */
   private static long sVibrationEndTime;
 
   private static Sensor gAccelerometerSensor;
@@ -512,9 +512,7 @@ public class GeckoAppShell {
       final float accuracy = location.hasAccuracy() ? location.getAccuracy() : Float.NaN;
 
       final float altitudeAccuracy =
-          Build.VERSION.SDK_INT >= 26 && location.hasVerticalAccuracy()
-              ? location.getVerticalAccuracyMeters()
-              : Float.NaN;
+          location.hasVerticalAccuracy() ? location.getVerticalAccuracyMeters() : Float.NaN;
 
       final float speed = location.hasSpeed() ? location.getSpeed() : Float.NaN;
 
@@ -933,45 +931,34 @@ public class GeckoAppShell {
 
   @WrapForJNI(calledFrom = "gecko")
   private static boolean hasHDRScreen() {
-    if (Build.VERSION.SDK_INT < 24) {
-      return false;
-    }
-    final WindowManager wm =
-        (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-    final Display display = wm.getDefaultDisplay();
-    if (Build.VERSION.SDK_INT >= 26) {
-      return display.isHdr();
-    }
-    final Display.HdrCapabilities hdrCapabilities = display.getHdrCapabilities();
-    if (hdrCapabilities == null) {
-      return false;
-    }
-    final int[] supportedHdrTypes = hdrCapabilities.getSupportedHdrTypes();
-    for (final int type : supportedHdrTypes) {
-      if (type == Display.HdrCapabilities.HDR_TYPE_HDR10
-          || type == Display.HdrCapabilities.HDR_TYPE_HDR10_PLUS
-          || type == Display.HdrCapabilities.HDR_TYPE_HLG
-          || type == Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION) {
-        return true;
-      }
-    }
-    return false;
+    final Display display =
+        ((DisplayManager) getApplicationContext().getSystemService(Context.DISPLAY_SERVICE))
+            .getDisplay(Display.DEFAULT_DISPLAY);
+    return display != null && display.isHdr();
   }
 
   @WrapForJNI(calledFrom = "gecko")
   private static void performHapticFeedback(final boolean aIsLongPress) {
     // Don't perform haptic feedback if a vibration is currently playing,
     // because the haptic feedback will nuke the vibration.
-    if (!sVibrationMaybePlaying || System.nanoTime() >= sVibrationEndTime) {
-      final int[] pattern;
-      if (aIsLongPress) {
-        pattern = new int[] {0, 1, 20, 21};
+    if (System.nanoTime() >= sVibrationEndTime) {
+      final VibrationEffect effect;
+      if (Build.VERSION.SDK_INT >= 29) {
+        // API level 29 introduces pre-defined vibration effects for better
+        // haptic feedback, prefer to use them.
+        if (aIsLongPress) {
+          effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK);
+        } else {
+          effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK);
+        }
       } else {
-        pattern = new int[] {0, 10, 20, 30};
+        if (aIsLongPress) {
+          effect = VibrationEffect.createWaveform(new long[] {0, 1, 20, 21}, -1);
+        } else {
+          effect = VibrationEffect.createWaveform(new long[] {0, 10, 20, 30}, -1);
+        }
       }
-      vibrateOnHapticFeedbackEnabled(pattern);
-      sVibrationMaybePlaying = false;
-      sVibrationEndTime = 0;
+      vibrateOnHapticFeedbackEnabled(effect);
     }
   }
 
@@ -979,26 +966,21 @@ public class GeckoAppShell {
     return (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
   }
 
-  // Helper method to convert integer array to long array.
-  private static long[] convertIntToLongArray(final int[] input) {
-    final long[] output = new long[input.length];
-    for (int i = 0; i < input.length; i++) {
-      output[i] = input[i];
-    }
-    return output;
-  }
-
   // Vibrate only if haptic feedback is enabled.
-  private static void vibrateOnHapticFeedbackEnabled(final int[] milliseconds) {
+  @SuppressLint("MissingPermission")
+  private static void vibrateOnHapticFeedbackEnabled(final VibrationEffect effect) {
     if (Settings.System.getInt(
             getApplicationContext().getContentResolver(),
             Settings.System.HAPTIC_FEEDBACK_ENABLED,
             0)
         > 0) {
-      if (milliseconds.length == 1) {
-        vibrate(milliseconds[0]);
-      } else {
-        vibrate(convertIntToLongArray(milliseconds), -1);
+      // Here, sVibrationEndTime is not set. Compared to other kinds of
+      // vibration, haptic feedbacks are usually shorter and less important,
+      // which means it's ok to "nuke" them.
+      try {
+        vibrator().vibrate(effect);
+      } catch (final SecurityException ignore) {
+        Log.w(LOGTAG, "No VIBRATE permission");
       }
     }
   }
@@ -1007,7 +989,6 @@ public class GeckoAppShell {
   @WrapForJNI(calledFrom = "gecko")
   private static void vibrate(final long milliseconds) {
     sVibrationEndTime = System.nanoTime() + milliseconds * 1000000;
-    sVibrationMaybePlaying = true;
     try {
       vibrator().vibrate(milliseconds);
     } catch (final SecurityException ignore) {
@@ -1027,7 +1008,6 @@ public class GeckoAppShell {
     }
 
     sVibrationEndTime = System.nanoTime() + vibrationDuration * 1000000;
-    sVibrationMaybePlaying = true;
     try {
       vibrator().vibrate(pattern, repeat);
     } catch (final SecurityException ignore) {
@@ -1038,7 +1018,6 @@ public class GeckoAppShell {
   @SuppressLint("MissingPermission")
   @WrapForJNI(calledFrom = "gecko")
   private static void cancelVibrate() {
-    sVibrationMaybePlaying = false;
     sVibrationEndTime = 0;
     try {
       vibrator().cancel();
@@ -1105,10 +1084,6 @@ public class GeckoAppShell {
 
   @WrapForJNI(calledFrom = "gecko", exceptionMode = "nsresult")
   private static String getDNSDomains() {
-    if (Build.VERSION.SDK_INT < 23) {
-      return "";
-    }
-
     ensureConnectivityManager();
     final Network net = sConnectivityManager.getActiveNetwork();
     if (net == null) {
@@ -1173,11 +1148,7 @@ public class GeckoAppShell {
     // TODO(m_kato):
     // Android 16 will have `layout related APIs such as setLayoutLabelNonLocalized
     // to get keyboard layout label.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-      return ims.getLanguageTag();
-    } else {
-      return ims.getLocale();
-    }
+    return ims.getLanguageTag();
   }
 
   @WrapForJNI(calledFrom = "gecko")
@@ -1438,9 +1409,8 @@ public class GeckoAppShell {
     return result;
   }
 
-  @WrapForJNI(calledFrom = "gecko")
   // For any-pointer and any-hover media queries features.
-  private static int getAllPointerCapabilities() {
+  /* package */ static int getAllPointerCapabilities() {
     int result = NO_POINTER;
 
     for (final int deviceId : InputDevice.getDeviceIds()) {
@@ -1482,17 +1452,15 @@ public class GeckoAppShell {
     if (hasInputDeviceSource(sources, InputDevice.SOURCE_STYLUS)) {
       result |= POINTING_DEVICE_PEN;
     }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-        && hasInputDeviceSource(sources, InputDevice.SOURCE_BLUETOOTH_STYLUS)) {
+    if (hasInputDeviceSource(sources, InputDevice.SOURCE_BLUETOOTH_STYLUS)) {
       result |= POINTING_DEVICE_PEN;
     }
 
     return result;
   }
 
-  @WrapForJNI(calledFrom = "gecko")
   // For pointing devices telemetry.
-  private static int getPointingDeviceKinds() {
+  /* package */ static int getPointingDeviceKinds() {
     int result = POINTING_DEVICE_NONE;
 
     for (final int deviceId : InputDevice.getDeviceIds()) {
@@ -1717,18 +1685,12 @@ public class GeckoAppShell {
 
   @WrapForJNI
   public static String[] getDefaultLocales() {
-    // XXX We may have to convert some language codes such as "id" vs "in".
-    if (Build.VERSION.SDK_INT >= 24) {
-      final LocaleList localeList = LocaleList.getDefault();
-      final String[] locales = new String[localeList.size()];
-      for (int i = 0; i < localeList.size(); i++) {
-        locales[i] = localeList.get(i).toLanguageTag();
-      }
-      return locales;
+    final LocaleList list = LocaleList.getDefault();
+    final int n = list.size();
+    final String[] locales = new String[n];
+    for (int i = 0; i < n; i++) {
+      locales[i] = list.get(i).toLanguageTag();
     }
-    final String[] locales = new String[1];
-    final Locale locale = Locale.getDefault();
-    locales[0] = locale.toLanguageTag();
     return locales;
   }
 
@@ -1751,11 +1713,6 @@ public class GeckoAppShell {
 
   @WrapForJNI(calledFrom = "gecko")
   private static int getMemoryUsage(final String stateName) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-      // No API to get Java heap usages.
-      return -1;
-    }
-
     final Debug.MemoryInfo memInfo = new Debug.MemoryInfo();
     Debug.getMemoryInfo(memInfo);
     final String usage = memInfo.getMemoryStat(stateName);

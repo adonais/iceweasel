@@ -148,8 +148,8 @@ PaintFragment PaintFragment::Record(dom::BrowsingContext* aBc,
     thebes.SetMatrix(Matrix::Scaling(aScale, aScale));
     thebes.SetCrossProcessPaintScale(aScale);
     RefPtr<PresShell> presShell = presContext->PresShell();
-    Unused << presShell->RenderDocument(r, renderDocFlags, aBackgroundColor,
-                                        &thebes);
+    (void)presShell->RenderDocument(r, renderDocFlags, aBackgroundColor,
+                                    &thebes);
   }
 
   if (!recorder->mOutputStream.mValid) {

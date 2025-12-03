@@ -557,6 +557,24 @@ So that ``console.shouldLog()`` only consider the level set by
   logger.debug("some debug info");
 
 
+Logging from Java
++++++++++++++++++
+
+In GeckoView, the Java code can log messages using the `org.mozilla.gecko.MozLog` class.
+
+.. code-block:: java
+
+  import org.mozilla.gecko.MozLog;
+
+  public class Example {
+      public void doStuff() {
+          final String MODULE = "GeckoSample";
+          MozLog.d(MODULE, "Doing stuff");
+          MozLog.w(MODULE, "Warning");
+          MozLog.e(MODULE, "Error happened");
+      }
+  }
+
 Logging web page errors and warnings
 ++++++++++++++++++++++++++++++++++++
 

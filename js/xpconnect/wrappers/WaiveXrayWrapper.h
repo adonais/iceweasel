@@ -7,7 +7,6 @@
 #ifndef __CrossOriginWrapper_h__
 #define __CrossOriginWrapper_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 
 #include "js/Wrapper.h"

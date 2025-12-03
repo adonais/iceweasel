@@ -28,6 +28,7 @@ from webdriver.bidi.modules.network import (
     NetworkStringValue,
 )
 from webdriver.bidi.modules.script import ContextTarget
+from webdriver.bidi.undefined import UNDEFINED
 from webdriver.error import TimeoutException
 
 
@@ -241,7 +242,30 @@ def current_time(bidi_session, top_context):
 
 
 @pytest.fixture
-def add_and_remove_iframe(bidi_session):
+def create_iframe(bidi_session):
+    """
+    Create an iframe and wait for it to load. Return the iframe's context id.
+    """
+
+    async def create_iframe(context, url):
+        resp = await bidi_session.script.call_function(
+            function_declaration="""(url) => {
+                const iframe = document.createElement("iframe");
+                iframe.src = url;
+                document.documentElement.lastElementChild.append(iframe);
+                return new Promise(resolve => iframe.onload = () => resolve(iframe.contentWindow));
+            }""",
+            arguments=[{"type": "string", "value": url}],
+            target=ContextTarget(context["context"]),
+            await_promise=True)
+        assert resp["type"] == "window"
+        return resp["value"]
+
+    return create_iframe
+
+
+@pytest.fixture
+def add_and_remove_iframe(bidi_session, create_iframe):
     """Create a frame, wait for load, and remove it.
 
     Return the frame's context id, which allows to test for invalid
@@ -507,8 +531,8 @@ async def create_user_context(bidi_session):
 
     user_contexts = []
 
-    async def create_user_context(accept_insecure_certs=None, proxy=None,
-            unhandled_prompt_behavior=None):
+    async def create_user_context(accept_insecure_certs=UNDEFINED, proxy=UNDEFINED,
+            unhandled_prompt_behavior=UNDEFINED):
         nonlocal user_contexts
         user_context = await bidi_session.browser.create_user_context(
             accept_insecure_certs=accept_insecure_certs, proxy=proxy,
@@ -601,24 +625,58 @@ def domain_value(server_config):
 def fetch(bidi_session, top_context, configuration):
     """Perform a fetch from the page of the provided context, default to the
     top context.
+
+    :param url: The url to fetch.
+    :param method: Force a specific HTTP method. defaults to "GET".
+    :param headers: Dictionary of request headers.
+    :param post_data: Request post data (forces method to "POST" if set to "GET").
+                      If post_data is a dictionary, FormData will be used to set
+                      the data as multipart form data. Otherwise will be set as
+                      as string.
+    :param context: BrowsingContext info object.
+    :param timeout_in_seconds: Timeout in seconds (defaults to 3 seconds).
     """
 
     async def fetch(
         url,
-        method="GET",
+        method=None,
         headers=None,
         post_data=None,
         context=top_context,
         timeout_in_seconds=3,
     ):
+        if method is None:
+            method = "GET" if post_data is None else "POST"
+
         method_arg = f"method: '{method}',"
 
         headers_arg = ""
         if headers is not None:
             headers_arg = f"headers: {json.dumps(headers)},"
 
-        body_arg = ""
-        if post_data is not None:
+        if post_data is None:
+            body_arg = ""
+        elif isinstance(post_data, dict):
+            body_arg = f"""body: (() => {{
+               const formData  = new FormData();
+               const data = {json.dumps(post_data)};
+               for(const name in data) {{
+                 // Handle file binary data.
+                 if (typeof data[name] == "object") {{
+                   const binary = atob(data[name].value);
+                   const bytes = new Uint8Array(binary.length);
+                   for (let i = 0; i < binary.length; i++) {{
+                     bytes[i] = binary.charCodeAt(i);
+                   }}
+                   const blob = new Blob([bytes], {{ type: data[name].type }});
+                   formData.append(name, blob, data[name].filename);
+                 }} else {{
+                   formData.append(name, data[name]);
+                 }}
+               }}
+               return formData;
+            }})(),"""
+        else:
             body_arg = f"body: {json.dumps(post_data)},"
 
         timeout_in_seconds = timeout_in_seconds * configuration["timeout_multiplier"]
@@ -676,7 +734,7 @@ async def setup_beforeunload_page(bidi_session, url):
 
 
 @pytest_asyncio.fixture
-async def setup_collected_response(
+async def setup_collected_data(
     bidi_session,
     subscribe_events,
     wait_for_event,
@@ -693,11 +751,12 @@ async def setup_collected_response(
     Returns the request id of the triggered request.
     """
 
-    async def _setup_collected_response(
+    async def _setup_collected_data(
         collector_type="blob",
         data_types=["response"],
         max_encoded_data_size=10000,
         fetch_url=url("/webdriver/tests/bidi/network/support/empty.txt"),
+        fetch_post_data=None,
         context=top_context,
     ):
         collector = await add_data_collector(
@@ -705,19 +764,25 @@ async def setup_collected_response(
             data_types=data_types,
             max_encoded_data_size=max_encoded_data_size,
         )
+
         await setup_network_test(
             events=[
+                "network.beforeRequestSent",
                 "network.responseCompleted",
             ]
         )
         on_response_completed = wait_for_event("network.responseCompleted")
 
-        await fetch(fetch_url, context=context)
+        await fetch(
+            fetch_url,
+            post_data=fetch_post_data,
+            context=context,
+        )
         response_completed_event = await on_response_completed
         request = response_completed_event["request"]["request"]
         return [request, collector]
 
-    return _setup_collected_response
+    return _setup_collected_data
 
 
 @pytest_asyncio.fixture

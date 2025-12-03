@@ -4,7 +4,7 @@
 "use strict";
 
 function test() {
-  /** Tests formdata format **/
+  /** Tests formdata format */
   waitForExplicitFinish();
 
   let formData = [

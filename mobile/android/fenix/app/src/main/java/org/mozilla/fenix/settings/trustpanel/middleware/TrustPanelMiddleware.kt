@@ -56,7 +56,7 @@ class TrustPanelMiddleware(
     private val permissionStorage: PermissionStorage,
     private val requestPermissionsLauncher: ActivityResultLauncher<Array<String>>,
     private val onDismiss: suspend () -> Unit,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
 ) : Middleware<TrustPanelState, TrustPanelAction> {
 
     override fun invoke(
@@ -86,7 +86,7 @@ class TrustPanelMiddleware(
 
     private fun toggleTrackingProtection(
         currentState: TrustPanelState,
-    ) = scope.launch {
+    ) = scope.launch(Dispatchers.Main) {
         currentState.sessionState?.let { session ->
             if (currentState.isTrackingProtectionEnabled) {
                 trackingProtectionUseCases.addException(session.id)

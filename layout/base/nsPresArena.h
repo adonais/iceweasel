@@ -14,7 +14,6 @@
 
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/ArenaObjectID.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/MemoryChecking.h"  // Note: Do not remove this, needed for MOZ_HAVE_MEM_CHECKS below
 #include "mozilla/MemoryReporting.h"
 #include "nsHashKeys.h"

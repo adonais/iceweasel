@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_DocumentFragment_h__
 #define mozilla_dom_DocumentFragment_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/BorrowedAttrInfo.h"
 #include "mozilla/dom/FragmentOrElement.h"
 #include "nsStringFwd.h"

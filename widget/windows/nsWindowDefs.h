@@ -11,7 +11,7 @@
  */
 
 #include "mozilla/widget/WinMessages.h"
-#include "nsBaseWidget.h"
+#include "nsIWidget.h"
 #include "nsdefs.h"
 #include "resource.h"
 

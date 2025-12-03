@@ -333,7 +333,7 @@ nsresult UrlClassifierCommon::CreatePairwiseEntityListURI(nsIChannel* aChannel,
           if (principal) {
             auto* basePrin = BasePrincipal::Cast(principal);
             rv = basePrin->GetURI(getter_AddRefs(topWinURI));
-            Unused << NS_WARN_IF(NS_FAILED(rv));
+            (void)NS_WARN_IF(NS_FAILED(rv));
           }
         }
       }
@@ -350,7 +350,7 @@ nsresult UrlClassifierCommon::CreatePairwiseEntityListURI(nsIChannel* aChannel,
       if (principal) {
         auto* basePrin = BasePrincipal::Cast(principal);
         rv = basePrin->GetURI(getter_AddRefs(topWinURI));
-        Unused << NS_WARN_IF(NS_FAILED(rv));
+        (void)NS_WARN_IF(NS_FAILED(rv));
       }
     }
   }

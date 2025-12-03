@@ -71,7 +71,8 @@ skip-if = [
 ["test_dnd_ignoreNuls.html"]
 skip-if = [
   "headless", # DND test requires a window!  nsDragService is not available.
-  "os == 'android'",  # Fx on android does not currently support DND
+  "os == 'android'", #  Fx on android does not currently support DND
+  "opt && xorigin && verify-standalone",
 ]
 
 ["test_keypress_event_with_alt_on_mac.html"]

@@ -15,6 +15,7 @@ num-integer = "0.1"
 pkcs11-bindings = "0.1.1"
 rand = "0.8"
 rsclientcerts = { path = "../../../rsclientcerts" }
+rsclientcerts-util = { path = "../../../rsclientcerts-util" }
 
 [lib]
 crate-type = ["staticlib"]

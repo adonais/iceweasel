@@ -36,7 +36,7 @@
 #include <android/log.h>
 
 #ifdef NIGHTLY_BUILD
-static mozilla::LazyLogModule sGeckoEditableSupportLog("GeckoEditableSupport");
+static mozilla::LazyLogModule sGeckoEditableSupportLog("IMEHandler");
 #  define ALOGIME(...) \
     MOZ_LOG(sGeckoEditableSupportLog, LogLevel::Debug, (__VA_ARGS__))
 #else

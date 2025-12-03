@@ -11,6 +11,13 @@ server.registerPathHandler("/dummy", (request, response) => {
   response.write("<!DOCTYPE html><html></html>");
 });
 
+server.registerPathHandler("/sandbox.html", (request, response) => {
+  response.setStatusLine(request.httpVersion, 200, "OK");
+  response.setHeader("Content-Type", "text/html", false);
+  response.setHeader("Content-Security-Policy", "sandbox allow-same-origin;");
+  response.write(`<!DOCTYPE html><html> </html>`);
+});
+
 server.registerPathHandler("/script.js", () => {
   ok(false, "Unexpected request to /script.js");
 });
@@ -66,6 +73,42 @@ add_task(async function test_disallowed_import() {
   await extension.startup();
   let contentPage = await ExtensionTestUtils.loadContentPage(
     "http://example.com/dummy"
+  );
+  await extension.awaitMessage("done");
+  await extension.unload();
+  await contentPage.close();
+});
+
+// The document's CSP shouldn't restrict the extension.
+add_task(async function test_import_in_sandboxed_document() {
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      content_scripts: [
+        {
+          matches: ["http://example.com/sandbox.html"],
+          js: ["main.js"],
+        },
+      ],
+    },
+
+    files: {
+      "main.js": async function () {
+        try {
+          let mod = await import(browser.runtime.getURL("module2.js"));
+          browser.test.assertEq(mod.foo, 2);
+        } catch (e) {
+          browser.test.assertTrue(false, `Threw while importing module: ${e}`);
+        }
+
+        browser.test.sendMessage("done");
+      },
+      "module2.js": MODULE2,
+    },
+  });
+
+  await extension.startup();
+  let contentPage = await ExtensionTestUtils.loadContentPage(
+    "http://example.com/sandbox.html"
   );
   await extension.awaitMessage("done");
   await extension.unload();

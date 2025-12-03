@@ -13,6 +13,7 @@ kind-dependencies:
     - signing-apk
 
 task-defaults:
+    run-on-repo-type: [hg]
     description: Runs UI tests for sanity checking startup on Nightly
     treeherder:
         kind: test

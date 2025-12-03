@@ -32,7 +32,6 @@
 #include "mozilla/Casting.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Likely.h"
-#include "mozilla/MathAlgorithms.h"
 
 #include <float.h>
 #include <limits>
@@ -1161,11 +1160,13 @@ void SimulatorProcess::checkICacheLocked(SimInstruction* instr) {
   char* cached_line = cache_page->cachedData(offset & ~CachePage::kLineMask);
 
   if (cache_hit) {
+#ifdef DEBUG
     // Check that the data in memory matches the contents of the I-cache.
     int cmpret =
         memcmp(reinterpret_cast<void*>(instr), cache_page->cachedData(offset),
                SimInstruction::kInstrSize);
     MOZ_ASSERT(cmpret == 0);
+#endif
   } else {
     // Cache miss.  Load memory into the cache.
     memcpy(cached_line, line, CachePage::kLineLength);
@@ -1924,9 +1925,6 @@ void Simulator::softwareInterrupt(SimInstruction* instr) {
 
   // We first check if we met a call_rt_redirected.
   if (instr->instructionBits() == kCallRedirInstr) {
-#if !defined(USES_N64_ABI)
-    MOZ_CRASH("Only N64 ABI supported.");
-#else
     Redirection* redirection = Redirection::FromSwiInstruction(instr);
     uintptr_t nativeFn =
         reinterpret_cast<uintptr_t>(redirection->nativeFunction());
@@ -1982,7 +1980,6 @@ void Simulator::softwareInterrupt(SimInstruction* instr) {
 
     setRegister(ra, saved_ra);
     set_pc(getRegister(ra));
-#endif
   } else if (func == ff_break && code <= kMaxStopCode) {
     if (isWatchpoint(code)) {
       printWatchpoint(code);

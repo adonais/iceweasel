@@ -10,11 +10,13 @@ support-files = ["data/**"]
 tags = "webextensions"
 
 ["test_ext_native_messaging.js"]
+requesttimeoutfactor = 2  # Slow on Windows
 
 ["test_ext_native_messaging_concurrent.js"]
 run-sequentially = ["os == 'mac'"] # frequent fail in parallel on Mac
 
 ["test_ext_native_messaging_perf.js"]
+requesttimeoutfactor = 3  # Slow on Windows and macOS aarch64
 run-sequentially = [
   "os == 'win'", # almost perma-fail in parallel on Windows
   "os == 'mac'", # frequent timeouts on Mac

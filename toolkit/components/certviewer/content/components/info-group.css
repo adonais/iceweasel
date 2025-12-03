@@ -18,7 +18,7 @@
 .info-group-title {
   margin: 0;
   text-align: end;
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   color: var(--text-color);
   font-size: 1em;
   vertical-align: middle;

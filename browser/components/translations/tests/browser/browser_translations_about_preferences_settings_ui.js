@@ -215,7 +215,8 @@ async function testLanguageList(
     menuList.querySelector("menupopup").hidePopup();
     await clickMenu;
 
-    /** Languages are always added on the top, so check the firstChild
+    /**
+     * Languages are always added on the top, so check the firstChild
      * for newly added languages.
      * the firstChild.querySelector("label").innerText is the language display name
      * which is compared with the menulist display name that is selected
@@ -296,7 +297,8 @@ async function testLanguageListWithPref(languageList, pref, sectionName) {
   for (const langOptions of langs) {
     Services.prefs.setCharPref(pref, langOptions);
 
-    /** Languages are always added on the top, so check the firstChild
+    /**
+     * Languages are always added on the top, so check the firstChild
      * for newly added languages.
      * the firstChild.querySelector("label").innerText is the language display name
      * which is compared with the menulist display name that is selected

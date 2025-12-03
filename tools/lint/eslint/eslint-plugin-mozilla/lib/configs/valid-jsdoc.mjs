@@ -15,19 +15,13 @@ export default {
     "jsdoc/check-tag-names": "error",
     "jsdoc/check-types": "error",
     "jsdoc/empty-tags": "error",
-    "jsdoc/no-multi-asterisks": "error",
+    "jsdoc/multiline-blocks": "error",
+    "jsdoc/no-bad-blocks": "error",
+    "jsdoc/no-multi-asterisks": ["error", { allowWhitespace: true }],
+    // "jsdoc/reject-function-type": "error",
     "jsdoc/require-param-type": "error",
     "jsdoc/require-returns-type": "error",
     "jsdoc/tag-lines": ["error", "any", { startLines: 1 }],
     "jsdoc/valid-types": "error",
-  },
-  settings: {
-    jsdoc: {
-      // This changes what's allowed in JSDocs, enabling more type-inference
-      // friendly types.  This is the default in eslint-plugin-jsdoc versions
-      // since May 2023, but we're still on 39.9 and need opt-in for now.
-      // https://github.com/gajus/eslint-plugin-jsdoc/issues/834
-      mode: "typescript",
-    },
   },
 };

@@ -606,9 +606,8 @@ HTMLEditor::AutoInsertParagraphHandler::InsertBRElement(
 
   const bool editingHostIsEmpty = HTMLEditUtils::IsEmptyNode(
       mEditingHost, {EmptyCheckOption::TreatNonEditableContentAsInvisible});
-  const WSRunScanner wsRunScanner(WSRunScanner::Scan::EditableNodes,
-                                  aPointToBreak,
-                                  BlockInlineCheck::UseComputedDisplayStyle);
+  const WSRunScanner wsRunScanner({WSRunScanner::Option::OnlyEditableNodes},
+                                  aPointToBreak);
   const WSScanResult backwardScanResult =
       wsRunScanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(aPointToBreak);
   if (MOZ_UNLIKELY(backwardScanResult.Failed())) {
@@ -758,8 +757,7 @@ HTMLEditor::AutoInsertParagraphHandler::InsertBRElement(
 
   const WSScanResult forwardScanFromAfterBRElementResult =
       WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::EditableNodes, afterBRElement,
-          BlockInlineCheck::UseComputedDisplayStyle);
+          {WSRunScanner::Option::OnlyEditableNodes}, afterBRElement);
   if (MOZ_UNLIKELY(forwardScanFromAfterBRElementResult.Failed())) {
     NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
     return Err(NS_ERROR_FAILURE);
@@ -983,8 +981,9 @@ HTMLEditor::AutoInsertParagraphHandler::SplitMailCiteElement(
   // mailquote may affect wrapping behavior, or font color, etc.
   const WSScanResult forwardScanFromPointToSplitResult =
       WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::EditableNodes, pointToSplit,
-          BlockInlineCheck::UseHTMLDefaultStyle);
+          {WSRunScanner::Option::OnlyEditableNodes,
+           WSRunScanner::Option::ReferHTMLDefaultStyle},
+          pointToSplit);
   if (forwardScanFromPointToSplitResult.Failed()) {
     return Err(NS_ERROR_FAILURE);
   }
@@ -1054,8 +1053,9 @@ nsresult HTMLEditor::AutoInsertParagraphHandler::
   //     resultOfInsertingBRElement.inspect()?
   const WSScanResult backwardScanFromPointToCreateNewBRElementResult =
       WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::EditableNodes, aPointToInsertBRElement,
-          BlockInlineCheck::UseHTMLDefaultStyle);
+          {WSRunScanner::Option::OnlyEditableNodes,
+           WSRunScanner::Option::ReferHTMLDefaultStyle},
+          aPointToInsertBRElement);
   if (MOZ_UNLIKELY(backwardScanFromPointToCreateNewBRElementResult.Failed())) {
     NS_WARNING(
         "WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary() "
@@ -1070,9 +1070,9 @@ nsresult HTMLEditor::AutoInsertParagraphHandler::
   }
   const WSScanResult forwardScanFromPointAfterNewBRElementResult =
       WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::EditableNodes,
-          EditorRawDOMPoint::After(aPointToInsertBRElement),
-          BlockInlineCheck::UseHTMLDefaultStyle);
+          {WSRunScanner::Option::OnlyEditableNodes,
+           WSRunScanner::Option::ReferHTMLDefaultStyle},
+          EditorRawDOMPoint::After(aPointToInsertBRElement));
   if (MOZ_UNLIKELY(forwardScanFromPointAfterNewBRElementResult.Failed())) {
     NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
     return NS_ERROR_FAILURE;
@@ -1282,9 +1282,7 @@ HTMLEditor::AutoInsertParagraphHandler::GetBetterPointToSplitParagraph(
     {
       const WSScanResult prevVisibleThing =
           WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-              WSRunScanner::Scan::All, aCandidatePointToSplit,
-              BlockInlineCheck::UseComputedDisplayOutsideStyle,
-              &aBlockElementToSplit);
+              {}, aCandidatePointToSplit, &aBlockElementToSplit);
       if (prevVisibleThing.GetContent() &&
           // Only if the previous thing is not in the same container.
           prevVisibleThing.GetContent() !=
@@ -1318,15 +1316,12 @@ HTMLEditor::AutoInsertParagraphHandler::GetBetterPointToSplitParagraph(
     }
     WSScanResult nextVisibleThing =
         WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::All, aCandidatePointToSplit,
-            BlockInlineCheck::UseComputedDisplayOutsideStyle,
-            &aBlockElementToSplit);
+            {}, aCandidatePointToSplit, &aBlockElementToSplit);
     if (nextVisibleThing.ReachedInvisibleBRElement()) {
       nextVisibleThing =
           WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-              WSRunScanner::Scan::All,
+              {},
               nextVisibleThing.PointAfterReachedContent<EditorRawDOMPoint>(),
-              BlockInlineCheck::UseComputedDisplayOutsideStyle,
               &aBlockElementToSplit);
     }
     if (nextVisibleThing.GetContent() &&
@@ -1380,17 +1375,13 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::AutoInsertParagraphHandler::
         const EditorDOMPoint& aPointToSplit) {
   const WSScanResult nextVisibleThing =
       WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::All, aPointToSplit,
-          BlockInlineCheck::UseComputedDisplayOutsideStyle,
-          &aBlockElementToSplit);
+          {}, aPointToSplit, &aBlockElementToSplit);
   if (!nextVisibleThing.ReachedBlockBoundary()) {
     return aPointToSplit;
   }
   const WSScanResult prevVisibleThing =
       WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::All, aPointToSplit,
-          BlockInlineCheck::UseComputedDisplayOutsideStyle,
-          &aBlockElementToSplit);
+          {}, aPointToSplit, &aBlockElementToSplit);
   Maybe<EditorLineBreak> precedingInvisibleLineBreak;
   if (prevVisibleThing.ReachedBRElement()) {
     precedingInvisibleLineBreak.emplace(*prevVisibleThing.BRElementPtr());
@@ -1467,9 +1458,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::AutoInsertParagraphHandler::
       [&]() MOZ_NEVER_INLINE_DEBUG {
         const WSScanResult nextVisibleThing =
             WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-                WSRunScanner::Scan::All, aPointToSplit,
-                BlockInlineCheck::UseComputedDisplayOutsideStyle,
-                &aBlockElementToSplit);
+                {}, aPointToSplit, &aBlockElementToSplit);
         if (nextVisibleThing.ReachedBRElement() ||
             nextVisibleThing.ReachedPreformattedLineBreak()) {
           // If it's followed by a line break in the closest ancestor container
@@ -1484,10 +1473,9 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::AutoInsertParagraphHandler::
           }
           const WSScanResult nextVisibleThingAfterLineBreak =
               WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-                  WSRunScanner::Scan::All,
+                  {},
                   nextVisibleThing
                       .PointAfterReachedContent<EditorRawDOMPoint>(),
-                  BlockInlineCheck::UseComputedDisplayOutsideStyle,
                   &aBlockElementToSplit);
           // If the line break is visible, we don't need to insert a padding
           // <br> element for the right paragraph because it'll have some
@@ -1572,17 +1560,13 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::AutoInsertParagraphHandler::
   // so, we want to keep it.)
   const WSScanResult nextVisibleThing =
       WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::All, pointToSplit,
-          BlockInlineCheck::UseComputedDisplayOutsideStyle,
-          &aBlockElementToSplit);
+          {}, pointToSplit, &aBlockElementToSplit);
   if (!nextVisibleThing.ReachedBRElement()) {
     return pointToSplit;
   }
   const WSScanResult nextVisibleThingAfterFirstBRElement =
       WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::All,
-          nextVisibleThing.PointAfterReachedContent<EditorRawDOMPoint>(),
-          BlockInlineCheck::UseComputedDisplayOutsideStyle,
+          {}, nextVisibleThing.PointAfterReachedContent<EditorRawDOMPoint>(),
           &aBlockElementToSplit);
   if (!nextVisibleThingAfterFirstBRElement.ReachedBRElement()) {
     return pointToSplit;
@@ -1726,9 +1710,7 @@ HTMLEditor::AutoInsertParagraphHandler::SplitParagraphWithTransaction(
     // break, we need to put a padding <br> to make an empty line.
     const WSScanResult prevVisibleThing =
         WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::All,
-            EditorRawDOMPoint::AtEndOf(*deepestContainerElementToSplit),
-            BlockInlineCheck::UseComputedDisplayOutsideStyle,
+            {}, EditorRawDOMPoint::AtEndOf(*deepestContainerElementToSplit),
             leftDivOrParagraphElement);
     if (prevVisibleThing.ReachedLineBoundary()) {
       return EditorDOMPoint::AtEndOf(*deepestContainerElementToSplit);
@@ -1740,9 +1722,7 @@ HTMLEditor::AutoInsertParagraphHandler::SplitParagraphWithTransaction(
     }
     const WSScanResult nextVisibleThing =
         WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::All,
-            EditorRawDOMPoint(deepestContainerElementToSplit, 0),
-            BlockInlineCheck::UseComputedDisplayOutsideStyle,
+            {}, EditorRawDOMPoint(deepestContainerElementToSplit, 0),
             leftDivOrParagraphElement);
     return nextVisibleThing.ReachedCurrentBlockBoundary()
                ? EditorDOMPoint::AtEndOf(*deepestContainerElementToSplit)
@@ -2010,9 +1990,7 @@ bool HTMLEditor::AutoInsertParagraphHandler::SplitPointIsStartOfSplittingBlock(
   EditorRawDOMPoint pointToSplit = aPointToSplit.To<EditorRawDOMPoint>();
   while (true) {
     const WSScanResult prevVisibleThing =
-        WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::All, pointToSplit,
-            BlockInlineCheck::UseComputedDisplayOutsideStyle);
+        WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary({}, pointToSplit);
     if (!prevVisibleThing.ReachedCurrentBlockBoundary()) {
       return false;
     }
@@ -2035,17 +2013,14 @@ bool HTMLEditor::AutoInsertParagraphHandler::SplitPointIsEndOfSplittingBlock(
   while (true) {
     WSScanResult nextVisibleThing =
         WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::All, pointToSplit,
-            BlockInlineCheck::UseComputedDisplayOutsideStyle,
-            &aBlockElementToSplit);
+            {}, pointToSplit, &aBlockElementToSplit);
     if (maybeFollowedByInvisibleBRElement &&
         (nextVisibleThing.ReachedBRElement() ||
          nextVisibleThing.ReachedPreformattedLineBreak())) {
       nextVisibleThing =
           WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-              WSRunScanner::Scan::All,
+              {},
               nextVisibleThing.PointAfterReachedContent<EditorRawDOMPoint>(),
-              BlockInlineCheck::UseComputedDisplayOutsideStyle,
               &aBlockElementToSplit);
     }
     if (!nextVisibleThing.ReachedCurrentBlockBoundary()) {

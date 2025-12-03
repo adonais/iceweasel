@@ -24,7 +24,7 @@ const PREVIEW_IMAGE_RULES = [
   "og:image:secure_url",
 ];
 
-/*
+/**
  * Checks if the incoming meta tag has a greater score than the current best
  * score by checking the index of the meta tag in the list of rules provided.
  *
@@ -42,7 +42,7 @@ function shouldExtractMetadata(aRules, aTag, aEntry) {
   return aRules.indexOf(aTag) > aEntry.currMaxScore;
 }
 
-/*
+/**
  * Ensure that the preview image URL is safe and valid before storing
  *
  * @param {URL} aURL

@@ -45,8 +45,9 @@
   }
 
   .ad-banner-inner {
+    @include newtab-card-style;
+
     position: relative;
-    background: var(--newtab-background-card);
     box-shadow: var(--box-shadow-card);
     border-radius: var(--border-radius-large);
 

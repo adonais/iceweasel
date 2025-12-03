@@ -25,7 +25,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "ClipboardHelper",
   "@mozilla.org/widget/clipboardhelper;1",
-  "nsIClipboardHelper"
+  Ci.nsIClipboardHelper
 );
 
 // This pref is relative to the `browser.urlbar` branch.
@@ -105,12 +105,11 @@ export class UrlbarProviderCalculator extends UrlbarProvider {
   }
 
   /**
-   * Starts querying. Extended classes should return a Promise resolved when the
-   * provider is done searching AND returning results.
+   * Starts querying.
    *
-   * @param {UrlbarQueryContext} queryContext The query context object
-   * @param {Function} addCallback Callback invoked by the provider to add a new
-   *        result. A UrlbarResult should be passed to it.
+   * @param {UrlbarQueryContext} queryContext
+   * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
+   *   Callback invoked by the provider to add a new result.
    */
   async startQuery(queryContext, addCallback) {
     try {

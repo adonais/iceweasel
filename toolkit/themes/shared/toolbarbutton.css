@@ -58,7 +58,7 @@ toolbarbutton {
   justify-self: end;
 
   @media (-moz-platform: windows) {
-    font-weight: bold;
+    font-weight: var(--font-weight-bold);
   }
 
   @media (-moz-platform: macos) {

@@ -69,7 +69,6 @@ skip-if = ["appname == 'thunderbird'"]
 
 ["test_bookmark_tracker.js"]
 skip-if = ["appname == 'thunderbird'"]
-requesttimeoutfactor = 4
 
 ["test_bridged_engine.js"]
 
@@ -137,7 +136,6 @@ run-sequentially = ["true"] # Frequent timeouts, bug 1395148
 
 ["test_glean.js"]
 skip-if = ["appname == 'thunderbird'"]
-requesttimeoutfactor = 4
 
 ["test_history_engine.js"]
 skip-if = ["appname == 'thunderbird'"]
@@ -265,7 +263,6 @@ skip-if = ["appname == 'thunderbird'"]
 
 ["test_telemetry.js"]
 skip-if = ["appname == 'thunderbird'"]
-requesttimeoutfactor = 4
 
 ["test_tracker_addChanged.js"]
 # Service semantics.

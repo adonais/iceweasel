@@ -15,7 +15,6 @@
 #include "nsNetUtil.h"
 
 #include "mozilla/Try.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/PSimpleChannelChild.h"
@@ -33,8 +32,8 @@ nsresult SimpleChannel::OpenContentStream(bool async,
                                           nsIChannel** channel) {
   NS_ENSURE_TRUE(mCallbacks, NS_ERROR_UNEXPECTED);
 
-  nsCOMPtr<nsIInputStream> stream;
-  MOZ_TRY_VAR(stream, mCallbacks->OpenContentStream(async, this));
+  nsCOMPtr<nsIInputStream> stream =
+      MOZ_TRY(mCallbacks->OpenContentStream(async, this));
   MOZ_ASSERT(stream);
 
   mCallbacks = nullptr;
@@ -111,7 +110,7 @@ SimpleChannelChild::CompleteRedirectSetup(nsIStreamListener* aListener) {
   }
 
   if (CanSend()) {
-    Unused << Send__delete__(this);
+    (void)Send__delete__(this);
   }
   return NS_OK;
 }

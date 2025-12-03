@@ -55,7 +55,7 @@ const movePointerToScrollbar = (element, iframe, scrollbarPosition, actions) => 
   };
 
   const hasHorizontalScrollbar = (element, iframe) => {
-  if (iframe == undefined) {
+    if (iframe == undefined) {
       return element.scrollWidth > element.clientWidth;
     }
     // If the element is in an iframe, it will become scrollable if
@@ -102,6 +102,8 @@ function dragDropTest(dragElement, dropElement, onDropCallBack, testDescription,
   // Only verifies drop on scrollbar tests if non-overlay scrollbar is present.
   // Skips the test on platforms with overlay scrollbars.
   if (dropPosition !== DropPosition.CENTER && calculateScrollbarThickness() <= 0) {
+    promise_test(async () => {
+    }, testDescription + ' (skipped - no scrollbars)');
     return;
   }
   promise_test((t) => new Promise(async (resolve, reject) => {
@@ -125,6 +127,31 @@ function dragDropTest(dragElement, dropElement, onDropCallBack, testDescription,
   }, testDescription));
 }
 
+// Similar to `dragDropTest`, but instead of listening to the `drop` event on the
+// `dropElement`, this function listens to `dragend` on the `dragElement`.
+function dragEndTest(dragElement, dropElement, onDropCallBack, testDescription,
+  dragIframe = undefined, dropIframe = undefined) {
+  promise_test((t) => new Promise(async (resolve, reject) => {
+    dragElement.addEventListener('dragend', t.step_func((event) => {
+      if (onDropCallBack(event) == true) {
+        resolve();
+      } else {
+        reject();
+      }
+    }));
+    try {
+      var actions = new test_driver.Actions();
+      actions = movePointerToCenter(dragElement, dragIframe, actions)
+        .pointerDown();
+      actions = movePointerToCenter(dropElement, dropIframe, actions)
+        .pointerUp();
+      await actions.send();
+    } catch (e) {
+      reject(e);
+    }
+  }, testDescription));
+}
+
 // The dragDropTestNoDropEvent function performs a drag-and-drop test but expects
 // no drop event to occur. This is useful for testing scenarios where drag-and-drop
 // should be blocked or ignored (e.g., dropping on root scrollbars). The test
@@ -135,6 +162,8 @@ function dragDropTestNoDropEvent(dragElement, dropElement, testDescription,
   // Only verifies drop on scrollbar tests if non-overlay scrollbar is present.
   // Skips the test on platforms with overlay scrollbars.
   if (dropPosition !== DropPosition.CENTER && calculateScrollbarThickness() <= 0) {
+    promise_test(async () => {
+    }, testDescription + ' (skipped - no scrollbars)');
     return;
   }
   promise_test((t) => new Promise(async (resolve, reject) => {
@@ -163,34 +192,23 @@ function dragDropTestNoDropEvent(dragElement, dropElement, testDescription,
 }
 
 const calculateScrollbarThickness = () => {
-    var container = document.createElement("div");
-    container.style.width = "100px";
-    container.style.height = "100px";
-    container.style.position = "absolute";
-    container.style.visibility = "hidden";
-    container.style.overflow = "auto";
+  var container = document.createElement("div");
+  container.style.width = "100px";
+  container.style.height = "100px";
+  container.style.position = "absolute";
+  container.style.visibility = "hidden";
+  container.style.overflow = "auto";
 
-    document.body.appendChild(container);
+  document.body.appendChild(container);
 
-    var widthBefore = container.clientWidth;
-    var longContent = document.createElement("div");
-    longContent.style.height = "1000px";
-    container.appendChild(longContent);
+  var widthBefore = container.clientWidth;
+  var longContent = document.createElement("div");
+  longContent.style.height = "1000px";
+  container.appendChild(longContent);
 
-    var widthAfter = container.clientWidth;
+  var widthAfter = container.clientWidth;
 
-    container.remove();
+  container.remove();
 
-    return widthBefore - widthAfter;
-}
-
-// Drop callback used for `dropEffect` tests in `dnd/drop/`. This function
-// compares the text content of the drop target with the `dropEffect` and
-// `effectAllowed` values of the `dataTransfer` object. The only
-// `effectAllowed` values that will be compared are "copy", "move", and "link"
-// since they have to correspond to the `dropEffect` value of the event.
-function dropEffectOnDropCallBack(event) {
-  assert_equals(event.target.textContent, event.dataTransfer.dropEffect);
-  assert_equals(event.target.textContent, event.dataTransfer.effectAllowed);
-  return true;
+  return widthBefore - widthAfter;
 }

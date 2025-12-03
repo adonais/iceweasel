@@ -236,7 +236,10 @@ class MozlintParser(ArgumentParser):
         args.extra_args = extra
 
         self.validate(args)
-        return args, extra
+        # Any extra arguments returned from `parse_known_args` are considered an
+        # error. Since we stash these into `extra_args` we just return an empty
+        # list.
+        return args, []
 
     def validate(self, args):
         if args.edit and not os.environ.get("EDITOR"):

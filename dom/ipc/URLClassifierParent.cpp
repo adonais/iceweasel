@@ -6,7 +6,6 @@
 
 #include "URLClassifierParent.h"
 
-#include "mozilla/Unused.h"
 #include "mozilla/net/UrlClassifierFeatureResult.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIUrlClassifierFeature.h"
@@ -182,7 +181,7 @@ URLClassifierLocalParent::OnClassifyComplete(
       ipcResult->matchingList() = r->List();
     }
 
-    Unused << Send__delete__(this, ipcResults);
+    (void)Send__delete__(this, ipcResults);
   }
   return NS_OK;
 }
@@ -238,7 +237,7 @@ URLClassifierLocalByNameParent::OnClassifyComplete(
       ipcResult->matchingList() = r->List();
     }
 
-    Unused << Send__delete__(this, ipcResults);
+    (void)Send__delete__(this, ipcResults);
   }
   return NS_OK;
 }

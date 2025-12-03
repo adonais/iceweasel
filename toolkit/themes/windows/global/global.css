@@ -111,7 +111,7 @@ xul|separator.groove[orient="vertical"] {
   }
 
   > menucaption > .menu-text {
-    font-weight: bold;
+    font-weight: var(--font-weight-bold);
   }
 
   > menuitem[_moz-menuactive="true"][disabled="true"] {

@@ -10,6 +10,7 @@ pypi:docutils==0.18.1
 pypi:fluent.pygments==1.0
 pypi:imagesize==1.4.1
 pypi:pytest-mock==3.15.0
+pypi:pytest-taskgraph==0.2.0
 pypi:pytest==8.4.2
 pypi:pytz==2022.7.1
 pypi:rstcheck==6.2.4

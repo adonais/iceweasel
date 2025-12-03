@@ -16,7 +16,6 @@
 #include "gfxPlatform.h"            // for gfxPlatform
 #include "gfxRect.h"                // for gfxRect
 #include "gfxUtils.h"               // for gfxUtils, etc
-#include "mozilla/ArrayUtils.h"     // for ArrayLength
 #include "mozilla/Preferences.h"    // for Preferences
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/StaticPrefs_gfx.h"
@@ -198,11 +197,9 @@ CompositorOGL::CompositorOGL(widget::CompositorWidget* aWidget,
       mFrameInProgress(false),
       mDestroyed(false),
       mViewportSize(0, 0) {
-  if (aWidget->GetNativeLayerRoot()) {
-    // We can only render into native layers, our GLContext won't have a usable
-    // default framebuffer.
-    mCanRenderToDefaultFramebuffer = false;
-  }
+  // If we render into native layers, our GLContext won't have a usable default
+  // framebuffer.
+  mCanRenderToDefaultFramebuffer = !aWidget->GetNativeLayerRoot();
   MOZ_COUNT_CTOR(CompositorOGL);
 }
 

@@ -106,7 +106,6 @@ void VRChild::Init() {
       gfxConfig::GetValue(Feature::D3D11_COMPOSITING);
   devicePrefs.oglCompositing() =
       gfxConfig::GetValue(Feature::OPENGL_COMPOSITING);
-  devicePrefs.useD2D1() = gfxConfig::GetValue(Feature::DIRECT2D);
 
   SendInit(updates, devicePrefs);
 

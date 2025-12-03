@@ -7,7 +7,6 @@
 
 #include "RemoteCDMParent.h"
 #include "RemoteMediaManagerParent.h"
-#include "mozilla/Unused.h"
 
 namespace mozilla {
 
@@ -66,12 +65,21 @@ mozilla::ipc::IPCResult RemoteDecoderParent::RecvInit(
           nsCString hardwareReason;
           bool hardwareAccelerated =
               self->mDecoder->IsHardwareAccelerated(hardwareReason);
+          nsTArray<DecodePropertyIPDL> properties;
+          for (size_t i = 0; i < MediaDataDecoder::sPropertyNameCount; i++) {
+            MediaDataDecoder::PropertyName name =
+                static_cast<MediaDataDecoder::PropertyName>(i);
+            if (auto v = self->mDecoder->GetDecodeProperty(name)) {
+              properties.AppendElement(
+                  DecodePropertyIPDL(name, std::move(v.ref())));
+            }
+          }
           resolver(InitCompletionIPDL{
               track, self->mDecoder->GetDescriptionName(),
               self->mDecoder->GetProcessName(), self->mDecoder->GetCodecName(),
               hardwareAccelerated, hardwareReason,
               self->mDecoder->NeedsConversion(),
-              self->mDecoder->ShouldDecoderAlwaysBeRecycled()});
+              self->mDecoder->ShouldDecoderAlwaysBeRecycled(), properties});
         }
       });
   return IPC_OK();

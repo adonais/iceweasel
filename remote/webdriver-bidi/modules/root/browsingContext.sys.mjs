@@ -23,6 +23,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   modal: "chrome://remote/content/shared/Prompt.sys.mjs",
   registerNavigationId:
     "chrome://remote/content/shared/NavigationManager.sys.mjs",
+  NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   NavigationListener:
     "chrome://remote/content/shared/listeners/NavigationListener.sys.mjs",
   PollPromise: "chrome://remote/content/shared/Sync.sys.mjs",
@@ -110,6 +111,7 @@ const DownloadEndStatus = {
  */
 export const LocatorType = {
   accessibility: "accessibility",
+  context: "context",
   css: "css",
   innerText: "innerText",
   xpath: "xpath",
@@ -293,7 +295,7 @@ class BrowsingContextModule extends RootBiDiModule {
       contextId,
       lazy.pprint`Expected "context" to be a string, got ${contextId}`
     );
-    const context = this.#getBrowsingContext(contextId);
+    const context = this._getNavigable(contextId);
 
     lazy.assert.topLevel(
       context,
@@ -393,7 +395,7 @@ class BrowsingContextModule extends RootBiDiModule {
       contextId,
       lazy.pprint`Expected "context" to be a string, got ${contextId}`
     );
-    const context = this.#getBrowsingContext(contextId);
+    const context = this._getNavigable(contextId);
 
     const originTypeValues = Object.values(OriginType);
     lazy.assert.that(
@@ -539,7 +541,7 @@ class BrowsingContextModule extends RootBiDiModule {
       lazy.pprint`Expected "promptUnload" to be a boolean, got ${promptUnload}`
     );
 
-    const context = lazy.TabManager.getBrowsingContextById(contextId);
+    const context = lazy.NavigableManager.getBrowsingContextById(contextId);
     if (!context) {
       throw new lazy.error.NoSuchFrameError(
         `Browsing Context with id ${contextId} not found`
@@ -613,7 +615,7 @@ class BrowsingContextModule extends RootBiDiModule {
       );
 
       referenceContext =
-        lazy.TabManager.getBrowsingContextById(referenceContextId);
+        lazy.NavigableManager.getBrowsingContextById(referenceContextId);
       if (!referenceContext) {
         throw new lazy.error.NoSuchFrameError(
           `Browsing Context with id ${referenceContextId} not found`
@@ -768,7 +770,7 @@ class BrowsingContextModule extends RootBiDiModule {
     browser.parentElement.clientHeight;
 
     return {
-      context: lazy.TabManager.getIdForBrowser(browser),
+      context: lazy.NavigableManager.getIdForBrowser(browser),
     };
   }
 
@@ -836,7 +838,7 @@ class BrowsingContextModule extends RootBiDiModule {
         rootId,
         lazy.pprint`Expected "root" to be a string, got ${rootId}`
       );
-      contexts = [this.#getBrowsingContext(rootId)];
+      contexts = [this._getNavigable(rootId)];
     } else {
       // Return all top-level browsing contexts.
       contexts = lazy.TabManager.getBrowsers().map(
@@ -881,7 +883,7 @@ class BrowsingContextModule extends RootBiDiModule {
       lazy.pprint`Expected "context" to be a string, got ${contextId}`
     );
 
-    const context = this.#getBrowsingContext(contextId);
+    const context = this._getNavigable(contextId);
 
     lazy.assert.boolean(
       accept,
@@ -952,8 +954,8 @@ class BrowsingContextModule extends RootBiDiModule {
 
   /**
    * Used as an argument for browsingContext.locateNodes command, as one of the available variants
-   * {AccessibilityLocator}, {CssLocator}, {InnerTextLocator} or {XPathLocator}, to represent a way of how lookup of nodes
-   * is going to be performed.
+   * {AccessibilityLocator}, {ContextLocator}, {CssLocator}, {InnerTextLocator} or {XPathLocator},
+   * to represent a way of how lookup of nodes is going to be performed.
    *
    * @typedef Locator
    */
@@ -976,6 +978,25 @@ class BrowsingContextModule extends RootBiDiModule {
    *
    * @property {LocatorType} [type=LocatorType.accessibility]
    * @property {AccessibilityLocatorValue} value
+   */
+
+  /**
+   * Used as a value argument for browsingContext.locateNodes command
+   * in case of a lookup for a context container.
+   *
+   * @typedef ContextLocatorValue
+   *
+   * @property {string} context
+   */
+
+  /**
+   * Used as an argument for browsingContext.locateNodes command
+   * to represent a lookup for a context container.
+   *
+   * @typedef ContextLocator
+   *
+   * @property {LocatorType} [type=LocatorType.context]
+   * @property {ContextLocatorValue} value
    */
 
   /**
@@ -1041,7 +1062,7 @@ class BrowsingContextModule extends RootBiDiModule {
    */
   async locateNodes(options = {}) {
     const {
-      context: contextId,
+      context: navigableId,
       locator,
       maxNodeCount = null,
       serializationOptions,
@@ -1049,11 +1070,11 @@ class BrowsingContextModule extends RootBiDiModule {
     } = options;
 
     lazy.assert.string(
-      contextId,
-      lazy.pprint`Expected "context" to be a string, got ${contextId}`
+      navigableId,
+      lazy.pprint`Expected "context" to be a string, got ${navigableId}`
     );
 
-    const context = this.#getBrowsingContext(contextId);
+    const context = this._getNavigable(navigableId);
 
     lazy.assert.object(
       locator,
@@ -1103,10 +1124,46 @@ class BrowsingContextModule extends RootBiDiModule {
       }
     }
 
+    if (locator.type == LocatorType.context) {
+      if (startNodes !== null) {
+        throw new lazy.error.InvalidArgumentError(
+          `Expected "startNodes" to be null when using "locator.type" "${locator.type}", ` +
+            lazy.pprint`got ${startNodes}`
+        );
+      }
+
+      lazy.assert.object(
+        locator.value,
+        `Expected "locator.value" of "locator.type" "${locator.type}" to be an object, ` +
+          lazy.pprint`got ${locator.value}`
+      );
+      const selector = locator.value;
+      const contextId = selector.context;
+      lazy.assert.string(
+        contextId,
+        `Expected "locator.value.context" of "locator.type" "${locator.type}" to be a string, ` +
+          lazy.pprint`got ${contextId}`
+      );
+
+      const childContext = this._getNavigable(contextId);
+      if (childContext.parent !== context) {
+        throw new lazy.error.InvalidArgumentError(
+          `Expected "locator.context" (${contextId}) to be a direct child context of "context" (${navigableId})`
+        );
+      }
+
+      // Replace the locator selector context value by the internal browsing
+      // context id.
+      locator.value.context = childContext.id;
+    }
+
     if (
-      ![LocatorType.accessibility, LocatorType.css, LocatorType.xpath].includes(
-        locator.type
-      )
+      ![
+        LocatorType.accessibility,
+        LocatorType.context,
+        LocatorType.css,
+        LocatorType.xpath,
+      ].includes(locator.type)
     ) {
       throw new lazy.error.UnsupportedOperationError(
         `"locator.type" argument with value: ${locator.type} is not supported yet.`
@@ -1200,7 +1257,7 @@ class BrowsingContextModule extends RootBiDiModule {
       );
     }
 
-    const context = this.#getBrowsingContext(contextId);
+    const context = this._getNavigable(contextId);
 
     // webProgress will be stable even if the context navigates, retrieve it
     // immediately before doing any asynchronous call.
@@ -1333,7 +1390,7 @@ class BrowsingContextModule extends RootBiDiModule {
       contextId,
       lazy.pprint`Expected "context" to be a string, got ${contextId}`
     );
-    const context = this.#getBrowsingContext(contextId);
+    const context = this._getNavigable(contextId);
 
     const settings = lazy.print.addDefaultSettings({
       background,
@@ -1444,7 +1501,7 @@ class BrowsingContextModule extends RootBiDiModule {
       );
     }
 
-    const context = this.#getBrowsingContext(contextId);
+    const context = this._getNavigable(contextId);
 
     // webProgress will be stable even if the context navigates, retrieve it
     // immediately before doing any asynchronous call.
@@ -1566,7 +1623,7 @@ class BrowsingContextModule extends RootBiDiModule {
 
     const navigables = new Set();
     if (contextId !== null) {
-      const navigable = this.#getBrowsingContext(contextId);
+      const navigable = this._getNavigable(contextId);
       lazy.assert.topLevel(
         navigable,
         `Browsing context with id ${contextId} is not top-level`
@@ -1668,7 +1725,7 @@ class BrowsingContextModule extends RootBiDiModule {
       lazy.pprint`Expected "context" to be a string, got ${contextId}`
     );
 
-    const context = this.#getBrowsingContext(contextId);
+    const context = this._getNavigable(contextId);
 
     lazy.assert.topLevel(
       context,
@@ -1876,33 +1933,6 @@ class BrowsingContextModule extends RootBiDiModule {
     );
   }
 
-  /**
-   * Retrieves a browsing context based on its id.
-   *
-   * @param {number} contextId
-   *     Id of the browsing context.
-   * @returns {BrowsingContext=}
-   *     The browsing context or null if <var>contextId</var> is null.
-   * @throws {NoSuchFrameError}
-   *     If the browsing context cannot be found.
-   */
-  #getBrowsingContext(contextId) {
-    // The WebDriver BiDi specification expects null to be
-    // returned if no browsing context id has been specified.
-    if (contextId === null) {
-      return null;
-    }
-
-    const context = lazy.TabManager.getBrowsingContextById(contextId);
-    if (context === null) {
-      throw new lazy.error.NoSuchFrameError(
-        `Browsing Context with id ${contextId} not found`
-      );
-    }
-
-    return context;
-  }
-
   #hasConfigurationForContext(userContext) {
     const internalId = lazy.UserContextManager.getInternalIdById(userContext);
     const contextDescriptor = {
@@ -1999,8 +2029,15 @@ class BrowsingContextModule extends RootBiDiModule {
 
   #onDownloadEnd = async (eventName, data) => {
     if (this.#subscribedEvents.has("browsingContext.downloadEnd")) {
-      const { navigationId, navigableId, canceled, filepath, timestamp, url } =
-        data;
+      const {
+        canceled,
+        contextId,
+        filepath,
+        navigableId,
+        navigationId,
+        timestamp,
+        url,
+      } = data;
 
       const browsingContextInfo = {
         context: navigableId,
@@ -2018,9 +2055,8 @@ class BrowsingContextModule extends RootBiDiModule {
         browsingContextInfo.filepath = filepath;
       }
 
-      const context = this.#getBrowsingContext(navigableId);
       this.#emitContextEventForBrowsingContext(
-        context.id,
+        contextId,
         "browsingContext.downloadEnd",
         browsingContextInfo
       );
@@ -2029,8 +2065,14 @@ class BrowsingContextModule extends RootBiDiModule {
 
   #onDownloadStarted = async (eventName, data) => {
     if (this.#subscribedEvents.has("browsingContext.downloadWillBegin")) {
-      const { navigationId, navigableId, suggestedFilename, timestamp, url } =
-        data;
+      const {
+        contextId,
+        navigationId,
+        navigableId,
+        suggestedFilename,
+        timestamp,
+        url,
+      } = data;
 
       const browsingContextInfo = {
         context: navigableId,
@@ -2040,9 +2082,8 @@ class BrowsingContextModule extends RootBiDiModule {
         url,
       };
 
-      const context = this.#getBrowsingContext(navigableId);
       this.#emitContextEventForBrowsingContext(
-        context.id,
+        contextId,
         "browsingContext.downloadWillBegin",
         browsingContextInfo
       );
@@ -2050,18 +2091,18 @@ class BrowsingContextModule extends RootBiDiModule {
   };
 
   #onFragmentNavigated = async (eventName, data) => {
-    const { navigationId, navigableId, url } = data;
-    const context = this.#getBrowsingContext(navigableId);
-
     if (this.#subscribedEvents.has("browsingContext.fragmentNavigated")) {
+      const { contextId, navigationId, navigableId, url } = data;
+
       const browsingContextInfo = {
         context: navigableId,
         navigation: navigationId,
         timestamp: Date.now(),
         url,
       };
+
       this.#emitContextEventForBrowsingContext(
-        context.id,
+        contextId,
         "browsingContext.fragmentNavigated",
         browsingContextInfo
       );
@@ -2069,17 +2110,17 @@ class BrowsingContextModule extends RootBiDiModule {
   };
 
   #onHistoryUpdated = async (eventName, data) => {
-    const { navigableId, url } = data;
-    const context = this.#getBrowsingContext(navigableId);
-
     if (this.#subscribedEvents.has("browsingContext.historyUpdated")) {
+      const { contextId, navigableId, url } = data;
+
       const browsingContextInfo = {
         context: navigableId,
         timestamp: Date.now(),
         url,
       };
+
       this.#emitContextEventForBrowsingContext(
-        context.id,
+        contextId,
         "browsingContext.historyUpdated",
         browsingContextInfo
       );
@@ -2089,7 +2130,7 @@ class BrowsingContextModule extends RootBiDiModule {
   #onPromptClosed = async (eventName, data) => {
     if (this.#subscribedEvents.has("browsingContext.userPromptClosed")) {
       const { contentBrowser, detail } = data;
-      const navigableId = lazy.TabManager.getIdForBrowser(contentBrowser);
+      const navigableId = lazy.NavigableManager.getIdForBrowser(contentBrowser);
 
       if (navigableId === null) {
         return;
@@ -2101,6 +2142,7 @@ class BrowsingContextModule extends RootBiDiModule {
         type: detail.promptType,
         userText: detail.userText,
       };
+
       this.#emitContextEventForBrowsingContext(
         contentBrowser.browsingContext.id,
         "browsingContext.userPromptClosed",
@@ -2120,7 +2162,7 @@ class BrowsingContextModule extends RootBiDiModule {
         return;
       }
 
-      const navigableId = lazy.TabManager.getIdForBrowser(contentBrowser);
+      const navigableId = lazy.NavigableManager.getIdForBrowser(contentBrowser);
 
       const session = lazy.getWebDriverSessionById(
         this.messageHandler.sessionId
@@ -2147,15 +2189,16 @@ class BrowsingContextModule extends RootBiDiModule {
   };
 
   #onNavigationCommitted = async (eventName, data) => {
-    const { navigableId, navigationId, url, contextId } = data;
-
     if (this.#subscribedEvents.has("browsingContext.navigationCommitted")) {
+      const { contextId, navigableId, navigationId, url } = data;
+
       const eventPayload = {
         context: navigableId,
         navigation: navigationId,
         timestamp: Date.now(),
         url,
       };
+
       this.#emitContextEventForBrowsingContext(
         contextId,
         "browsingContext.navigationCommitted",
@@ -2165,15 +2208,16 @@ class BrowsingContextModule extends RootBiDiModule {
   };
 
   #onNavigationFailed = async (eventName, data) => {
-    const { navigableId, navigationId, url, contextId } = data;
-
     if (this.#subscribedEvents.has("browsingContext.navigationFailed")) {
+      const { contextId, navigableId, navigationId, url } = data;
+
       const eventPayload = {
         context: navigableId,
         navigation: navigationId,
         timestamp: Date.now(),
         url,
       };
+
       this.#emitContextEventForBrowsingContext(
         contextId,
         "browsingContext.navigationFailed",
@@ -2183,18 +2227,18 @@ class BrowsingContextModule extends RootBiDiModule {
   };
 
   #onNavigationStarted = async (eventName, data) => {
-    const { navigableId, navigationId, url } = data;
-    const context = this.#getBrowsingContext(navigableId);
-
     if (this.#subscribedEvents.has("browsingContext.navigationStarted")) {
+      const { contextId, navigableId, navigationId, url } = data;
+
       const eventPayload = {
         context: navigableId,
         navigation: navigationId,
         timestamp: Date.now(),
         url,
       };
+
       this.#emitContextEventForBrowsingContext(
-        context.id,
+        contextId,
         "browsingContext.navigationStarted",
         eventPayload
       );
@@ -2478,11 +2522,11 @@ export const getBrowsingContextInfo = (context, options = {}) => {
   const userContext = lazy.UserContextManager.getIdByBrowsingContext(context);
   const originalOpener =
     context.crossGroupOpener !== null
-      ? lazy.TabManager.getIdForBrowsingContext(context.crossGroupOpener)
+      ? lazy.NavigableManager.getIdForBrowsingContext(context.crossGroupOpener)
       : null;
   const contextInfo = {
     children,
-    context: lazy.TabManager.getIdForBrowsingContext(context),
+    context: lazy.NavigableManager.getIdForBrowsingContext(context),
     // TODO: Bug 1904641. If a browsing context was not tracked in TabManager,
     // because it was created and discarded before the WebDriver BiDi session was
     // started, we get undefined as id for this browsing context.
@@ -2495,7 +2539,9 @@ export const getBrowsingContextInfo = (context, options = {}) => {
 
   if (includeParentId) {
     // Only emit the parent id for the top-most browsing context.
-    const parentId = lazy.TabManager.getIdForBrowsingContext(context.parent);
+    const parentId = lazy.NavigableManager.getIdForBrowsingContext(
+      context.parent
+    );
     contextInfo.parent = parentId;
   }
 

@@ -13,7 +13,6 @@
 #include "base/pickle.h"
 #include "mojo/core/ports/user_message.h"
 #include "mojo/core/ports/port_ref.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/ipc/ScopedPort.h"

@@ -9,7 +9,6 @@
 #include "gfxWindowsPlatform.h"
 
 #include "cairo.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 
 #include "gfxBlur.h"
@@ -79,6 +78,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/gfx/DisplayConfigWindows.h"
+#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/layers/DeviceAttachmentsD3D11.h"
 #include "mozilla/WindowsProcessMitigations.h"
 #include "D3D11Checks.h"
@@ -96,28 +96,6 @@ DCForMetrics::DCForMetrics() {
   mDC = GetDC(nullptr);
   SetGraphicsMode(mDC, GM_ADVANCED);
 }
-
-class GfxD2DVramReporter final : public nsIMemoryReporter {
-  ~GfxD2DVramReporter() {}
-
- public:
-  NS_DECL_ISUPPORTS
-
-  NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
-                            nsISupports* aData, bool aAnonymize) override {
-    MOZ_COLLECT_REPORT("gfx-d2d-vram-draw-target", KIND_OTHER, UNITS_BYTES,
-                       Factory::GetD2DVRAMUsageDrawTarget(),
-                       "Video memory used by D2D DrawTargets.");
-
-    MOZ_COLLECT_REPORT("gfx-d2d-vram-source-surface", KIND_OTHER, UNITS_BYTES,
-                       Factory::GetD2DVRAMUsageSourceSurface(),
-                       "Video memory used by D2D SourceSurfaces.");
-
-    return NS_OK;
-  }
-};
-
-NS_IMPL_ISUPPORTS(GfxD2DVramReporter, nsIMemoryReporter)
 
 class GPUAdapterReporter final : public nsIMemoryReporter {
   // Callers must Release the DXGIAdapter after use or risk mem-leak
@@ -268,15 +246,12 @@ gfxWindowsPlatform::gfxWindowsPlatform() {
      */
     CoInitialize(nullptr);
 
-    RegisterStrongMemoryReporter(new GfxD2DVramReporter());
     RegisterStrongMemoryReporter(new GPUAdapterReporter());
     RegisterStrongMemoryReporter(new D3DSharedTexturesReporter());
   }
 }
 
 gfxWindowsPlatform::~gfxWindowsPlatform() {
-  mozilla::gfx::Factory::D2DCleanup();
-
   DeviceManagerDx::Shutdown();
 
   // We don't initialize COM when win32k is locked down.
@@ -292,7 +267,6 @@ gfxWindowsPlatform::~gfxWindowsPlatform() {
 void gfxWindowsPlatform::InitMemoryReportersForGPUProcess() {
   MOZ_RELEASE_ASSERT(XRE_IsGPUProcess());
 
-  RegisterStrongMemoryReporter(new GfxD2DVramReporter());
   RegisterStrongMemoryReporter(new GPUAdapterReporter());
   RegisterStrongMemoryReporter(new D3DSharedTexturesReporter());
 }
@@ -374,7 +348,6 @@ void gfxWindowsPlatform::InitAcceleration() {
   DeviceManagerDx::Init();
 
   InitializeConfig();
-  InitGPUProcessSupport();
   // Ensure devices initialization. SharedSurfaceANGLE and
   // SharedSurfaceD3D11Interop use them. The devices are lazily initialized
   // with WebRender to reduce memory usage.
@@ -496,12 +469,10 @@ bool gfxWindowsPlatform::HandleDeviceReset() {
 
   gfxConfig::Reset(Feature::D3D11_COMPOSITING);
   gfxConfig::Reset(Feature::D3D11_HW_ANGLE);
-  gfxConfig::Reset(Feature::DIRECT2D);
 
   InitializeConfig();
   // XXX Add InitWebRenderConfig() calling.
   if (mInitializedDevices) {
-    InitGPUProcessSupport();
     InitializeDevices();
   }
   UpdateANGLEConfig();
@@ -516,36 +487,12 @@ BackendPrefsData gfxWindowsPlatform::GetBackendPrefs() const {
   data.mCanvasDefault = BackendType::SKIA;
   data.mContentDefault = BackendType::SKIA;
 
-  if (gfxConfig::IsEnabled(Feature::DIRECT2D)) {
-    data.mCanvasBitmask |= BackendTypeBit(BackendType::DIRECT2D1_1);
-    data.mCanvasDefault = BackendType::DIRECT2D1_1;
-  }
   return data;
 }
 
 void gfxWindowsPlatform::UpdateBackendPrefs() {
   BackendPrefsData data = GetBackendPrefs();
-  // Remove DIRECT2D1 preference if D2D1Device does not exist.
-  if (!Factory::HasD2D1Device()) {
-    data.mContentBitmask &= ~BackendTypeBit(BackendType::DIRECT2D1_1);
-    if (data.mContentDefault == BackendType::DIRECT2D1_1) {
-      data.mContentDefault = BackendType::SKIA;
-    }
-
-    // Don't exclude DIRECT2D1_1 if using remote canvas, because DIRECT2D1_1 and
-    // hence the device will be used in the GPU process.
-    if (!gfxPlatform::UseRemoteCanvas()) {
-      data.mCanvasBitmask &= ~BackendTypeBit(BackendType::DIRECT2D1_1);
-      if (data.mCanvasDefault == BackendType::DIRECT2D1_1) {
-        data.mCanvasDefault = BackendType::SKIA;
-      }
-    }
-  }
   InitBackendPrefs(std::move(data));
-}
-
-bool gfxWindowsPlatform::IsDirect2DBackend() {
-  return GetDefaultContentBackend() == BackendType::DIRECT2D1_1;
 }
 
 void gfxWindowsPlatform::UpdateRenderMode() {
@@ -563,9 +510,6 @@ void gfxWindowsPlatform::UpdateRenderMode() {
           << ", D3D11 status:"
           << FeatureStatusToString(
                  gfxConfig::GetValue(Feature::D3D11_COMPOSITING))
-          << ", D2D1 device:" << hexa(Factory::GetD2D1Device().get())
-          << ", D2D1 status:"
-          << FeatureStatusToString(gfxConfig::GetValue(Feature::DIRECT2D))
           << ", content:" << int(GetDefaultContentBackend())
           << ", compositor:" << int(GetCompositorBackend());
       MOZ_CRASH(
@@ -576,38 +520,11 @@ void gfxWindowsPlatform::UpdateRenderMode() {
 
 mozilla::gfx::BackendType gfxWindowsPlatform::GetContentBackendFor(
     mozilla::layers::LayersBackend aLayers) {
-  mozilla::gfx::BackendType defaultBackend =
-      gfxPlatform::GetDefaultContentBackend();
-  if (aLayers == LayersBackend::LAYERS_WR &&
-      gfx::gfxVars::UseWebRenderANGLE()) {
-    return defaultBackend;
-  }
-
-  if (defaultBackend == BackendType::DIRECT2D1_1) {
-    // We can't have D2D without D3D11 layers, so fallback to Skia.
-    return BackendType::SKIA;
-  }
-
-  // Otherwise we have some non-accelerated backend and that's ok.
-  return defaultBackend;
+  return gfxPlatform::GetDefaultContentBackend();
 }
 
 mozilla::gfx::BackendType gfxWindowsPlatform::GetPreferredCanvasBackend() {
-  mozilla::gfx::BackendType backend = gfxPlatform::GetPreferredCanvasBackend();
-
-  if (backend == BackendType::DIRECT2D1_1) {
-    if (!gfx::gfxVars::UseWebRenderANGLE()) {
-      // We can't have D2D without ANGLE when WebRender is enabled, so fallback
-      // to Skia.
-      return BackendType::SKIA;
-    }
-
-    // Fall back to software when remote canvas has been deactivated.
-    if (CanvasChild::Deactivated()) {
-      return BackendType::SKIA;
-    }
-  }
-  return backend;
+  return gfxPlatform::GetPreferredCanvasBackend();
 }
 
 bool gfxWindowsPlatform::CreatePlatformFontList() {
@@ -1423,7 +1340,6 @@ void gfxWindowsPlatform::InitializeConfig() {
     // This information is relayed to content processes and the GPU process.
     InitializeD3D11Config();
     InitializeANGLEConfig();
-    InitializeD2DConfig();
   } else {
     ImportCachedContentDeviceData();
     InitializeANGLEConfig();
@@ -1535,22 +1451,11 @@ void gfxWindowsPlatform::InitializeDevices() {
     gfxConfig::SetFailed(
         Feature::D3D11_COMPOSITING, FeatureStatus::CrashedOnStartup,
         "Harware acceleration crashed during startup in a previous session");
-    gfxConfig::SetFailed(
-        Feature::DIRECT2D, FeatureStatus::CrashedOnStartup,
-        "Harware acceleration crashed during startup in a previous session");
     return;
   }
 
-  bool shouldUseD2D = gfxConfig::IsEnabled(Feature::DIRECT2D);
-
-  // First, initialize D3D11. If this succeeds we attempt to use Direct2D.
+  // First, initialize D3D11.
   InitializeD3D11();
-  InitializeD2D();
-
-  if (!gfxConfig::IsEnabled(Feature::DIRECT2D) && XRE_IsContentProcess() &&
-      shouldUseD2D) {
-    RecordContentDeviceFailure(TelemetryDeviceCode::D2D1);
-  }
 }
 
 void gfxWindowsPlatform::InitializeD3D11() {
@@ -1581,114 +1486,6 @@ void gfxWindowsPlatform::InitializeD3D11() {
         << "[D3D11] Failed to create the D3D11 device in content \
                            process.";
   }
-}
-
-void gfxWindowsPlatform::InitializeD2DConfig() {
-  FeatureState& d2d1 = gfxConfig::GetFeature(Feature::DIRECT2D);
-
-  if (!gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
-    d2d1.DisableByDefault(FeatureStatus::Unavailable,
-                          "Direct2D requires Direct3D 11 compositing",
-                          "FEATURE_FAILURE_D2D_D3D11_COMP"_ns);
-    return;
-  }
-
-  d2d1.SetDefaultFromPref(StaticPrefs::GetPrefName_gfx_direct2d_disabled(),
-                          false,
-                          StaticPrefs::GetPrefDefault_gfx_direct2d_disabled());
-
-  nsCString message;
-  nsCString failureId;
-  if (!gfxPlatform::IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_DIRECT2D, &message,
-                                        failureId)) {
-    d2d1.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
-  }
-
-  if (!d2d1.IsEnabled() &&
-      StaticPrefs::gfx_direct2d_force_enabled_AtStartup()) {
-    d2d1.UserForceEnable("Force-enabled via user-preference");
-  }
-}
-
-void gfxWindowsPlatform::InitializeD2D() {
-  ScopedGfxFeatureReporter d2d1_1("D2D1.1");
-
-  FeatureState& d2d1 = gfxConfig::GetFeature(Feature::DIRECT2D);
-
-  DeviceManagerDx* dm = DeviceManagerDx::Get();
-
-  // We don't know this value ahead of time, but the user can force-override
-  // it, so we use Disable instead of SetFailed.
-  if (dm->IsWARP()) {
-    d2d1.Disable(FeatureStatus::Blocked,
-                 "Direct2D is not compatible with Direct3D11 WARP",
-                 "FEATURE_FAILURE_D2D_WARP_BLOCK"_ns);
-  }
-
-  // If we pass all the initial checks, we can proceed to runtime decisions.
-  if (!d2d1.IsEnabled()) {
-    return;
-  }
-
-  if (!Factory::SupportsD2D1()) {
-    d2d1.SetFailed(FeatureStatus::Unavailable,
-                   "Failed to acquire a Direct2D 1.1 factory",
-                   "FEATURE_FAILURE_D2D_FACTORY"_ns);
-    return;
-  }
-
-  if (!dm->GetContentDevice()) {
-    d2d1.SetFailed(FeatureStatus::Failed,
-                   "Failed to acquire a Direct3D 11 content device",
-                   "FEATURE_FAILURE_D2D_DEVICE"_ns);
-    return;
-  }
-
-  if (!dm->TextureSharingWorks()) {
-    d2d1.SetFailed(FeatureStatus::Failed,
-                   "Direct3D11 device does not support texture sharing",
-                   "FEATURE_FAILURE_D2D_TXT_SHARING"_ns);
-    return;
-  }
-
-  // Using Direct2D depends on DWrite support.
-  if (!DWriteEnabled() && !InitDWriteSupport()) {
-    d2d1.SetFailed(FeatureStatus::Failed,
-                   "Failed to initialize DirectWrite support",
-                   "FEATURE_FAILURE_D2D_DWRITE"_ns);
-    return;
-  }
-
-  // Verify that Direct2D device creation succeeded.
-  RefPtr<ID3D11Device> contentDevice = dm->GetContentDevice();
-  if (!Factory::SetDirect3D11Device(contentDevice)) {
-    d2d1.SetFailed(FeatureStatus::Failed, "Failed to create a Direct2D device",
-                   "FEATURE_FAILURE_D2D_CREATE_FAILED"_ns);
-    return;
-  }
-
-  MOZ_ASSERT(d2d1.IsEnabled());
-  d2d1_1.SetSuccessful();
-}
-
-void gfxWindowsPlatform::InitGPUProcessSupport() {
-  FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
-
-  if (!gpuProc.IsEnabled()) {
-    return;
-  }
-
-  if (!gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
-    // Don't use the GPU process if not using D3D11, unless software
-    // compositor is allowed
-    if (StaticPrefs::layers_gpu_process_allow_software_AtStartup()) {
-      return;
-    }
-    gpuProc.Disable(FeatureStatus::Unavailable,
-                    "Not using GPU Process since D3D11 is unavailable",
-                    "FEATURE_FAILURE_NO_D3D11"_ns);
-  }
-  // If we're still enabled at this point, the user set the force-enabled pref.
 }
 
 class D3DVsyncSource final : public VsyncSource {
@@ -1975,14 +1772,6 @@ void gfxWindowsPlatform::ImportGPUDeviceData(
   } else {
     // There should be no devices, so this just takes away the device status.
     dm->ResetDevices();
-
-    // Make sure we disable D2D if content processes might use it.
-    FeatureState& d2d1 = gfxConfig::GetFeature(Feature::DIRECT2D);
-    if (d2d1.IsEnabled()) {
-      d2d1.SetFailed(FeatureStatus::Unavailable,
-                     "Direct2D requires Direct3D 11 compositing",
-                     "FEATURE_FAILURE_D2D_D3D11_COMP"_ns);
-    }
   }
 
   // Hardware video decoding depends on d3d11 state, so update the cache.
@@ -2002,7 +1791,6 @@ void gfxWindowsPlatform::ImportContentDeviceData(
 
   const DevicePrefs& prefs = aData.prefs();
   gfxConfig::Inherit(Feature::D3D11_COMPOSITING, prefs.d3d11Compositing());
-  gfxConfig::Inherit(Feature::DIRECT2D, prefs.useD2D1());
 
   if (gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
     DeviceManagerDx* dm = DeviceManagerDx::Get();
@@ -2011,6 +1799,13 @@ void gfxWindowsPlatform::ImportContentDeviceData(
 }
 
 void gfxWindowsPlatform::BuildContentDeviceData(ContentDeviceData* aOut) {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  // D3D11_COMPOSITING may be updated by the GPU process in DeviceManagerDx.
+  if (auto* gpm = GPUProcessManager::Get()) {
+    MOZ_DIAGNOSTIC_ASSERT(gpm->IsGPUReady());
+  }
+#endif
+
   // Check for device resets before giving back new graphics information.
   UpdateRenderMode();
 
@@ -2018,7 +1813,6 @@ void gfxWindowsPlatform::BuildContentDeviceData(ContentDeviceData* aOut) {
 
   const FeatureState& d3d11 = gfxConfig::GetFeature(Feature::D3D11_COMPOSITING);
   aOut->prefs().d3d11Compositing() = d3d11.GetValue();
-  aOut->prefs().useD2D1() = gfxConfig::GetValue(Feature::DIRECT2D);
 
   if (d3d11.IsEnabled()) {
     DeviceManagerDx* dm = DeviceManagerDx::Get();

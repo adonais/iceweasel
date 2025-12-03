@@ -44,7 +44,6 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 
 // Use OS specific iovec array limit where it's possible.
 #if defined(IOV_MAX)

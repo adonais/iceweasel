@@ -242,6 +242,30 @@ export class SearchModeSwitcher {
     }
   }
 
+  /**
+   * If the user presses Option+Up or Option+Down while navigating the urlbar results
+   * we open the engine list.
+   *
+   * @param {KeyboardEvent} event
+   *   The key down event.
+   */
+  handleKeyDown(event) {
+    if (
+      (event.keyCode == KeyEvent.DOM_VK_UP ||
+        event.keyCode == KeyEvent.DOM_VK_DOWN) &&
+      event.altKey
+    ) {
+      this.#input.controller.focusOnUnifiedSearchButton();
+      this.#popup.openPopup(null, {
+        triggerEvent: event,
+      });
+      event.stopPropagation();
+      event.preventDefault();
+      return true;
+    }
+    return false;
+  }
+
   async updateSearchIcon() {
     let searchMode = this.#input.searchMode;
 
@@ -276,7 +300,6 @@ export class SearchModeSwitcher {
     let element = /** @type {HTMLImageElement} */ (
       this.#input.querySelector(".searchmode-switcher-icon")
     );
-    // @ts-expect-error Bug 1982726 - CSS2Properties aren't available as TypeScript types
     element.style.listStyleImage = iconUrl;
 
     if (label) {
@@ -404,7 +427,7 @@ export class SearchModeSwitcher {
    * @param {Element} separator
    */
   async #buildLocalSearchModeList(separator) {
-    if (!this.#input.isAddressbar) {
+    if (this.#input.sapName != "urlbar") {
       return;
     }
 

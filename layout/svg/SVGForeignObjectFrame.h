@@ -7,7 +7,6 @@
 #ifndef LAYOUT_SVG_SVGFOREIGNOBJECTFRAME_H_
 #define LAYOUT_SVG_SVGFOREIGNOBJECTFRAME_H_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/ISVGDisplayableFrame.h"
 #include "mozilla/PresShellForwards.h"
 #include "mozilla/UniquePtr.h"

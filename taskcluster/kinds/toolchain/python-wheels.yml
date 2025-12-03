@@ -60,7 +60,7 @@ linux64-aarch64-2404-dbus-python:
         toolchain-artifact: public/build/dbus_python-1.3.2-cp312-cp312-linux_aarch64.whl
     worker:
         docker-image: {in-tree: ubuntu2404-arm64-build-python-wheels}
-    worker-type: images-gcp-aarch64
+    worker-type: b-linux-aarch64
 
 linux-python-dbusmock:
     treeherder:

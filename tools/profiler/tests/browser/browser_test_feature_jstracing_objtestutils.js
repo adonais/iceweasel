@@ -9,7 +9,7 @@ const { XPCShellContentUtils } = ChromeUtils.importESModule(
   "resource://testing-common/XPCShellContentUtils.sys.mjs"
 );
 const { ValueSummaryReader } = ChromeUtils.importESModule(
-  "chrome://mochitests/content/browser/tools/profiler/tests/browser/value_summary_reader.mjs"
+  "resource://devtools/client/shared/components/reps/reps/value-summary-reader.mjs"
 );
 
 /**
@@ -83,11 +83,15 @@ add_task(async function test_profile_feature_jstracing_objtestutils() {
       // Then lookup for the matching frame, based on the string index
       const { frameTable } = contentThread;
       const FRAME_LOCATION_SLOT = frameTable.schema.location;
-      const functionDummyFrameIndex = frameTable.data.findIndex(
-        frame => frame[FRAME_LOCATION_SLOT] == functionDummyStringIndex
-      );
+      const functionDummyFrameIndexes = [];
+      frameTable.data.forEach((frame, idx) => {
+        if (frame[FRAME_LOCATION_SLOT] === functionDummyStringIndex) {
+          functionDummyFrameIndexes.push(idx);
+        }
+      });
+
       Assert.greater(
-        functionDummyFrameIndex,
+        functionDummyFrameIndexes.length,
         0,
         "Found frame for 'dummy' function call"
       );
@@ -96,14 +100,17 @@ add_task(async function test_profile_feature_jstracing_objtestutils() {
       // Each symbol's frame is visible in a stack, and the stack tree is valid
       const { stackTable } = contentThread;
       const STACK_FRAME_SLOT = stackTable.schema.frame;
-      const functionDummyStack = stackTable.data.findIndex(
-        stack => stack[STACK_FRAME_SLOT] == functionDummyFrameIndex
-      );
+      const functionDummyStacks = [];
+      stackTable.data.forEach((stack, idx) => {
+        if (functionDummyFrameIndexes.includes(stack[STACK_FRAME_SLOT])) {
+          functionDummyStacks.push(idx);
+        }
+      });
 
       const { samples } = contentThread;
       const SAMPLE_STACK_SLOT = contentThread.samples.schema.stack;
-      const functionDummySamples = samples.data.filter(
-        sample => sample[SAMPLE_STACK_SLOT] == functionDummyStack
+      const functionDummySamples = samples.data.filter(sample =>
+        functionDummyStacks.includes(sample[SAMPLE_STACK_SLOT])
       );
 
       const actualValues = [];

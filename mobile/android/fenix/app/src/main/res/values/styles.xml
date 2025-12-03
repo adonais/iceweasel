@@ -47,6 +47,54 @@
         <item name="mozacSelectCreditCardHeaderTextStyle" tools:ignore="UnusedResources">@style/SelectPromptHeaderTextStyle</item>
         <item name="mozacSelectAddressHeaderTextStyle" tools:ignore="UnusedResources">@style/SelectPromptHeaderTextStyle</item>
 
+        <!-- Material3 -->
+        <item name="colorPrimary">@color/fx_mobile_primary</item>
+        <item name="colorOnPrimary">@color/fx_mobile_on_primary</item>
+        <item name="colorPrimaryContainer">@color/fx_mobile_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/fx_mobile_on_primary_container</item>
+        <item name="colorPrimaryInverse">@color/fx_mobile_primary_inverse</item>
+        <item name="colorSecondary">@color/fx_mobile_secondary</item>
+        <item name="colorOnSecondary">@color/fx_mobile_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/fx_mobile_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/fx_mobile_on_secondary_container</item>
+        <item name="colorTertiary">@color/fx_mobile_tertiary</item>
+        <item name="colorOnTertiary">@color/fx_mobile_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/fx_mobile_tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/fx_mobile_on_tertiary_container</item>
+        <item name="android:colorBackground">@color/fx_mobile_background</item>
+        <item name="colorOnBackground">@color/fx_mobile_on_background</item>
+        <item name="colorSurface">@color/fx_mobile_surface</item>
+        <item name="colorOnSurface">@color/fx_mobile_on_surface</item>
+        <item name="colorSurfaceVariant">@color/fx_mobile_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/fx_mobile_on_surface_variant</item>
+        <item name="colorSurfaceInverse">@color/fx_mobile_surface_inverse</item>
+        <item name="colorOnSurfaceInverse">@color/fx_mobile_on_surface_inverse</item>
+        <item name="colorError">@color/fx_mobile_error</item>
+        <item name="colorOnError">@color/fx_mobile_on_error</item>
+        <item name="colorErrorContainer">@color/fx_mobile_error_container</item>
+        <item name="colorOnErrorContainer">@color/fx_mobile_on_error_container</item>
+        <item name="colorOutline">@color/fx_mobile_outline</item>
+        <item name="colorOutlineVariant">@color/fx_mobile_outline_variant</item>
+        <item name="colorSurfaceBright">@color/fx_mobile_surface_bright</item>
+        <item name="colorSurfaceDim">@color/fx_mobile_surface_dim</item>
+        <item name="colorSurfaceContainer">@color/fx_mobile_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/fx_mobile_surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/fx_mobile_surface_container_highest</item>
+        <item name="colorSurfaceContainerLow">@color/fx_mobile_surface_container_low</item>
+        <item name="colorSurfaceContainerLowest">@color/fx_mobile_surface_container_lowest</item>
+        <item name="colorPrimaryFixed">@color/photonViolet05</item>
+        <item name="colorPrimaryFixedDim">@color/fx_mobile_primary_fixed_dim</item>
+        <item name="colorOnPrimaryFixed">@color/photonDarkGrey90</item>
+        <item name="colorOnPrimaryFixedVariant">@color/fx_mobile_on_primary_fixed_variant</item>
+        <item name="colorSecondaryFixed">@color/fx_mobile_secondary_fixed</item>
+        <item name="colorSecondaryFixedDim">@color/fx_mobile_secondary_fixed_dim</item>
+        <item name="colorOnSecondaryFixed">@color/fx_mobile_on_secondary_fixed</item>
+        <item name="colorOnSecondaryFixedVariant">@color/fx_mobile_on_secondary_fixed_variant</item>
+        <item name="colorTertiaryFixed">@color/fx_mobile_tertiary_fixed</item>
+        <item name="colorTertiaryFixedDim">@color/fx_mobile_tertiary_fixed_dim</item>
+        <item name="colorOnTertiaryFixed">@color/fx_mobile_on_tertiary_fixed</item>
+        <item name="colorOnTertiaryFixedVariant">@color/fx_mobile_on_tertiary_fixed_variant</item>
+
         <!-- Design system color attributes -->
 
         <!-- Layers -->
@@ -261,6 +309,9 @@
     <style name="PrivateThemeBase" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Android system styling -->
         <item name="searchViewStyle">@style/SearchViewStyle</item>
+        <item name="android:textColorLink">@color/fx_mobile_private_text_color_accent</item>
+        <item name="preferenceTheme">@style/PreferenceTheme</item>
+        <item name="checkboxStyle">@style/App.Widget.CompoundButton.CheckBox</item>
         <item name="autoCompleteTextViewStyle">@style/AutoCompleteTextViewStyle</item>
         <item name="android:textAlignment">viewStart</item>
         <item name="android:datePickerDialogTheme">@style/PrivateDatePickerDialogStyle</item>
@@ -286,6 +337,54 @@
         <item name="mozacLoginSelectHeaderTextStyle" tools:ignore="UnusedResources">@style/SelectPromptHeaderTextStyle</item>
         <item name="mozacSelectCreditCardHeaderTextStyle" tools:ignore="UnusedResources">@style/SelectPromptHeaderTextStyle</item>
         <item name="mozacSelectAddressHeaderTextStyle" tools:ignore="UnusedResources">@style/SelectPromptHeaderTextStyle</item>
+
+        <!-- Material3 -->
+        <item name="colorPrimary">@color/fx_mobile_private_primary</item>
+        <item name="colorOnPrimary">@color/fx_mobile_private_on_primary</item>
+        <item name="colorPrimaryContainer">@color/fx_mobile_private_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/fx_mobile_private_on_primary_container</item>
+        <item name="colorPrimaryInverse">@color/fx_mobile_private_primary_inverse</item>
+        <item name="colorSecondary">@color/fx_mobile_private_secondary</item>
+        <item name="colorOnSecondary">@color/fx_mobile_private_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/fx_mobile_private_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/fx_mobile_private_on_secondary_container</item>
+        <item name="colorTertiary">@color/fx_mobile_private_tertiary</item>
+        <item name="colorOnTertiary">@color/fx_mobile_private_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/fx_mobile_private_tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/fx_mobile_private_on_tertiary_container</item>
+        <item name="android:colorBackground">@color/fx_mobile_private_background</item>
+        <item name="colorOnBackground">@color/fx_mobile_private_on_background</item>
+        <item name="colorSurface">@color/fx_mobile_private_surface</item>
+        <item name="colorOnSurface">@color/fx_mobile_private_on_surface</item>
+        <item name="colorSurfaceVariant">@color/fx_mobile_private_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/fx_mobile_private_on_surface_variant</item>
+        <item name="colorSurfaceInverse">@color/fx_mobile_private_surface_inverse</item>
+        <item name="colorOnSurfaceInverse">@color/fx_mobile_private_on_surface_inverse</item>
+        <item name="colorError">@color/fx_mobile_private_error</item>
+        <item name="colorOnError">@color/fx_mobile_private_on_error</item>
+        <item name="colorErrorContainer">@color/fx_mobile_private_error_container</item>
+        <item name="colorOnErrorContainer">@color/fx_mobile_private_on_error_container</item>
+        <item name="colorOutline">@color/fx_mobile_private_outline</item>
+        <item name="colorOutlineVariant">@color/fx_mobile_private_outline_variant</item>
+        <item name="colorSurfaceBright">@color/fx_mobile_private_surface_bright</item>
+        <item name="colorSurfaceDim">@color/fx_mobile_private_surface_dim</item>
+        <item name="colorSurfaceContainer">@color/fx_mobile_private_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/fx_mobile_private_surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/fx_mobile_private_surface_container_highest</item>
+        <item name="colorSurfaceContainerLow">@color/fx_mobile_private_surface_container_low</item>
+        <item name="colorSurfaceContainerLowest">@color/fx_mobile_private_surface_container_lowest</item>
+        <item name="colorPrimaryFixed">@color/photonViolet05</item>
+        <item name="colorPrimaryFixedDim">@color/fx_mobile_private_primary_fixed_dim</item>
+        <item name="colorOnPrimaryFixed">@color/photonDarkGrey90</item>
+        <item name="colorOnPrimaryFixedVariant">@color/fx_mobile_private_on_primary_fixed_variant</item>
+        <item name="colorSecondaryFixed">@color/fx_mobile_private_secondary_fixed</item>
+        <item name="colorSecondaryFixedDim">@color/fx_mobile_private_secondary_fixed_dim</item>
+        <item name="colorOnSecondaryFixed">@color/fx_mobile_private_on_secondary_fixed</item>
+        <item name="colorOnSecondaryFixedVariant">@color/fx_mobile_private_on_secondary_fixed_variant</item>
+        <item name="colorTertiaryFixed">@color/fx_mobile_private_tertiary_fixed</item>
+        <item name="colorTertiaryFixedDim">@color/fx_mobile_private_tertiary_fixed_dim</item>
+        <item name="colorOnTertiaryFixed">@color/fx_mobile_private_on_tertiary_fixed</item>
+        <item name="colorOnTertiaryFixedVariant">@color/fx_mobile_private_on_tertiary_fixed_variant</item>
 
         <!-- Design system color attributes -->
 
@@ -388,6 +487,10 @@
         <item name="mozac_ic_shield_slash_fill_critical">@color/fx_mobile_private_icon_color_critical</item>
 
         <item name="tabCounterTintColor">?attr/textPrimary</item>
+    </style>
+
+    <style name="App.Widget.CompoundButton.CheckBox" parent="Widget.Material3.CompoundButton.CheckBox">
+        <item name="buttonTint">@color/checkbox_tint</item>
     </style>
 
     <style name="Mozac.Browser.Menu" parent="" tools:ignore="UnusedResources">

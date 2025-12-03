@@ -11,7 +11,6 @@
 #include "MLSTypeUtils.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Span.h"
 #include "mozilla/dom/MLSGroupView.h"
 #include "mozilla/dom/MLSTransactionChild.h"
 #include "mozilla/dom/MLSTransactionMessage.h"

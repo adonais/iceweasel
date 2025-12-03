@@ -376,6 +376,16 @@ class SettingsSubMenuAddonsManagerRobot {
                 Log.i(TAG, "verifyTheRecommendedAddons: AssertionError caught, executing fallback methods")
                 if (i == RETRY_COUNT) {
                     throw e
+                } else {
+                    Log.i(TAG, "verifyTheRecommendedAddons: Trying to click device back button to dismiss the main menu")
+                    mDevice.pressBack()
+                    Log.i(TAG, "verifyTheRecommendedAddons: Clicked device back button to dismiss the main menu")
+                    waitForAppWindowToBeUpdated()
+                    browserScreen {
+                    }.openThreeDotMenu(composeTestRule) {
+                        verifyTryRecommendedExtensionButton()
+                    }.openExtensionsFromMainMenu {
+                    }
                 }
             }
         }

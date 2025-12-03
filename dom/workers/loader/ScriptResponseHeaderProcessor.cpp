@@ -31,7 +31,7 @@ nsresult ScriptResponseHeaderProcessor::ProcessCrossOriginEmbedderPolicyHeader(
     // the main script, but it must pass CORP checking.
     // see: wpt window-simple-success.https.html, the worker import script
     // test-incrementer.js without coep header.
-    Unused << NS_WARN_IF(!aWorkerPrivate->MatchEmbedderPolicy(aPolicy));
+    (void)NS_WARN_IF(!aWorkerPrivate->MatchEmbedderPolicy(aPolicy));
   }
 
   return NS_OK;

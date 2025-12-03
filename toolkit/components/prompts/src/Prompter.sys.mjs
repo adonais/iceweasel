@@ -866,7 +866,7 @@ var InternalPromptUtils = {
       if (realm.length > 150) {
         realm = realm.substring(0, 150);
         // Append "..." (or localized equivalent).
-        realm += this.ellipsis;
+        realm += Services.locale.ellipsis;
       }
 
       return this.getLocalizedString("EnterLoginForProxy3", [
@@ -905,7 +905,7 @@ var InternalPromptUtils = {
     if (realm.length > 150) {
       realm = realm.substring(0, 150);
       // Append "..." (or localized equivalent).
-      realm += this.ellipsis;
+      realm += Services.locale.ellipsis;
     }
 
     let text;
@@ -958,17 +958,6 @@ ChromeUtils.defineLazyGetter(InternalPromptUtils, "brandBundle", function () {
     throw new Error("String bundle for branding not present!");
   }
   return bundle;
-});
-
-ChromeUtils.defineLazyGetter(InternalPromptUtils, "ellipsis", function () {
-  let ellipsis = "\u2026";
-  try {
-    ellipsis = Services.prefs.getComplexValue(
-      "intl.ellipsis",
-      Ci.nsIPrefLocalizedString
-    ).data;
-  } catch (e) {}
-  return ellipsis;
 });
 
 class ModalPrompter {

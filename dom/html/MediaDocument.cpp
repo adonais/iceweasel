@@ -23,7 +23,6 @@
 #include "nsProxyRelease.h"
 #include "nsRect.h"
 #include "nsServiceManagerUtils.h"
-#include "nsViewManager.h"
 
 namespace mozilla::dom {
 
@@ -121,7 +120,8 @@ const char* const MediaDocument::sFormatNames[4] = {
     ""                       // eWithDimAndFile
 };
 
-MediaDocument::MediaDocument() : mDidInitialDocumentSetup(false) {
+MediaDocument::MediaDocument()
+    : nsHTMLDocument(LoadedAsData::No), mDidInitialDocumentSetup(false) {
   mCompatMode = eCompatibility_FullStandards;
 }
 MediaDocument::~MediaDocument() = default;

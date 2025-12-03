@@ -16,7 +16,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "touchBarUpdater",
   "@mozilla.org/widget/touchbarupdater;1",
-  "nsITouchBarUpdater"
+  Ci.nsITouchBarUpdater
 );
 
 // For accessing TouchBarHelper methods from static contexts in this file.
@@ -24,7 +24,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "touchBarHelper",
   "@mozilla.org/widget/touchbarhelper;1",
-  "nsITouchBarHelper"
+  Ci.nsITouchBarHelper
 );
 
 /**

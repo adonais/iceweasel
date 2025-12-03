@@ -33,7 +33,7 @@ h3,
 
 .text-error {
   color: var(--text-color-error);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
 }
 
 .text-truncated-ellipsis {

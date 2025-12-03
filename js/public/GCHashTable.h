@@ -85,6 +85,7 @@ class GCHashMap : public js::HashMap<Key, Value, HashPolicy, AllocPolicy> {
   bool traceWeak(JSTracer* trc) {
     typename Base::Enum e(*this);
     traceWeakEntries(trc, e);
+    Base::compact();
     return !this->empty();
   }
 
@@ -274,6 +275,7 @@ class GCHashSet : public js::HashSet<T, HashPolicy, AllocPolicy> {
   bool traceWeak(JSTracer* trc) {
     typename Base::Enum e(*this);
     traceWeakEntries(trc, e);
+    Base::compact();
     return !this->empty();
   }
 

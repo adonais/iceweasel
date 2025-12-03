@@ -12,7 +12,7 @@
   margin-block: 2em 1em;
   font-size: large;
   text-align: start;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 button {
@@ -68,7 +68,7 @@ td.integer {
 #codec-table td:first-child {
   text-align: start;
   unicode-bidi: normal;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 #codec-table tr:nth-child(even) {
@@ -88,7 +88,7 @@ td.integer {
 }
 
 #codec-table tr > td.lack-of-extension {
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
 }
 
 #codec-table tr:nth-child(even) > td.unsupported {

@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">ilo %s pi nasin len</string>
@@ -58,7 +65,7 @@
     %1$s is the name of the app (for example "Firefox").
     %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
   -->
-  <string name="felt_privacy_info_card_subtitle_2">sina weka e poki lipu ale la ilo %1$s li weka e sona sina. %2$s</string>
+  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">sina weka e poki lipu ale la ilo %1$s li weka e sona sina. %2$s</string>
   <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
@@ -163,8 +170,6 @@
   <string name="browser_menu_manage_extensions">o nasin e ilo namako</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
   <string name="browser_menu_more_settings">o suli</string>
-  <!-- Browser menu group that contains additional settings in expanded state -->
-  <string name="browser_menu_less_settings" moz:removedIn="144" tools:ignore="UnusedResources">o lili</string>
   <!--
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
@@ -563,10 +568,6 @@
     Content description for various wallpapers. %1$s is the name of the wallpaper.
   -->
   <string name="wallpapers_item_name_content_description">selo kule: %1$s</string>
-  <!-- Snackbar message for when wallpaper is selected -->
-  <string name="wallpaper_updated_snackbar_message" tools:ignore="UnusedResources" moz:removedIn="144">mi ante e selo kule!</string>
-  <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">o lukin</string>
   <!-- Snackbar message for when wallpaper couldn't be downloaded -->
   <string name="wallpaper_download_error_snackbar_message">pakala la mi ken ala kama jo e selo kule</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
@@ -960,8 +961,6 @@
   <string name="webcompat_reporter_cancel">ala</string>
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">o pana</string>
-  <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">mi pana e toki pakala sina</string>
   <!-- Broken site reason text for site asked to turn off ad blocker -->
   <string name="webcompat_reporter_reason_turn_off_adblocker">lipu ni li wile e ni: sina weka ala e sitelen esun</string>
   <!-- Broken site reason text for something else -->
@@ -1115,10 +1114,6 @@
   <string name="create_collection_add_new_collection">o pali e kulupu poki sin</string>
   <!-- Button to select all tabs in the "select tabs" step of the collection creator -->
   <string name="create_collection_select_all">o wile e lipu ale</string>
-  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">mi awen e kulupu poki!</string>
-  <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">mi pana e poki tawa kulupu!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">o pini</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1215,8 +1210,6 @@
   <string name="snackbar_tabs_closed">mi pini e poki</string>
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">mi pini e poki %1$s</string>
-  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">mi pana e lipu tawa kulupu “%s”!</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">O NI ALA</string>
   <!--
@@ -1253,14 +1246,6 @@
   <string name="preferences_delete_browsing_data_site_permissions">ken lipu</string>
   <!-- Title for the downloads item in Delete browsing data -->
   <string name="preferences_delete_browsing_data_downloads">jo lipu</string>
-  <!--
-    Onboarding theme
-
-    Text shown in snackbar when multiple tabs have been sent to device
-  -->
-  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">mi pana e poki ni!</string>
-  <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">mi pana e poki ni!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">pakala la mi ken ala pana e poki ni</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -1416,8 +1401,6 @@
   <string name="credit_cards_edit_card">o ante e lipu mani</string>
   <!-- The header for the card number of a credit card -->
   <string name="credit_cards_card_number">nanpa mani</string>
-  <!-- The header for the expiration date of a credit card -->
-  <string name="credit_cards_expiration_date">tenpo pi pini lawa</string>
   <!-- The label for the expiration date month of a credit card to be used by a11y services -->
   <string name="credit_cards_expiration_date_month">tenpo mun pi pini lawa</string>
   <!-- The label for the expiration date year of a credit card to be used by a11y services -->

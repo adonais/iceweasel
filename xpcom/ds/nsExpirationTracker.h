@@ -22,7 +22,6 @@
 #include "nsThreadUtils.h"
 #include "nscore.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Likely.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RefCountType.h"
 #include "mozilla/RefPtr.h"

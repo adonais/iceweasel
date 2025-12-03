@@ -40,5 +40,6 @@ def make_beetmover_description(config, jobs):
             "treeherder": treeherder,
             "locale": locale,
             "shipping-phase": job["shipping-phase"],
+            "run-on-repo-type": job.get("run-on-repo-type", ["git", "hg"]),
         }
         yield beet_description

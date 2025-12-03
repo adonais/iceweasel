@@ -8,7 +8,6 @@
 
 #include "SVGContentUtils.h"
 #include "SVGTransform.h"
-#include "mozilla/ArrayUtils.h"
 #include "nsAtom.h"
 #include "nsGkAtoms.h"
 

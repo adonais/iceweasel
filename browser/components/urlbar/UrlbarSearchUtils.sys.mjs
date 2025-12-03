@@ -16,8 +16,7 @@
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
-  UrlbarTokenizer:
-    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
+  UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   separatePrivateDefaultUIEnabled: {
     pref: "browser.search.separatePrivateDefault.ui.enabled",
@@ -154,7 +153,7 @@ class SearchUtils {
       let query = lazy.UrlbarUtils.substringAfter(searchString, alias);
       // Match an alias only when it has a space after it.  If there's no trailing
       // space, then continue to treat it as part of the search string.
-      if (!lazy.UrlbarTokenizer.REGEXP_SPACES_START.test(query)) {
+      if (!lazy.UrlUtils.REGEXP_SPACES_START.test(query)) {
         return null;
       }
     }

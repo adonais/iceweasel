@@ -6,7 +6,7 @@
 #ifndef mozilla_widget_NativeMenuSupport_h
 #define mozilla_widget_NativeMenuSupport_h
 
-#include "mozilla/RefPtr.h"
+#include "mozilla/AlreadyAddRefed.h"
 
 class nsIWidget;
 

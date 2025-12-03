@@ -10,7 +10,6 @@
 #define nsChangeHint_h___
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Types.h"
 
 // Defines for various style related constants
 

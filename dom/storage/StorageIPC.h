@@ -561,8 +561,8 @@ class SessionStorageManagerParent final
   BackgroundSessionStorageManager* GetManager() const;
 
   mozilla::ipc::IPCResult RecvClearStorages(
-      const OriginAttributesPattern& aPattern,
-      const nsACString& aOriginScope) override;
+      const OriginAttributesPattern& aPattern, const nsACString& aOriginScope,
+      const uint32_t& aMode) override;
 
  private:
   ~SessionStorageManagerParent();

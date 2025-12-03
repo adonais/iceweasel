@@ -224,7 +224,7 @@ class ClientChannelHelperParent final : public ClientChannelHelper {
     }
 
     if (aClientInfo) {
-      Unused << NS_WARN_IF(!ClientManager::ExpectFutureSource(*aClientInfo));
+      (void)NS_WARN_IF(!ClientManager::ExpectFutureSource(*aClientInfo));
     }
 
     mRecentFutureSourceInfo = std::move(aClientInfo);

@@ -142,7 +142,6 @@ private fun RecentTabItem(
                 modifier = Modifier
                     .size(108.dp, 80.dp)
                     .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop,
             )
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -209,13 +208,11 @@ private fun RecentTabItem(
  *
  * @param tab [RecentTab] that was recently viewed.
  * @param modifier [Modifier] used to draw the image content.
- * @param contentScale [ContentScale] used to draw image content.
  */
 @Composable
 fun RecentTabImage(
     tab: RecentTab.Tab,
     modifier: Modifier = Modifier,
-    contentScale: ContentScale = ContentScale.FillWidth,
 ) {
     val previewImageUrl = tab.state.content.previewImageUrl
 
@@ -229,18 +226,16 @@ fun RecentTabImage(
                 fallback = {
                     TabThumbnail(
                         tab = tab.state,
-                        size = LocalDensity.current.run { THUMBNAIL_SIZE.dp.toPx().toInt() },
+                        thumbnailSizePx = LocalDensity.current.run { THUMBNAIL_SIZE.dp.toPx().toInt() },
                         modifier = modifier,
-                        contentScale = contentScale,
                     )
                 },
             )
         }
         else -> TabThumbnail(
             tab = tab.state,
-            size = LocalDensity.current.run { THUMBNAIL_SIZE.dp.toPx().toInt() },
+            thumbnailSizePx = LocalDensity.current.run { THUMBNAIL_SIZE.dp.toPx().toInt() },
             modifier = modifier,
-            contentScale = contentScale,
         )
     }
 }

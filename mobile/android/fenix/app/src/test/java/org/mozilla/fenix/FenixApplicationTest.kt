@@ -37,7 +37,6 @@ import org.mozilla.fenix.GleanMetrics.SearchDefaultEngine
 import org.mozilla.fenix.GleanMetrics.TopSites
 import org.mozilla.fenix.components.metrics.MozillaProductDetector
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
-import org.mozilla.fenix.crashes.StartupCrashCanary
 import org.mozilla.fenix.distributions.DefaultDistributionBrowserStoreProvider
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.distributions.DistributionProviderChecker
@@ -89,45 +88,6 @@ class FenixApplicationTest {
             legacyDistributionProviderChecker = testLegacyDistributionProviderChecker,
             distributionSettings = testDistributionSettings,
         )
-    }
-
-    @Test
-    fun `GIVEN a startup crash canary THEN initialize is never called`() {
-        var called = false
-        val initialize = { called = true }
-
-        val canary = object : StartupCrashCanary {
-            override val startupCrashDetected: Boolean
-                get() = true
-
-            override suspend fun clearCanary() { TODO("Not yet implemented") }
-
-            override suspend fun createCanary() { TODO("Not yet implemented") }
-        }
-
-        val application = FenixApplication()
-        application.checkForStartupCrash(canary, initialize)
-
-        assertFalse(called)
-    }
-
-    @Test
-    fun `GIVEN no startup crash canary THEN initialize is called`() {
-        var called = false
-        val initialize = { called = true }
-        val canary = object : StartupCrashCanary {
-            override val startupCrashDetected: Boolean
-                get() = false
-
-            override suspend fun clearCanary() { TODO("Not yet implemented") }
-
-            override suspend fun createCanary() { TODO("Not yet implemented") }
-        }
-
-        val application = FenixApplication()
-        application.checkForStartupCrash(canary, initialize)
-
-        assertTrue(called)
     }
 
     @Test
@@ -221,6 +181,7 @@ class FenixApplicationTest {
         every { application.getDeviceTotalRAM() } returns 7L
         every { settings.inactiveTabsAreEnabled } returns true
         every { settings.isIsolatedProcessEnabled } returns true
+        every { settings.isAppZygoteEnabled } returns true
         every { application.isDeviceRamAboveThreshold } returns true
         every { dohSettingsProvider.getSelectedProtectionLevel() } returns ProtectionLevel.Max
         every { settings.getHttpsOnlyMode() } returns HttpsOnlyMode.ENABLED_PRIVATE_ONLY
@@ -276,6 +237,7 @@ class FenixApplicationTest {
         assertEquals(listOf("switch", "touch exploration"), Preferences.accessibilityServices.testGetValue())
         assertEquals(true, Preferences.inactiveTabsEnabled.testGetValue())
         assertEquals(true, Preferences.isolatedContentProcessesEnabled.testGetValue())
+        assertEquals(true, Preferences.appZygoteIsolatedContentProcessesEnabled.testGetValue())
         assertEquals(true, Metrics.defaultWallpaper.testGetValue())
         assertEquals(true, Metrics.ramMoreThanThreshold.testGetValue())
         assertEquals(7L, Metrics.deviceTotalRam.testGetValue())

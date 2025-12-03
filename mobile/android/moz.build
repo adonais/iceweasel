@@ -59,14 +59,14 @@ GeneratedFile(
 
 GeneratedFile(
     "geckoview/src/main/java/org/mozilla/geckoview/CrashReport.java",
-    script="/toolkit/crashreporter/generate_crash_reporter_sources.py",
-    entry_point="emit_java",
+    script="/toolkit/crashreporter/annotations/generate.py",
+    inputs=["!/toolkit/crashreporter/annotations/validated.yaml"],
 )
 
 GeneratedFile(
     "android-components/components/lib/crash/src/main/java/mozilla/components/lib/crash/service/CrashReport.kt",
-    script="/toolkit/crashreporter/generate_crash_reporter_sources.py",
-    entry_point="emit_java",
+    script="/toolkit/crashreporter/annotations/generate.py",
+    inputs=["!/toolkit/crashreporter/annotations/validated.yaml"],
 )
 
 CONFIGURE_SUBST_FILES += ["installer/Makefile"]

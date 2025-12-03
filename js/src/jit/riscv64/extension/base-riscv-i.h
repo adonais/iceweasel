@@ -18,7 +18,7 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
   void auipc(Register rd, int32_t imm20);
 
   // Jumps
-  void jal(Register rd, int32_t imm20);
+  CodeOffset jal(Register rd, int32_t imm20);
   BufferOffset jalr(Register rd, Register rs1, int16_t imm12);
 
   // Branches
@@ -224,11 +224,11 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
     bleu(rs1, rs2, branch_offset(L));
   }
 
-  void j(int32_t imm21) { jal(zero_reg, imm21); }
-  void j(Label* L) { j(jump_offset(L)); }
-  void b(Label* L) { j(L); }
-  void jal(int32_t imm21) { jal(ra, imm21); }
-  void jal(Label* L) { jal(jump_offset(L)); }
+  CodeOffset j(int32_t imm21) { return jal(zero_reg, imm21); }
+  CodeOffset j(Label* L) { return j(jump_offset(L)); }
+  CodeOffset b(Label* L) { return j(L); }
+  CodeOffset jal(int32_t imm21) { return jal(ra, imm21); }
+  CodeOffset jal(Label* L) { return jal(jump_offset(L)); }
   void jr(Register rs) { jalr(zero_reg, rs, 0); }
   void jr(Register rs, int32_t imm12) { jalr(zero_reg, rs, imm12); }
   void jalr(Register rs, int32_t imm12) { jalr(ra, rs, imm12); }

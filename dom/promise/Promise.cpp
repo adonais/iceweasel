@@ -15,14 +15,11 @@
 #include "js/Object.h"     // JS::GetCompartment
 #include "js/StructuredClone.h"
 #include "jsfriendapi.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/ResultExtensions.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMException.h"
@@ -419,7 +416,7 @@ void Promise::CreateWrapper(
     return;
   }
   if (aPropagateUserInteraction == ePropagateUserInteraction) {
-    Unused << MaybePropagateUserInputEventHandling();
+    (void)MaybePropagateUserInputEventHandling();
   }
 }
 

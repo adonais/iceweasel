@@ -10,7 +10,6 @@
 #include <cstdint>
 
 #include "ErrorList.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"

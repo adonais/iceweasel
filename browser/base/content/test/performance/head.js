@@ -503,8 +503,10 @@ async function recordFrames(testPromise, win = window) {
 }
 
 // How many identical pixels to accept between 2 rects when deciding to merge
-// them.
-const kMaxEmptyPixels = 3;
+// them. This needs to be at least as big as the size of the margin between 2
+// tabs so 2 consecutive tabs being repainted at once are counted as a single
+// changed rect.
+const kMaxEmptyPixels = 4;
 function compareFrames(frame, previousFrame) {
   // Accessing the Math global is expensive as the test executes in a
   // non-syntactic scope. Accessing it as a lexical variable is enough

@@ -740,7 +740,9 @@ impl AuthrsService {
         if static_prefs::pref!("security.webauth.webauthn_enable_usbtoken") {
             Ok(false)
         } else if static_prefs::pref!("security.webauth.webauthn_enable_softtoken") {
-            Ok(self.test_token_manager.has_platform_authenticator())
+            Ok(self
+                .test_token_manager
+                .has_user_verifying_platform_authenticator())
         } else {
             Err(NS_ERROR_NOT_AVAILABLE)
         }

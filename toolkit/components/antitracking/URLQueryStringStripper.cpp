@@ -9,7 +9,6 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/glean/AntitrackingMetrics.h"
 
 #include "nsIEffectiveTLDService.h"
@@ -308,7 +307,7 @@ nsresult URLQueryStringStripper::StripQueryString(nsIURI* aURI,
   nsAutoCString newQuery;
   params.Serialize(newQuery, false);
 
-  Unused << NS_MutateURI(uri).SetQuery(newQuery).Finalize(aOutput);
+  (void)NS_MutateURI(uri).SetQuery(newQuery).Finalize(aOutput);
   return NS_OK;
 }
 

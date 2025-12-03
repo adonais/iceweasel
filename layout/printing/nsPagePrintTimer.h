@@ -7,7 +7,6 @@
 #define nsPagePrintTimer_h___
 
 // Timer Includes
-#include "mozilla/Attributes.h"
 #include "mozilla/OwningNonNull.h"
 #include "nsIDocumentViewerPrint.h"
 #include "nsITimer.h"

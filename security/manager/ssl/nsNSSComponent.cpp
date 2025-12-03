@@ -19,7 +19,6 @@
 #include "certdb.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Base64.h"
 #include "mozilla/Casting.h"
@@ -30,14 +29,12 @@
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/PublicSSL.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/Unused.h"
 #include "mozilla/Vector.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
@@ -199,7 +196,7 @@ bool EnsureNSSInitializedChromeOrContent() {
     // If ipcclientcerts fails to load, client certificate authentication won't
     // work (if networking is done on the socket process). This is preferable
     // to stopping the program entirely, so treat this as best-effort.
-    Unused << NS_WARN_IF(!LoadIPCClientCerts());
+    (void)NS_WARN_IF(!LoadIPCClientCerts());
     initialized = true;
     return true;
   }
@@ -335,7 +332,7 @@ void nsNSSComponent::MaybeImportEnterpriseRoots() {
   if (importEnterpriseRoots) {
     RefPtr<BackgroundImportEnterpriseCertsTask> task =
         new BackgroundImportEnterpriseCertsTask(this);
-    Unused << task->Dispatch();
+    (void)task->Dispatch();
   }
 }
 
@@ -564,7 +561,7 @@ void AsyncLoadOrUnloadOSClientCertsModule(bool load) {
   if (load) {
     RefPtr<BackgroundLoadOSClientCertsModuleTask> task =
         new BackgroundLoadOSClientCertsModuleTask();
-    Unused << task->Dispatch();
+    (void)task->Dispatch();
   } else {
     UniqueSECMODModule osClientCertsModule(
         SECMOD_FindModule(kOSClientCertsModuleName.get()));
@@ -620,14 +617,14 @@ nsresult nsNSSComponent::CheckForSmartCardChanges() {
   }
   for (auto& module : modulesWithRemovableSlots) {
     // Best-effort.
-    Unused << SECMOD_UpdateSlotList(module.get());
+    (void)SECMOD_UpdateSlotList(module.get());
   }
   AutoSECMODListReadLock secmodLock;
   for (auto& module : modulesWithRemovableSlots) {
     for (int i = 0; i < module->slotCount; i++) {
       // We actually don't care about the return value here - we just need to
       // call this to get NSS to update its view of this slot.
-      Unused << PK11_IsPresent(module->slots[i]);
+      (void)PK11_IsPresent(module->slots[i]);
     }
   }
 #endif
@@ -908,7 +905,7 @@ bool HandleTLSPrefChange(const nsCString& prefName) {
   if (prefName.EqualsLiteral("security.tls.version.min") ||
       prefName.EqualsLiteral("security.tls.version.max") ||
       prefName.EqualsLiteral("security.tls.version.enable-deprecated")) {
-    Unused << nsNSSComponent::SetEnabledTLSVersions();
+    (void)nsNSSComponent::SetEnabledTLSVersions();
   } else if (prefName.EqualsLiteral("security.tls.hello_downgrade_check")) {
     SSL_OptionSetDefault(SSL_ENABLE_HELLO_DOWNGRADE_CHECK,
                          StaticPrefs::security_tls_hello_downgrade_check());
@@ -1301,7 +1298,7 @@ static nsresult AttemptToRenamePKCS11ModuleDB(const nsACString& profilePath) {
   // This may fail on, e.g., a read-only file system. This would be unfortunate,
   // but again it isn't catastropic and we would want to fall back to
   // initializing NSS in no-DB mode.
-  Unused << dbFile->MoveToNative(profileDir, destModuleDBFilename);
+  (void)dbFile->MoveToNative(profileDir, destModuleDBFilename);
   return NS_OK;
 }
 #endif  // ifndef ANDROID
@@ -1464,7 +1461,7 @@ void UnmigrateOneCertDB(const nsCOMPtr<nsIFile>& profileDirectory,
   if (NS_FAILED(rv)) {
     return;
   }
-  Unused << prefixedDBFile->MoveToNative(nullptr, dbType);
+  (void)prefixedDBFile->MoveToNative(nullptr, dbType);
 }
 
 void UnmigrateFromPrefixedCertDBs() {
@@ -1482,7 +1479,7 @@ void UnmigrateFromPrefixedCertDBs() {
 nsresult nsNSSComponent::InitializeNSS() {
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent::InitializeNSS\n"));
   AUTO_PROFILER_LABEL("nsNSSComponent::InitializeNSS", OTHER);
-  AUTO_PROFILER_TRACING_MARKER("NSS", "nsNSSComponent::InitializeNSS", OTHER);
+  AUTO_PROFILER_MARKER("nsNSSComponent::InitializeNSS", OTHER);
 
   static_assert(
       nsINSSErrorsService::NSS_SEC_ERROR_BASE == SEC_ERROR_BASE &&
@@ -1860,7 +1857,7 @@ nsNSSComponent::ClearSSLExternalAndInternalSessionCache() {
       mozilla::net::gIOService->CallOrWaitForSocketProcess([]() {
         RefPtr<mozilla::net::SocketProcessParent> socketParent =
             mozilla::net::SocketProcessParent::GetSingleton();
-        Unused << socketParent->SendClearSessionCache();
+        (void)socketParent->SendClearSessionCache();
       });
     }
   }
@@ -1894,7 +1891,7 @@ nsNSSComponent::AsyncClearSSLExternalAndInternalSessionCache(
                                                               promise}]() {
       RefPtr<mozilla::net::SocketProcessParent> socketParent =
           mozilla::net::SocketProcessParent::GetSingleton();
-      Unused << socketParent->SendClearSessionCache()->Then(
+      (void)socketParent->SendClearSessionCache()->Then(
           GetCurrentSerialEventTarget(), __func__,
           [promise = RefPtr{p}] { promise->MaybeResolveWithUndefined(); },
           [promise = RefPtr{p}] { promise->MaybeReject(NS_ERROR_UNEXPECTED); });
@@ -1970,7 +1967,7 @@ static inline void CopyCertificatesTo(UniqueCERTCertList& from,
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("      provisionally adding '%s'", n->cert->subjectName));
     if (CERT_AddCertToListTail(to.get(), cert.get()) == SECSuccess) {
-      Unused << cert.release();
+      (void)cert.release();
     }
   }
 }

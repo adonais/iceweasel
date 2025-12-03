@@ -64,7 +64,6 @@
 
 #include "prenv.h"
 #include "mozilla/PodOperations.h"
-#include "mozilla/DebugOnly.h"
 
 #include <string.h>
 #include <list>

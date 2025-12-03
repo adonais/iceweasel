@@ -57,7 +57,7 @@ xpcshell:
                 by-test-platform:
                     linux.*: large-legacy
                     default: large
-            default: large-noscratch
+            default: highcpu
     run-on-projects:
         by-variant:
             conditioned_profile:
@@ -120,6 +120,21 @@ xpcshell:
                     linux1804-64.*/opt: 2
                     linux2404-64.*/opt: 2
                     default: 4
+    timeoutfactor:
+        by-test-platform:
+            android-em-14.*: 2
+            linux2404-64-asan/opt: 2
+            linux2404-64-ccov/opt: 4
+            linux2404-64-tsan/opt: 3
+            linux2404-64/debug: 2
+            linux2204-64-wayland/debug: 2
+            macosx1015-64.*: 6
+            macosx1470-64/debug: 6
+            macosx1470-64.*/opt: 4
+            windows.*/debug: 2
+            windows11-64-24h2-asan/opt: 2
+            windows11-64-24h2-ccov/opt: 3
+            default: 1
     max-run-time:
         by-variant:
             msix: 7200

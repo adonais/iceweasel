@@ -153,7 +153,7 @@ class WindowGlobalChild final : public WindowGlobalActor,
   void BlockBFCacheFor(BFCacheStatus aStatus);
 
  protected:
-  const nsACString& GetRemoteType() override;
+  const nsACString& GetRemoteType() const override;
 
   already_AddRefed<JSActor> InitJSActor(JS::Handle<JSObject*> aMaybeActor,
                                         const nsACString& aName,

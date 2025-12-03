@@ -1820,6 +1820,8 @@ add_task(
       source: "newtab",
       position: 0,
       isPinned: false,
+      smartScores: { moo: 1 },
+      smartWeights: { moo: 0 },
     };
     const SESSION_ID = "decafc0ffee";
     sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
@@ -1833,6 +1835,8 @@ add_task(
       newtab_visit_id: SESSION_ID,
       is_sponsored: String(false),
       position: String(0),
+      smart_scores: JSON.stringify({ moo: 1 }),
+      smart_weights: JSON.stringify({ moo: 0 }),
     });
 
     sandbox.restore();
@@ -1855,6 +1859,8 @@ add_task(
       source: "newtab",
       position: 0,
       isPinned: false,
+      smartScores: { moo: 1 },
+      smartWeights: { moo: 0 },
     };
     const SESSION_ID = "decafc0ffee";
     sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
@@ -1868,6 +1874,8 @@ add_task(
       is_sponsored: String(false),
       position: String(0),
       is_pinned: String(false),
+      smart_scores: JSON.stringify({ moo: 1 }),
+      smart_weights: JSON.stringify({ moo: 0 }),
     });
 
     sandbox.restore();

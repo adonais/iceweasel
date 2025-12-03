@@ -1,4 +1,5 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-*/
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -307,7 +308,7 @@ TEST(TestAudioTrackGraph, NotifyDeviceStarted)
       nullptr, GetMainThreadSerialEventTarget());
 
   RefPtr<SourceMediaTrack> dummySource;
-  Unused << WaitFor(InvokeAsync([&] {
+  (void)WaitFor(InvokeAsync([&] {
     // Dummy track to make graph rolling. Add it and remove it to remove the
     // graph from the global hash table and let it shutdown.
     dummySource = graph->CreateSourceTrack(MediaSegment::AUDIO);
@@ -435,7 +436,7 @@ TEST(TestAudioTrackGraph, NonNativeInputTrackStartAndStop)
         EXPECT_EQ(info.mType, AudioInputType::Voice);
       }
 
-      Unused << WaitFor(nonNativeStream->FramesProcessedEvent());
+      (void)WaitFor(nonNativeStream->FramesProcessedEvent());
 
       DispatchFunction([&] {
         track->GraphImpl()->AppendMessage(
@@ -479,7 +480,7 @@ TEST(TestAudioTrackGraph, NonNativeInputTrackStartAndStop)
       EXPECT_EQ(nonNativeStream->InputChannels(), channels);
       EXPECT_EQ(nonNativeStream->SampleRate(), static_cast<uint32_t>(rate));
 
-      Unused << WaitFor(nonNativeStream->FramesProcessedEvent());
+      (void)WaitFor(nonNativeStream->FramesProcessedEvent());
 
       DispatchFunction([&] {
         track->GraphImpl()->AppendMessage(
@@ -546,7 +547,7 @@ TEST(TestAudioTrackGraph, NonNativeInputTrackErrorCallback)
     EXPECT_EQ(nonNativeStream->SampleRate(), static_cast<uint32_t>(rate));
 
     // Make sure the audio stream is running.
-    Unused << WaitFor(nonNativeStream->FramesProcessedEvent());
+    (void)WaitFor(nonNativeStream->FramesProcessedEvent());
 
     // Force an error. This results in the audio stream destroying.
     DispatchFunction([&] { nonNativeStream->ForceError(); });
@@ -657,7 +658,7 @@ TEST(TestAudioTrackGraph, DeviceChangedCallback)
   EXPECT_TRUE(stream1->mHasInput);
   EXPECT_TRUE(stream1->mHasOutput);
   EXPECT_EQ(stream1->GetInputDeviceID(), device1);
-  Unused << WaitFor(started);
+  (void)WaitFor(started);
 
   // Create a NonNativeInputTrack, and make sure its DeviceChangeCallback works.
   const CubebUtils::AudioDeviceID device2 = (CubebUtils::AudioDeviceID)2;
@@ -719,7 +720,7 @@ TEST(TestAudioTrackGraph, RestartAudioIfMaxChannelCountChanged)
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
   auto unforcer = WaitFor(cubeb->ForceAudioThread()).unwrap();
-  Unused << unforcer;
+  (void)unforcer;
 
   MediaTrackGraph* graphImpl = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER, /*Window ID*/ 1,
@@ -858,7 +859,7 @@ TEST(TestAudioTrackGraph, RestartAudioIfMaxChannelCountChanged)
     EXPECT_TRUE(nativeStream->mHasInput);
     EXPECT_TRUE(nativeStream->mHasOutput);
     EXPECT_EQ(nativeStream->GetInputDeviceID(), nativeDevice);
-    Unused << WaitFor(started);
+    (void)WaitFor(started);
 
     // Open a 2-channel NativeInputTrack and wait for a new driver since the
     // max-channel for the native device becomes 2 now.
@@ -1060,7 +1061,7 @@ TEST(TestAudioTrackGraph, SwitchNativeInputDevice)
   EXPECT_TRUE(stream1->mHasOutput);
   EXPECT_EQ(stream1->InputChannels(), 1U);
   EXPECT_EQ(stream1->GetInputDeviceID(), device1);
-  Unused << WaitFor(started);
+  (void)WaitFor(started);
   std::cerr << "Device " << device1 << " is opened (stream " << stream1.get()
             << ")" << std::endl;
 
@@ -1211,7 +1212,7 @@ TEST(TestAudioTrackGraph, AudioProcessingTrack)
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
   auto unforcer = WaitFor(cubeb->ForceAudioThread()).unwrap();
-  Unused << unforcer;
+  (void)unforcer;
 
   // Start on a system clock driver, then switch to full-duplex in one go. If we
   // did output-then-full-duplex we'd risk a second NotifyWhenDeviceStarted
@@ -1247,7 +1248,7 @@ TEST(TestAudioTrackGraph, AudioProcessingTrack)
 
   RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
   EXPECT_TRUE(stream->mHasInput);
-  Unused << WaitFor(p);
+  (void)WaitFor(p);
 
   // Wait for a second worth of audio data. GoFaster is dispatched through a
   // ControlMessage so that it is called in the first audio driver iteration.
@@ -1660,7 +1661,7 @@ TEST(TestAudioTrackGraph, SetRequestedInputChannelCount)
   EXPECT_TRUE(stream1->mHasOutput);
   EXPECT_EQ(stream1->InputChannels(), 2U);
   EXPECT_EQ(stream1->GetInputDeviceID(), device1);
-  Unused << WaitFor(started);
+  (void)WaitFor(started);
 
   // Open a 1-channel non-native input stream.
   const CubebUtils::AudioDeviceID device2 = (CubebUtils::AudioDeviceID)2;
@@ -1762,7 +1763,7 @@ TEST(TestAudioTrackGraph, RestartAudioIfProcessingMaxChannelCountChanged)
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
   auto unforcer = WaitFor(cubeb->ForceAudioThread()).unwrap();
-  Unused << unforcer;
+  (void)unforcer;
 
   MediaTrackGraph* graph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER, /*Window ID*/ 1,
@@ -1885,7 +1886,7 @@ TEST(TestAudioTrackGraph, RestartAudioIfProcessingMaxChannelCountChanged)
     EXPECT_TRUE(nativeStream->mHasOutput);
     EXPECT_EQ(nativeStream->InputChannels(), 1U);
     EXPECT_EQ(nativeStream->GetInputDeviceID(), nativeDevice);
-    Unused << WaitFor(started);
+    (void)WaitFor(started);
 
     // Open a 2-channel AudioProcessingTrack for the native device and wait for
     // a new driver since the max-channel for the native device becomes 2 now.
@@ -2039,7 +2040,7 @@ TEST(TestAudioTrackGraph, SetInputChannelCountBeforeAudioCallbackDriver)
   EXPECT_TRUE(stream->mHasOutput);
   EXPECT_EQ(stream->InputChannels(), 1U);
 
-  Unused << WaitFor(
+  (void)WaitFor(
       InvokeAsync([&] { return graph->NotifyWhenDeviceStarted(nullptr); }));
 
   // Clean up.
@@ -2049,7 +2050,7 @@ TEST(TestAudioTrackGraph, SetInputChannelCountBeforeAudioCallbackDriver)
     track->DisconnectDeviceInput();
     track->Destroy();
   });
-  Unused << WaitFor(cubeb->StreamDestroyEvent());
+  (void)WaitFor(cubeb->StreamDestroyEvent());
 }
 
 TEST(TestAudioTrackGraph, StartAudioDeviceBeforeStartingAudioProcessing)
@@ -2114,7 +2115,7 @@ TEST(TestAudioTrackGraph, StartAudioDeviceBeforeStartingAudioProcessing)
     track->DisconnectDeviceInput();
     track->Destroy();
   });
-  Unused << WaitFor(cubeb->StreamDestroyEvent());
+  (void)WaitFor(cubeb->StreamDestroyEvent());
 }
 
 TEST(TestAudioTrackGraph, StopAudioProcessingBeforeStoppingAudioDevice)
@@ -2180,7 +2181,7 @@ TEST(TestAudioTrackGraph, StopAudioProcessingBeforeStoppingAudioDevice)
     track->DisconnectDeviceInput();
     track->Destroy();
   });
-  Unused << WaitFor(cubeb->StreamDestroyEvent());
+  (void)WaitFor(cubeb->StreamDestroyEvent());
 }
 
 // This test is pretty similar to SwitchNativeInputDevice above, which makes
@@ -2283,7 +2284,7 @@ TEST(TestAudioTrackGraph, SwitchNativeAudioProcessingTrack)
   EXPECT_TRUE(stream1->mHasOutput);
   EXPECT_EQ(stream1->InputChannels(), 1U);
   EXPECT_EQ(stream1->GetInputDeviceID(), device1);
-  Unused << WaitFor(started);
+  (void)WaitFor(started);
   std::cerr << "Device " << device1 << " is opened (stream " << stream1.get()
             << ")" << std::endl;
 

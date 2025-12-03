@@ -23,8 +23,9 @@ function ignore({ getState }) {
     if (getState()[IGNORING]) {
       // Throw to stop execution from the callsite and prevent any further code from running
       throw new Error(
-        "[REDUX_MIDDLEWARE_IGNORED_REDUX_ACTION] Dispatching '" + action.type ||
-          action + "' action after panel's closing"
+        "[REDUX_MIDDLEWARE_IGNORED_REDUX_ACTION] Dispatching '" +
+          (action.type || action) +
+          "' action after panel's closing"
       );
     }
 

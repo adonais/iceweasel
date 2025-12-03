@@ -42,6 +42,7 @@
 #include "vm/List.h"
 #include "vm/Opcodes.h"
 #include "vm/RealmFuses.h"
+#include "vm/RuntimeFuses.h"
 #include "vm/Shape.h"
 #include "vm/TypeofEqOperand.h"  // TypeofEqOperand
 #include "wasm/WasmConstants.h"
@@ -303,6 +304,11 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
     static_assert(sizeof(RealmFuses::FuseIndex) == sizeof(uint8_t),
                   "RealmFuses::FuseIndex must fit in a byte");
     buffer_.writeByte(uint8_t(realmFuseIndex));
+  }
+  void writeRuntimeFuseIndexImm(RuntimeFuses::FuseIndex runtimeFuseIndex) {
+    static_assert(sizeof(RuntimeFuses::FuseIndex) == sizeof(uint8_t),
+                  "RuntimeFuses::FuseIndex must fit in a byte");
+    buffer_.writeByte(uint8_t(runtimeFuseIndex));
   }
 
   void writeByteImm(uint32_t b) {

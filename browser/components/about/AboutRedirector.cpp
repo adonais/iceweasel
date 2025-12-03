@@ -76,8 +76,7 @@ static const RedirEntry kRedirMap[] = {
          nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
          nsIAboutModule::IS_SECURE_CHROME_UI},
     {"firefoxview", "chrome://browser/content/firefoxview/firefoxview.html",
-     nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI |
-         nsIAboutModule::HIDE_FROM_ABOUTABOUT},
+     nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI},
     {"policies", "chrome://browser/content/policies/aboutPolicies.html",
      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI},
     {"privatebrowsing", "chrome://browser/content/aboutPrivateBrowsing.html",

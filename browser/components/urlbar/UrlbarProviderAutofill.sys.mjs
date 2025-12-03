@@ -24,6 +24,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarTokenizer:
     "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
+  UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "pageFrecencyThreshold", () => {
@@ -384,7 +385,7 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
     // This may confuse completeDefaultIndex cause the AUTOCOMPLETE_MATCH
     // tokenizer ends up trimming the search string and returning a value
     // that doesn't match it, or is even shorter.
-    if (lazy.UrlbarTokenizer.REGEXP_SPACES.test(queryContext.searchString)) {
+    if (lazy.UrlUtils.REGEXP_SPACES.test(queryContext.searchString)) {
       return false;
     }
 
@@ -412,10 +413,9 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
   /**
    * Starts querying.
    *
-   * @param {object} queryContext The query context object
-   * @param {Function} addCallback Callback invoked by the provider to add a new
-   *        result.
-   * @returns {Promise} resolved when the query stops.
+   * @param {UrlbarQueryContext} queryContext
+   * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
+   *   Callback invoked by the provider to add a new result.
    */
   async startQuery(queryContext, addCallback) {
     // Check if the query was cancelled while the autofill result was being
@@ -989,8 +989,9 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
     // at the end, we still treat it as an URL.
     let query, params;
     if (
-      lazy.UrlbarTokenizer.looksLikeOrigin(this._searchString, {
+      lazy.UrlUtils.looksLikeOrigin(this._searchString, {
         ignoreKnownDomains: true,
+        allowPartialNumericalTLDs: true,
       })
     ) {
       [query, params] = this._getOriginQuery(queryContext);

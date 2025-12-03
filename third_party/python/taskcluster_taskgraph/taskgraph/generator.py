@@ -14,7 +14,7 @@ from concurrent.futures import (
     wait,
 )
 from dataclasses import dataclass
-from typing import Callable, Dict, Optional, Union
+from typing import Callable, Optional, Union
 
 from . import filter_tasks
 from .config import GraphConfig, load_graph_config
@@ -42,7 +42,7 @@ class KindNotFound(Exception):
 class Kind:
     name: str
     path: str
-    config: Dict
+    config: dict
     graph_config: GraphConfig
 
     def _get_loader(self) -> Callable:
@@ -250,6 +250,15 @@ class TaskGraphGenerator:
         """
         return self._run_until("graph_config")
 
+    @property
+    def kind_graph(self):
+        """
+        The dependency graph of kinds.
+
+        @type: Graph
+        """
+        return self._run_until("kind_graph")
+
     def _load_kinds(self, graph_config, target_kinds=None):
         if target_kinds:
             # docker-image is an implicit dependency that never appears in
@@ -378,6 +387,7 @@ class TaskGraphGenerator:
 
         # Initial verifications that don't depend on any generation state.
         self.verify("initial")
+        self.verify("graph_config", graph_config)
 
         if callable(self._parameters):
             parameters = self._parameters(graph_config)
@@ -421,14 +431,28 @@ class TaskGraphGenerator:
                 set(target_kinds) | {"docker-image"}
             )
 
+        yield "kind_graph", kind_graph
+
         logger.info("Generating full task set")
-        # Current parallel generation relies on multiprocessing, and forking.
-        # This causes problems on Windows and macOS due to how new processes
-        # are created there, and how doing so reinitializes global variables
-        # that are modified earlier in graph generation, that doesn't get
-        # redone in the new processes. Ideally this would be fixed, or we
-        # would take another approach to parallel kind generation. In the
-        # meantime, it's not supported outside of Linux.
+        # The short version of the below is: we only support parallel kind
+        # processing on Linux.
+        #
+        # Current parallel generation relies on multiprocessing, and more
+        # specifically: the "fork" multiprocessing method. This is not supported
+        # at all on Windows (it uses "spawn"). Forking is supported on macOS,
+        # but no longer works reliably in all cases, and our usage of it here
+        # causes crashes. See https://github.com/python/cpython/issues/77906
+        # and http://sealiesoftware.com/blog/archive/2017/6/5/Objective-C_and_fork_in_macOS_1013.html
+        # for more details on that.
+        # Other methods of multiprocessing (both "spawn" and "forkserver")
+        # do not work for our use case, because they cause global variables
+        # to be reinitialized, which are sometimes modified earlier in graph
+        # generation. These issues can theoretically be worked around by
+        # eliminating all reliance on globals as part of task generation, but
+        # is far from a small amount of work in users like Gecko/Firefox.
+        # In the long term, the better path forward is likely to be switching
+        # to threading with a free-threaded python to achieve similar parallel
+        # processing.
         if platform.system() != "Linux" or os.environ.get("TASKGRAPH_SERIAL"):
             all_tasks = self._load_tasks_serial(kinds, kind_graph, parameters)
         else:
@@ -550,28 +574,32 @@ class TaskGraphGenerator:
             return name, args[0]
 
 
-def load_tasks_for_kinds(parameters, kinds, root_dir=None):
+def load_tasks_for_kinds(
+    parameters, kinds, root_dir=None, graph_attr=None, **tgg_kwargs
+):
     """
     Get all the tasks of the given kinds.
 
     This function is designed to be called from outside of taskgraph.
     """
+    graph_attr = graph_attr or "full_task_set"
+
     # make parameters read-write
     parameters = dict(parameters)
     parameters["target-kinds"] = kinds
     parameters = parameters_loader(spec=None, strict=False, overrides=parameters)
-    tgg = TaskGraphGenerator(root_dir=root_dir, parameters=parameters)
+    tgg = TaskGraphGenerator(root_dir=root_dir, parameters=parameters, **tgg_kwargs)
     return {
         task.task["metadata"]["name"]: task
-        for task in tgg.full_task_set
+        for task in getattr(tgg, graph_attr)
         if task.kind in kinds
     }
 
 
-def load_tasks_for_kind(parameters, kind, root_dir=None):
+def load_tasks_for_kind(parameters, kind, root_dir=None, **tgg_kwargs):
     """
     Get all the tasks of a given kind.
 
     This function is designed to be called from outside of taskgraph.
     """
-    return load_tasks_for_kinds(parameters, [kind], root_dir)
+    return load_tasks_for_kinds(parameters, [kind], root_dir, **tgg_kwargs)

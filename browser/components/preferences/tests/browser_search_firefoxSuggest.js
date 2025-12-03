@@ -10,7 +10,8 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 const CONTAINER_ID = "firefoxSuggestContainer";
-const DATA_COLLECTION_TOGGLE_ID = "firefoxSuggestDataCollectionSearchToggle";
+const ONLINE_ENABLED_TOGGLE_ID = "firefoxSuggestOnlineEnabledToggle";
+const ONLINE_ENABLED_LEARN_MORE_ID = "firefoxSuggestOnlineEnabledLearnMore";
 const LEARN_MORE_ID = "firefoxSuggestLearnMore";
 const BUTTON_RESTORE_DISMISSED_ID = "restoreDismissedSuggestions";
 
@@ -20,14 +21,15 @@ const EXPECTED = {
   [QuickSuggest.SETTINGS_UI.FULL]: {
     [LEARN_MORE_ID]: { isVisible: true },
     [CONTAINER_ID]: { isVisible: true },
-    [DATA_COLLECTION_TOGGLE_ID]: { isVisible: true },
+    [ONLINE_ENABLED_TOGGLE_ID]: { isVisible: true },
+    [ONLINE_ENABLED_LEARN_MORE_ID]: { isVisible: true },
     locationBarGroupHeader: {
       isVisible: true,
-      l10nId: "addressbar-header-firefox-suggest",
+      l10nId: "addressbar-header-firefox-suggest-1",
     },
     locationBarSuggestionLabel: {
       isVisible: true,
-      l10nId: "addressbar-suggest-firefox-suggest",
+      l10nId: "addressbar-suggest-firefox-suggest-1",
     },
   },
   [QuickSuggest.SETTINGS_UI.NONE]: {
@@ -36,20 +38,21 @@ const EXPECTED = {
     locationBarGroupHeader: { isVisible: true, l10nId: "addressbar-header" },
     locationBarSuggestionLabel: {
       isVisible: true,
-      l10nId: "addressbar-suggest",
+      l10nId: "addressbar-suggest-1",
     },
   },
   [QuickSuggest.SETTINGS_UI.OFFLINE_ONLY]: {
     [LEARN_MORE_ID]: { isVisible: true },
     [CONTAINER_ID]: { isVisible: true },
-    [DATA_COLLECTION_TOGGLE_ID]: { isVisible: false },
+    [ONLINE_ENABLED_TOGGLE_ID]: { isVisible: false },
+    [ONLINE_ENABLED_LEARN_MORE_ID]: { isVisible: false },
     locationBarGroupHeader: {
       isVisible: true,
-      l10nId: "addressbar-header-firefox-suggest",
+      l10nId: "addressbar-header-firefox-suggest-1",
     },
     locationBarSuggestionLabel: {
       isVisible: true,
-      l10nId: "addressbar-suggest-firefox-suggest",
+      l10nId: "addressbar-suggest-firefox-suggest-1",
     },
   },
 };
@@ -209,6 +212,96 @@ add_task(async function initiallyEnabled_settingsUiOfflineOnly() {
     newExpected: EXPECTED[QuickSuggest.SETTINGS_UI.OFFLINE_ONLY],
   });
 });
+
+add_task(async function toggling_all_firefoxsuggest_disables_other_options() {
+  // Enable quicksuggest since it could be off by default depending on location.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.suggest.quicksuggest.all", true]],
+  });
+
+  await openPreferencesViaOpenPreferencesAPI("search", { leaveOpen: true });
+
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  let allCheckbox = doc.getElementById("firefoxSuggestAll");
+  let sponsoredCheckbox = doc.getElementById("firefoxSuggestSponsored");
+  let onlineEnabledCheckbox = doc.getElementById(
+    "firefoxSuggestOnlineEnabledToggle"
+  );
+
+  // Initial state.
+  Assert.ok(
+    allCheckbox.checked,
+    "firefoxSuggestAll should initially be checked"
+  );
+  Assert.ok(
+    !sponsoredCheckbox.disabled,
+    "sponsoredCheckbox should initially be enabled"
+  );
+  Assert.ok(
+    !onlineEnabledCheckbox.disabled,
+    "onlineEnabledCheckbox should initially be enabled"
+  );
+
+  allCheckbox.click();
+
+  Assert.ok(!allCheckbox.checked, "firefoxSuggestAll should now be unchecked");
+  Assert.ok(sponsoredCheckbox.disabled, "sponsoredCheckbox should be disabled");
+  Assert.ok(
+    onlineEnabledCheckbox.disabled,
+    "onlineEnabledCheckbox should be disabled"
+  );
+
+  allCheckbox.click();
+
+  Assert.ok(allCheckbox.checked, "firefoxSuggestAll should be checked");
+  Assert.ok(
+    !sponsoredCheckbox.disabled,
+    "sponsoredCheckbox should be enabled again"
+  );
+  Assert.ok(
+    !onlineEnabledCheckbox.disabled,
+    "onlineEnabledCheckbox should be enabled again"
+  );
+
+  gBrowser.removeCurrentTab();
+});
+
+add_task(
+  async function all_firefoxsuggest_disabled_disables_other_options_on_open() {
+    // Disable the "all" preference and enable the others before opening settings.
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.urlbar.suggest.quicksuggest.all", false],
+        ["browser.urlbar.suggest.quicksuggest.sponsored", true],
+        ["browser.urlbar.quicksuggest.online.enabled", true],
+      ],
+    });
+
+    await openPreferencesViaOpenPreferencesAPI("search", { leaveOpen: true });
+
+    let doc = gBrowser.selectedBrowser.contentDocument;
+    let allCheckbox = doc.getElementById("firefoxSuggestAll");
+    let sponsoredCheckbox = doc.getElementById("firefoxSuggestSponsored");
+    let onlineEnabledCheckbox = doc.getElementById(
+      "firefoxSuggestOnlineEnabledToggle"
+    );
+
+    // Initial state.
+    Assert.ok(!allCheckbox.checked, "firefoxSuggestAll should not be checked");
+    Assert.ok(
+      sponsoredCheckbox.disabled,
+      "sponsoredCheckbox should initially be disabled"
+    );
+    Assert.ok(
+      onlineEnabledCheckbox.disabled,
+      "onlineEnabledCheckbox should initially be disabled"
+    );
+
+    gBrowser.removeCurrentTab();
+
+    await SpecialPowers.popPrefEnv();
+  }
+);
 
 // Tests the "Restore" button for dismissed suggestions.
 add_task(async function restoreDismissedSuggestions() {

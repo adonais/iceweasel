@@ -44,7 +44,7 @@ class WebExtensionPopupObserverTest {
         store.dispatch(WebExtensionAction.UpdatePopupSessionAction(extensionId, popupSession = engineSession)).joinBlocking()
         assertNotNull(extensionOpeningPopup)
         assertEquals(extensionId, extensionOpeningPopup!!.id)
-        assertEquals(engineSession, extensionOpeningPopup!!.popupSession)
+        assertEquals(engineSession, extensionOpeningPopup.popupSession)
 
         // Verify that stopped feature does not observe and forward requests to open popup
         extensionOpeningPopup = null

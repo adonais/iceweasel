@@ -18,6 +18,7 @@ kind-dependencies:
     - build-fat-aar
 
 task-defaults:
+    run-on-repo-type: [hg]
     artifact-template:
         type: file
         name: public/build/{artifact_file_name}

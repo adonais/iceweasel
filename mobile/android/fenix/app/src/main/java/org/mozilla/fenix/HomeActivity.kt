@@ -9,13 +9,11 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.ACTION_MAIN
-import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
-import android.os.Process
 import android.os.StrictMode
 import android.text.format.DateUtils
 import android.util.AttributeSet
@@ -105,7 +103,6 @@ import org.mozilla.fenix.components.metrics.GrowthDataWorker
 import org.mozilla.fenix.components.metrics.MarketingAttributionService
 import org.mozilla.fenix.components.metrics.fonts.FontEnumerationWorker
 import org.mozilla.fenix.crashes.CrashReporterBinding
-import org.mozilla.fenix.crashes.StartupCrashCanary
 import org.mozilla.fenix.crashes.UnsubmittedCrashDialog
 import org.mozilla.fenix.customtabs.ExternalAppBrowserActivity
 import org.mozilla.fenix.databinding.ActivityHomeBinding
@@ -146,6 +143,7 @@ import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.onboarding.ReEngagementNotificationWorker
 import org.mozilla.fenix.pbmlock.DefaultPrivateBrowsingLockStorage
 import org.mozilla.fenix.pbmlock.PrivateBrowsingLockFeature
+import org.mozilla.fenix.perf.DefaultStartupPathProvider
 import org.mozilla.fenix.perf.MarkersActivityLifecycleCallbacks
 import org.mozilla.fenix.perf.MarkersFragmentLifecycleCallbacks
 import org.mozilla.fenix.perf.Performance
@@ -162,7 +160,6 @@ import org.mozilla.fenix.splashscreen.DefaultExperimentsOperationStorage
 import org.mozilla.fenix.splashscreen.DefaultSplashScreenStorage
 import org.mozilla.fenix.splashscreen.FetchExperimentsOperation
 import org.mozilla.fenix.splashscreen.SplashScreenManager
-import org.mozilla.fenix.startupCrash.StartupCrashActivity
 import org.mozilla.fenix.tabhistory.TabHistoryDialogFragment
 import org.mozilla.fenix.tabstray.TabsTrayFragment
 import org.mozilla.fenix.theme.DefaultThemeManager
@@ -319,7 +316,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     // Tracker for contextual menu (Copy|Search|Select all|etc...)
     private var actionMode: ActionMode? = null
 
-    private val startupPathProvider = StartupPathProvider()
+    private val startupPathProvider: StartupPathProvider = DefaultStartupPathProvider()
     private lateinit var startupTypeTelemetry: StartupTypeTelemetry
 
     private val onBackPressedCallback = object : UserInteractionOnBackPressedCallback(
@@ -360,29 +357,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         }
     }
 
-    final override fun onCreate(savedInstanceState: Bundle?) {
-        if (StartupCrashCanary.build(applicationContext).startupCrashDetected) {
-            super.onCreate(savedInstanceState)
-            val startupCrashIntent =
-                Intent(
-                    applicationContext,
-                    StartupCrashActivity::class.java,
-                )
-            startupCrashIntent.flags = FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
-            startActivity(startupCrashIntent)
-            // We kill the process, because `finish` will cause `onDestroy` to run which would end up
-            // causing several components to be initialized and potentially cause the startup crash.
-            Process.killProcess(Process.myPid())
-        } else {
-            initialize(savedInstanceState)
-        }
-    }
-
-    /**
-     * Initializes [HomeActivity] and all required subsystems.
-     */
     @Suppress("ComplexMethod")
-    fun initialize(savedInstanceState: Bundle?) {
+    final override fun onCreate(savedInstanceState: Bundle?) {
         // DO NOT MOVE ANYTHING ABOVE THIS getProfilerTime CALL.
         val startTimeProfiler = components.core.engine.profiler?.getProfilerTime()
 
@@ -565,6 +541,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             TopSitesRefresher(
                 settings = settings(),
                 topSitesProvider = components.core.marsTopSitesProvider,
+                startupPathProvider = startupPathProvider,
+                visualCompletenessQueue = components.performance.visualCompletenessQueue,
             ),
             downloadSnackbar,
             privateBrowsingLockFeature,
@@ -1343,7 +1321,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     }
 
     private fun updateSecureWindowFlags(mode: BrowsingMode = browsingModeManager.mode) {
-        if (mode == BrowsingMode.Private && !settings().allowScreenshotsInPrivateMode) {
+        if (mode == BrowsingMode.Private && !settings().shouldSecureModeBeOverridden) {
             window.addFlags(FLAG_SECURE)
         } else {
             window.clearFlags(FLAG_SECURE)

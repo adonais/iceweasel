@@ -702,13 +702,12 @@ abstract class BaseBrowserFragment :
             view = binding.root,
         )
 
-        val allowScreenshotsInPrivateMode = context.settings().allowScreenshotsInPrivateMode
         secureWindowFeature.set(
             feature = SecureWindowFeature(
                 window = requireActivity().window,
                 store = store,
                 customTabId = customTabSessionId,
-                isSecure = { !allowScreenshotsInPrivateMode && it.content.private },
+                isSecure = { !context.settings().shouldSecureModeBeOverridden && it.content.private },
                 clearFlagOnStop = false,
             ),
             owner = this,
@@ -783,42 +782,104 @@ abstract class BaseBrowserFragment :
             onNeedToRequestPermissions = { permissions ->
                 requestPermissions(permissions, REQUEST_CODE_DOWNLOAD_PERMISSIONS)
             },
-            customFirstPartyDownloadDialog = { filename, contentSize, positiveAction, negativeAction ->
+            customFirstPartyDownloadDialog = {
+                    filename,
+                    contentSize,
+                    fileNameIfAlreadyDownloaded,
+                    positiveAction,
+                    negativeAction,
+                    openFileAction,
+                ->
                 run {
                     if (downloadDialog == null) {
                         requireContext().components.analytics.crashReporter.recordCrashBreadcrumb(
                             Breadcrumb("FirstPartyDownloadDialog created"),
                         )
 
-                        val title = if (contentSize.value > 0L) {
-                            val contentSizeInBytes =
-                                requireComponents.core.fileSizeFormatter.formatSizeInBytes(
-                                    contentSize.value,
+                        if (fileNameIfAlreadyDownloaded.value != null) {
+                            val title = if (contentSize.value > 0L) {
+                                val contentSizeInBytes =
+                                    requireComponents.core.fileSizeFormatter.formatSizeInBytes(
+                                        contentSize.value,
+                                    )
+                                getString(
+                                    downloadsR.string.mozac_feature_downloads_again_dialog_title,
+                                    contentSizeInBytes,
                                 )
-                            getString(
-                                downloadsR.string.mozac_feature_downloads_dialog_title_3,
-                                contentSizeInBytes,
-                            )
-                        } else {
-                            getString(downloadsR.string.mozac_feature_downloads_dialog_title_with_unknown_size)
-                        }
-
-                        downloadDialog = MaterialAlertDialogBuilder(requireContext())
-                            .setTitle(title)
-                            .setMessage(filename.value)
-                            .setPositiveButton(downloadsR.string.mozac_feature_downloads_dialog_download) { dialog, _ ->
-                                positiveAction.value.invoke()
-                                dialog.dismiss()
+                            } else {
+                                getString(
+                                    downloadsR.string.mozac_feature_downloads_again_dialog_title_with_unknown_size,
+                                )
                             }
-                            .setNegativeButton(downloadsR.string.mozac_feature_downloads_dialog_cancel) { dialog, _ ->
-                                negativeAction.value.invoke()
-                                dialog.dismiss()
-                            }.setOnDismissListener {
-                                downloadDialog = null
-                                context.components.analytics.crashReporter.recordCrashBreadcrumb(
-                                    Breadcrumb("FirstPartyDownloadDialog onDismiss"),
+
+                            val message = getString(
+                                downloadsR.string.mozac_feature_downloads_already_exists_dialog_title,
+                                fileNameIfAlreadyDownloaded.value,
+                            )
+
+                            downloadDialog = MaterialAlertDialogBuilder(requireContext())
+                                .setTitle(title)
+                                .setMessage(message)
+                                .setNegativeButton(
+                                    downloadsR.string.mozac_feature_downloads_dialog_download_again,
+                                ) { dialog, _ ->
+                                    dialog.dismiss()
+                                    positiveAction.value.invoke()
+                                }
+                                .setPositiveButton(
+                                    downloadsR.string.mozac_feature_downloads_open_existing_file,
+                                ) { dialog, _ ->
+                                    openFileAction.value.invoke()
+                                    dialog.dismiss()
+                                }
+                                .setNeutralButton(
+                                    downloadsR.string.mozac_feature_downloads_dialog_cancel,
+                                ) { dialog, _ ->
+                                    negativeAction.value.invoke()
+                                    dialog.dismiss()
+                                }.setOnDismissListener {
+                                    downloadDialog = null
+                                    context.components.analytics.crashReporter.recordCrashBreadcrumb(
+                                        Breadcrumb("FirstPartyDownloadDialog onDismiss"),
+                                    )
+                                }.show()
+                        } else {
+                            val title = if (contentSize.value > 0L) {
+                                val contentSizeInBytes =
+                                    requireComponents.core.fileSizeFormatter.formatSizeInBytes(
+                                        contentSize.value,
+                                    )
+                                getString(
+                                    downloadsR.string.mozac_feature_downloads_dialog_title_3,
+                                    contentSizeInBytes,
                                 )
-                            }.show()
+                            } else {
+                                getString(
+                                    downloadsR.string.mozac_feature_downloads_dialog_title_with_unknown_size,
+                                )
+                            }
+
+                            downloadDialog = MaterialAlertDialogBuilder(requireContext())
+                                .setTitle(title)
+                                .setMessage(filename.value)
+                                .setPositiveButton(
+                                    downloadsR.string.mozac_feature_downloads_dialog_download,
+                                ) { dialog, _ ->
+                                    positiveAction.value.invoke()
+                                    dialog.dismiss()
+                                }
+                                .setNegativeButton(
+                                    downloadsR.string.mozac_feature_downloads_dialog_cancel,
+                                ) { dialog, _ ->
+                                    negativeAction.value.invoke()
+                                    dialog.dismiss()
+                                }.setOnDismissListener {
+                                    downloadDialog = null
+                                    context.components.analytics.crashReporter.recordCrashBreadcrumb(
+                                        Breadcrumb("FirstPartyDownloadDialog onDismiss"),
+                                    )
+                                }.show()
+                        }
                     }
                 }
             },
@@ -2502,9 +2563,9 @@ abstract class BaseBrowserFragment :
                 }
                 saveLoginJob?.await()
             }
-            saveLoginJob?.invokeOnCompletion {
+            saveLoginJob.invokeOnCompletion {
                 if (it is CancellationException) {
-                    saveLoginJob?.cancel()
+                    saveLoginJob.cancel()
                 }
             }
         }
@@ -2548,12 +2609,19 @@ abstract class BaseBrowserFragment :
     }
 
     private fun setupIMEInsetsHandling(view: View) {
+        // Ensure that navigating to new webpages which triggers this handling being set again
+        // would not leave the engine view with half set values from the previous animation.
+        (view.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = 0
+
         when (context?.settings()?.toolbarPosition) {
             ToolbarPosition.BOTTOM -> {
                 val toolbar = listOf(
                     _bottomToolbarContainerView?.toolbarContainerView,
                     _browserToolbarView?.layout,
                 ).firstOrNull { it != null } ?: return
+
+                // Ensure the toolbar is anchored to the bottom of the screen.
+                (toolbar.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = 0
 
                 ImeInsetsSynchronizer.setup(
                     targetView = toolbar,

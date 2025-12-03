@@ -6,6 +6,7 @@ package org.mozilla.fenix.components.menu.compose
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,6 +43,8 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.theme.information
+import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
@@ -87,7 +91,7 @@ fun LibraryMenuItem(
                 this.contentDescription = contentDescription
                 role = Role.Button
             },
-        color = FirefoxTheme.colors.layer3,
+        color = MaterialTheme.colorScheme.surfaceDimVariant,
         shape = shape,
     ) {
         Column(
@@ -97,17 +101,19 @@ fun LibraryMenuItem(
             BadgedBox(
                 badge = {
                     if (isHighlighted) {
-                        Badge(containerColor = FirefoxTheme.colors.actionInformation)
+                        Badge(containerColor = MaterialTheme.colorScheme.information)
                     }
                 },
             ) {
                 Icon(
                     painter = painterResource(iconRes),
                     contentDescription = null,
-                    tint = FirefoxTheme.colors.iconPrimary,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
+
             Spacer(Modifier.height(4.dp))
+
             Text(
                 text = stringResource(labelRes),
                 style = FirefoxTheme.typography.caption.copy(
@@ -118,7 +124,7 @@ fun LibraryMenuItem(
                 textAlign = TextAlign.Center,
                 maxLines = 2,
                 softWrap = true,
-                color = FirefoxTheme.colors.textPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -146,8 +152,10 @@ private fun LibraryMenuItemPreview(
     FirefoxTheme {
         Row(
             Modifier
+                .background(color = MaterialTheme.colorScheme.surface)
                 .fillMaxWidth()
-                .height(IntrinsicSize.Min),
+                .height(IntrinsicSize.Min)
+                .padding(all = FirefoxTheme.layout.space.static100),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {

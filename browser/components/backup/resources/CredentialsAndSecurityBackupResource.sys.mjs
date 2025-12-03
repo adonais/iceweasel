@@ -92,16 +92,27 @@ export class CredentialsAndSecurityBackupResource extends BackupResource {
     for (let creditCard of autofillRecords.creditCards) {
       let oldEncryptedCard = creditCard["cc-number-encrypted"];
       if (oldEncryptedCard) {
+        let plaintextCard;
         // We use the native OSKeyStore backend to decrypt the bytes with the
         // original secret in order to skip authentication dialogs.
-        let plaintextCardBytes = await lazy.nativeOSKeyStore.asyncDecryptBytes(
-          lazy.BackupService.RECOVERY_OSKEYSTORE_LABEL,
-          oldEncryptedCard
-        );
-        let plaintextCard = String.fromCharCode.apply(
-          String,
-          plaintextCardBytes
-        );
+        if (
+          await lazy.nativeOSKeyStore.asyncSecretAvailable(
+            lazy.BackupService.RECOVERY_OSKEYSTORE_LABEL
+          )
+        ) {
+          let plaintextCardBytes =
+            await lazy.nativeOSKeyStore.asyncDecryptBytes(
+              lazy.BackupService.RECOVERY_OSKEYSTORE_LABEL,
+              oldEncryptedCard
+            );
+          plaintextCard = String.fromCharCode.apply(String, plaintextCardBytes);
+        } else {
+          plaintextCard = await lazy.OSKeyStore.decrypt(
+            oldEncryptedCard,
+            "backup_cc"
+          );
+        }
+
         // We're accessing the "real" OSKeyStore for this device here, and
         // encrypting the card with it.
         let newEncryptedCard = await lazy.OSKeyStore.encrypt(plaintextCard);

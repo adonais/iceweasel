@@ -89,7 +89,6 @@ rtc_library("timestamp_extrapolator") {
     "timestamp_extrapolator.h",
   ]
   deps = [
-    "../../../api:field_trials",
     "../../../api:field_trials_view",
     "../../../api/units:time_delta",
     "../../../api/units:timestamp",
@@ -150,10 +149,9 @@ rtc_library("timing_unittests") {
     "../../../api/units:timestamp",
     "../../../rtc_base:histogram_percentile_counter",
     "../../../rtc_base:timeutils",
+    "../../../system_wrappers",
     "../../../system_wrappers:metrics",
-    "../../../system_wrappers:system_wrappers",
     "../../../test:create_test_field_trials",
-    "../../../test:scoped_key_value_config",
     "../../../test:test_support",
   ]
 }

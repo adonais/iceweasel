@@ -10,6 +10,21 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+import path from "path";
+
+const EXTENSION_FOLDER = path.join("browser", "extensions", "newtab");
+const COMPONENT_FOLDER = path.join("browser", "components", "newtab");
+const ABOUTNEWTAB_MODULE = path.join(
+  "browser",
+  "modules",
+  "AboutNewTab.sys.mjs"
+);
+const ABOUTNEWTABCHILD_ACTOR = path.join(
+  "browser",
+  "actors",
+  "AboutNewTabChild.sys.mjs"
+);
+
 export default {
   meta: {
     docs: {
@@ -31,10 +46,10 @@ export default {
 
     // Hard-code some directories and files that should always be exempt.
     if (
-      filename.includes("browser/extensions/newtab/") ||
-      filename.includes("browser/components/newtab/") ||
-      filename.endsWith("browser/modules/AboutNewTab.sys.mjs") ||
-      filename.endsWith("browser/actors/AboutNewTabChild.sys.mjs")
+      filename.includes(EXTENSION_FOLDER) ||
+      filename.includes(COMPONENT_FOLDER) ||
+      filename.endsWith(ABOUTNEWTAB_MODULE) ||
+      filename.endsWith(ABOUTNEWTABCHILD_ACTOR)
     ) {
       return {};
     }

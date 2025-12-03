@@ -10,8 +10,6 @@
 #include "MediaSourceDecoder.h"
 #include "TimeUnits.h"
 #include "js/RootingAPI.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/MediaSourceBinding.h"

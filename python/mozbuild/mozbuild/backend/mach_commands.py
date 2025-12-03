@@ -180,6 +180,14 @@ def setup_vscode_or_vscodium(ide, command_context, interactive):
                 "regex": "\\b(D\\d+)\\b",
                 "uri": "https://phabricator.services.mozilla.com/$1",
             },
+            {
+                "regex": "\\bmoz-src://\\w*/([^\\s:,\"'\\)\\}\\]>]+)(?:[\\s:,\"']+)(\\d+)",
+                "uri": "vscode://file${workspaceFolder}/$1:$2",
+            },
+            {
+                "regex": "\\bmoz-src://\\w*/([^\\s:,\"'\\)\\}\\]>]+)",
+                "uri": "vscode://file${workspaceFolder}/$1",
+            },
         ],
     }
 

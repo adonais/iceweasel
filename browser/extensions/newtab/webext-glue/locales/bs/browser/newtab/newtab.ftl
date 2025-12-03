@@ -383,7 +383,7 @@ newtab-wallpaper-abstract-purple-green = Gradijent ljubičastog i zelenog svjetl
 newtab-wallpaper-abstract-blue-purple-waves = Plavi i ljubičasti valoviti oblici
 newtab-wallpaper-abstract-black-waves = Crni valoviti oblici
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotografije
 newtab-wallpaper-beach-at-sunrise = Plaža u izlasku sunca

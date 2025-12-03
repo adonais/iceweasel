@@ -2082,6 +2082,17 @@ VARIABLES = {
         """Extra flags passed to the dumpsymbols utility when generating symbols for the crash reporter.
         """,
     ),
+    "LEGACY_RUN_TESTS": (
+        TypedList(dict),
+        list,
+        """Scripts to run during check phase.
+
+        This variable holds scripts that used to be part of ``make check`` rule
+        and which should probably migrate to another test target.
+
+        Please don't add new values to it.
+        """,
+    ),
     "JAR_MANIFESTS": (
         ContextDerivedTypedList(SourcePath, StrictOrderingOnAppendList),
         list,

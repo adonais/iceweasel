@@ -173,6 +173,23 @@ sysroot-aarch64-linux-gnu:
         arguments:
             - arm64
 
+linux32-toolchain-sysroot:
+    description: "Sysroot for linux32 toolchain builds"
+    worker:
+        env:
+            PACKAGES_TASKS: {task-reference: '<gcc-8>'}
+            GCC_VERSION: '8'
+    treeherder:
+        symbol: TL32(sysroot-toolchain)
+    dependencies:
+        gcc-8: packages-deb8-32-gcc-8
+    run:
+        arguments:
+            - i386
+            # For clang
+            - binutils-dev
+            - libxml2-dev
+
 linux64-toolchain-sysroot:
     description: "Sysroot for linux64 toolchain builds"
     worker:

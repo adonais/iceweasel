@@ -200,4 +200,16 @@ extern mozilla::Atomic<size_t> gRecycledSize;
 
 extern AddressRadixTree<(sizeof(void*) << 3) - LOG2(kChunkSize)> gChunkRTree;
 
+enum ShouldCommit {
+  // Reserve address space only, accessing the mapping will crash.
+  ReserveOnly,
+
+  // Reserve the address space and populate it with "valid" page mappings.
+  // On windows this will commit memory, on Linux it populate memory as its
+  // accessed (with overcommit behaviour).
+  ReserveAndCommit,
+};
+
+void* pages_mmap_aligned(size_t size, size_t alignment, ShouldCommit committed);
+
 #endif /* ! CHUNK_H */

@@ -75,6 +75,11 @@ ProfileBufferEntry::ProfileBufferEntry(Kind aKind, uint64_t aUint64)
   memcpy(mStorage, &aUint64, sizeof(aUint64));
 }
 
+ProfileBufferEntry::ProfileBufferEntry(Kind aKind, uint32_t aUint32)
+    : mKind(aKind) {
+  memcpy(mStorage, &aUint32, sizeof(aUint32));
+}
+
 ProfileBufferEntry::ProfileBufferEntry(Kind aKind, ProfilerThreadId aThreadId)
     : mKind(aKind) {
   static_assert(std::is_trivially_copyable_v<ProfilerThreadId>);
@@ -114,6 +119,12 @@ int64_t ProfileBufferEntry::GetInt64() const {
 
 uint64_t ProfileBufferEntry::GetUint64() const {
   uint64_t result;
+  memcpy(&result, mStorage, sizeof(result));
+  return result;
+}
+
+uint32_t ProfileBufferEntry::GetUint32() const {
+  uint32_t result;
   memcpy(&result, mStorage, sizeof(result));
   return result;
 }
@@ -321,7 +332,8 @@ bool UniqueStacks::FrameKey::NormalFrameData::operator==(
   return mLocation == aOther.mLocation &&
          mRelevantForJS == aOther.mRelevantForJS &&
          mBaselineInterp == aOther.mBaselineInterp &&
-         mInnerWindowID == aOther.mInnerWindowID && mLine == aOther.mLine &&
+         mInnerWindowID == aOther.mInnerWindowID &&
+         mSourceId == aOther.mSourceId && mLine == aOther.mLine &&
          mColumn == aOther.mColumn && mCategoryPair == aOther.mCategoryPair;
 }
 
@@ -337,14 +349,17 @@ bool UniqueStacks::FrameKey::JITFrameData::operator==(
 // strings at the same indices.
 UniqueStacks::UniqueStacks(
     FailureLatch& aFailureLatch, JITFrameInfo&& aJITFrameInfo,
-    ProfilerCodeAddressService* aCodeAddressService /* = nullptr */)
+    ProfilerCodeAddressService* aCodeAddressService /* = nullptr */,
+    const nsTHashMap<SourceId, IndexIntoSourceTable>*
+        aSourceIdToIndexMap /* = nullptr */)
     : mUniqueStrings(std::move(aJITFrameInfo)
                          .MoveUniqueStringsWithNewFailureLatch(aFailureLatch)),
       mCodeAddressService(aCodeAddressService),
       mFrameTableWriter(aFailureLatch),
       mStackTableWriter(aFailureLatch),
       mJITInfoRanges(std::move(aJITFrameInfo)
-                         .MoveRangesWithNewFailureLatch(aFailureLatch)) {
+                         .MoveRangesWithNewFailureLatch(aFailureLatch)),
+      mSourceIdToIndexMap(aSourceIdToIndexMap) {
   if (!mUniqueStrings) {
     SetFailure("Did not get mUniqueStrings from JITFrameInfo");
     return;
@@ -504,7 +519,8 @@ void UniqueStacks::StreamNonJITFrame(const FrameKey& aFrame) {
   AutoArraySchemaWithStringsWriter writer(mFrameTableWriter, *mUniqueStrings);
 
   const NormalFrameData& data = aFrame.mData.as<NormalFrameData>();
-  writer.StringElement(LOCATION, data.mLocation);
+  writer.StringElement(LOCATION,
+                       data.GetLocationWithSourceIndex(mSourceIdToIndexMap));
   writer.BoolElement(RELEVANT_FOR_JS, data.mRelevantForJS);
 
   // It's okay to convert uint64_t to double here because DOM always creates IDs
@@ -533,7 +549,9 @@ void UniqueStacks::StreamNonJITFrame(const FrameKey& aFrame) {
 
 static void StreamJITFrame(JSContext* aContext, SpliceableJSONWriter& aWriter,
                            UniqueJSONStrings& aUniqueStrings,
-                           const JS::ProfiledFrameHandle& aJITFrame) {
+                           const JS::ProfiledFrameHandle& aJITFrame,
+                           const nsTHashMap<SourceId, IndexIntoSourceTable>*
+                               aSourceIdToIndexMap = nullptr) {
   enum Schema : uint32_t {
     LOCATION = 0,
     RELEVANT_FOR_JS = 1,
@@ -547,7 +565,18 @@ static void StreamJITFrame(JSContext* aContext, SpliceableJSONWriter& aWriter,
 
   AutoArraySchemaWithStringsWriter writer(aWriter, aUniqueStrings);
 
-  writer.StringElement(LOCATION, MakeStringSpan(aJITFrame.label()));
+  uint32_t sourceId = aJITFrame.sourceId();
+  nsCString labelWithSourceIndex(aJITFrame.label());
+  if (sourceId && aSourceIdToIndexMap) {
+    auto index = aSourceIdToIndexMap->MaybeGet(sourceId);
+    if (index) {
+      labelWithSourceIndex.AppendLiteral("[");
+      labelWithSourceIndex.AppendInt(*index);
+      labelWithSourceIndex.AppendLiteral("]");
+    }
+  }
+  writer.StringElement(LOCATION, labelWithSourceIndex);
+
   writer.BoolElement(RELEVANT_FOR_JS, false);
 
   // It's okay to convert uint64_t to double here because DOM always creates IDs
@@ -571,20 +600,24 @@ static void StreamJITFrame(JSContext* aContext, SpliceableJSONWriter& aWriter,
   writer.IntElement(SUBCATEGORY, info.mSubcategoryIndex);
 }
 
-static nsCString JSONForJITFrame(JSContext* aContext,
-                                 const JS::ProfiledFrameHandle& aJITFrame,
-                                 UniqueJSONStrings& aUniqueStrings) {
+static nsCString JSONForJITFrame(
+    JSContext* aContext, const JS::ProfiledFrameHandle& aJITFrame,
+    UniqueJSONStrings& aUniqueStrings,
+    const nsTHashMap<SourceId, IndexIntoSourceTable>* aSourceIdToIndexMap =
+        nullptr) {
   nsCString json;
   JSONStringRefWriteFunc jw(json);
   SpliceableJSONWriter writer(jw, aUniqueStrings.SourceFailureLatch());
-  StreamJITFrame(aContext, writer, aUniqueStrings, aJITFrame);
+  StreamJITFrame(aContext, writer, aUniqueStrings, aJITFrame,
+                 aSourceIdToIndexMap);
   return json;
 }
 
 void JITFrameInfo::AddInfoForRange(
     uint64_t aRangeStart, uint64_t aRangeEnd, JSContext* aCx,
     const std::function<void(const std::function<void(void*)>&)>&
-        aJITAddressProvider) {
+        aJITAddressProvider,
+    const nsTHashMap<SourceId, IndexIntoSourceTable>* aSourceIdToIndexMap) {
   if (mLocalFailureLatchSource.Failed()) {
     return;
   }
@@ -619,7 +652,8 @@ void JITFrameInfo::AddInfoForRange(
         if (!frameEntry) {
           if (!jitFrameToFrameJSONMap.add(
                   frameEntry, jitFrameKey,
-                  JSONForJITFrame(aCx, handle, *mUniqueStrings))) {
+                  JSONForJITFrame(aCx, handle, *mUniqueStrings,
+                                  aSourceIdToIndexMap))) {
             mLocalFailureLatchSource.SetFailure(
                 "OOM in JITFrameInfo::AddInfoForRange adding jit->frame map");
             return;
@@ -1143,7 +1177,10 @@ void ProfileBuffer::MaybeStreamExecutionTraceToJSON(
         }
 
         UniqueStacks::FrameKey newFrame(nsCString(name.get()), true, false,
-                                        event.functionEvent.realmID, Nothing{},
+                                        event.functionEvent.realmID,
+                                        // Even though it says scriptId, this is
+                                        // actually sourceId. See bug 1980369.
+                                        event.functionEvent.scriptId, Nothing{},
                                         Nothing{}, Some(categoryPair));
         maybeStack = uniqueStacks.AppendFrame(stack, newFrame);
         if (!maybeStack) {
@@ -1160,7 +1197,7 @@ void ProfileBuffer::MaybeStreamExecutionTraceToJSON(
       } else if (event.kind == JS::ExecutionTrace::EventKind::LabelEnter) {
         UniqueStacks::FrameKey newFrame(
             nsCString(&trace.stringBuffer[event.labelEvent.label]), true, false,
-            0, Nothing{}, Nothing{}, Some(JS::ProfilingCategoryPair::DOM));
+            0, 0, Nothing{}, Nothing{}, Some(JS::ProfilingCategoryPair::DOM));
         maybeStack = uniqueStacks.AppendFrame(stack, newFrame);
         if (!maybeStack) {
           writer.SetFailure("AppendFrame failure");
@@ -1409,6 +1446,12 @@ ProfilerThreadId ProfileBuffer::DoStreamSamplesAndMarkersToJSON(
               e.Next();
             }
 
+            uint32_t sourceId = 0;
+            if (e.Has() && e.Get().IsSourceId()) {
+              sourceId = uint64_t(e.Get().GetUint32());
+              e.Next();
+            }
+
             Maybe<unsigned> line;
             if (e.Has() && e.Get().IsLineNumber()) {
               line = Some(unsigned(e.Get().GetInt()));
@@ -1431,8 +1474,8 @@ ProfilerThreadId ProfileBuffer::DoStreamSamplesAndMarkersToJSON(
             maybeStack = uniqueStacks.AppendFrame(
                 stack,
                 UniqueStacks::FrameKey(std::move(frameLabel), relevantForJS,
-                                       isBaselineInterp, innerWindowID, line,
-                                       column, categoryPair));
+                                       isBaselineInterp, innerWindowID,
+                                       sourceId, line, column, categoryPair));
             if (!maybeStack) {
               writer.SetFailure("AppendFrame failure");
               return;
@@ -1717,8 +1760,9 @@ void ProfileBuffer::StreamSamplesAndMarkersToJSON(
 
 void ProfileBuffer::AddJITInfoForRange(
     uint64_t aRangeStart, ProfilerThreadId aThreadId, JSContext* aContext,
-    JITFrameInfo& aJITFrameInfo,
-    mozilla::ProgressLogger aProgressLogger) const {
+    JITFrameInfo& aJITFrameInfo, mozilla::ProgressLogger aProgressLogger,
+    const nsTHashMap<SourceId, IndexIntoSourceTable>* aSourceIdToIndexMap)
+    const {
   // We can only process JitReturnAddr entries if we have a JSContext.
   MOZ_RELEASE_ASSERT(aContext);
 
@@ -1812,7 +1856,8 @@ void ProfileBuffer::AddJITInfoForRange(
             }
           }
         });
-      });
+      },
+      aSourceIdToIndexMap);
 }
 
 void ProfileBuffer::StreamMarkersToJSON(
@@ -2509,7 +2554,55 @@ bool ProfileBuffer::DuplicateLastSample(ProfilerThreadId aThreadId,
 void ProfileBuffer::DiscardSamplesBeforeTime(double aTime) {
   // This function does nothing!
   // The duration limit will be removed from Firefox, see bug 1632365.
-  Unused << aTime;
+  (void)aTime;
+}
+
+nsTHashMap<SourceId, IndexIntoSourceTable>
+ProfileBuffer::StreamSourceTableToJSON(
+    SpliceableJSONWriter& aWriter,
+    const nsTArray<mozilla::JSSourceEntry>& aJSSourceEntries) const {
+  enum Schema : uint32_t { UUID = 0, FILENAME = 1 };
+  nsTHashMap<SourceId, IndexIntoSourceTable> sourceIdToIndexMap;
+
+  aWriter.StartObjectProperty("sources");
+  {
+    // Write the schema
+    {
+      JSONSchemaWriter schema(aWriter);
+      schema.WriteField("uuid");
+      schema.WriteField("filename");
+    }
+
+    // Write data array and build sourceId-to-index mapping
+    aWriter.StartArrayProperty("data");
+    uint32_t index = 0;
+    for (const auto& entry : aJSSourceEntries) {
+      // Build sourceId-to-index mapping
+      if (entry.sourceData.sourceId() != 0) {
+        MOZ_ASSERT(!sourceIdToIndexMap.Contains(entry.sourceData.sourceId()),
+                   "Duplicate sourceId detected! This indicates sourceId "
+                   "collision between different sources.");
+        sourceIdToIndexMap.InsertOrUpdate(entry.sourceData.sourceId(), index);
+      }
+
+      // Write [uuid, filename] entry
+      aWriter.StartArrayElement();
+      {
+        // TODO: Use AutoArraySchemaWithStringsWriter to write string indexes
+        // into string table once we have "process global" string table.
+        // Currently string tables are per-thread.
+        aWriter.StringElement(MakeStringSpan(entry.uuid.get()));
+        aWriter.StringElement(MakeStringSpan(entry.sourceData.filePath()));
+      }
+      aWriter.EndArray();
+
+      index++;
+    }
+    aWriter.EndArray();
+  }
+  aWriter.EndObject();
+
+  return sourceIdToIndexMap;
 }
 
 // END ProfileBuffer

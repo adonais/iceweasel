@@ -18,6 +18,7 @@
 #include "mozilla/Queue.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/WeakPtr.h"
 
 #ifdef FUZZING_SNAPSHOT
 #  include "mozilla/fuzzing/IPCFuzzController.h"

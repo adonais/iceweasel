@@ -122,7 +122,7 @@ void RemoteMediaManagerChild::Init() {
                   ipc::BackgroundChild::GetOrCreateForCurrentThread();
               NS_WARNING_ASSERTION(bgActor,
                                    "Failed to start Background channel");
-              Unused << bgActor;
+              (void)bgActor;
             }));
 
     NS_ENSURE_SUCCESS_VOID(rv);

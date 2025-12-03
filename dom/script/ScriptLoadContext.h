@@ -19,7 +19,6 @@
 #include "js/loader/ScriptKind.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
@@ -31,7 +30,6 @@
 #include "mozilla/TaskController.h"  // mozilla::Task
 #include "mozilla/Utf8.h"            // mozilla::Utf8Unit
 #include "mozilla/Variant.h"
-#include "mozilla/Vector.h"
 #include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "nsCOMPtr.h"
@@ -206,12 +204,6 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   // NOTE: This is called also for imported modules.
   //       The consumer allows nullptr.
   inline nsIScriptElement* GetScriptElementForTrace() const {
-    return mScriptElement;
-  }
-
-  // Event target for beforescriptexecute/afterscriptexecute events.
-  inline nsIScriptElement* GetScriptElementForExecuteEvents() const {
-    MOZ_ASSERT(mScriptElement);
     return mScriptElement;
   }
 

@@ -12,8 +12,6 @@
 #include "gfxUtils.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/ComputedStyle.h"
-#include "mozilla/DebugOnly.h"
-#include "mozilla/Likely.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Preferences.h"

@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_InternalResponse_h
 #define mozilla_dom_InternalResponse_h
 
-#include "mozilla/NotNull.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ChannelInfo.h"
 #include "mozilla/dom/FetchTypes.h"

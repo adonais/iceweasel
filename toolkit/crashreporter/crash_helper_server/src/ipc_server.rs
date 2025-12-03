@@ -100,14 +100,17 @@ impl IPCServer {
         let connector = &mut connection.connector;
         let (data, ancillary_data) = connector.recv(header.size)?;
 
-        let reply = match connection.endpoint {
-            IPCEndpoint::Parent => generator.parent_message(header.kind, &data, ancillary_data),
+        let connection = match connection.endpoint {
+            IPCEndpoint::Parent => {
+                generator.parent_message(connector, header.kind, &data, ancillary_data)
+            }
             IPCEndpoint::Child => generator.child_message(header.kind, &data, ancillary_data),
-            IPCEndpoint::External => generator.external_message(header.kind, &data, ancillary_data),
+            IPCEndpoint::External => {
+                generator.external_message(connector, header.kind, &data, ancillary_data)
+            }
         }?;
 
-        match reply {
-            MessageResult::Reply(reply) => connector.send_message(reply.as_ref())?,
+        match connection {
             MessageResult::Connection(connector) => {
                 self.connections.push(IPCConnection {
                     connector,

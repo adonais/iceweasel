@@ -8,7 +8,6 @@
 #define mozilla_ipc_backgroundutils_h__
 
 #include "ipc/IPCMessageUtils.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/OriginAttributes.h"
 #include "nsCOMPtr.h"
 #include "nscore.h"

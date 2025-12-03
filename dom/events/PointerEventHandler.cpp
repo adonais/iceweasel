@@ -586,7 +586,7 @@ void PointerEventHandler::ReleaseAllPointerCaptureRemoteTarget() {
     BrowserParent* browserParent = iter.Data();
     MOZ_ASSERT(browserParent, "Null BrowserParent in pointer captured table?");
 
-    Unused << browserParent->SendReleaseAllPointerCapture();
+    (void)browserParent->SendReleaseAllPointerCapture();
     iter.Remove();
   }
 }
@@ -674,32 +674,6 @@ void PointerEventHandler::CheckPointerCaptureState(WidgetPointerEvent* aEvent) {
   MOZ_ASSERT(aEvent->mClass == ePointerEventClass);
 
   PointerCaptureInfo* captureInfo = GetPointerCaptureInfo(aEvent->pointerId);
-
-  // When fingerprinting resistance is enabled, we need to map other pointer
-  // ids into the spoofed one. We don't have to do the mapping if the capture
-  // info exists for the non-spoofed pointer id because of we won't allow
-  // content to set pointer capture other than the spoofed one. Thus, it must be
-  // from chrome if the capture info exists in this case. And we don't have to
-  // do anything if the pointer id is the same as the spoofed one.
-  if (nsContentUtils::ShouldResistFingerprinting("Efficiency Check",
-                                                 RFPTarget::PointerId) &&
-      aEvent->pointerId != (uint32_t)GetSpoofedPointerIdForRFP() &&
-      !captureInfo) {
-    PointerCaptureInfo* spoofedCaptureInfo =
-        GetPointerCaptureInfo(GetSpoofedPointerIdForRFP());
-
-    // We need to check the target element's document should resist
-    // fingerprinting. If not, we don't need to send a capture event
-    // since the capture info of the original pointer id doesn't exist
-    // in this case.
-    if (!spoofedCaptureInfo || !spoofedCaptureInfo->mPendingElement ||
-        !spoofedCaptureInfo->mPendingElement->OwnerDoc()
-             ->ShouldResistFingerprinting(RFPTarget::PointerEvents)) {
-      return;
-    }
-
-    captureInfo = spoofedCaptureInfo;
-  }
 
   if (!captureInfo ||
       captureInfo->mPendingElement == captureInfo->mOverrideElement) {

@@ -15,7 +15,7 @@ function sendCommandAsync(command) {
   });
 }
 
-/*
+/**
  * Run an xpcshell subprocess and crash it.
  *
  * @param setup
@@ -254,7 +254,7 @@ async function do_triggered_content_crash(trigger, callback) {
   }
 }
 
-/*
+/**
  * Run the `crash` backgroundtask subprocess, crashing it in the
  * specified manner.
  *

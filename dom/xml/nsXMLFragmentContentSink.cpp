@@ -311,7 +311,6 @@ nsXMLFragmentContentSink::FinishFragmentParsing(DocumentFragment** aFragment) {
   mTargetDocument = nullptr;
   mNodeInfoManager = nullptr;
   mScriptLoader = nullptr;
-  mCSSLoader = nullptr;
   mContentStack.Clear();
   mDocumentURI = nullptr;
   mDocShell = nullptr;

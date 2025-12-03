@@ -4,7 +4,6 @@
 #include "jit/riscv64/constant/Base-constant-riscv.h"
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Types.h"
 
 #include <stdio.h>
 

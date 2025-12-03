@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
+import datetime
 import logging
 import os
 import re
@@ -10,6 +11,8 @@ import sys
 import warnings
 
 import attr
+from taskcluster.utils import fromNow
+from taskgraph.util.keyed_by import evaluate_keyed_by
 from taskgraph.util.treeherder import join_symbol
 from taskgraph.util.verify import VerificationSequence
 
@@ -444,4 +447,23 @@ def verify_run_known_projects(task, taskgraph, scratch_pad, graph_config, parame
             raise Exception(
                 f"Task '{task.label}' has an invalid run-on-projects value: "
                 f"{invalid_projects}"
+            )
+
+
+@verifications.add("graph_config")
+def verify_try_expiration_policies(graph_config):
+    """We don't want any configuration leading to anything with an expiry longer
+    than 28 days on try."""
+    now = datetime.datetime.utcnow()
+    cap = "28 days"
+    cap_from_now = fromNow(cap, now)
+    expiration_policy = evaluate_keyed_by(
+        graph_config["expiration-policy"],
+        "task expiration",
+        {"project": "try", "level": "1"},
+    )
+    for policy, expires in expiration_policy.items():
+        if fromNow(expires, now) > cap_from_now:
+            raise Exception(
+                f'expiration-policy "{policy}" ({expires}) is larger than {cap} for try'
             )

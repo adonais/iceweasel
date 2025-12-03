@@ -14,6 +14,7 @@
 #include "mozilla/dom/CSSStyleValue.h"
 #include "mozilla/dom/StylePropertyMapBinding.h"
 #include "nsCOMPtr.h"
+#include "nsCSSProps.h"
 #include "nsDOMCSSDeclaration.h"
 #include "nsQueryObject.h"
 #include "nsString.h"
@@ -39,6 +40,14 @@ void StylePropertyMap::Set(
     const nsACString& aProperty,
     const Sequence<OwningCSSStyleValueOrUTF8String>& aValues,
     ErrorResult& aRv) {
+  // Step 2.
+
+  nsCSSPropertyID propID = nsCSSProps::LookupProperty(aProperty);
+  if (propID == eCSSProperty_UNKNOWN) {
+    aRv.ThrowTypeError("Invalid property: "_ns + aProperty);
+    return;
+  }
+
   if (aValues.Length() != 1) {
     aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
     return;

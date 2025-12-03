@@ -17,7 +17,6 @@
 #include "mozilla/Logging.h"
 #include "nsIObserver.h"
 #include "nsTArray.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Monitor.h"
 #include "WifiScanner.h"
 #include "nsTHashMap.h"

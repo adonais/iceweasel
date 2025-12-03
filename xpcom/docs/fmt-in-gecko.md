@@ -65,7 +65,7 @@ auto [out, size] = fmt::format_to(bufFmt, "{}", p);
 assert(!strcmp("POD: mA: 4.3, mB: 8", bufFmt));
 fmt::println(FMT_STRING("### debug: {}"), p);
 fmt::print(stderr, FMT_STRING("### debug to stderr {}\n"), p);
-MOZ_LOG_FMT(gLogModule, "Important: {}", p);
+MOZ_LOG_FMT(gLogModule, LogLevel::Warning, "Important: {}", p);
 ```
 
 # Formatting sequences
@@ -87,7 +87,7 @@ ASSERT_STREQ("0x69, 0xd2, 0x3c, 0xa5", bufFmt);
 `MOZ_LOG_FMT`  is like `MOZ_LOG`, but takes an `{fmt}`-style format string:
 
 ```c++
-MOZ_LOG_FMT(gLogModule, "{}x{} = {}", 3, 3, 3*3);
+MOZ_LOG_FMT(gLogModule, LogLevel::Verbose, "{}x{} = {}", 3, 3, 3*3);
 ```
 
 Unlike with `MOZ_LOG`, it is unnecessary to put an extra pair of parenthesis around the format and argument list.

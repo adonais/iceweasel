@@ -22,6 +22,8 @@ import { MozBaseInputElement, MozLitElement } from "../lit-utils.mjs";
  * @property {string} iconSrc - The src for an optional icon
  * @property {string} description - The text for the description element that helps describe the input control
  * @property {string} supportPage - Name of the SUMO support page to link to.
+ * @property {string} ariaLabel - The aria-label text when there is no visible label.
+ * @property {string} ariaDescription - The aria-description text when there is no visible description.
  * @property {array} options - The array of options, populated by <moz-option> children in the
  *     default slot. Do not set directly, these will be overridden by <moz-option> children.
  */
@@ -141,8 +143,11 @@ export default class MozSelect extends MozBaseInputElement {
           @input=${this.handleStateChange}
           @change=${this.redispatchEvent}
           ?disabled=${this.disabled || this.parentDisabled}
-          aria-describedby="description"
           aria-label=${ifDefined(this.ariaLabel ?? undefined)}
+          aria-describedby="description"
+          aria-description=${ifDefined(
+            this.hasDescription ? undefined : this.ariaDescription
+          )}
         >
           ${this.options.map(
             option => html`

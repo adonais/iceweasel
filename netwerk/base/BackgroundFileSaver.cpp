@@ -522,7 +522,7 @@ nsresult BackgroundFileSaver::ProcessStateChange() {
 
       // Try to clean up the inputStream if an error occurs.
       auto closeGuard =
-          mozilla::MakeScopeExit([&] { Unused << inputStream->Close(); });
+          mozilla::MakeScopeExit([&] { (void)inputStream->Close(); });
 
       char buffer[BUFFERED_IO_SIZE];
       while (true) {

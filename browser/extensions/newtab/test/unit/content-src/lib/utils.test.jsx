@@ -3,6 +3,7 @@ import { mount } from "enzyme";
 import {
   useIntersectionObserver,
   getActiveCardSize,
+  getActiveColumnLayout,
   useConfetti,
   selectWeatherPlacement,
 } from "content-src/lib/utils.jsx";
@@ -162,6 +163,28 @@ describe("getActiveCardSize", () => {
   it("returns 'spoc' when flightId has value", () => {
     const result = getActiveCardSize(null, null, false, 123);
     assert.equal(result, "spoc");
+  });
+});
+
+describe("getActiveColumnLayout", () => {
+  it("returns 'col-4' for screen width 1920", () => {
+    const result = getActiveColumnLayout(1920);
+    assert.equal(result, "col-4");
+  });
+
+  it("returns 'col-3' for screen width 1200", () => {
+    const result = getActiveColumnLayout(1200);
+    assert.equal(result, "col-3");
+  });
+
+  it("returns 'col-2' for screen width 800", () => {
+    const result = getActiveColumnLayout(800);
+    assert.equal(result, "col-2");
+  });
+
+  it("returns 'col-1' for screen width 500", () => {
+    const result = getActiveColumnLayout(500);
+    assert.equal(result, "col-1");
   });
 });
 

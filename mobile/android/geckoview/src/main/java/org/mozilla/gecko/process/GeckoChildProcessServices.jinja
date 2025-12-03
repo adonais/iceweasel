@@ -21,5 +21,6 @@ public class GeckoChildProcessServices {
 {% for id in range(0, MOZ_ANDROID_CONTENT_SERVICE_COUNT | int) %}
     public static final class tab{{ id }} extends GeckoServiceChildProcess {}
     public static final class isolatedTab{{ id }} extends GeckoServiceChildProcess {}
+    public static final class isolatedTabWithZygote{{ id }} extends GeckoServiceChildProcess {}
 {% endfor %}
 }

@@ -12,7 +12,6 @@
 #include "nsNSSComponent.h"
 #include "nsTArray.h"
 #include "PLDHashTable.h"
-#include "mozilla/Attributes.h"
 
 /* Disable the "base class XXX should be explicitly initialized
    in the copy constructor" warning. */

@@ -7,8 +7,6 @@
 #include <ras.h>
 #include <wininet.h>
 
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/Attributes.h"
 #include "nsISystemProxySettings.h"
 #include "mozilla/Components.h"
 #include "mozilla/ProfilerLabels.h"

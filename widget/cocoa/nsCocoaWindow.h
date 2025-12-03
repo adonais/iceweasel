@@ -13,7 +13,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/layers/NativeLayerRootRemoteMacChild.h"
 #include "mozilla/layers/NativeLayerRootRemoteMacParent.h"
-#include "nsBaseWidget.h"
+#include "nsIWidget.h"
 #include "nsCocoaUtils.h"
 #include "nsTouchBar.h"
 #include "ViewRegion.h"
@@ -85,7 +85,7 @@ class TextInputHandler;
 - (void)createTrackingArea;
 - (void)removeTrackingArea;
 
-- (void)setBeingShown:(BOOL)aValue;
+- (void)setIsBeingShown:(BOOL)aValue;
 - (BOOL)isBeingShown;
 - (BOOL)isVisibleOrBeingShown;
 
@@ -195,20 +195,20 @@ class TextInputHandler;
 - (void)windowMainStateChanged;
 @end
 
-class nsCocoaWindow final : public nsBaseWidget {
+class nsCocoaWindow final : public nsIWidget {
  private:
   friend class nsChildView;
-  typedef nsBaseWidget Inherited;
+  typedef nsIWidget Inherited;
 
  public:
   nsCocoaWindow();
 
   [[nodiscard]] nsresult Create(nsIWidget* aParent, const DesktopIntRect& aRect,
-                                InitData* = nullptr) override;
+                                const InitData&) override;
 
   [[nodiscard]] nsresult Create(nsIWidget* aParent,
                                 const LayoutDeviceIntRect& aRect,
-                                InitData* = nullptr) override;
+                                const InitData&) override;
 
   void Destroy() override;
 
@@ -232,7 +232,7 @@ class nsCocoaWindow final : public nsBaseWidget {
 
   void ConstrainPosition(DesktopIntPoint&) override;
   void SetSizeConstraints(const SizeConstraints& aConstraints) override;
-  void Move(double aX, double aY) override;
+  void Move(const DesktopPoint&) override;
   nsSizeMode SizeMode() override { return mSizeMode; }
   void SetSizeMode(nsSizeMode aMode) override;
   void GetWorkspaceID(nsAString& workspaceID) override;
@@ -354,12 +354,12 @@ class nsCocoaWindow final : public nsBaseWidget {
     mFullscreenTransitionAnimation = nil;
   }
 
-  void Resize(double aWidth, double aHeight, bool aRepaint) override;
-  void Resize(double aX, double aY, double aWidth, double aHeight,
-              bool aRepaint) override;
+  void Resize(const DesktopSize&, bool aRepaint) override;
+  void Resize(const DesktopRect&, bool aRepaint) override;
   NSRect GetClientCocoaRect();
   LayoutDeviceIntRect GetClientBounds() override;
   LayoutDeviceIntRect GetScreenBounds() override;
+  LayoutDeviceIntRect GetBounds() override { return mBounds; }
   void ReportMoveEvent();
   void ReportSizeEvent();
   bool WidgetTypeSupportsAcceleration() override { return true; }
@@ -403,7 +403,7 @@ class nsCocoaWindow final : public nsBaseWidget {
 
   bool PreRender(mozilla::widget::WidgetRenderingContext* aContext) override;
   void PostRender(mozilla::widget::WidgetRenderingContext* aContext) override;
-  RefPtr<mozilla::layers::NativeLayerRoot> GetNativeLayerRoot() override;
+  mozilla::layers::NativeLayerRoot* GetNativeLayerRoot() override;
 
   void UpdateWindowDraggingRegion(
       const LayoutDeviceIntRegion& aRegion) override;
@@ -520,16 +520,13 @@ class nsCocoaWindow final : public nsBaseWidget {
   void UpdateBounds();
   int32_t GetWorkspaceID();
   void MoveVisibleWindowToWorkspace(int32_t workspaceID);
+  CGFloat ComputeBackingScaleFactor() const;
 
   void DoResize(double aX, double aY, double aWidth, double aHeight,
                 bool aRepaint, bool aConstrainToCurrentScreen);
 
   void UpdateFullscreenState(bool aFullScreen, bool aNativeMode);
   nsresult DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransition);
-
-  already_AddRefed<nsIWidget> AllocateChildPopupWidget() override {
-    return nsIWidget::CreateTopLevelWindow();
-  }
 
   BaseWindow* mWindow;                // our cocoa window [STRONG]
   BaseWindow* mClosedRetainedWindow;  // a second strong reference to our
@@ -664,6 +661,8 @@ class nsCocoaWindow final : public nsBaseWidget {
   RefPtr<mozilla::widget::TextInputHandler> mTextInputHandler;
   InputContext mInputContext;
   NSWindowAnimationBehavior mWindowAnimationBehavior;
+
+  LayoutDeviceIntRect mBounds;
 
   mozilla::widget::PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate =
       nullptr;

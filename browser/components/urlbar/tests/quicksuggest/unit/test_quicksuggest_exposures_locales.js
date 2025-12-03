@@ -175,16 +175,10 @@ async function doLocaleTest({
     info("Doing locale test: " + JSON.stringify({ homeRegion, locale }));
 
     // Set the region and locale.
-    await QuickSuggestTestUtils.withLocales({
-      homeRegion,
-      locales: [locale],
+    await QuickSuggestTestUtils.withRegionAndLocale({
+      locale,
+      region: homeRegion,
       callback: async () => {
-        // Reinitialize Suggest, which will set default-branch values for
-        // Suggest prefs appropriate to the locale.
-        info("Reinitializing Suggest");
-        await QuickSuggest._test_reset();
-        info("Done reinitializing Suggest");
-
         // Sanity-check prefs. At this point, the value of `quickSuggestEnabled`
         // will be the value of its fallback pref, `quicksuggest.enabled`.
         assertSuggestPrefs(expectedQuickSuggestEnabled);
@@ -228,17 +222,13 @@ async function doLocaleTest({
       },
     });
   }
-
-  // Reinitialize Suggest so prefs go back to their defaults now that the app is
-  // back to its default locale.
-  await QuickSuggest._test_reset();
 }
 
 function assertSuggestPrefs(expectedEnabled) {
   let prefs = [
     "browser.urlbar.quicksuggest.enabled",
+    "browser.urlbar.suggest.quicksuggest.all",
     "browser.urlbar.suggest.quicksuggest.sponsored",
-    "browser.urlbar.suggest.quicksuggest.nonsponsored",
   ];
   for (let p of prefs) {
     Assert.equal(

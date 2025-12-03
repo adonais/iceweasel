@@ -720,7 +720,7 @@ class HTMLInputElement final : public TextControlElement,
                                        SelectionMode aSelectMode,
                                        ErrorResult& aRv);
 
-  void ShowPicker(ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void ShowPicker(ErrorResult& aRv);
 
   bool WebkitDirectoryAttr() const {
     return HasAttr(nsGkAtoms::webkitdirectory);

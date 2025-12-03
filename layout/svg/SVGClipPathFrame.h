@@ -8,7 +8,6 @@
 #define LAYOUT_SVG_SVGCLIPPATHFRAME_H_
 
 #include "gfxMatrix.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/SVGContainerFrame.h"
 
 class gfxContext;

@@ -124,7 +124,7 @@ void nsMathMLmoFrame::ProcessTextData() {
     mFlags |= NS_MATHML_OPERATOR_FORCE_MATHML_CHAR;
   }
 
-  // cache the special bits: mutable, accent, movablelimits, centered.
+  // cache the special bits: mutable, accent, movablelimits.
   // we need to do this in anticipation of other requirements, and these
   // bits don't change. Do not reset these bits unless the text gets changed.
 
@@ -143,21 +143,6 @@ void nsMathMLmoFrame::ProcessTextData() {
 
   mFlags |= allFlags & NS_MATHML_OPERATOR_ACCENT;
   mFlags |= allFlags & NS_MATHML_OPERATOR_MOVABLELIMITS;
-
-  if (!StaticPrefs::mathml_centered_operators_disabled()) {
-    // see if this is an operator that should be centered to cater for
-    // fonts that are not math-aware
-    if (1 == length) {
-      if ((ch == '+') || (ch == '=') || (ch == '*') ||
-          (ch == 0x2212) ||  // &minus;
-          (ch == 0x2264) ||  // &le;
-          (ch == 0x2265) ||  // &ge;
-          (ch == 0x00D7)) {  // &times;
-        mFlags |= NS_MATHML_OPERATOR_CENTERED;
-        mFlags |= NS_MATHML_OPERATOR_FORCE_MATHML_CHAR;
-      }
-    }
-  }
 
   // cache the operator
   mMathMLChar.SetData(data);
@@ -197,8 +182,8 @@ void nsMathMLmoFrame::ProcessOperatorData() {
   // it mutable irrespective of the form of the embellished container.
   // Also remember the other special bits that we want to carry forward.
   mFlags &= NS_MATHML_OPERATOR_MUTABLE | NS_MATHML_OPERATOR_ACCENT |
-            NS_MATHML_OPERATOR_MOVABLELIMITS | NS_MATHML_OPERATOR_CENTERED |
-            NS_MATHML_OPERATOR_INVISIBLE | NS_MATHML_OPERATOR_FORCE_MATHML_CHAR;
+            NS_MATHML_OPERATOR_MOVABLELIMITS | NS_MATHML_OPERATOR_INVISIBLE |
+            NS_MATHML_OPERATOR_FORCE_MATHML_CHAR;
 
   if (!mEmbellishData.coreFrame) {
     // i.e., we haven't been here before, the default form is infix
@@ -608,20 +593,7 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
   nscoord axisHeight, height;
   GetAxisHeight(aDrawTarget, fm, axisHeight);
 
-  // get the leading to be left at the top and the bottom of the stretched char
-  // this seems more reliable than using fm->GetLeading() on suspicious fonts
-  const nscoord leading = [&fm] {
-    if (StaticPrefs::
-            mathml_top_bottom_spacing_for_stretchy_operators_disabled()) {
-      return 0;
-    }
-    nscoord em;
-    GetEmHeight(fm, em);
-    return NSToCoordRound(0.2f * (float)em);
-  }();
-
-  // Operators that are stretchy, or those that are to be centered
-  // to cater for fonts that are not math-aware, are handled by the MathMLChar
+  // Operators that are stretchy are handled by the MathMLChar
   // ('form' is reset if stretch fails -- i.e., we don't bother to stretch next
   // time)
   bool useMathMLChar = UseMathMLChar();
@@ -764,22 +736,19 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
 
     // if the returned direction is 'unsupported', the char didn't actually
     // change. So we do the centering only if necessary
-    if (mMathMLChar.GetStretchDirection() != NS_STRETCH_DIRECTION_UNSUPPORTED ||
-        NS_MATHML_OPERATOR_IS_CENTERED(mFlags)) {
+    if (mMathMLChar.GetStretchDirection() != NS_STRETCH_DIRECTION_UNSUPPORTED) {
       bool largeopOnly = (NS_STRETCH_LARGEOP & stretchHint) != 0 &&
                          (NS_STRETCH_VARIABLE_MASK & stretchHint) == 0;
 
-      if (isVertical || NS_MATHML_OPERATOR_IS_CENTERED(mFlags)) {
+      if (isVertical) {
         // the desired size returned by mMathMLChar maybe different
         // from the size of the container.
         // the mMathMLChar.mRect.y calculation is subtle, watch out!!!
 
         height = mBoundingMetrics.ascent + mBoundingMetrics.descent;
-        if (NS_MATHML_OPERATOR_IS_SYMMETRIC(mFlags) ||
-            NS_MATHML_OPERATOR_IS_CENTERED(mFlags)) {
-          // For symmetric and vertical operators, or for operators that are
-          // always centered ('+', '*', etc) we want to center about the axis of
-          // the container
+        if (NS_MATHML_OPERATOR_IS_SYMMETRIC(mFlags)) {
+          // For symmetric and vertical operators, we want to center about the
+          // axis of the container
           mBoundingMetrics.descent = height / 2 - axisHeight;
         } else if (!largeopOnly) {
           // Align the center of the char with the center of the container
@@ -794,7 +763,7 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
 
   // Fixup for the final height.
   // On one hand, our stretchy height can sometimes be shorter than surrounding
-  // ASCII chars, e.g., arrow symbols have |mBoundingMetrics.ascent + leading|
+  // ASCII chars, e.g., arrow symbols have |mBoundingMetrics.ascent|
   // that is smaller than the ASCII's ascent, hence when painting the background
   // later, it won't look uniform along the line.
   // On the other hand, sometimes we may leave too much gap when our glyph
@@ -817,9 +786,9 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
   }
   if (isAccent && firstChild) {
     // see bug 188467 for what is going on here
-    nscoord dy = aDesiredStretchSize.BlockStartAscent() -
-                 (mBoundingMetrics.ascent + leading);
-    aDesiredStretchSize.SetBlockStartAscent(mBoundingMetrics.ascent + leading);
+    nscoord dy =
+        aDesiredStretchSize.BlockStartAscent() - (mBoundingMetrics.ascent);
+    aDesiredStretchSize.SetBlockStartAscent(mBoundingMetrics.ascent);
     aDesiredStretchSize.Height() =
         aDesiredStretchSize.BlockStartAscent() + mBoundingMetrics.descent;
 
@@ -828,10 +797,9 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
     nscoord ascent = fm->MaxAscent();
     nscoord descent = fm->MaxDescent();
     aDesiredStretchSize.SetBlockStartAscent(
-        std::max(mBoundingMetrics.ascent + leading, ascent));
-    aDesiredStretchSize.Height() =
-        aDesiredStretchSize.BlockStartAscent() +
-        std::max(mBoundingMetrics.descent + leading, descent);
+        std::max(mBoundingMetrics.ascent, ascent));
+    aDesiredStretchSize.Height() = aDesiredStretchSize.BlockStartAscent() +
+                                   std::max(mBoundingMetrics.descent, descent);
   }
   aDesiredStretchSize.Width() = mBoundingMetrics.width;
   aDesiredStretchSize.mBoundingMetrics = mBoundingMetrics;

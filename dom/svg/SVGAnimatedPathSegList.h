@@ -8,7 +8,6 @@
 #define DOM_SVG_SVGANIMATEDPATHSEGLIST_H_
 
 #include "SVGPathData.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"

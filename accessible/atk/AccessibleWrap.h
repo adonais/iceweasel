@@ -64,11 +64,12 @@ class AccessibleWrap : public LocalAccessible {
 
   bool IsValidObject();
 
-  static const char* ReturnString(nsAString& aString) {
-    static nsCString returnedString;
-    CopyUTF16toUTF8(aString, returnedString);
-    return returnedString.get();
-  }
+  /**
+   * ATK has a bunch of getters that expect a borrowed reference to raw char*
+   * pointers. To simulate this, we have a method that uses a static nsCString
+   * return a temporary buffer that gets wiped on the next call.
+   */
+  static const char* ReturnString(nsAString& aString);
 
   static void GetKeyBinding(Accessible* aAccessible, nsAString& aResult);
 

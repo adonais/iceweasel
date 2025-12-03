@@ -72,7 +72,7 @@ class nsFormFillController final : public nsIFormFillController,
   bool IsFocusedInputControlled() const;
 
   MOZ_CAN_RUN_SCRIPT
-  nsresult HandleFocus(mozilla::dom::Element* aInput);
+  nsresult HandleFocus(mozilla::dom::Element* aElement);
 
   void AttachListeners(mozilla::dom::EventTarget* aEventTarget);
 
@@ -110,7 +110,7 @@ class nsFormFillController final : public nsIFormFillController,
   // members //////////////////////////////////////////
 
   nsCOMPtr<nsIAutoCompleteController> mController;
-  mozilla::dom::Element* mFocusedElement;
+  mozilla::dom::Element* mControlledElement;
   RefPtr<mozilla::CancelableRunnable> mRestartAfterAttributeChangeTask;
 
   // mListNode is a <datalist> element which, is set, has the form fill

@@ -637,7 +637,7 @@ class TransportTestPeer : public sigslot::has_slots<> {
                             NrIceMediaStream::GatheringState state) {
     // We only use one stream, no need to check whether all streams are done
     // gathering.
-    Unused << aTransportId;
+    (void)aTransportId;
     if (state == NrIceMediaStream::ICE_STREAM_GATHER_COMPLETE) {
       GatheringComplete();
     }

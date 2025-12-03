@@ -13,7 +13,6 @@
 #ifndef nsXHTMLContentSerializer_h__
 #define nsXHTMLContentSerializer_h__
 
-#include "mozilla/Attributes.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsXMLContentSerializer.h"

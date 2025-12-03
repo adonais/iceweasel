@@ -5,9 +5,6 @@
 
 #![allow(non_snake_case)]
 
-#[macro_use]
-extern crate rsclientcerts;
-
 use log::{debug, error, trace};
 use pkcs11_bindings::*;
 use rsclientcerts::manager::{IsSearchingForClientCerts, Manager};

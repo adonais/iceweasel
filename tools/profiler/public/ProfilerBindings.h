@@ -92,6 +92,8 @@ void gecko_profiler_marker_schema_set_table_label(
 void gecko_profiler_marker_schema_set_all_labels(mozilla::MarkerSchema* aSchema,
                                                  const char* aLabel,
                                                  size_t aLabelLength);
+void gecko_profiler_marker_schema_set_stack_based(
+    mozilla::MarkerSchema* aSchema);
 
 // MarkerSchema methods for adding key/key-label values.
 void gecko_profiler_marker_schema_add_key_format(

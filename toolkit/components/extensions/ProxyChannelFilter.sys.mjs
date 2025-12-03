@@ -47,7 +47,7 @@ const ProxyInfoData = {
       "type",
       "host",
       "port",
-      "pathTemplate",
+      "masqueTemplate",
       "username",
       "password",
       "proxyDNS",
@@ -104,19 +104,19 @@ const ProxyInfoData = {
     proxyData.port = port;
   },
 
-  pathTemplate(proxyData) {
-    let { pathTemplate } = proxyData;
+  masqueTemplate(proxyData) {
+    let { masqueTemplate } = proxyData;
     if (proxyData.type !== PROXY_TYPES.MASQUE) {
-      if (pathTemplate !== undefined) {
+      if (masqueTemplate !== undefined) {
         throw new ExtensionError(
-          `ProxyInfoData: pathTemplate can only be used for "masque" proxies`
+          `ProxyInfoData: masqueTemplate can only be used for "masque" proxies`
         );
       }
       return;
     }
-    if (typeof pathTemplate !== "string" || !pathTemplate) {
+    if (typeof masqueTemplate !== "string" || !masqueTemplate) {
       throw new ExtensionError(
-        `ProxyInfoData: Invalid proxy path template: "${pathTemplate}"`
+        `ProxyInfoData: Invalid proxy masque template: "${masqueTemplate}"`
       );
     }
   },
@@ -227,7 +227,7 @@ const ProxyInfoData = {
       type,
       host,
       port,
-      pathTemplate,
+      masqueTemplate,
       username,
       password,
       proxyDNS,
@@ -263,7 +263,7 @@ const ProxyInfoData = {
       proxyInfo = lazy.ProxyService.newMASQUEProxyInfo(
         host,
         port,
-        pathTemplate,
+        masqueTemplate,
         proxyAuthorizationHeader,
         connectionIsolationKey,
         proxyDNS ? TRANSPARENT_PROXY_RESOLVES_HOST : 0,

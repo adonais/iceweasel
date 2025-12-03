@@ -1811,6 +1811,7 @@ class LogTaskBase {
 };
 
 class MicroTaskRunnable;
+class MustConsumeMicroTask;
 class Task;  // TaskController
 class PresShell;
 namespace dom {
@@ -1833,6 +1834,7 @@ LogTaskBase<nsTimerImpl>::Run::Run(nsTimerImpl* aEvent, bool aWillRunAgain);
 
 typedef LogTaskBase<nsIRunnable> LogRunnable;
 typedef LogTaskBase<MicroTaskRunnable> LogMicroTaskRunnable;
+typedef LogTaskBase<MustConsumeMicroTask> LogMustConsumeMicroTask;
 typedef LogTaskBase<IPC::Message> LogIPCMessage;
 typedef LogTaskBase<nsTimerImpl> LogTimerEvent;
 typedef LogTaskBase<Task> LogTask;

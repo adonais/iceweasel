@@ -17,7 +17,7 @@
   grid-template-columns: 34px 1fr;
   height: 100%;
   font-size: var(--body-20-font-size);
-  font-weight: var(--body-20-font-weight);
+  font-weight: var(--body-20-font-weight, normal);
 }
 
 .sidebar-fixed-item__icon {

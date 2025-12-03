@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Ìkọ̀kọ̀ %s</string>
@@ -355,10 +362,6 @@
     Content description for various wallpapers. %1$s is the name of the wallpaper.
   -->
   <string name="wallpapers_item_name_content_description">Ohun Ìṣẹ̀ṣọ́ ògiri: %1$s</string>
-  <!-- Snackbar message for when wallpaper is selected -->
-  <string name="wallpaper_updated_snackbar_message" tools:ignore="UnusedResources" moz:removedIn="144">Ìsọdọ̀tun ìṣẹ̀sọ́ ògiri!</string>
-  <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">Wòó</string>
   <!-- Preference for triggering sync -->
   <string name="preferences_sync_now">Ṣepọ̀ nísìyín</string>
   <!-- Preference category for sync -->
@@ -829,10 +832,6 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d àwọn táàbù tí a yàn</string>
-  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Ti fi àkójọpọ̀ pamọ́!</string>
-  <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Táàbù ti wà ní ìfipamọ́!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Padé</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -912,8 +911,6 @@
   <string name="snackbar_private_tab_closed">Táàbù ìkọ̀kọ̀ ti padé</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">MÁṢÈÉ</string>
-  <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">Sáìtì ti di yíyọ kúrò</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -1000,14 +997,6 @@
     text to display in the snackbar once account is signed-in
   -->
   <string name="onboarding_firefox_account_sync_is_on">Ìṣepọ̀ wà ní títàn</string>
-  <!--
-    Onboarding theme
-
-    Text shown in snackbar when multiple tabs have been sent to device
-  -->
-  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Àwọn táàbù ti a fi ránṣẹ́!</string>
-  <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Táàbù ti a fi ránṣẹ́!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">A kò lè fi ránṣẹ́</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -1255,8 +1244,6 @@
   <string name="credit_cards_edit_card">Ṣàtúnṣe káàdì</string>
   <!-- The header for the card number of a credit card -->
   <string name="credit_cards_card_number">Nóḿbà káàdì</string>
-  <!-- The header for the expiration date of a credit card -->
-  <string name="credit_cards_expiration_date">Déètì ọjọ́ ìparí</string>
   <!-- The label for the expiration date month of a credit card to be used by a11y services -->
   <string name="credit_cards_expiration_date_month">Déètì oṣù ọjọ́ ìparí</string>
   <!-- The label for the expiration date year of a credit card to be used by a11y services -->

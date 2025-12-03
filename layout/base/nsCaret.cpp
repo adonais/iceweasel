@@ -57,10 +57,6 @@ nsCaret::~nsCaret() { StopBlinking(); }
 nsresult nsCaret::Init(PresShell* aPresShell) {
   NS_ENSURE_ARG(aPresShell);
 
-  mPresShell =
-      do_GetWeakReference(aPresShell);  // the presshell owns us, so no addref
-  NS_ASSERTION(mPresShell, "Hey, pres shell should support weak refs");
-
   RefPtr<Selection> selection =
       aPresShell->GetSelection(nsISelectionController::SELECTION_NORMAL);
   if (!selection) {
@@ -127,7 +123,6 @@ void nsCaret::Terminate() {
     mDomSelectionWeak->RemoveSelectionListener(this);
   }
   mDomSelectionWeak = nullptr;
-  mPresShell = nullptr;
   mCaretPosition = {};
 }
 
@@ -632,11 +627,6 @@ void nsCaret::StopBlinking() {
 
 size_t nsCaret::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
   size_t total = aMallocSizeOf(this);
-  if (mPresShell) {
-    // We only want the size of the nsWeakReference object, not the PresShell
-    // (since we don't own the PresShell).
-    total += mPresShell->SizeOfOnlyThis(aMallocSizeOf);
-  }
   if (mBlinkTimer) {
     total += mBlinkTimer->SizeOfIncludingThis(aMallocSizeOf);
   }

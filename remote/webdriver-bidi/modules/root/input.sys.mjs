@@ -9,10 +9,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   actions: "chrome://remote/content/shared/webdriver/Actions.sys.mjs",
   assert: "chrome://remote/content/shared/webdriver/Assert.sys.mjs",
-  error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   event: "chrome://remote/content/shared/webdriver/Event.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
-  TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
 });
 
 class InputModule extends RootBiDiModule {
@@ -267,12 +265,7 @@ class InputModule extends RootBiDiModule {
       lazy.pprint`Expected "context" to be a string, got ${contextId}`
     );
 
-    const context = lazy.TabManager.getBrowsingContextById(contextId);
-    if (!context) {
-      throw new lazy.error.NoSuchFrameError(
-        `Browsing context with id ${contextId} not found`
-      );
-    }
+    const context = this._getNavigable(contextId);
 
     // Bug 1821460: Fetch top-level browsing context.
     const inputState = this.#getInputState(context);
@@ -313,12 +306,7 @@ class InputModule extends RootBiDiModule {
       lazy.pprint`Expected "context" to be a string, got ${contextId}`
     );
 
-    const context = lazy.TabManager.getBrowsingContextById(contextId);
-    if (!context) {
-      throw new lazy.error.NoSuchFrameError(
-        `Browsing context with id ${contextId} not found`
-      );
-    }
+    const context = this._getNavigable(contextId);
 
     // Bug 1821460: Fetch top-level browsing context.
     const inputState = this.#getInputState(context);
@@ -366,12 +354,7 @@ class InputModule extends RootBiDiModule {
       lazy.pprint`Expected "context" to be a string, got ${contextId}`
     );
 
-    const context = lazy.TabManager.getBrowsingContextById(contextId);
-    if (!context) {
-      throw new lazy.error.NoSuchFrameError(
-        `Browsing context with id ${contextId} not found`
-      );
-    }
+    const context = this._getNavigable(contextId);
 
     lazy.assert.array(
       files,

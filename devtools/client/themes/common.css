@@ -413,15 +413,18 @@ iframe {
 }
 
 /* Standalone buttons */
-.devtools-button[data-standalone] {
+.devtools-button.devtools-button-standalone {
   min-height: 28px;
   padding: 4px 6px;
-  border: 1px solid transparent;
+  border: 1px solid light-dark(rgba(138, 161, 180, 0.2), var(--grey-50));
   background: var(--toolbarbutton-background);
-}
-
-.theme-light .devtools-button[data-standalone] {
-  border-color: rgba(138, 161, 180, 0.2);
+  /* prettier-ignore */
+  color: light-dark(
+    var(--grey-70),
+    /* In dark mode, --grey-40 will only give us a AA contrast score, but --grey-30
+       is a bit too harsh, so we mix the color just enough to get a AAA score */
+    color-mix(in srgb, var(--grey-30) 70%, var(--grey-40))
+  );
 }
 
 /* Selectable button which is unchecked. */

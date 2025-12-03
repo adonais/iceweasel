@@ -14,7 +14,6 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Document.h"
@@ -350,7 +349,7 @@ nsSynthVoiceRegistry::RemoveVoice(nsISpeechService* aService,
   GetAllSpeechSynthActors(ssplist);
 
   for (uint32_t i = 0; i < ssplist.Length(); ++i)
-    Unused << ssplist[i]->SendVoiceRemoved(aUri);
+    (void)ssplist[i]->SendVoiceRemoved(aUri);
 
   return NS_OK;
 }
@@ -362,7 +361,7 @@ nsSynthVoiceRegistry::NotifyVoicesChanged() {
     GetAllSpeechSynthActors(ssplist);
 
     for (uint32_t i = 0; i < ssplist.Length(); ++i)
-      Unused << ssplist[i]->SendNotifyVoicesChanged();
+      (void)ssplist[i]->SendNotifyVoicesChanged();
   }
 
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
@@ -382,7 +381,7 @@ nsSynthVoiceRegistry::NotifyVoicesError(const nsAString& aError) {
     GetAllSpeechSynthActors(ssplist);
 
     for (uint32_t i = 0; i < ssplist.Length(); ++i) {
-      Unused << ssplist[i]->SendNotifyVoicesError(aError);
+      (void)ssplist[i]->SendNotifyVoicesError(aError);
     }
   }
 
@@ -419,7 +418,7 @@ nsSynthVoiceRegistry::SetDefaultVoice(const nsAString& aUri, bool aIsDefault) {
     GetAllSpeechSynthActors(ssplist);
 
     for (uint32_t i = 0; i < ssplist.Length(); ++i) {
-      Unused << ssplist[i]->SendSetDefaultVoice(aUri, aIsDefault);
+      (void)ssplist[i]->SendSetDefaultVoice(aUri, aIsDefault);
     }
   }
 
@@ -525,7 +524,7 @@ nsresult nsSynthVoiceRegistry::AddVoiceImpl(
                                       aQueuesUtterances);
 
     for (uint32_t i = 0; i < ssplist.Length(); ++i) {
-      Unused << ssplist[i]->SendVoiceAdded(ssvoice);
+      (void)ssplist[i]->SendVoiceAdded(ssvoice);
     }
   }
 
@@ -764,7 +763,7 @@ void nsSynthVoiceRegistry::SetIsSpeaking(bool aIsSpeaking) {
   nsTArray<SpeechSynthesisParent*> ssplist;
   GetAllSpeechSynthActors(ssplist);
   for (uint32_t i = 0; i < ssplist.Length(); ++i) {
-    Unused << ssplist[i]->SendIsSpeakingChanged(aIsSpeaking);
+    (void)ssplist[i]->SendIsSpeakingChanged(aIsSpeaking);
   }
 }
 

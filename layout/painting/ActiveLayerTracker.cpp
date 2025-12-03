@@ -8,7 +8,6 @@
 
 #include "gfx2DGlue.h"
 #include "mozilla/AnimationUtils.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/EffectSet.h"
 #include "mozilla/MotionPathUtils.h"
 #include "mozilla/PodOperations.h"

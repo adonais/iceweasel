@@ -99,7 +99,7 @@ RESTRequest.prototype = {
     "nsIChannelEventSink",
   ]),
 
-  /** Public API: **/
+  /** Public API: */
 
   /**
    * URI for the request (an nsIURI object).
@@ -249,7 +249,7 @@ RESTRequest.prototype = {
     }
   },
 
-  /** Implementation stuff **/
+  /** Implementation stuff */
 
   async dispatch(method, data) {
     if (this.status != this.NOT_SENT) {
@@ -378,7 +378,7 @@ RESTRequest.prototype = {
     );
   },
 
-  /** nsIStreamListener **/
+  /** nsIStreamListener */
 
   onStartRequest(channel) {
     if (this.status == this.ABORTED) {
@@ -524,7 +524,7 @@ RESTRequest.prototype = {
     this.delayTimeout();
   },
 
-  /** nsIInterfaceRequestor **/
+  /** nsIInterfaceRequestor */
 
   getInterface(aIID) {
     return this.QueryInterface(aIID);
@@ -549,7 +549,7 @@ RESTRequest.prototype = {
     return isInternal && isSameURI;
   },
 
-  /** nsIChannelEventSink **/
+  /** nsIChannelEventSink */
   asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
     let oldSpec =
       oldChannel && oldChannel.URI ? oldChannel.URI.spec : "<undefined>";

@@ -4,6 +4,11 @@ prefs = [
 ]
 support-files = [
   "head.js",
+  "page.pdf",
 ]
 
 ["browser_dom_extractor.js"]
+
+["browser_dom_extractor_pdf.js"]
+
+["browser_dom_extractor_reader_mode.js"]

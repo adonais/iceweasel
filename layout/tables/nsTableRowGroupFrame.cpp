@@ -1671,11 +1671,11 @@ Result<nsILineIterator::LineInfo, nsresult> nsTableRowGroupFrame::GetLine(
   return Err(NS_ERROR_FAILURE);
 }
 
-int32_t nsTableRowGroupFrame::FindLineContaining(nsIFrame* aFrame,
+int32_t nsTableRowGroupFrame::FindLineContaining(const nsIFrame* aFrame,
                                                  int32_t aStartLine) {
   NS_ENSURE_TRUE(aFrame, -1);
 
-  nsTableRowFrame* rowFrame = do_QueryFrame(aFrame);
+  const nsTableRowFrame* rowFrame = do_QueryFrame(aFrame);
   if (MOZ_UNLIKELY(!rowFrame)) {
     // When we do not have valid table structure in the DOM tree, somebody wants
     // to check the line number with an out-of-flow child of this frame because

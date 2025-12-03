@@ -5,7 +5,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsViewSourceChannel.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/NullPrincipal.h"
 #include "nsContentSecurityManager.h"
 #include "nsContentUtils.h"
@@ -973,12 +972,6 @@ NS_IMETHODIMP
 nsViewSourceChannel::IsNoCacheResponse(bool* _retval) {
   return !mHttpChannel ? NS_ERROR_NULL_POINTER
                        : mHttpChannel->IsNoCacheResponse(_retval);
-}
-
-NS_IMETHODIMP
-nsViewSourceChannel::IsPrivateResponse(bool* _retval) {
-  return !mHttpChannel ? NS_ERROR_NULL_POINTER
-                       : mHttpChannel->IsPrivateResponse(_retval);
 }
 
 NS_IMETHODIMP

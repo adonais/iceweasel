@@ -218,8 +218,12 @@ def prepare_langpack_files(output_dir, xpi_directory):
         manifest = get_manifest_from_langpack(xpi_file, output_dir)
         if manifest is not None:
             language = manifest["langpack_id"]
-            metadata[language] = manifest["description"]
-            output_file = mozpath.join(output_dir, f"{language}.langpack.xpi")
+            extension_id = manifest["browser_specific_settings"]["gecko"]["id"]
+            metadata[language] = {
+                "description": manifest["description"],
+                "extension_id": extension_id,
+            }
+            output_file = mozpath.join(output_dir, f"{extension_id}.xpi")
             shutil.copy(xpi_file, output_file)
 
     return metadata

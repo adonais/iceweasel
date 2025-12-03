@@ -12,7 +12,6 @@
 
 #include "nsXULContentUtils.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/intl/Collator.h"

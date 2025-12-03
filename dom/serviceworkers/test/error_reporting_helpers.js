@@ -7,7 +7,7 @@
  * strings (the interpolated arguments aren't kept around), we load the string
  * bundle and use it to derive the exact string message we expect for the given
  * payload.
- **/
+ */
 
 let stringBundleService = SpecialPowers.Cc[
   "@mozilla.org/intl/stringbundle;1"

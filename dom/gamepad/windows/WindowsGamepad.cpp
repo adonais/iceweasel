@@ -18,7 +18,6 @@
 // clang-format on
 
 #include "Gamepad.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/GamepadPlatformService.h"
 #include "mozilla/dom/GamepadRemapping.h"
 #include "mozilla/ipc/BackgroundParent.h"

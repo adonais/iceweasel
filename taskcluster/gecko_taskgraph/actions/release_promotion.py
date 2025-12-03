@@ -6,7 +6,7 @@
 import json
 import os
 
-import requests
+from taskcluster.exceptions import TaskclusterRestFailure
 from taskgraph.parameters import Parameters
 from taskgraph.taskgraph import TaskGraph
 from taskgraph.util.taskcluster import get_artifact, list_task_group_incomplete_tasks
@@ -312,9 +312,9 @@ def release_promotion_action(parameters, graph_config, input, task_group_id, tas
             raise Exception(
                 f"task group has unexpected pre-existing incomplete tasks (e.g. {t})"
             )
-    except requests.exceptions.HTTPError as e:
+    except TaskclusterRestFailure as e:
         # 404 means the task group doesn't exist yet, and we're fine
-        if e.response.status_code != 404:
+        if e.status_code != 404:
             raise
 
     # Build previous_graph_ids from ``previous_graph_ids``, ``revision``,

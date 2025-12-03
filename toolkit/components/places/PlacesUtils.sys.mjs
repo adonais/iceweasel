@@ -3015,14 +3015,14 @@ XPCOMUtils.defineLazyServiceGetter(
   PlacesUtils,
   "favicons",
   "@mozilla.org/browser/favicon-service;1",
-  "nsIFaviconService"
+  Ci.nsIFaviconService
 );
 
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "bmsvc",
   "@mozilla.org/browser/nav-bookmarks-service;1",
-  "nsINavBookmarksService"
+  Ci.nsINavBookmarksService
 );
 ChromeUtils.defineLazyGetter(PlacesUtils, "bookmarks", () => {
   return Object.freeze(
@@ -3039,7 +3039,7 @@ XPCOMUtils.defineLazyServiceGetter(
   PlacesUtils,
   "tagging",
   "@mozilla.org/browser/tagging-service;1",
-  "nsITaggingService"
+  Ci.nsITaggingService
 );
 
 ChromeUtils.defineLazyGetter(lazy, "bundle", function () {

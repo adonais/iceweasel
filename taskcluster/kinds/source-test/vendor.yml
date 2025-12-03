@@ -20,6 +20,7 @@ task-defaults:
         kind: test
         tier: 1
     platform: lint/opt
+    run-on-repo-type: [hg]
     run:
         using: run-task
 

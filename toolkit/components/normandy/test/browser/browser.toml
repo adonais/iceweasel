@@ -24,6 +24,7 @@ head = "head.js"
 ["browser_CleanupManager.js"]
 
 ["browser_ClientEnvironment.js"]
+skip-if = ["verify-standalone"]
 
 ["browser_EventEmitter.js"]
 

@@ -30,6 +30,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <string_view>
 
 #include "jit/riscv64/Assembler-riscv64.h"
 
@@ -843,7 +844,7 @@ void Decoder::PrintAcquireRelease(Instruction* instr) {
 
 void Decoder::PrintCSRReg(Instruction* instr) {
   int32_t csr_reg = instr->CsrValue();
-  std::string s;
+  std::string_view s;
   switch (csr_reg) {
     case csr_fflags:  // Floating-Point Accrued Exceptions (RW)
       s = "csr_fflags";
@@ -875,12 +876,12 @@ void Decoder::PrintCSRReg(Instruction* instr) {
     default:
       MOZ_CRASH();
   }
-  out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%s", s.c_str());
+  out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%s", s.data());
 }
 
 void Decoder::PrintRoundingMode(Instruction* instr) {
   int frm = instr->RoundMode();
-  std::string s;
+  std::string_view s;
   switch (frm) {
     case RNE:
       s = "RNE";
@@ -903,25 +904,26 @@ void Decoder::PrintRoundingMode(Instruction* instr) {
     default:
       MOZ_CRASH();
   }
-  out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%s", s.c_str());
+  out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%s", s.data());
 }
 
 void Decoder::PrintMemoryOrder(Instruction* instr, bool is_pred) {
   int memOrder = instr->MemoryOrder(is_pred);
-  std::string s;
+  char s[5] = {};
+  char* ps = s;
   if ((memOrder & PSI) == PSI) {
-    s += "i";
+    *ps++ = 'i';
   }
   if ((memOrder & PSO) == PSO) {
-    s += "o";
+    *ps++ = 'o';
   }
   if ((memOrder & PSR) == PSR) {
-    s += "r";
+    *ps++ = 'r';
   }
   if ((memOrder & PSW) == PSW) {
-    s += "w";
+    *ps++ = 'w';
   }
-  out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%s", s.c_str());
+  out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%s", s);
 }
 
 // Printing of instruction name.

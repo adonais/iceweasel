@@ -6,7 +6,6 @@
 #ifndef __TX_XPATH_SINGLENODE_CONTEXT
 #define __TX_XPATH_SINGLENODE_CONTEXT
 
-#include "mozilla/Attributes.h"
 #include "txIXPathContext.h"
 #include "txXPathNode.h"
 

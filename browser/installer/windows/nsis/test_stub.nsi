@@ -367,17 +367,6 @@ Function TestUninstallRegKey
     ClearErrors
 
     ; ----
-    ; The same test again, but this time simulate Windows 11. The path is
-    ; supposed to contain a version number. This restriction is expected to be
-    ; removed in the future.
-    Push ${buildNumWin11}
-    Call getUninstallKey
-    Pop $INSTDIR ; reuse INSTDIR for the return value
-    !insertmacro AssertEqual INSTDIR \
-        "Software\Microsoft\Windows\CurrentVersion\Uninstall\${BrandFullNameInternal} ${AppVersion} (${ARCH} ${AB_CD})"
-    ClearErrors
-
-    ; ----
     ; Special case: The maximal supported path length here is 1024 chars, in
     ; which case the return value for the path comparison is an error value.
     ; Since this error value will never match the default path name, we expect

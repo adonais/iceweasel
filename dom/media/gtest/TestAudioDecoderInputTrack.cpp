@@ -1,5 +1,5 @@
 /* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* vim: set ts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -406,7 +406,7 @@ TEST_F(TestAudioDecoderInputTrack, OutputAndEndEvent) {
   TrackTime start = 0;
   TrackTime end = 10;
   mTrack->ProcessInput(start, end, ProcessedMediaTrack::ALLOW_END);
-  Unused << WaitFor(p);
+  (void)WaitFor(p);
 
   // Track should end in this iteration, so the end event should be notified.
   p = holder.Ensure(__func__);
@@ -415,7 +415,7 @@ TEST_F(TestAudioDecoderInputTrack, OutputAndEndEvent) {
   start = end;
   end += 10;
   mTrack->ProcessInput(start, end, ProcessedMediaTrack::ALLOW_END);
-  Unused << WaitFor(p);
+  (void)WaitFor(p);
   outputListener.Disconnect();
   endListener.Disconnect();
 }

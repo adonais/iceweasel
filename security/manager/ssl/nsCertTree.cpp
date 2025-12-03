@@ -542,7 +542,7 @@ static void PRTimeToLocalDateString(PRTime time, nsAString& result) {
   intl::DateTimeFormat::StyleBag style;
   style.date = Some(intl::DateTimeFormat::Style::Long);
   style.time = Nothing();
-  Unused << intl::AppDateTimeFormat::Format(style, &explodedTime, result);
+  (void)intl::AppDateTimeFormat::Format(style, &explodedTime, result);
 }
 
 NS_IMETHODIMP

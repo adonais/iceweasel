@@ -24,7 +24,6 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_webgl.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/dom/HTMLVideoElement.h"
 #include "mozilla/dom/ImageBitmap.h"

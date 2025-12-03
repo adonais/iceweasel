@@ -13,7 +13,6 @@
 #include "mozilla/IntegerRange.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/StaticPrefs_print.h"
 #include "mozilla/Try.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -188,7 +187,7 @@ void nsPrintJob::BuildNestedPrintObjects(
             do_GetService(sPrintSettingsServiceContractID);
         embedding::PrintData printData;
         printSettingsService->SerializeToPrintData(mPrintSettings, &printData);
-        Unused << cc->SendUpdateRemotePrintSettings(bc, printData);
+        (void)cc->SendUpdateRemotePrintSettings(bc, printData);
       }
       continue;
     }
@@ -475,7 +474,7 @@ nsresult nsPrintJob::PrintPreview(Document& aDoc,
 
 int32_t nsPrintJob::GetRawNumPages() const {
   auto [seqFrame, numSheets] = GetSeqFrameAndCountSheets();
-  Unused << numSheets;
+  (void)numSheets;
   return seqFrame ? seqFrame->GetRawNumPages() : 0;
 }
 
@@ -492,7 +491,7 @@ bool nsPrintJob::GetIsEmpty() const {
 
 int32_t nsPrintJob::GetPrintPreviewNumSheets() const {
   auto [seqFrame, numSheets] = GetSeqFrameAndCountSheets();
-  Unused << seqFrame;
+  (void)seqFrame;
   return numSheets;
 }
 
@@ -1286,9 +1285,7 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
   // init it with the DC
   MOZ_TRY(aPO->mPresContext->Init(printData->mPrintDC));
 
-  aPO->mViewManager = new nsViewManager();
-
-  MOZ_TRY(aPO->mViewManager->Init(printData->mPrintDC));
+  aPO->mViewManager = new nsViewManager(printData->mPrintDC);
 
   bool doReturn = false;
   bool documentIsTopLevel = false;
@@ -1601,8 +1598,11 @@ void SelectionRangeState::SelectNodesExceptInSubtree(const Position& aStart,
   if (auto* text = Text::FromNode(aStart.mNode)) {
     if (start.mNode != text && aStart.mOffset &&
         aStart.mOffset < text->Length()) {
-      text->InsertData(aStart.mOffset, kEllipsis, IgnoreErrors());
-      ellipsizedStart = true;
+      // Only insert ellipsis if there is any non-whitespace prior to selection.
+      if (!text->TextStartsWithOnlyWhitespace(aStart.mOffset)) {
+        text->InsertData(aStart.mOffset, kEllipsis, IgnoreErrors());
+        ellipsizedStart = true;
+      }
     }
   }
 
@@ -1624,8 +1624,11 @@ void SelectionRangeState::SelectNodesExceptInSubtree(const Position& aStart,
   // If the end is mid text then add an ellipsis.
   if (auto* text = Text::FromNode(start.mNode)) {
     if (start.mOffset && start.mOffset < text->Length()) {
-      text->InsertData(start.mOffset, kEllipsis, IgnoreErrors());
-      start.mOffset += kEllipsis.Length();
+      // Only insert ellipsis if there is any non-whitespace after selection.
+      if (!text->TextEndsWithOnlyWhitespace(start.mOffset)) {
+        text->InsertData(start.mOffset, kEllipsis, IgnoreErrors());
+        start.mOffset += kEllipsis.Length();
+      }
     }
   }
 }

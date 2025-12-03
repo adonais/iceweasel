@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,8 +24,6 @@ import org.mozilla.fenix.components.menu.compose.header.SubmenuHeader
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.trackingprotection.TrackerBuckets
 import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory
-
-internal const val TRACKER_CATEGORY_DETAILS_PANEL_ROUTE = "tracker_category_details_panel"
 
 @Composable
 internal fun TrackerCategoryDetailsPanel(
@@ -65,7 +64,7 @@ internal fun TrackerCategoryDetailsPanel(
 
             Text(
                 text = trackerCategoryTitle,
-                color = FirefoxTheme.colors.textAccent,
+                color = MaterialTheme.colorScheme.tertiary,
                 style = FirefoxTheme.typography.headline8,
             )
 
@@ -73,7 +72,7 @@ internal fun TrackerCategoryDetailsPanel(
 
             Text(
                 text = trackerCategoryDescription,
-                color = FirefoxTheme.colors.textPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = FirefoxTheme.typography.body2,
             )
 
@@ -81,7 +80,7 @@ internal fun TrackerCategoryDetailsPanel(
 
             Text(
                 text = stringResource(id = R.string.enhanced_tracking_protection_blocked),
-                color = FirefoxTheme.colors.textPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = FirefoxTheme.typography.headline8,
             )
 
@@ -91,7 +90,7 @@ internal fun TrackerCategoryDetailsPanel(
                 bucketedTrackers.get(detailedTrackerCategory, true).forEach {
                     Text(
                         text = it.url.tryGetHostFromUrl(),
-                        color = FirefoxTheme.colors.textPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = FirefoxTheme.typography.body2,
                     )
                 }
@@ -106,7 +105,7 @@ private fun TrackersBlockedPanelPreview() {
     FirefoxTheme {
         Column(
             modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer3),
+                .background(color = MaterialTheme.colorScheme.surface),
         ) {
             TrackerCategoryDetailsPanel(
                 title = "Mozilla",

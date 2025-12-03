@@ -9,6 +9,7 @@
 #include "sandboxBroker.h"
 
 #include <aclapi.h>
+#include <sddl.h>
 #include <shlobj.h>
 #include <string>
 
@@ -391,8 +392,8 @@ static void AddLLVMProfilePathDirectoryToPolicy(
     sandbox::TargetConfig* aConfig) {
   std::wstring parentPath;
   if (GetLlvmProfileDir(parentPath)) {
-    Unused << aConfig->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                       parentPath.c_str());
+    (void)aConfig->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
+                                   parentPath.c_str());
   }
 }
 #endif
@@ -717,6 +718,30 @@ static sandbox::MitigationFlags DynamicCodeFlagForSystemMediaLibraries() {
   return dynamicCodeFlag;
 }
 
+static auto GetProcessUserSidString() {
+  std::unique_ptr<wchar_t, LocalFreeDeleter> userSidString;
+  std::unique_ptr<HANDLE, CloseHandleDeleter> tokenHandle;
+  if (!::OpenProcessToken(::GetCurrentProcess(), TOKEN_QUERY,
+                          getter_Transfers(tokenHandle))) {
+    return userSidString;
+  }
+
+  BYTE tokenUserBuffer[sizeof(TOKEN_USER) + SECURITY_MAX_SID_SIZE];
+  DWORD len = sizeof(tokenUserBuffer);
+  if (!::GetTokenInformation(tokenHandle.get(), TokenUser, &tokenUserBuffer,
+                             len, &len)) {
+    return userSidString;
+  }
+
+  auto* tokenUser = reinterpret_cast<TOKEN_USER*>(tokenUserBuffer);
+  if (!::ConvertSidToStringSidW(tokenUser->User.Sid,
+                                getter_Transfers(userSidString))) {
+    userSidString.reset();
+  }
+
+  return userSidString;
+}
+
 // Process fails to start in LPAC with ASan build
 #if !defined(MOZ_ASAN)
 static void HexEncode(const Span<const uint8_t>& aBytes, nsACString& aEncoded) {
@@ -976,6 +1001,11 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
     accessTokenLevel = sandbox::USER_LOCKDOWN;
     initialIntegrityLevel = sandbox::INTEGRITY_LEVEL_LOW;
     delayedIntegrityLevel = sandbox::INTEGRITY_LEVEL_UNTRUSTED;
+  } else if (aSandboxLevel >= 9) {
+    jobLevel = sandbox::JobLevel::kLockdown;
+    accessTokenLevel = sandbox::USER_LOCKDOWN_WITH_TRAVERSE;
+    initialIntegrityLevel = sandbox::INTEGRITY_LEVEL_LOW;
+    delayedIntegrityLevel = sandbox::INTEGRITY_LEVEL_UNTRUSTED;
   } else if (aSandboxLevel >= 8) {
     jobLevel = sandbox::JobLevel::kLockdown;
     accessTokenLevel = sandbox::USER_RESTRICTED;
@@ -1057,6 +1087,7 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
       sandbox::MITIGATION_BOTTOM_UP_ASLR | sandbox::MITIGATION_HEAP_TERMINATE |
       sandbox::MITIGATION_SEHOP | sandbox::MITIGATION_DEP_NO_ATL_THUNK |
       sandbox::MITIGATION_DEP | sandbox::MITIGATION_EXTENSION_POINT_DISABLE |
+      sandbox::MITIGATION_KTM_COMPONENT | sandbox::MITIGATION_FSCTL_DISABLED |
       sandbox::MITIGATION_IMAGE_LOAD_NO_REMOTE |
       sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL |
       sandbox::MITIGATION_IMAGE_LOAD_PREFER_SYS32;
@@ -1127,14 +1158,16 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
 #endif
   }
 
-  // Add the policy for the client side of a pipe. It is just a file
-  // in the \pipe\ namespace. We restrict it to pipes that start with
-  // "chrome." so the sandboxed process cannot connect to system services.
-  result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                   L"\\??\\pipe\\chrome.*");
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
+  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
+    // Add the policy for the client side of a pipe. It is just a file
+    // in the \pipe\ namespace. We restrict it to pipes that start with
+    // "chrome." so the sandboxed process cannot connect to system services.
+    result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
+                                     L"\\??\\pipe\\chrome.*");
+    MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
+                       "With these static arguments AddRule should never fail, "
+                       "what happened?");
+  }
 
   // Add the policy for the client side of the crash server pipe.
   result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
@@ -1164,6 +1197,9 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
     // USER_RESTRCITED will also block access to the KnownDlls list, so we force
     // that path to fall-back to the normal loading path.
     config->SetForceKnownDllLoadingFallback();
+
+    // We should be able to remove access to these media registry keys below
+    // once encoding has moved out of the content process (bug 1972552).
 
     // Read access for MF Media Source Activate and subkeys/values.
     result = config->AllowRegistryRead(
@@ -1217,12 +1253,28 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
       }
     }
 #endif
+  }
 
-    // We still currently create IPC named pipes in the content process.
-    result = config->AllowNamedPipes(L"\\\\.\\pipe\\chrome.*");
-    MOZ_RELEASE_ASSERT(
-        sandbox::SBOX_ALL_OK == result,
-        "With these static arguments AddRule should never fail.");
+  if (aSandboxLevel >= 9) {
+    // Before reading the media registry keys (specified for aSandboxLevel >= 8)
+    // the user's Classes key is read. We lose access to this at
+    // USER_LOCKDOWN_WITH_TRAVERSE because we no longer have the Restricted SID.
+    // We should be able to remove this once encoding has moved out of the
+    // content process (bug 1972552).
+    auto userSidString = GetProcessUserSidString();
+    if (userSidString) {
+      std::wstring userClassKeyName(L"HKEY_USERS\\");
+      userClassKeyName += userSidString.get();
+      userClassKeyName += L"_Classes";
+      result = config->AllowRegistryRead(userClassKeyName.c_str());
+      if (sandbox::SBOX_ALL_OK != result) {
+        NS_ERROR("Failed to add rule for user's Classes.");
+        LOG_E("Failed (ResultCode %d) to add rule for user's Classes.", result);
+      }
+    } else {
+      NS_ERROR("Failed to get user's SID.");
+      LOG_E("Failed to get user's SID. %lx", ::GetLastError());
+    }
   }
 }
 
@@ -1247,6 +1299,7 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
   sandbox::MitigationFlags initialMitigations =
       sandbox::MITIGATION_BOTTOM_UP_ASLR | sandbox::MITIGATION_HEAP_TERMINATE |
       sandbox::MITIGATION_SEHOP | sandbox::MITIGATION_DEP_NO_ATL_THUNK |
+      sandbox::MITIGATION_KTM_COMPONENT | sandbox::MITIGATION_FSCTL_DISABLED |
       sandbox::MITIGATION_IMAGE_LOAD_NO_REMOTE |
       sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL | sandbox::MITIGATION_DEP;
 
@@ -1276,11 +1329,13 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
   // 14 pages, so 13 allows one page for generic process rules.
   sandboxing::SizeTrackingConfig trackingConfig(config, 13);
 
-  // Add the policy for the client side of a pipe. It is just a file
-  // in the \pipe\ namespace. We restrict it to pipes that start with
-  // "chrome." so the sandboxed process cannot connect to system services.
-  SANDBOX_SUCCEED_OR_CRASH(trackingConfig.AllowFileAccess(
-      sandbox::FileSemantics::kAllowAny, L"\\??\\pipe\\chrome.*"));
+  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
+    // Add the policy for the client side of a pipe. It is just a file
+    // in the \pipe\ namespace. We restrict it to pipes that start with
+    // "chrome." so the sandboxed process cannot connect to system services.
+    SANDBOX_SUCCEED_OR_CRASH(trackingConfig.AllowFileAccess(
+        sandbox::FileSemantics::kAllowAny, L"\\??\\pipe\\chrome.*"));
+  }
 
   // Add the policy for the client side of the crash server pipe.
   SANDBOX_SUCCEED_OR_CRASH(
@@ -1349,6 +1404,7 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
       sandbox::MITIGATION_SEHOP | sandbox::MITIGATION_EXTENSION_POINT_DISABLE |
       sandbox::MITIGATION_DEP_NO_ATL_THUNK | sandbox::MITIGATION_DEP |
       sandbox::MITIGATION_NONSYSTEM_FONT_DISABLE |
+      sandbox::MITIGATION_KTM_COMPONENT | sandbox::MITIGATION_FSCTL_DISABLED |
       sandbox::MITIGATION_IMAGE_LOAD_NO_REMOTE |
       sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL |
       sandbox::MITIGATION_IMAGE_LOAD_PREFER_SYS32;
@@ -1375,14 +1431,16 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
   result = AddCigToConfig(config);
   SANDBOX_ENSURE_SUCCESS(result, "Failed to initialize signed policy rules.");
 
-  // Add the policy for the client side of a pipe. It is just a file
-  // in the \pipe\ namespace. We restrict it to pipes that start with
-  // "chrome." so the sandboxed process cannot connect to system services.
-  result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                   L"\\??\\pipe\\chrome.*");
-  SANDBOX_ENSURE_SUCCESS(
-      result,
-      "With these static arguments AddRule should never fail, what happened?");
+  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
+    // Add the policy for the client side of a pipe. It is just a file
+    // in the \pipe\ namespace. We restrict it to pipes that start with
+    // "chrome." so the sandboxed process cannot connect to system services.
+    result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
+                                     L"\\??\\pipe\\chrome.*");
+    SANDBOX_ENSURE_SUCCESS(result,
+                           "With these static arguments AddRule should never "
+                           "fail, what happened?");
+  }
 
   // Add the policy for the client side of the crash server pipe.
   result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
@@ -1430,6 +1488,7 @@ bool SandboxBroker::SetSecurityLevelForSocketProcess() {
       sandbox::MITIGATION_SEHOP | sandbox::MITIGATION_EXTENSION_POINT_DISABLE |
       sandbox::MITIGATION_DEP_NO_ATL_THUNK | sandbox::MITIGATION_DEP |
       sandbox::MITIGATION_NONSYSTEM_FONT_DISABLE |
+      sandbox::MITIGATION_KTM_COMPONENT | sandbox::MITIGATION_FSCTL_DISABLED |
       sandbox::MITIGATION_IMAGE_LOAD_NO_REMOTE |
       sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL |
       sandbox::MITIGATION_IMAGE_LOAD_PREFER_SYS32;
@@ -1457,14 +1516,16 @@ bool SandboxBroker::SetSecurityLevelForSocketProcess() {
   result = AddCigToConfig(config);
   SANDBOX_ENSURE_SUCCESS(result, "Failed to initialize signed policy rules.");
 
-  // Add the policy for the client side of a pipe. It is just a file
-  // in the \pipe\ namespace. We restrict it to pipes that start with
-  // "chrome." so the sandboxed process cannot connect to system services.
-  result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                   L"\\??\\pipe\\chrome.*");
-  SANDBOX_ENSURE_SUCCESS(
-      result,
-      "With these static arguments AddRule should never fail, what happened?");
+  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
+    // Add the policy for the client side of a pipe. It is just a file
+    // in the \pipe\ namespace. We restrict it to pipes that start with
+    // "chrome." so the sandboxed process cannot connect to system services.
+    result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
+                                     L"\\??\\pipe\\chrome.*");
+    SANDBOX_ENSURE_SUCCESS(result,
+                           "With these static arguments AddRule should never "
+                           "fail, what happened?");
+  }
 
   // Add the policy for the client side of the crash server pipe.
   result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
@@ -1499,10 +1560,13 @@ struct UtilitySandboxProps {
       sandbox::MITIGATION_SEHOP | sandbox::MITIGATION_EXTENSION_POINT_DISABLE |
       sandbox::MITIGATION_DEP_NO_ATL_THUNK | sandbox::MITIGATION_DEP |
       sandbox::MITIGATION_NONSYSTEM_FONT_DISABLE |
+      sandbox::MITIGATION_KTM_COMPONENT | sandbox::MITIGATION_FSCTL_DISABLED |
       sandbox::MITIGATION_IMAGE_LOAD_NO_REMOTE |
       sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL |
       sandbox::MITIGATION_IMAGE_LOAD_PREFER_SYS32 |
       sandbox::MITIGATION_CET_COMPAT_MODE;
+
+  sandbox::MitigationFlags mExcludedInitialMitigations = 0;
 
   sandbox::MitigationFlags mDelayedMitigations =
       sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
@@ -1593,6 +1657,8 @@ struct WindowsUtilitySandboxProps : public UtilitySandboxProps {
     mDelayedIntegrityLevel = sandbox::INTEGRITY_LEVEL_MEDIUM;
     mUseWin32kLockdown = false;
     mUseCig = false;
+    mExcludedInitialMitigations =
+        sandbox::MITIGATION_KTM_COMPONENT | sandbox::MITIGATION_FSCTL_DISABLED;
     mDelayedMitigations = sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
                           sandbox::MITIGATION_DLL_SEARCH_ORDER;
   }
@@ -1638,7 +1704,8 @@ void LogUtilitySandboxProps(const UtilitySandboxProps& us) {
                       us.mUseWin32kLockdown ? "yes" : "no");
   logMsg.AppendPrintf("\tUse CIG: %s\n", us.mUseCig ? "yes" : "no");
   logMsg.AppendPrintf("\tInitial mitigations: %016llx\n",
-                      static_cast<uint64_t>(us.mInitialMitigations));
+                      static_cast<uint64_t>(us.mInitialMitigations &
+                                            ~us.mExcludedInitialMitigations));
   logMsg.AppendPrintf("\tDelayed mitigations: %016llx\n",
                       static_cast<uint64_t>(us.mDelayedMitigations));
   if (us.mPackagePrefix.IsEmpty()) {
@@ -1695,7 +1762,8 @@ bool BuildUtilitySandbox(sandbox::TargetConfig* config,
     config->AddRestrictingRandomSid();
   }
 
-  result = config->SetProcessMitigations(us.mInitialMitigations);
+  result = config->SetProcessMitigations(us.mInitialMitigations &
+                                         ~us.mExcludedInitialMitigations);
   SANDBOX_ENSURE_SUCCESS(result, "Invalid flags for SetProcessMitigations.");
 
   result = config->SetDelayedProcessMitigations(us.mDelayedMitigations);
@@ -1728,14 +1796,16 @@ bool BuildUtilitySandbox(sandbox::TargetConfig* config,
   }
 #endif
 
-  // Add the policy for the client side of a pipe. It is just a file
-  // in the \pipe\ namespace. We restrict it to pipes that start with
-  // "chrome." so the sandboxed process cannot connect to system services.
-  result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                   L"\\??\\pipe\\chrome.*");
-  SANDBOX_ENSURE_SUCCESS(
-      result,
-      "With these static arguments AddRule should never fail, what happened?");
+  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
+    // Add the policy for the client side of a pipe. It is just a file
+    // in the \pipe\ namespace. We restrict it to pipes that start with
+    // "chrome." so the sandboxed process cannot connect to system services.
+    result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
+                                     L"\\??\\pipe\\chrome.*");
+    SANDBOX_ENSURE_SUCCESS(result,
+                           "With these static arguments AddRule should never "
+                           "fail, what happened?");
+  }
 
   // Add the policy for the client side of the crash server pipe.
   result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
@@ -1815,6 +1885,7 @@ bool SandboxBroker::SetSecurityLevelForGMPlugin(
       sandbox::MITIGATION_BOTTOM_UP_ASLR | sandbox::MITIGATION_HEAP_TERMINATE |
       sandbox::MITIGATION_SEHOP | sandbox::MITIGATION_EXTENSION_POINT_DISABLE |
       sandbox::MITIGATION_NONSYSTEM_FONT_DISABLE |
+      sandbox::MITIGATION_KTM_COMPONENT | sandbox::MITIGATION_FSCTL_DISABLED |
       sandbox::MITIGATION_IMAGE_LOAD_NO_REMOTE |
       sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL |
       sandbox::MITIGATION_DEP_NO_ATL_THUNK | sandbox::MITIGATION_DEP;
@@ -1857,14 +1928,16 @@ bool SandboxBroker::SetSecurityLevelForGMPlugin(
   SANDBOX_ENSURE_SUCCESS(result,
                          "Invalid flags for SetDelayedProcessMitigations.");
 
-  // Add the policy for the client side of a pipe. It is just a file
-  // in the \pipe\ namespace. We restrict it to pipes that start with
-  // "chrome." so the sandboxed process cannot connect to system services.
-  result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                   L"\\??\\pipe\\chrome.*");
-  SANDBOX_ENSURE_SUCCESS(
-      result,
-      "With these static arguments AddRule should never fail, what happened?");
+  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
+    // Add the policy for the client side of a pipe. It is just a file
+    // in the \pipe\ namespace. We restrict it to pipes that start with
+    // "chrome." so the sandboxed process cannot connect to system services.
+    result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
+                                     L"\\??\\pipe\\chrome.*");
+    SANDBOX_ENSURE_SUCCESS(result,
+                           "With these static arguments AddRule should never "
+                           "fail, what happened?");
+  }
 
   // Add the policy for the client side of the crash server pipe.
   result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
@@ -1970,8 +2043,8 @@ void SandboxBroker::ApplyLoggingConfig() {
   // We already have a file interception set up for the client side of pipes.
   // Also, passing just "dummy" for file system policy causes win_utils.cc
   // IsReparsePoint() to loop.
-  Unused << config->AllowNamedPipes(L"dummy");
-  Unused << config->AllowRegistryRead(L"HKEY_CURRENT_USER\\dummy");
+  (void)config->AllowNamedPipes(L"dummy");
+  (void)config->AllowRegistryRead(L"HKEY_CURRENT_USER\\dummy");
 }
 
 SandboxBroker::~SandboxBroker() = default;

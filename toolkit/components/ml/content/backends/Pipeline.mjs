@@ -31,10 +31,15 @@ ChromeUtils.defineESModuleGetters(
 export async function getBackend(consumer, wasm, options) {
   const pipelineOptions = new lazy.PipelineOptions(options);
   var factory;
-  let backendName = pipelineOptions.backend || "onnx";
+
+  // The default backend is onnx-native
+  let backendName = pipelineOptions.backend || "onnx-native";
 
   switch (pipelineOptions.backend) {
     case "onnx":
+      factory = lazy.ONNXPipeline.initialize;
+      break;
+    case "onnx-native":
       factory = lazy.ONNXPipeline.initialize;
       break;
     case "wllama":

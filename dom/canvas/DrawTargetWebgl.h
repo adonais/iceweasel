@@ -7,13 +7,13 @@
 #ifndef _MOZILLA_GFX_DRAWTARGETWEBGL_H
 #define _MOZILLA_GFX_DRAWTARGETWEBGL_H
 
+#include <deque>
 #include <memory>
 #include <vector>
 
 #include "GLTypes.h"
 #include "mozilla/Array.h"
 #include "mozilla/LinkedList.h"
-#include "mozilla/ThreadLocal.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/PathSkia.h"
@@ -63,7 +63,9 @@ class SharedTextureHandle;
 class StandaloneTexture;
 class GlyphCache;
 class PathCache;
+class PathCacheEntry;
 struct PathVertexRange;
+enum class AAStrokeMode;
 
 // SharedContextWebgl stores most of the actual WebGL state that may be used by
 // any number of DrawTargetWebgl's that use it. Foremost, it holds the actual
@@ -286,6 +288,11 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   // Cached unit circle path
   RefPtr<Path> mUnitCirclePath;
 
+  // The total bytes used by pending snapshot PBOs.
+  size_t mUsedSnapshotPBOMemory = 0;
+  // The owning surfaces initiating snapshot PBO readbacks.
+  std::deque<ThreadSafeWeakPtr<SourceSurfaceWebgl>> mSnapshotPBOs;
+
   bool Initialize();
   bool CreateShaders();
   void ResetPathVertexBuffer();
@@ -339,7 +346,8 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   void InitTexParameters(WebGLTexture* aTex, bool aFilter = true);
 
   bool ReadInto(uint8_t* aDstData, int32_t aDstStride, SurfaceFormat aFormat,
-                const IntRect& aBounds, TextureHandle* aHandle = nullptr);
+                const IntRect& aBounds, TextureHandle* aHandle = nullptr,
+                const RefPtr<WebGLBuffer>& aBuffer = nullptr);
   already_AddRefed<DataSourceSurface> ReadSnapshot(
       TextureHandle* aHandle = nullptr);
   already_AddRefed<TextureHandle> WrapSnapshot(const IntSize& aSize,
@@ -347,6 +355,15 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
                                                RefPtr<WebGLTexture> aTex);
   already_AddRefed<TextureHandle> CopySnapshot(
       const IntRect& aRect, TextureHandle* aHandle = nullptr);
+
+  already_AddRefed<WebGLBuffer> ReadSnapshotIntoPBO(
+      SourceSurfaceWebgl* aOwner, TextureHandle* aHandle = nullptr);
+  already_AddRefed<DataSourceSurface> ReadSnapshotFromPBO(
+      const RefPtr<WebGLBuffer>& aBuffer, SurfaceFormat aFormat,
+      const IntSize& aSize);
+  void RemoveSnapshotPBO(SourceSurfaceWebgl* aOwner,
+                         already_AddRefed<WebGLBuffer> aBuffer);
+  void ClearSnapshotPBOs(size_t aMaxMemory = 0);
 
   already_AddRefed<WebGLTexture> GetCompatibleSnapshot(
       SourceSurface* aSurface, RefPtr<TextureHandle>* aHandle = nullptr,
@@ -414,6 +431,12 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
 
   already_AddRefed<TextureHandle> DrawStrokeMask(
       const PathVertexRange& aVertexRange, const IntSize& aSize);
+  bool DrawWGRPath(const Path* aPath, const IntRect& aIntBounds,
+                   const Rect& aQuantBounds, const Matrix& aPathXform,
+                   RefPtr<PathCacheEntry>& aEntry, const DrawOptions& aOptions,
+                   const StrokeOptions* aStrokeOptions,
+                   AAStrokeMode aAAStrokeMode, const Pattern& aPattern,
+                   const Maybe<DeviceColor>& aColor);
   bool DrawPathAccel(const Path* aPath, const Pattern& aPattern,
                      const DrawOptions& aOptions,
                      const StrokeOptions* aStrokeOptions = nullptr,
@@ -444,8 +467,9 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   bool RemoveSharedTexture(const RefPtr<SharedTexture>& aTexture);
   bool RemoveStandaloneTexture(const RefPtr<StandaloneTexture>& aTexture);
 
-  void UnlinkSurfaceTextures();
-  void UnlinkSurfaceTexture(const RefPtr<TextureHandle>& aHandle);
+  void UnlinkSurfaceTextures(bool aForce = false);
+  void UnlinkSurfaceTexture(const RefPtr<TextureHandle>& aHandle,
+                            bool aForce = false);
   void UnlinkGlyphCaches();
 
   void AddHeapData(const void* aBuf);
@@ -756,6 +780,9 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     return mSharedContext->SupportsPattern(aPattern);
   }
 
+  bool SupportsDrawOptions(const DrawOptions& aOptions,
+                           const Rect& aRect = Rect());
+
   bool SetSimpleClipRect();
   bool GenerateComplexClipMask();
   bool PrepareContext(bool aClipped = true,
@@ -785,7 +812,8 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   Maybe<Rect> RectClippedToViewport(const RectDouble& aRect) const;
 
   bool ShouldAccelPath(const DrawOptions& aOptions,
-                       const StrokeOptions* aStrokeOptions);
+                       const StrokeOptions* aStrokeOptions,
+                       const Rect& aRect = Rect());
   void DrawPath(const Path* aPath, const Pattern& aPattern,
                 const DrawOptions& aOptions,
                 const StrokeOptions* aStrokeOptions = nullptr,
@@ -808,6 +836,7 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
 
   bool ReadInto(uint8_t* aDstData, int32_t aDstStride);
   already_AddRefed<DataSourceSurface> ReadSnapshot();
+  already_AddRefed<WebGLBuffer> ReadSnapshotIntoPBO(SourceSurfaceWebgl* aOwner);
   already_AddRefed<TextureHandle> CopySnapshot(const IntRect& aRect);
   already_AddRefed<TextureHandle> CopySnapshot() {
     return CopySnapshot(GetRect());

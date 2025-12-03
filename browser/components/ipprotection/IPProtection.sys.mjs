@@ -39,6 +39,7 @@ class IPProtectionWidget {
 
   static ENABLED_PREF = "browser.ipProtection.enabled";
   static VARIANT_PREF = "browser.ipProtection.variant";
+  static ADDED_PREF = "browser.ipProtection.added";
 
   #inited = false;
   created = false;
@@ -121,7 +122,7 @@ class IPProtectionWidget {
     const onBeforeCreated = this.#onBeforeCreated.bind(this);
     const onCreated = this.#onCreated.bind(this);
     const onDestroyed = this.#onDestroyed.bind(this);
-    lazy.CustomizableUI.createWidget({
+    const item = {
       id: IPProtectionWidget.WIDGET_ID,
       l10nId: "ipprotection-button",
       type: "view",
@@ -131,7 +132,8 @@ class IPProtectionWidget {
       onBeforeCreated,
       onCreated,
       onDestroyed,
-    });
+    };
+    lazy.CustomizableUI.createWidget(item);
 
     this.#placeWidget();
 
@@ -142,12 +144,16 @@ class IPProtectionWidget {
    * Places the widget in the nav bar, next to the FxA widget.
    */
   #placeWidget() {
+    let wasAddedToToolbar = Services.prefs.getBoolPref(
+      IPProtectionWidget.ADDED_PREF,
+      false
+    );
     let alreadyPlaced = lazy.CustomizableUI.getPlacementOfWidget(
       IPProtectionWidget.WIDGET_ID,
       false,
       true
     );
-    if (alreadyPlaced) {
+    if (wasAddedToToolbar || alreadyPlaced) {
       return;
     }
 
@@ -161,6 +167,7 @@ class IPProtectionWidget {
       lazy.CustomizableUI.AREA_NAVBAR,
       pos
     );
+    Services.prefs.setBoolPref(IPProtectionWidget.ADDED_PREF, true);
   }
 
   /**
@@ -225,8 +232,6 @@ class IPProtectionWidget {
    * @param {Event} event - the panel shown.
    */
   #onViewShowing(event) {
-    lazy.IPProtectionService.maybeEnroll();
-
     let { ownerGlobal } = event.target;
     if (this.#panels.has(ownerGlobal)) {
       let panel = this.#panels.get(ownerGlobal);

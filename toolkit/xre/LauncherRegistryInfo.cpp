@@ -7,7 +7,6 @@
 #include "LauncherRegistryInfo.h"
 
 #include "commonupdatedir.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/NativeNt.h"
 #include "mozilla/UniquePtr.h"

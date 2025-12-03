@@ -257,4 +257,5 @@ object ComponentsDependencies {
     val mozilla_appservices_errorsupport = "${ApplicationServicesConfig.groupId}:errorsupport:${ApplicationServicesConfig.version}"
     val mozilla_appservices_rust_log_forwarder = "${ApplicationServicesConfig.groupId}:rust-log-forwarder:${ApplicationServicesConfig.version}"
     val mozilla_appservices_sync15 = "${ApplicationServicesConfig.groupId}:sync15:${ApplicationServicesConfig.version}"
+    val mozilla_appservices_fxrelay = "${ApplicationServicesConfig.groupId}:relay:${ApplicationServicesConfig.version}"
 }

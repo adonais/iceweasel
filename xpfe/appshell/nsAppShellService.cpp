@@ -27,7 +27,6 @@
 #include "nsIWebNavigation.h"
 #include "nsIWindowlessBrowser.h"
 
-#include "mozilla/Attributes.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StartupTimeline.h"
@@ -124,7 +123,7 @@ nsAppShellService::CreateHiddenWindow() {
   nsCOMPtr<nsIDocShell> docShell;
   newWindow->GetDocShell(getter_AddRefs(docShell));
   if (docShell) {
-    Unused << docShell->GetBrowsingContext()->SetExplicitActive(
+    (void)docShell->GetBrowsingContext()->SetExplicitActive(
         dom::ExplicitActiveStatus::Inactive);
   }
 
@@ -407,9 +406,7 @@ nsAppShellService::CreateWindowlessBrowser(bool aIsChrome, uint32_t aChromeMask,
     return NS_ERROR_FAILURE;
   }
 
-  nsresult rv =
-      widget->Create(nullptr, LayoutDeviceIntRect(0, 0, 0, 0), nullptr);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(widget->Create(nullptr, LayoutDeviceIntRect(), widget::InitData()));
 
   // Create a BrowsingContext for our windowless browser.
   RefPtr<BrowsingContext> browsingContext = BrowsingContext::CreateIndependent(

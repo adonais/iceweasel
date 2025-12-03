@@ -219,7 +219,8 @@ export function getTruncatedFileName(source) {
   return truncateMiddleText(source.longName, 30);
 }
 
-/* Gets path for files with same filename for editor tabs, breakpoints, etc.
+/**
+ * Gets path for files with same filename for editor tabs, breakpoints, etc.
  * Pass the source, and list of other sources
  *
  * @memberof utils/source

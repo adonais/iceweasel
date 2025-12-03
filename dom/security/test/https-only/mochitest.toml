@@ -11,13 +11,13 @@ prefs = [
 ]
 
 ["test_break_endless_upgrade_downgrade_loop.html"]
-skip-if = [
-  "os == 'android'", # no support for error pages, Bug 1697866
-  "http3",
-  "http2",
-]
 support-files = [
   "file_break_endless_upgrade_downgrade_loop.sjs",
+]
+skip-if = [
+  "http2",
+  "http3",
+  "os == 'android'", # no support for error pages, Bug 1697866
 ]
 
 ["test_fragment.html"]

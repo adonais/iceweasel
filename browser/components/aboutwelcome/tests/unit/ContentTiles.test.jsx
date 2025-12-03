@@ -1033,4 +1033,33 @@ describe("ContentTiles component", () => {
     );
     mountedWrapper.unmount();
   });
+
+  it("renders a single tile without container when there is no header or container style", () => {
+    const SINGLE_TILE_NO_CONTAINER = {
+      tiles: {
+        tile_items: {
+          type: "mobile_downloads",
+          data: { email: { link_text: "Email!" } },
+        },
+        container: {},
+      },
+    };
+
+    const mounted = mount(
+      <ContentTiles
+        content={SINGLE_TILE_NO_CONTAINER}
+        handleAction={() => {}}
+        activeMultiSelect={null}
+        setActiveMultiSelect={setActiveMultiSelect}
+      />
+    );
+
+    assert.isFalse(
+      mounted.find("#content-tiles-container").exists(),
+      "should not render container wrapper"
+    );
+    assert.equal(mounted.find(".content-tile").length, 1);
+
+    mounted.unmount();
+  });
 });

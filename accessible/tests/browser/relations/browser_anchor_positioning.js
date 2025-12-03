@@ -76,6 +76,11 @@ addAccessibleTask(
     const target1 = findAccessibleChildByID(docAcc, "target1");
     await testDetailsRelations(btn1, target1);
 
+    is(
+      btn1.attributes.getStringProperty("details-from"),
+      "css-anchor",
+      "Correct details-from attribute"
+    );
     info("Make anchor invalid");
     await invokeContentTaskAndTick(browser, [], () => {
       Object.assign(content.document.getElementById("btn1").style, {
@@ -448,7 +453,7 @@ addAccessibleTask(
   <div id="target-targetsetdetails" aria-details="" class="target">World</div>
   <button id="btn-targetsetdetails">Hello</button>
   `,
-  async function testTooltipPositionAnchor(browser, docAcc) {
+  async function testOtherRelationsWithAnchor(browser, docAcc) {
     info("Test no details relations when explicit relations are set");
     const btnDescribedby = findAccessibleChildByID(docAcc, "btn-describedby");
     const targetDescribedby = findAccessibleChildByID(
@@ -613,6 +618,130 @@ addAccessibleTask(
     const anchor = findAccessibleChildByID(docAcc, "anchor");
     const target = findAccessibleChildByID(docAcc, "target");
     await testDetailsRelations(anchor, target);
+  },
+  { chrome: true, topLevel: true }
+);
+
+/**
+ * Test details relations when content does not have accessibles.
+ */
+addAccessibleTask(
+  `
+  <style>
+  #btn1 {
+    anchor-name: --btn1;
+  }
+
+  #target1 {
+    position: absolute;
+    position-anchor: --btn1;
+    left: anchor(right);
+    bottom: anchor(top);
+  }
+
+  #btn2 {
+    anchor-name: --btn2;
+  }
+
+  #target2 {
+    position: absolute;
+    position-anchor: --btn2;
+    left: anchor(right);
+    bottom: anchor(top);
+  }
+  </style>
+
+  <div id="target1">World</div>
+  <button id="btn1" aria-hidden="true">Hello</button>
+
+  <div id="target2" aria-hidden="true">World</div>
+  <button id="btn2">Hello</button>
+  `,
+  async function testARIAHiddenAnchorsAndPosition(browser, docAcc) {
+    info("ARIA hidden anchor");
+    const target1 = findAccessibleChildByID(docAcc, "target1");
+    await testCachedRelation(target1, RELATION_DETAILS_FOR, []);
+
+    info("ARIA hidden target");
+    const btn2 = findAccessibleChildByID(docAcc, "btn2");
+    await testCachedRelation(btn2, RELATION_DETAILS, []);
+  },
+  { chrome: true, topLevel: true }
+);
+
+addAccessibleTask(
+  `
+<style>
+.anchor {
+  width: 50px;
+  height: 50px;
+  background: pink;
+}
+
+.positioned {
+  width: 50px;
+  height: 50px;
+  background: purple;
+  position: absolute;
+  position-anchor: --a;
+  left: anchor(right);
+  bottom: anchor(bottom);
+  position-try-fallbacks: --fb;
+}
+
+@position-try --fb {
+  position-anchor: --b;
+}
+
+.abs-cb {
+  width: 200px;
+  height: 200px;
+  border: 1px solid;
+  position: relative;
+}
+
+.scroller {
+  overflow: scroll;
+  width: 100%;
+  height: 100%;
+  border: 1px solid;
+  box-sizing: border-box;
+}
+
+.filler {
+  height: 125px;
+  width: 1px;
+}
+
+.dn {
+  display: none;
+}
+</style>
+<div class="abs-cb">
+  <div class="scroller">
+    <div class="filler"></div>
+    <div class="anchor" id="anchor1" style="anchor-name: --a;" role="group"></div>
+    <div class="filler"></div>
+    <div class="anchor" id="anchor2" style="anchor-name: --b; background: aqua;" role="group"></div>
+    <div class="filler"></div>
+  </div>
+  <div id="target" class="positioned" role="group"></div>
+</div>`,
+  async function testScrollWithFallback(browser, docAcc) {
+    const anchor1 = findAccessibleChildByID(docAcc, "anchor1");
+    const anchor2 = findAccessibleChildByID(docAcc, "anchor2");
+    const target = findAccessibleChildByID(docAcc, "target");
+
+    info("Correct details relation before scroll");
+    await testDetailsRelations(anchor1, target);
+
+    await invokeContentTaskAndTick(browser, [], () => {
+      let scroller = content.document.querySelector(".scroller");
+      scroller.scrollTo(0, scroller.scrollTopMax);
+    });
+
+    info("Correct details relation after scroll");
+    await testDetailsRelations(anchor2, target);
   },
   { chrome: true, topLevel: true }
 );

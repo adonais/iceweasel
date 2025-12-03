@@ -5,7 +5,6 @@
 
 #include "txPatternParser.h"
 
-#include "mozilla/UniquePtrExtensions.h"
 #include "nsError.h"
 #include "nsGkAtoms.h"
 #include "txExprLexer.h"

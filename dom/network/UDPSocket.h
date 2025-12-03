@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_UDPSocket_h__
 #define mozilla_dom_UDPSocket_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/SocketCommonBinding.h"

@@ -9,7 +9,6 @@
 
 #include <limits>
 
-#include "mozilla/HashTable.h"
 #include "mozilla/RefPtr.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"

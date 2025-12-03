@@ -21,7 +21,6 @@
 #include "nsRange.h"
 #include "nsReadableUtils.h"
 #include "nsContentUtils.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/ChildIterator.h"
@@ -205,7 +204,7 @@ static bool SkipNode(const nsIContent* aContent) {
     // Skip option nodes if their select is a combo box, or if they
     // have no select (somehow).
     if (const auto* option = HTMLOptionElement::FromNode(content)) {
-      auto* select = HTMLSelectElement::FromNodeOrNull(option->GetParent());
+      const auto* select = option->GetSelect();
       if (!select || select->IsCombobox()) {
         DEBUG_FIND_PRINTF("Skipping node: ");
         DumpNode(content);
@@ -1010,13 +1009,6 @@ already_AddRefed<nsRange> nsFind::FindFromRangeBoundaries(
           if (!rv.Failed()) {
             range->SetEnd(*endParent, matchEndOffset, rv);
           }
-          // https://html.spec.whatwg.org/#interaction-with-details-and-hidden=until-found
-          NS_DispatchToMainThread(NS_NewRunnableFunction(
-              "RevealHiddenUntilFound",
-              [node = RefPtr(startParent)]()
-                  MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-                    node->AncestorRevealingAlgorithm(IgnoreErrors());
-                  }));
           if (!rv.Failed()) {
             return range.forget();
           }

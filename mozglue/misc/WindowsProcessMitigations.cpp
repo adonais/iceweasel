@@ -8,7 +8,6 @@
 
 #include <processthreadsapi.h>
 
-#include "mozilla/Assertions.h"
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
 
 static_assert(sizeof(PROCESS_MITIGATION_DYNAMIC_CODE_POLICY) == 4);

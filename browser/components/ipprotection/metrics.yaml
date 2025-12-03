@@ -90,3 +90,21 @@ ipprotection:
       - sstreich@mozilla.com
       - vpn-telemetry@mozilla.com
     expires: never
+  error:
+    type: event
+    description: >
+      Recorded when the in-panel error message is triggered.
+    bugs:
+     - https://bugzilla.mozilla.org/show_bug.cgi?id=1998500
+    data_reviews:
+     - https://bugzilla.mozilla.org/show_bug.cgi?id=1998500
+    data_sensitivity:
+     - interaction
+    notification_emails:
+      - rking@mozilla.com
+    expires: never
+    extra_keys:
+      source:
+        type: string
+        description: >
+          Module where the error originated.

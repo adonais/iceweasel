@@ -116,7 +116,7 @@ class MFTEncoder final {
 
   MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(
       ProcessedResult, (AllAvailableInputsProcessed, InputProcessed,
-                        OutputYielded, DrainComplete));
+                        OutputHeaderYielded, OutputDataYielded, DrainComplete));
   using ProcessedResults = EnumSet<ProcessedResult>;
   Result<ProcessedResults, HRESULT> ProcessPendingEvents();
   Result<MediaEventType, HRESULT> GetPendingEvent();

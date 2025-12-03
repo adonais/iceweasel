@@ -11,17 +11,14 @@ import android.content.ClipDescription;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Point;
-import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import org.mozilla.gecko.annotation.WrapForJNI;
 
-@RequiresApi(Build.VERSION_CODES.N)
 public class GeckoDragAndDrop {
   private static final String LOGTAG = "GeckoDragAndDrop";
   private static final boolean DEBUG = false;

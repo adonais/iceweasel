@@ -22,6 +22,9 @@ not-for-build-platforms:
     - macosx64-shippable/opt
     - macosx64-devedition/opt
 
+task-defaults:
+    run-on-repo-type: [hg]
+
 tasks:
     upload-generated-sources:
         description: Upload generated source files from build

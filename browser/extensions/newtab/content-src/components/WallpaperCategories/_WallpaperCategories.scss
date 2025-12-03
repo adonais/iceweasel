@@ -208,17 +208,17 @@
     gap: unset;
     grid-auto-rows: unset;
     grid-template-columns: unset;
-
-    /* XXXdholbert The 32px subtraction here is to account for our 16px of
-     * margin on top and bottom. Ideally this should change to use
-     * 'height: stretch' when bug 1789477 lands. */
-    height: calc(100% - var(--space-xlarge));
+    height: 100%;
+    // Can get rid of padding and replace height with
+    // 'height: stretch' when bug 1789477 lands.
+    padding-block-end: var(--space-xxlarge);
     inset-inline-start: var(--space-xlarge);
     position: absolute;
     inset-block-start: 0;
     width: 380px;
     z-index: 2;
     transform: translateX(100%);
+    overflow-y: auto;
 
     &:dir(rtl) {
       transform: translateX(-100%);

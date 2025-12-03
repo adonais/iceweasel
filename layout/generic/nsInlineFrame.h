@@ -9,7 +9,6 @@
 #ifndef nsInlineFrame_h___
 #define nsInlineFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "nsContainerFrame.h"
 
 class nsLineLayout;

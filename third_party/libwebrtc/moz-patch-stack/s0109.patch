@@ -9,10 +9,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/73f9e0e64eb65e9f2
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/modules/rtp_rtcp/source/rtcp_sender.cc b/modules/rtp_rtcp/source/rtcp_sender.cc
-index 3f39a6a96a..5c0aaf50de 100644
+index 4f7ec4f751..14dcdd9cfa 100644
 --- a/modules/rtp_rtcp/source/rtcp_sender.cc
 +++ b/modules/rtp_rtcp/source/rtcp_sender.cc
-@@ -216,7 +216,7 @@ bool RTCPSender::Sending() const {
+@@ -215,7 +215,7 @@ bool RTCPSender::Sending() const {
    return sending_;
  }
  

@@ -13,7 +13,6 @@
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/FragmentDirective.h"
@@ -173,7 +172,7 @@ void Location::SetHash(const nsACString& aHash, nsIPrincipal& aSubjectPrincipal,
     return;
   }
 
-  SetURI(uri, aSubjectPrincipal, aRv);
+  Navigate(uri, aSubjectPrincipal, aRv);
 }
 
 void Location::GetHost(nsACString& aHost, nsIPrincipal& aSubjectPrincipal,
@@ -186,10 +185,10 @@ void Location::GetHost(nsACString& aHost, nsIPrincipal& aSubjectPrincipal,
   aHost.Truncate();
 
   nsCOMPtr<nsIURI> uri;
-  mozilla::Unused << GetURI(getter_AddRefs(uri), true);
+  (void)GetURI(getter_AddRefs(uri), true);
 
   if (uri) {
-    mozilla::Unused << uri->GetHostPort(aHost);
+    (void)uri->GetHostPort(aHost);
   }
 }
 
@@ -211,7 +210,7 @@ void Location::SetHost(const nsACString& aHost, nsIPrincipal& aSubjectPrincipal,
     return;
   }
 
-  SetURI(uri, aSubjectPrincipal, aRv);
+  Navigate(uri, aSubjectPrincipal, aRv);
 }
 
 void Location::GetHostname(nsACString& aHostname,
@@ -248,7 +247,7 @@ void Location::SetHostname(const nsACString& aHostname,
     return;
   }
 
-  SetURI(uri, aSubjectPrincipal, aRv);
+  Navigate(uri, aSubjectPrincipal, aRv);
 }
 
 nsresult Location::GetHref(nsACString& aHref) {
@@ -328,7 +327,7 @@ void Location::SetPathname(const nsACString& aPathname,
     return;
   }
 
-  SetURI(uri, aSubjectPrincipal, aRv);
+  Navigate(uri, aSubjectPrincipal, aRv);
 }
 
 void Location::GetPort(nsACString& aPort, nsIPrincipal& aSubjectPrincipal,
@@ -387,7 +386,7 @@ void Location::SetPort(const nsACString& aPort, nsIPrincipal& aSubjectPrincipal,
     return;
   }
 
-  SetURI(uri, aSubjectPrincipal, aRv);
+  Navigate(uri, aSubjectPrincipal, aRv);
 }
 
 void Location::GetProtocol(nsACString& aProtocol,
@@ -430,7 +429,7 @@ void Location::SetProtocol(const nsACString& aProtocol,
   aProtocol.BeginReading(start);
   aProtocol.EndReading(end);
   nsACString::const_iterator iter(start);
-  Unused << FindCharInReadable(':', iter, end);
+  (void)FindCharInReadable(':', iter, end);
 
   nsresult rv =
       NS_MutateURI(uri).SetScheme(Substring(start, iter)).Finalize(uri);
@@ -462,7 +461,7 @@ void Location::SetProtocol(const nsACString& aProtocol,
     return;
   }
 
-  SetURI(uri, aSubjectPrincipal, aRv);
+  Navigate(uri, aSubjectPrincipal, aRv);
 }
 
 void Location::GetSearch(nsACString& aSearch, nsIPrincipal& aSubjectPrincipal,
@@ -513,7 +512,7 @@ void Location::SetSearch(const nsACString& aSearch,
     return;
   }
 
-  SetURI(uri, aSubjectPrincipal, aRv);
+  Navigate(uri, aSubjectPrincipal, aRv);
 }
 
 void Location::Reload(JSContext* aCx, bool aForceget,

@@ -65,10 +65,6 @@ async function waitForDBSkipFlush() {
 }
 
 add_setup(async function () {
-  // BTP storage needs a profile directory to work. That's where the sqlite
-  // database file is stored.
-  do_get_profile();
-
   // Get the sqlite database file path.
   let profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
   let dbFile = profileDir.clone();

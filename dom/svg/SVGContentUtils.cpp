@@ -435,9 +435,8 @@ static gfx::Matrix GetCTMInternal(SVGElement* aElement, CTMType aCTMType,
   auto postTranslateFrameOffset = [](nsIFrame* aFrame, nsIFrame* aAncestorFrame,
                                      gfx::Matrix& aMatrix) {
     auto point = aFrame->GetOffsetTo(aAncestorFrame);
-    aMatrix =
-        aMatrix.PostTranslate(nsPresContext::AppUnitsToFloatCSSPixels(point.x),
-                              nsPresContext::AppUnitsToFloatCSSPixels(point.y));
+    aMatrix.PostTranslate(nsPresContext::AppUnitsToFloatCSSPixels(point.x),
+                          nsPresContext::AppUnitsToFloatCSSPixels(point.y));
   };
 
   gfxMatrix matrix = getLocalTransformHelper(aElement, aHaveRecursed);
@@ -498,8 +497,7 @@ static gfx::Matrix GetCTMInternal(SVGElement* aElement, CTMType aCTMType,
   if (frame->IsSVGOuterSVGFrame()) {
     nsMargin bp = frame->GetUsedBorderAndPadding();
     int32_t appUnitsPerCSSPixel = AppUnitsPerCSSPixel();
-    float xOffset = NSAppUnitsToFloatPixels(bp.left, appUnitsPerCSSPixel);
-    float yOffset = NSAppUnitsToFloatPixels(bp.top, appUnitsPerCSSPixel);
+    nscoord xOffset, yOffset;
     // See
     // https://drafts.csswg.org/css-transforms/#valdef-transform-box-fill-box
     // For elements with associated CSS layout box, the used value for fill-box
@@ -507,17 +505,24 @@ static gfx::Matrix GetCTMInternal(SVGElement* aElement, CTMType aCTMType,
     switch (frame->StyleDisplay()->mTransformBox) {
       case StyleTransformBox::FillBox:
       case StyleTransformBox::ContentBox:
-        // Apply border/padding separate from the rest of the transform.
-        // i.e. after it's been transformed
-        tm.PostTranslate(xOffset, yOffset);
+        xOffset = bp.left;
+        yOffset = bp.top;
         break;
       case StyleTransformBox::StrokeBox:
       case StyleTransformBox::ViewBox:
-      case StyleTransformBox::BorderBox:
-        // Apply border/padding before we transform the surface.
-        tm.PreTranslate(xOffset, yOffset);
+      case StyleTransformBox::BorderBox: {
+        // Extract the rotation component of the matrix.
+        float angle = std::atan2(tm._12, tm._11);
+        float cosAngle = std::cos(angle);
+        float sinAngle = std::sin(angle);
+        // Apply that rotation to bp.left and bp.top.
+        xOffset = bp.left * cosAngle - bp.top * sinAngle;
+        yOffset = bp.top * cosAngle + bp.left * sinAngle;
         break;
+      }
     }
+    tm.PostTranslate(NSAppUnitsToFloatPixels(xOffset, appUnitsPerCSSPixel),
+                     NSAppUnitsToFloatPixels(yOffset, appUnitsPerCSSPixel));
   }
 
   if (!ancestor || !ancestor->IsElement()) {

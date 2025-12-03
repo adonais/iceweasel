@@ -241,11 +241,11 @@ export class LoginManagerRustStorage {
             this.#storageAdapter = new RustLoginsStoreAdapter(store);
             this.log("Rust login storage ready.");
 
-            // Interrupt sooner prior to the `profile-before-change` phase to allow
-            // all the in-progress IOs to exit.
+            // All LoginManager storage backends must have their own shutdown
+            // blocker to ensure that they finalize properly.
             lazy.AsyncShutdown.profileChangeTeardown.addBlocker(
               "LoginManagerRustStorage: Interrupt IO operations on login store",
-              () => this.terminate()
+              async () => this.finalize()
             );
 
             resolve(this);
@@ -262,11 +262,30 @@ export class LoginManagerRustStorage {
   }
 
   /**
-   * Internal method used by regression tests only.  It is called before
-   * replacing this storage module with a new instance, and on shutdown
+   * Terminate all pending writes. After this call, the store can't be used.
    */
-  terminate() {
+  async finalize() {
+    // TODO: Currently we do not mark the instance as closed, not sure if later
+    // calls would be rejected elsewhere.
+
+    // Note: This is a synchronous call.
     this.#storageAdapter.shutdown();
+    return Promise.resolve();
+  }
+
+  /**
+   * Internal method used by tests only. It is called before replacing
+   * this storage module with a new instance.
+   */
+  testSaveForReplace() {
+    // Currently we only ever call this on LoginManagerStorage which is derived
+    // from LoginManagerStorage_json and there seems to be nothing that would
+    // want to call it here, but maybe once we entirely replace the JSON store
+    // with this one it would be called and we'd need to implement it.
+    throw Components.Exception(
+      "testSaveForReplace",
+      Cr.NS_ERROR_NOT_IMPLEMENTED
+    );
   }
 
   /**

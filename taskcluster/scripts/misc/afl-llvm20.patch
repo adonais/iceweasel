@@ -1,0 +1,290 @@
+From 30861b5d542105f19e65b5ca90e3f1385743d457 Mon Sep 17 00:00:00 2001
+From: vanhauser-thc <vh@thc.org>
+Date: Thu, 16 Jan 2025 15:32:58 +0100
+Subject: [PATCH] llvm 20 support
+
+---
+ GNUmakefile.llvm                                  |  4 ++--
+ instrumentation/SanitizerCoveragePCGUARD.so.cc    |  4 ++++
+ instrumentation/afl-llvm-dict2file.so.cc          | 13 +++++++++----
+ instrumentation/afl-llvm-lto-instrumentlist.so.cc | 13 +++++++++----
+ instrumentation/afl-llvm-pass.so.cc               |  7 +++++--
+ instrumentation/cmplog-instructions-pass.cc       | 13 +++++++++----
+ instrumentation/cmplog-routines-pass.cc           | 13 +++++++++----
+ instrumentation/cmplog-switches-pass.cc           | 13 +++++++++----
+ instrumentation/compare-transform-pass.so.cc      |  4 ++++
+ instrumentation/injection-pass.cc                 | 13 +++++++++----
+ instrumentation/split-compares-pass.so.cc         |  4 ++++
+ instrumentation/split-switches-pass.so.cc         |  4 ++++
+ 14 files changed, 81 insertions(+), 30 deletions(-)
+
+diff --git a/GNUmakefile.llvm b/GNUmakefile.llvm
+index 5e0adb7f..2d9cc51a 100644
+--- a/GNUmakefile.llvm
++++ b/GNUmakefile.llvm
+@@ -69,7 +69,7 @@ endif
+ 
+ LLVM_STDCXX                  := gnu++11
+ LLVM_LTO                     := 0
+-LLVM_UNSUPPORTED             := $(shell echo "$(LLVMVER)" | grep -E -q '^[0-2]\.|^3\.[0-7]\.|^2[0-9]\.' && echo 1 || echo 0)
++LLVM_UNSUPPORTED             := $(shell echo "$(LLVMVER)" | grep -E -q '^[0-2]\.|^3\.[0-7]\.|^2[1-9]\.' && echo 1 || echo 0)
+ # Uncomment to see the values assigned above
+ # $(foreach var,_CLANG_VERSIONS_TO_TEST LLVM_CONFIG LLVMVER LLVM_MAJOR LLVM_MINOR LLVM_TOO_NEW LLVM_TOO_OLD LLVM_TOO_NEW_DEFAULT LLVM_TOO_OLD_DEFAULT LLVM_NEW_API LLVM_NEWER_API LLVM_13_OK LLVM_HAVE_LTO LLVM_BINDIR LLVM_LIBDIR LLVM_STDCXX LLVM_APPLE_XCODE LLVM_LTO LLVM_UNSUPPORTED,$(warning $(var) = $($(var))))
+ 
+@@ -78,7 +78,7 @@ ifeq "$(LLVMVER)" ""
+ endif
+ 
+ ifeq "$(LLVM_UNSUPPORTED)" "1"
+-  $(error llvm_mode only supports llvm from version 3.8 onwards)
++  $(error llvm_mode only supports llvm from version 3.8 onwards - or your version is too new. Upgrade AFL++ if possible or downgrade LLVM.)
+ endif
+ 
+ ifeq "$(LLVM_TOO_NEW)" "1"
+index a9c87094..fae33d27 100644
+--- a/instrumentation/SanitizerCoveragePCGUARD.so.cc
++++ b/instrumentation/SanitizerCoveragePCGUARD.so.cc
+@@ -226,7 +226,11 @@ llvmGetPassPluginInfo() {
+             using OptimizationLevel = typename PassBuilder::OptimizationLevel;
+ #endif
+ #if LLVM_VERSION_MAJOR >= 16
++  #if LLVM_VERSION_MAJOR >= 20
++            PB.registerPipelineStartEPCallback(
++  #else
+             PB.registerOptimizerEarlyEPCallback(
++  #endif
+ #else
+             PB.registerOptimizerLastEPCallback(
+ #endif
+diff --git a/instrumentation/afl-llvm-dict2file.so.cc b/instrumentation/afl-llvm-dict2file.so.cc
+index 6559bc84..c6b7312e 100644
+--- a/instrumentation/afl-llvm-dict2file.so.cc
++++ b/instrumentation/afl-llvm-dict2file.so.cc
+@@ -120,12 +120,17 @@ llvmGetPassPluginInfo() {
+   #if LLVM_VERSION_MAJOR <= 13
+             using OptimizationLevel = typename PassBuilder::OptimizationLevel;
+   #endif
+-            PB.registerOptimizerLastEPCallback(
+-                [](ModulePassManager &MPM, OptimizationLevel OL) {
++            PB.registerOptimizerLastEPCallback([](ModulePassManager &MPM,
++                                                  OptimizationLevel  OL
++  #if LLVM_VERSION_MAJOR >= 20
++                                                  ,
++                                                  ThinOrFullLTOPhase Phase
++  #endif
++                                               ) {
+ 
+-                  MPM.addPass(AFLdict2filePass());
++              MPM.addPass(AFLdict2filePass());
+ 
+-                });
++            });
+ 
+           }};
+ 
+diff --git a/instrumentation/afl-llvm-lto-instrumentlist.so.cc b/instrumentation/afl-llvm-lto-instrumentlist.so.cc
+index 17abe2a8..a0d4811d 100644
+--- a/instrumentation/afl-llvm-lto-instrumentlist.so.cc
++++ b/instrumentation/afl-llvm-lto-instrumentlist.so.cc
+@@ -83,12 +83,17 @@ llvmGetPassPluginInfo() {
+ #if LLVM_VERSION_MAJOR <= 13
+             using OptimizationLevel = typename PassBuilder::OptimizationLevel;
+ #endif
+-            PB.registerOptimizerLastEPCallback(
+-                [](ModulePassManager &MPM, OptimizationLevel OL) {
++            PB.registerOptimizerLastEPCallback([](ModulePassManager &MPM,
++                                                  OptimizationLevel  OL
++#if LLVM_VERSION_MAJOR >= 20
++                                                  ,
++                                                  ThinOrFullLTOPhase Phase
++#endif
++                                               ) {
+ 
+-                  MPM.addPass(AFLcheckIfInstrument());
++              MPM.addPass(AFLcheckIfInstrument());
+ 
+-                });
++            });
+ 
+           }};
+ 
+diff --git a/instrumentation/afl-llvm-pass.so.cc b/instrumentation/afl-llvm-pass.so.cc
+index 8620fb3f..c599e957 100644
+--- a/instrumentation/afl-llvm-pass.so.cc
++++ b/instrumentation/afl-llvm-pass.so.cc
+@@ -110,8 +110,7 @@ class AFLCoverage : public ModulePass {
+ }  // namespace
+ 
+ #if LLVM_VERSION_MAJOR >= 11                        /* use new pass manager */
+-extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK
+-llvmGetPassPluginInfo() {
++extern "C" LLVM_ATTRIBUTE_WEAK PassPluginLibraryInfo llvmGetPassPluginInfo() {
+ 
+   return {LLVM_PLUGIN_API_VERSION, "AFLCoverage", "v0.1",
+           /* lambda to insert our pass into the pass pipeline. */
+@@ -122,7 +121,11 @@ llvmGetPassPluginInfo() {
+             using OptimizationLevel = typename PassBuilder::OptimizationLevel;
+     #endif
+     #if LLVM_VERSION_MAJOR >= 16
++      #if LLVM_VERSION_MAJOR >= 20
++            PB.registerPipelineStartEPCallback(
++      #else
+             PB.registerOptimizerEarlyEPCallback(
++      #endif
+     #else
+             PB.registerOptimizerLastEPCallback(
+     #endif
+diff --git a/instrumentation/cmplog-instructions-pass.cc b/instrumentation/cmplog-instructions-pass.cc
+index fe5c2926..a2165d7b 100644
+--- a/instrumentation/cmplog-instructions-pass.cc
++++ b/instrumentation/cmplog-instructions-pass.cc
+@@ -123,12 +123,17 @@ llvmGetPassPluginInfo() {
+   #if LLVM_VERSION_MAJOR <= 13
+             using OptimizationLevel = typename PassBuilder::OptimizationLevel;
+   #endif
+-            PB.registerOptimizerLastEPCallback(
+-                [](ModulePassManager &MPM, OptimizationLevel OL) {
++            PB.registerOptimizerLastEPCallback([](ModulePassManager &MPM,
++                                                  OptimizationLevel  OL
++  #if LLVM_VERSION_MAJOR >= 20
++                                                  ,
++                                                  ThinOrFullLTOPhase Phase
++  #endif
++                                               ) {
+ 
+-                  MPM.addPass(CmpLogInstructions());
++              MPM.addPass(CmpLogInstructions());
+ 
+-                });
++            });
+ 
+           }};
+ 
+diff --git a/instrumentation/cmplog-routines-pass.cc b/instrumentation/cmplog-routines-pass.cc
+index 560bd73b..d3fafe53 100644
+--- a/instrumentation/cmplog-routines-pass.cc
++++ b/instrumentation/cmplog-routines-pass.cc
+@@ -118,12 +118,17 @@ llvmGetPassPluginInfo() {
+   #if LLVM_VERSION_MAJOR <= 13
+             using OptimizationLevel = typename PassBuilder::OptimizationLevel;
+   #endif
+-            PB.registerOptimizerLastEPCallback(
+-                [](ModulePassManager &MPM, OptimizationLevel OL) {
++            PB.registerOptimizerLastEPCallback([](ModulePassManager &MPM,
++                                                  OptimizationLevel  OL
++  #if LLVM_VERSION_MAJOR >= 20
++                                                  ,
++                                                  ThinOrFullLTOPhase Phase
++  #endif
++                                               ) {
+ 
+-                  MPM.addPass(CmpLogRoutines());
++              MPM.addPass(CmpLogRoutines());
+ 
+-                });
++            });
+ 
+           }};
+ 
+diff --git a/instrumentation/cmplog-switches-pass.cc b/instrumentation/cmplog-switches-pass.cc
+index 2b87ea8c..727c47d6 100644
+--- a/instrumentation/cmplog-switches-pass.cc
++++ b/instrumentation/cmplog-switches-pass.cc
+@@ -118,12 +118,17 @@ llvmGetPassPluginInfo() {
+   #if LLVM_VERSION_MAJOR <= 13
+             using OptimizationLevel = typename PassBuilder::OptimizationLevel;
+   #endif
+-            PB.registerOptimizerLastEPCallback(
+-                [](ModulePassManager &MPM, OptimizationLevel OL) {
++            PB.registerOptimizerLastEPCallback([](ModulePassManager &MPM,
++                                                  OptimizationLevel  OL
++  #if LLVM_VERSION_MAJOR >= 20
++                                                  ,
++                                                  ThinOrFullLTOPhase Phase
++  #endif
++                                               ) {
+ 
+-                  MPM.addPass(CmplogSwitches());
++              MPM.addPass(CmplogSwitches());
+ 
+-                });
++            });
+ 
+           }};
+ 
+diff --git a/instrumentation/compare-transform-pass.so.cc b/instrumentation/compare-transform-pass.so.cc
+index 36149f35..5516880c 100644
+--- a/instrumentation/compare-transform-pass.so.cc
++++ b/instrumentation/compare-transform-pass.so.cc
+@@ -130,7 +130,11 @@ llvmGetPassPluginInfo() {
+             using OptimizationLevel = typename PassBuilder::OptimizationLevel;
+     #endif
+     #if LLVM_VERSION_MAJOR >= 16
++      #if LLVM_VERSION_MAJOR >= 20
++            PB.registerPipelineStartEPCallback(
++      #else
+             PB.registerOptimizerEarlyEPCallback(
++      #endif
+     #else
+             PB.registerOptimizerLastEPCallback(
+     #endif
+diff --git a/instrumentation/injection-pass.cc b/instrumentation/injection-pass.cc
+index 47ddabd9..f745de78 100644
+--- a/instrumentation/injection-pass.cc
++++ b/instrumentation/injection-pass.cc
+@@ -122,12 +122,17 @@ llvmGetPassPluginInfo() {
+   #if LLVM_VERSION_MAJOR <= 13
+             using OptimizationLevel = typename PassBuilder::OptimizationLevel;
+   #endif
+-            PB.registerOptimizerLastEPCallback(
+-                [](ModulePassManager &MPM, OptimizationLevel OL) {
++            PB.registerOptimizerLastEPCallback([](ModulePassManager &MPM,
++                                                  OptimizationLevel  OL
++  #if LLVM_VERSION_MAJOR >= 20
++                                                  ,
++                                                  ThinOrFullLTOPhase Phase
++  #endif
++                                               ) {
+ 
+-                  MPM.addPass(InjectionRoutines());
++              MPM.addPass(InjectionRoutines());
+ 
+-                });
++            });
+ 
+           }};
+ 
+diff --git a/instrumentation/split-compares-pass.so.cc b/instrumentation/split-compares-pass.so.cc
+index effafe50..cc031073 100644
+--- a/instrumentation/split-compares-pass.so.cc
++++ b/instrumentation/split-compares-pass.so.cc
+@@ -190,7 +190,11 @@ llvmGetPassPluginInfo() {
+             using OptimizationLevel = typename PassBuilder::OptimizationLevel;
+     #endif
+     #if LLVM_VERSION_MAJOR >= 16
++      #if LLVM_VERSION_MAJOR >= 20
++            PB.registerPipelineStartEPCallback(
++      #else
+             PB.registerOptimizerEarlyEPCallback(
++      #endif
+     #else
+             PB.registerOptimizerLastEPCallback(
+     #endif
+diff --git a/instrumentation/split-switches-pass.so.cc b/instrumentation/split-switches-pass.so.cc
+index aa552a42..1e4052a3 100644
+--- a/instrumentation/split-switches-pass.so.cc
++++ b/instrumentation/split-switches-pass.so.cc
+@@ -138,7 +138,11 @@ llvmGetPassPluginInfo() {
+             using OptimizationLevel = typename PassBuilder::OptimizationLevel;
+     #endif
+     #if LLVM_VERSION_MAJOR >= 16
++      #if LLVM_VERSION_MAJOR >= 20
++            PB.registerPipelineStartEPCallback(
++      #else
+             PB.registerOptimizerEarlyEPCallback(
++      #endif
+     #else
+             PB.registerOptimizerLastEPCallback(
+     #endif
+-- 
+2.51.0.1.g7a422dac74
+

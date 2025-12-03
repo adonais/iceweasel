@@ -12,7 +12,6 @@
 #include "ThreeDPoint.h"
 #include "WebAudioUtils.h"
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"

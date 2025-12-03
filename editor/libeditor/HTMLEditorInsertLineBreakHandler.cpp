@@ -170,9 +170,8 @@ nsresult HTMLEditor::AutoInsertLineBreakHandler::HandleInsertBRElement() {
   }
   const WSScanResult backwardScanFromBeforeBRElementResult =
       WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::EditableNodes,
-          insertLineBreakResult.AtLineBreak<EditorDOMPoint>(),
-          BlockInlineCheck::UseComputedDisplayStyle);
+          {WSRunScanner::Option::OnlyEditableNodes},
+          insertLineBreakResult.AtLineBreak<EditorDOMPoint>());
   if (MOZ_UNLIKELY(backwardScanFromBeforeBRElementResult.Failed())) {
     NS_WARNING("WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary() failed");
     return Err(NS_ERROR_FAILURE);
@@ -180,8 +179,7 @@ nsresult HTMLEditor::AutoInsertLineBreakHandler::HandleInsertBRElement() {
 
   const WSScanResult forwardScanFromAfterBRElementResult =
       WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::EditableNodes, pointToPutCaret,
-          BlockInlineCheck::UseComputedDisplayStyle);
+          {WSRunScanner::Option::OnlyEditableNodes}, pointToPutCaret);
   if (MOZ_UNLIKELY(forwardScanFromAfterBRElementResult.Failed())) {
     NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
     return Err(NS_ERROR_FAILURE);
@@ -367,9 +365,7 @@ HTMLEditor::AutoInsertLineBreakHandler::InsertLinefeed(
   // boundary.  Note that it should always be <br> for avoiding padding line
   // breaks appear in `.textContent` value.
   if (pointToPutCaret.IsInContentNode() && pointToPutCaret.IsEndOfContainer()) {
-    const WSRunScanner scannerAtCaret(WSRunScanner::Scan::All, pointToPutCaret,
-                                      BlockInlineCheck::UseComputedDisplayStyle,
-                                      &aEditingHost);
+    const WSRunScanner scannerAtCaret({}, pointToPutCaret, &aEditingHost);
     const WSScanResult prevVisibleThing =
         scannerAtCaret.ScanPreviousVisibleNodeOrBlockBoundaryFrom(
             pointToPutCaret);

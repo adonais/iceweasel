@@ -9,7 +9,6 @@
 #include "jsapi.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SimpleGlobalObject.h"
 #include "mozilla/dom/StructuredCloneHolder.h"

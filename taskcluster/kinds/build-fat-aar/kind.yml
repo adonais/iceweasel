@@ -18,6 +18,7 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
+    run-on-repo-type: [hg]
     attributes:
         artifact_map: taskcluster/gecko_taskgraph/manifests/fennec_geckoview.yml
     index:

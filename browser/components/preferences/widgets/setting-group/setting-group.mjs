@@ -2,8 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html, ifDefined } from "chrome://global/content/vendor/lit.all.mjs";
-import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
+import { html } from "chrome://global/content/vendor/lit.all.mjs";
+import {
+  SettingElement,
+  spread,
+} from "chrome://browser/content/preferences/widgets/setting-element.mjs";
 
 /** @import { SettingControl } from "../setting-control/setting-control.mjs"; */
 /** @import {PreferencesSettingsConfig, Preferences} from "chrome://global/content/preferences/Preferences.mjs" */
@@ -17,7 +20,7 @@ const CLICK_HANDLERS = new Set([
   "moz-box-group",
 ]);
 
-export class SettingGroup extends MozLitElement {
+export class SettingGroup extends SettingElement {
   constructor() {
     super();
 
@@ -113,12 +116,12 @@ export class SettingGroup extends MozLitElement {
       return "";
     }
     return html`<moz-fieldset
-      data-l10n-id=${ifDefined(this.config.l10nId)}
       .headingLevel=${this.config.headingLevel}
-      .supportPage=${ifDefined(this.config.supportPage)}
       @change=${this.onChange}
+      @toggle=${this.onChange}
       @click=${this.onClick}
       @visibility-change=${this.handleVisibilityChange}
+      ${spread(this.getCommonPropertyMapping(this.config))}
       >${this.config.items.map(item => this.itemTemplate(item))}</moz-fieldset
     >`;
   }

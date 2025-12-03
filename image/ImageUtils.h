@@ -8,7 +8,6 @@
 
 #include "FrameTimeout.h"
 #include "mozilla/image/SurfaceFlags.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"

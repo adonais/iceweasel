@@ -116,7 +116,7 @@
 
 #UITourTooltipTitle {
   font-size: 1.45rem;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   margin: 0;
 }
 

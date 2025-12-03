@@ -177,14 +177,14 @@ void SharedWorkerOp::StartOnMainThread(RefPtr<RemoteWorkerChild>& aOwner) {
         mOpArgs.get_SharedWorkerAddWindowIDOpArgs().windowID());
     RefPtr<UpdateWindowIDRunnable> r = new UpdateWindowIDRunnable(
         mOpArgs.get_SharedWorkerAddWindowIDOpArgs().windowID(), true);
-    Unused << r->Dispatch(workerPrivate);
+    (void)r->Dispatch(workerPrivate);
   } else if (mOpArgs.type() ==
              SharedWorkerOpArgs::TSharedWorkerRemoveWindowIDOpArgs) {
     aOwner->mWindowIDs.RemoveElement(
         mOpArgs.get_SharedWorkerRemoveWindowIDOpArgs().windowID());
     RefPtr<UpdateWindowIDRunnable> r = new UpdateWindowIDRunnable(
         mOpArgs.get_SharedWorkerRemoveWindowIDOpArgs().windowID(), false);
-    Unused << r->Dispatch(workerPrivate);
+    (void)r->Dispatch(workerPrivate);
   } else {
     MOZ_CRASH("Unknown SharedWorkerOpArgs type!");
   }

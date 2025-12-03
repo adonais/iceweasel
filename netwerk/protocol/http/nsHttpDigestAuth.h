@@ -11,7 +11,6 @@
 #include "nsIHttpAuthenticator.h"
 #include "nsStringFwd.h"
 #include "nsCOMPtr.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/StaticPtr.h"
 
 namespace mozilla {

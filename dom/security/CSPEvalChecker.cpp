@@ -35,14 +35,12 @@ nsresult CheckInternal(nsIContentSecurityPolicy* aCSP,
   *aAllowed = false;
 
   // This is the non-CSP check for gating eval() use in the SystemPrincipal
-#if !defined(ANDROID)
   JSContext* cx = nsContentUtils::GetCurrentJSContext();
   if (!nsContentSecurityUtils::IsEvalAllowed(
           cx, aSubjectPrincipal->IsSystemPrincipal(), aExpression)) {
     *aAllowed = false;
     return NS_OK;
   }
-#endif
 
   if (!aCSP) {
     *aAllowed = true;

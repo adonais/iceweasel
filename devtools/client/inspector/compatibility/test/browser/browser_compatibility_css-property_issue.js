@@ -15,7 +15,7 @@ const TEST_URI = `
     color: blue;
     scrollbar-color: gold;
     user-modify: read-only;
-    object-view-box: inset(0% 19% -33% 57%);
+    background-repeat-x: repeat;
   }
   div {
     overflow-anchor: auto;
@@ -44,9 +44,10 @@ const TEST_DATA_SELECTED = [
   },
   {
     type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
-    property: "object-view-box",
-    // No MDN url but a spec one
-    specUrl: "https://drafts.csswg.org/css-images-5/#propdef-object-view-box",
+    property: "background-repeat-x",
+    // No MDN url, but a spec one
+    specUrl:
+      "https://drafts.csswg.org/css-backgrounds-4/#background-repeat-longhands",
     deprecated: false,
     experimental: true,
   },

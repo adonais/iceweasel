@@ -18,8 +18,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
-  UrlbarTokenizer:
-    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
+  UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
 });
 
 /**
@@ -101,9 +100,9 @@ export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
   /**
    * Starts querying.
    *
-   * @param {object} queryContext The query context object
-   * @param {Function} addCallback Callback invoked by the provider to add a new
-   *        result.
+   * @param {UrlbarQueryContext} queryContext
+   * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
+   *   Callback invoked by the provider to add a new result.
    */
   async startQuery(queryContext, addCallback) {
     if (!this._engines || !this._engines.length) {
@@ -177,7 +176,7 @@ export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
           // alias followed by a space. We enter search mode at that point.
           if (
             lowerCaseSearchString.startsWith(alias) &&
-            lazy.UrlbarTokenizer.REGEXP_SPACES_START.test(
+            lazy.UrlUtils.REGEXP_SPACES_START.test(
               lowerCaseSearchString.substring(alias.length)
             )
           ) {

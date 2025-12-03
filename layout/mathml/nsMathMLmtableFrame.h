@@ -7,7 +7,6 @@
 #ifndef nsMathMLmtableFrame_h___
 #define nsMathMLmtableFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "nsBlockFrame.h"
 #include "nsMathMLContainerFrame.h"

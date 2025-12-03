@@ -126,6 +126,7 @@ pub struct AdapterInformation<S> {
     driver_info: S,
     backend: wgt::Backend,
     support_use_shared_texture_in_swap_chain: bool,
+    transient_saves_memory: bool,
 }
 
 #[repr(C)]
@@ -226,6 +227,8 @@ pub enum QueueWriteDataSource {
     Shmem(usize),
 }
 
+const MAX_SWAPCHAIN_BUFFER_COUNT: usize = 10;
+
 #[derive(serde::Serialize, serde::Deserialize)]
 enum Message<'a> {
     RequestAdapter {
@@ -279,7 +282,7 @@ enum Message<'a> {
         width: i32,
         height: i32,
         format: SurfaceFormat,
-        buffer_ids: Cow<'a, [id::BufferId]>,
+        buffer_ids: [id::BufferId; MAX_SWAPCHAIN_BUFFER_COUNT],
         remote_texture_owner_id: RemoteTextureOwnerId,
         use_shared_texture_in_swap_chain: bool,
     },
@@ -447,6 +450,11 @@ enum ServerMessage<'a> {
     CreateShaderModuleResponse(id::ShaderModuleId, Vec<ShaderModuleCompilationMessage>),
     BufferMapResponse(id::BufferId, BufferMapResult<'a>),
     QueueOnSubmittedWorkDoneResponse(id::QueueId),
+
+    /// This message tells the client when we are done with swapchain readback buffers.
+    /// Freeing a swapchain buffer too early may result in an ID resolution panic or
+    /// an error submitting swapchain-related commands to the GPU.
+    FreeSwapChainBufferIds([id::BufferId; MAX_SWAPCHAIN_BUFFER_COUNT]),
 }
 
 #[repr(C)]

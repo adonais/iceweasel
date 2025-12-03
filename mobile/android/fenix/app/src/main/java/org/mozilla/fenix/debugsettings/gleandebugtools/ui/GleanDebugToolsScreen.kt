@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -227,7 +228,7 @@ private fun GleanDebugSectionTitle(
     Text(
         text = text,
         modifier = Modifier.padding(horizontal = FirefoxTheme.layout.space.dynamic400),
-        color = FirefoxTheme.colors.textAccent,
+        color = MaterialTheme.colorScheme.tertiary,
         style = FirefoxTheme.typography.subtitle1,
     )
 }

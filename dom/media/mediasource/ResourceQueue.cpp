@@ -11,7 +11,6 @@
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Sprintf.h"
-#include "mozilla/Unused.h"
 
 extern mozilla::LogModule* GetSourceBufferResourceLog();
 
@@ -159,7 +158,7 @@ void ResourceQueue::Dump(const char* aPath) {
     if (!fp) {
       return;
     }
-    Unused << fwrite(item->mData.Elements(), item->mData.Length(), 1, fp);
+    (void)fwrite(item->mData.Elements(), item->mData.Length(), 1, fp);
     fclose(fp);
   }
 }

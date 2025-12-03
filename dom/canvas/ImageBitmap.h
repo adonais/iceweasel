@@ -9,7 +9,6 @@
 
 #include "ImageData.h"
 #include "gfxTypes.h"  // for gfxAlphaType
-#include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/SurfaceFromElementResult.h"
 #include "mozilla/UniquePtr.h"

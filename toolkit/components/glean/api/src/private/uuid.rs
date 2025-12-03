@@ -143,7 +143,9 @@ impl glean::traits::Uuid for UuidMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<Uuid> for UuidMetric {
+impl glean::TestGetValue for UuidMetric {
+    type Output = Uuid;
+
     /// **Test-only API.**
     ///
     /// Get the stored UUID value.

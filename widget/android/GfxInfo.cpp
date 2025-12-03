@@ -136,11 +136,6 @@ GfxInfo::GfxInfo()
 
 GfxInfo::~GfxInfo() {}
 
-/* GetD2DEnabled and GetDwriteEnabled shouldn't be called until after
- * gfxPlatform initialization has occurred because they depend on it for
- * information. (See bug 591561) */
-nsresult GfxInfo::GetD2DEnabled(bool* aEnabled) { return NS_ERROR_FAILURE; }
-
 nsresult GfxInfo::GetDWriteEnabled(bool* aEnabled) { return NS_ERROR_FAILURE; }
 
 nsresult GfxInfo::GetHasBattery(bool* aHasBattery) {
@@ -431,80 +426,6 @@ nsresult GfxInfo::GetFeatureStatusImpl(
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
         aFailureId = "FEATURE_FAILURE_VILLE";
         return NS_OK;
-      }
-    }
-
-    if (aFeature == FEATURE_STAGEFRIGHT) {
-      NS_LossyConvertUTF16toASCII cManufacturer(mManufacturer);
-      NS_LossyConvertUTF16toASCII cModel(mModel);
-      NS_LossyConvertUTF16toASCII cHardware(mHardware);
-
-      if (cHardware.EqualsLiteral("antares") ||
-          cHardware.EqualsLiteral("harmony") ||
-          cHardware.EqualsLiteral("picasso") ||
-          cHardware.EqualsLiteral("picasso_e") ||
-          cHardware.EqualsLiteral("ventana") ||
-          cHardware.EqualsLiteral("rk30board")) {
-        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-        aFailureId = "FEATURE_FAILURE_STAGE_HW";
-        return NS_OK;
-      }
-
-      if (CompareVersions(mOSVersion.get(), "4.1.0") < 0) {
-        // Whitelist:
-        //   All Samsung ICS devices, except for:
-        //     Samsung SGH-I717 (Bug 845729)
-        //     Samsung SGH-I727 (Bug 845729)
-        //     Samsung SGH-I757 (Bug 845729)
-        //   All Galaxy nexus ICS devices
-        //   Sony Xperia Ion (LT28) ICS devices
-        bool isWhitelisted =
-            cModel.Equals("LT28h", nsCaseInsensitiveCStringComparator) ||
-            cManufacturer.Equals("samsung",
-                                 nsCaseInsensitiveCStringComparator) ||
-            cModel.Equals(
-                "galaxy nexus",
-                nsCaseInsensitiveCStringComparator);  // some Galaxy Nexus
-                                                      // have
-                                                      // manufacturer=amazon
-
-        if (cModel.LowerCaseFindASCII("sgh-i717") != -1 ||
-            cModel.LowerCaseFindASCII("sgh-i727") != -1 ||
-            cModel.LowerCaseFindASCII("sgh-i757") != -1) {
-          isWhitelisted = false;
-        }
-
-        if (!isWhitelisted) {
-          *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-          aFailureId = "FEATURE_FAILURE_4_1_HW";
-          return NS_OK;
-        }
-      } else if (CompareVersions(mOSVersion.get(), "4.2.0") < 0) {
-        // Whitelist:
-        //   All JB phones except for those in blocklist below
-        // Blocklist:
-        //   Samsung devices from bug 812881 and 853522.
-        //   Motorola XT890 from bug 882342.
-        bool isBlocklisted = cModel.LowerCaseFindASCII("gt-p3100") != -1 ||
-                             cModel.LowerCaseFindASCII("gt-p3110") != -1 ||
-                             cModel.LowerCaseFindASCII("gt-p3113") != -1 ||
-                             cModel.LowerCaseFindASCII("gt-p5100") != -1 ||
-                             cModel.LowerCaseFindASCII("gt-p5110") != -1 ||
-                             cModel.LowerCaseFindASCII("gt-p5113") != -1 ||
-                             cModel.LowerCaseFindASCII("xt890") != -1;
-
-        if (isBlocklisted) {
-          *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-          aFailureId = "FEATURE_FAILURE_4_2_HW";
-          return NS_OK;
-        }
-      } else if (CompareVersions(mOSVersion.get(), "4.3.0") < 0) {
-        // Blocklist all Sony devices
-        if (cManufacturer.LowerCaseFindASCII("sony") != -1) {
-          *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-          aFailureId = "FEATURE_FAILURE_4_3_SONY";
-          return NS_OK;
-        }
       }
     }
 

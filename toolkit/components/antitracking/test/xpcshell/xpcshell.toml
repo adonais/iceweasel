@@ -10,6 +10,7 @@ prefs = ["dom.security.https_first=false"] #Disable https-first because of expli
 skip-if = ["socketprocess_networking"] # Bug 1759035
 
 ["test_purge_trackers.js"]
+requesttimeoutfactor = 2  # Slow on Linux and Windows
 run-sequentially = ["os == 'mac'"] # frequent fail in parallel on Mac
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1760085

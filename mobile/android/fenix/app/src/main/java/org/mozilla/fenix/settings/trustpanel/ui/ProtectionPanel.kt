@@ -21,8 +21,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +50,7 @@ import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem.CheckableItem
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.text.value
+import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.MenuBadgeItem
 import org.mozilla.fenix.components.menu.compose.MenuGroup
@@ -71,11 +75,11 @@ private const val DROPDOWN_TEXT_WIDTH_FRACTION = 0.5f
 @Suppress("LongParameterList", "LongMethod")
 @Composable
 internal fun ProtectionPanel(
+    websiteInfoState: WebsiteInfoState,
     icon: Bitmap?,
     isTrackingProtectionEnabled: Boolean,
     isLocalPdf: Boolean,
     numberOfTrackersBlocked: Int,
-    websiteInfoState: WebsiteInfoState,
     websitePermissions: List<WebsitePermission>,
     onTrackerBlockedMenuClick: () -> Unit,
     onTrackingProtectionToggleClick: () -> Unit,
@@ -87,8 +91,8 @@ internal fun ProtectionPanel(
     MenuScaffold(
         header = {
             ProtectionPanelHeader(
-                icon = icon,
                 websiteInfoState = websiteInfoState,
+                icon = icon,
             )
         },
     ) {
@@ -191,7 +195,7 @@ internal fun ProtectionPanel(
                     onClick = { onPrivacySecuritySettingsClick() },
                 ),
             ),
-            linkTextColor = FirefoxTheme.colors.textAccent,
+            linkTextColor = MaterialTheme.colorScheme.tertiary,
             linkTextDecoration = TextDecoration.Underline,
         )
     }
@@ -202,7 +206,7 @@ private fun ProtectionPanelBanner(
     isSecured: Boolean,
     isTrackingProtectionEnabled: Boolean,
 ) {
-    var backgroundColor: Color = FirefoxTheme.colors.layer3
+    var backgroundColor: Color = MaterialTheme.colorScheme.surfaceDimVariant
     val imageId: Int
     val title: String
     val description: String
@@ -212,7 +216,7 @@ private fun ProtectionPanelBanner(
         title = stringResource(id = R.string.protection_panel_banner_not_secure_title)
         description = stringResource(id = R.string.protection_panel_banner_not_secure_description)
     } else if (!isTrackingProtectionEnabled) {
-        backgroundColor = FirefoxTheme.colors.layerSearch
+        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
         imageId = R.drawable.protection_panel_not_protected
         title = stringResource(id = R.string.protection_panel_banner_not_protected_title)
         description = stringResource(
@@ -251,17 +255,17 @@ private fun ProtectionPanelBanner(
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
-                    text = title,
-                    color = FirefoxTheme.colors.textPrimary,
-                    style = FirefoxTheme.typography.headline7,
-                )
+                CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+                    Text(
+                        text = title,
+                        style = FirefoxTheme.typography.headline7,
+                    )
 
-                Text(
-                    text = description,
-                    color = FirefoxTheme.colors.textPrimary,
-                    style = FirefoxTheme.typography.body2,
-                )
+                    Text(
+                        text = description,
+                        style = FirefoxTheme.typography.body2,
+                    )
+                }
             }
         }
     }
@@ -275,12 +279,13 @@ private fun WebsitePermissionsMenuGroup(
 ) {
     Column {
         Row(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             Text(
                 text = stringResource(id = R.string.protection_panel_permissions_title),
-                color = FirefoxTheme.colors.textAccent,
+                color = MaterialTheme.colorScheme.tertiary,
                 style = FirefoxTheme.typography.headline8,
             )
         }
@@ -346,7 +351,7 @@ private fun WebsitePermissionToggle(
         Text(
             text = toggleLabel,
             modifier = Modifier.fillMaxWidth(DROPDOWN_TEXT_WIDTH_FRACTION),
-            color = FirefoxTheme.colors.textAccent,
+            color = MaterialTheme.colorScheme.tertiary,
             textAlign = TextAlign.End,
             maxLines = 2,
             style = FirefoxTheme.typography.body1,
@@ -384,7 +389,7 @@ private fun AutoplayDropdownMenu(
             Text(
                 text = placeholderText,
                 modifier = Modifier.fillMaxWidth(DROPDOWN_TEXT_WIDTH_FRACTION),
-                color = FirefoxTheme.colors.textAccent,
+                color = MaterialTheme.colorScheme.tertiary,
                 textAlign = TextAlign.End,
                 maxLines = 2,
                 style = FirefoxTheme.typography.body1,
@@ -396,7 +401,7 @@ private fun AutoplayDropdownMenu(
                 Icon(
                     painter = painterResource(id = iconsR.drawable.mozac_ic_dropdown_arrow),
                     contentDescription = null,
-                    tint = FirefoxTheme.colors.iconAccentViolet,
+                    tint = MaterialTheme.colorScheme.tertiary,
                 )
 
                 if (expanded) {
@@ -423,16 +428,16 @@ private fun ProtectionPanelPreview() {
     FirefoxTheme {
         Column(
             modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer1),
+                .background(color = MaterialTheme.colorScheme.surface),
         ) {
             ProtectionPanel(
-                icon = null,
                 websiteInfoState = WebsiteInfoState(
                     isSecured = true,
                     websiteUrl = "https://www.mozilla.org",
                     websiteTitle = "Mozilla",
                     certificateName = "",
                 ),
+                icon = null,
                 isTrackingProtectionEnabled = true,
                 isLocalPdf = false,
                 numberOfTrackersBlocked = 5,

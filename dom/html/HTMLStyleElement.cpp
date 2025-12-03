@@ -93,7 +93,7 @@ void HTMLStyleElement::ContentWillBeRemoved(nsIContent* aChild,
 void HTMLStyleElement::ContentChanged(nsIContent* aContent) {
   mTriggeringPrincipal = nullptr;
   if (nsContentUtils::IsInSameAnonymousTree(this, aContent)) {
-    Unused << UpdateStyleSheetInternal(nullptr, nullptr);
+    (void)UpdateStyleSheetInternal(nullptr, nullptr);
   }
 }
 
@@ -110,7 +110,7 @@ void HTMLStyleElement::UnbindFromTree(UnbindContext& aContext) {
 
   nsGenericHTMLElement::UnbindFromTree(aContext);
 
-  Unused << UpdateStyleSheetInternal(oldDoc, oldShadow);
+  (void)UpdateStyleSheetInternal(oldDoc, oldShadow);
 }
 
 bool HTMLStyleElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
@@ -135,7 +135,7 @@ void HTMLStyleElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   if (aNameSpaceID == kNameSpaceID_None) {
     if (aName == nsGkAtoms::title || aName == nsGkAtoms::media ||
         aName == nsGkAtoms::type) {
-      Unused << UpdateStyleSheetInternal(nullptr, nullptr, ForceUpdate::Yes);
+      (void)UpdateStyleSheetInternal(nullptr, nullptr, ForceUpdate::Yes);
     }
   }
 
@@ -177,7 +177,7 @@ void HTMLStyleElement::SetTextContentInternal(const nsAString& aTextContent,
   aError = nsContentUtils::SetNodeTextContent(this, aTextContent, true);
   if (updatesWereEnabled) {
     mTriggeringPrincipal = aScriptedPrincipal;
-    Unused << EnableUpdatesAndUpdateStyleSheet(nullptr);
+    (void)EnableUpdatesAndUpdateStyleSheet(nullptr);
   }
 }
 

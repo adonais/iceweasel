@@ -9,7 +9,6 @@
 #include <functional>
 
 #include "js/TracingAPI.h"
-#include "mozilla/Attributes.h"
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"

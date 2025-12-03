@@ -32,7 +32,6 @@
 #include <algorithm>
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Unused.h"
 
 namespace logging {
 
@@ -107,7 +106,7 @@ Win32ErrorLogMessage::Win32ErrorLogMessage(const char* file, int line,
                                            LogSeverity severity,
                                            SystemErrorCode err)
     : LogMessage(file, line, severity), err_(err) {
-  mozilla::Unused << err_;
+  (void)err_;
 }
 
 Win32ErrorLogMessage::~Win32ErrorLogMessage() {}
@@ -117,7 +116,7 @@ ErrnoLogMessage::ErrnoLogMessage(const char* file,
                                  LogSeverity severity,
                                  SystemErrorCode err)
     : LogMessage(file, line, severity), err_(err) {
-  mozilla::Unused << err_;
+  (void)err_;
 }
 
 ErrnoLogMessage::~ErrnoLogMessage() {

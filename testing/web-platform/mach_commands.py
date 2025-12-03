@@ -349,6 +349,7 @@ class WebPlatformTestsTestPathsRunner(MozbuildObject):
         )
         import logging
 
+        import localpaths  # noqa: F401
         import manifestupdate
         from manifest import testpaths
         from wptrunner import wptcommandline
@@ -372,15 +373,11 @@ class WebPlatformTestsTestPathsRunner(MozbuildObject):
         )
         results = {}
         for url_base, paths in test_paths.items():
-            if "manifest_path" not in paths:
-                paths["manifest_path"] = os.path.join(
-                    paths["metadata_path"], "MANIFEST.json"
-                )
             results.update(
                 testpaths.get_paths(
-                    path=paths["manifest_path"],
+                    path=paths.manifest_path,
                     src_root=src_root,
-                    tests_root=paths["tests_path"],
+                    tests_root=paths.tests_path,
                     update=kwargs["update"],
                     rebuild=kwargs["rebuild"],
                     url_base=url_base,

@@ -13,7 +13,6 @@
 #include "nsHashKeys.h"
 #include "nsMaybeWeakPtr.h"
 #include "nsSimpleEnumerator.h"
-#include "mozilla/Attributes.h"
 
 class nsObserverList : public nsCharPtrHashKey {
   friend class nsObserverService;

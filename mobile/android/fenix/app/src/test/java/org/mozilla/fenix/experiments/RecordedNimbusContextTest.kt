@@ -11,6 +11,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
@@ -21,6 +22,7 @@ import org.junit.runner.RunWith
 import org.mozilla.experiments.nimbus.internal.validateEventQueries
 import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.helpers.FenixGleanTestRule
+import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 import org.mozilla.fenix.GleanMetrics.NimbusSystem as GleanNimbus
 
@@ -71,8 +73,8 @@ class RecordedNimbusContextTest {
                 put("device_model", Build.MODEL)
                 put("user_accepted_tou", true)
                 put("no_shortcuts_or_stories_opt_outs", true)
-                put("user_clicked_tou_prompt_link", true)
-                put("user_clicked_tou_prompt_remind_me_later", true)
+                putJsonArray("addon_ids") {}
+                put("tou_points", 3)
             },
             contextAsJson,
         )
@@ -97,28 +99,27 @@ class RecordedNimbusContextTest {
         assertNotNull(recordedValue)
         assertEquals(
             buildJsonObject {
-                put("androidSdkVersion", Build.VERSION.SDK_INT.toString())
-                put("appVersion", "")
-                put("daysSinceInstall", 5)
-                put("daysSinceUpdate", 0)
-                put("deviceManufacturer", Build.MANUFACTURER)
-                put("deviceModel", Build.MODEL)
-                putJsonObject("eventQueryValues") {
-                    put("daysOpenedInLast28", 1)
+                put("android_sdk_version", Build.VERSION.SDK_INT.toString())
+                put("app_version", "")
+                put("days_since_install", 5)
+                put("days_since_update", 0)
+                put("device_manufacturer", Build.MANUFACTURER)
+                put("device_model", Build.MODEL)
+                putJsonObject("event_query_values") {
+                    put("days_opened_in_last_28", 1)
                 }
-                put("installReferrerResponseUtmSource", "")
-                put("installReferrerResponseUtmMedium", "")
-                put("installReferrerResponseUtmCampaign", "")
-                put("installReferrerResponseUtmTerm", "")
-                put("installReferrerResponseUtmContent", "")
-                put("isFirstRun", false)
+                put("install_referrer_response_utm_source", "")
+                put("install_referrer_response_utm_medium", "")
+                put("install_referrer_response_utm_campaign", "")
+                put("install_referrer_response_utm_term", "")
+                put("install_referrer_response_utm_content", "")
+                put("is_first_run", false)
                 put("language", "en")
                 put("locale", "")
                 put("region", "US")
-                put("userAcceptedTou", true)
-                put("noShortcutsOrStoriesOptOuts", true)
-                put("userClickedTouPromptLink", true)
-                put("userClickedTouPromptRemindMeLater", true)
+                put("user_accepted_tou", true)
+                put("no_shortcuts_or_stories_opt_outs", true)
+                put("tou_points", 3)
             },
             recordedValue?.jsonObject,
         )
@@ -147,5 +148,29 @@ class RecordedNimbusContextTest {
         context.setEventQueryValues(mapOf("TEST" to 1.0))
 
         assertEquals(1.0, context.toJson().getJSONObject("events").get("TEST"))
+    }
+
+    @Test
+    fun `WHEN addonIds has values THEN the json object should reflect those values`() {
+        val context = RecordedNimbusContext.createForTest(
+            addonIds = listOf(
+                "addon@example.com",
+                "d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d",
+            ),
+        )
+
+        assertEquals("addon@example.com", context.toJson().getJSONArray("addon_ids")[0])
+        assertEquals("d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d", context.toJson().getJSONArray("addon_ids")[1])
+    }
+
+    @Test
+    fun `WHEN we fetch stored addon IDs THEN a list is returned`() {
+        val settings = Settings(testContext)
+        settings.installedAddonsList = "addon@example.com,d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d"
+
+        val addons = RecordedNimbusContext.getFormattedAddons(settings)
+
+        assertEquals("addon@example.com", addons[0])
+        assertEquals("d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d", addons[1])
     }
 }

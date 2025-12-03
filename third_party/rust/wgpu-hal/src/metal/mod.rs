@@ -156,9 +156,11 @@ impl crate::Instance for Instance {
                         vendor: 0,
                         device: 0,
                         device_type: shared.private_caps.device_type(),
+                        device_pci_bus_id: String::new(),
                         driver: String::new(),
                         driver_info: String::new(),
                         backend: wgt::Backend::Metal,
+                        transient_saves_memory: shared.private_caps.supports_memoryless_storage,
                     },
                     features: shared.private_caps.features(),
                     capabilities: shared.private_caps.capabilities(),
@@ -300,6 +302,7 @@ struct PrivateCapabilities {
     int64_atomics: bool,
     float_atomics: bool,
     supports_shared_event: bool,
+    supports_memoryless_storage: bool,
 }
 
 #[derive(Clone, Debug)]

@@ -11,6 +11,8 @@ support-files = [
   "xpcshell-content.toml",
 ]
 tags = "webextensions remote-webextensions"
+# Extension tests frequently take more than the default 30s timeout
+requesttimeoutfactor = 2
 
 # Make sure that loading the default settings for url-classifier-skip-urls
 # doesn't interfere with running our tests while IDB operations are in
@@ -38,7 +40,12 @@ skip-if = ["os == 'android' && processor == 'x86_64'"]
 support-files = ["!/netwerk/test/unit/proxy-ca.pem", "!/netwerk/test/unit/http2-ca.pem"]
 skip-if = [
   "msix", # H3 server not working on msix
-  "os == 'android' && !fission",
+  "os == 'android'", # bug 1992996
+  # Setting dontfragment socket option on MacOS 10.15 fails with -5987. Without
+  # dontfragment, PMTUD needs to be disabled. Without PMTUD, the HTTP/3 proxy
+  # outer connection can not carry the UDP datagrams of the HTTP/3 proxied inner
+  # connection. Disable test on MacOS 10.15.
+  "os == 'mac' && os_version == '10.15'",
 ]
 
 ["test_extension_process_alive.js"]

@@ -403,7 +403,7 @@ newtab-wallpaper-abstract-purple-green = Gradiente de luz roxo e verde
 newtab-wallpaper-abstract-blue-purple-waves = Formas onduladas em azul e roxo
 newtab-wallpaper-abstract-black-waves = Formas onduladas pretas
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotos
 newtab-wallpaper-beach-at-sunrise = Praia ao ao nascer do sol
@@ -432,6 +432,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -474,8 +478,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Mudar para Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Mudar para Celsius
 newtab-weather-menu-hide-weather = Ocultar tempo em nova aba
 newtab-weather-menu-learn-more = Saiba mais
+newtab-weather-menu-detect-my-location = Detectar minha localização
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Dados sobre o tempo não estão disponíveis no momento.
+newtab-weather-opt-in-see-weather = Quer ver a previsão do tempo na sua localização?
+newtab-weather-opt-in-not-now =
+    .label = Agora não
+newtab-weather-opt-in-yes =
+    .label = Sim
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = Cidade de Nova York
 
 ## Topic Labels
 
@@ -664,10 +676,6 @@ newtab-widget-timer-mode-focus =
     .label = Foco
 newtab-widget-timer-mode-break =
     .label = Intervalo
-newtab-widget-timer-play =
-    .title = Iniciar
-newtab-widget-timer-pause =
-    .title = Pausar
 newtab-widget-timer-label-play =
     .label = Iniciar
 newtab-widget-timer-label-pause =

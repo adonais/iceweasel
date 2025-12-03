@@ -4426,9 +4426,9 @@ CodeOffset MacroAssembler::call(wasm::SymbolicAddress imm) {
   return call(CallReg);
 }
 
-void MacroAssembler::call(const Address& addr) {
+CodeOffset MacroAssembler::call(const Address& addr) {
   loadPtr(addr, CallReg);
-  call(CallReg);
+  return call(CallReg);
 }
 
 void MacroAssembler::call(JitCode* c) {
@@ -6004,18 +6004,15 @@ extern MOZ_EXPORT int64_t __aeabi_idivmod(int, int);
 extern MOZ_EXPORT int64_t __aeabi_uidivmod(int, int);
 }
 
-inline void EmitRemainderOrQuotient(bool isRemainder, MacroAssembler& masm,
-                                    Register rhs, Register lhsOutput,
+static void EmitRemainderOrQuotient(bool isRemainder, MacroAssembler& masm,
+                                    Register lhs, Register rhs, Register output,
                                     bool isUnsigned,
                                     const LiveRegisterSet& volatileLiveRegs) {
-  // Currently this helper can't handle this situation.
-  MOZ_ASSERT(lhsOutput != rhs);
-
   if (ARMFlags::HasIDIV()) {
     if (isRemainder) {
-      masm.remainder32(rhs, lhsOutput, isUnsigned);
+      masm.remainder32(lhs, rhs, output, isUnsigned);
     } else {
-      masm.quotient32(rhs, lhsOutput, isUnsigned);
+      masm.quotient32(lhs, rhs, output, isUnsigned);
     }
   } else {
     // Ensure that the output registers are saved and restored properly.
@@ -6030,7 +6027,7 @@ inline void EmitRemainderOrQuotient(bool isRemainder, MacroAssembler& masm,
       ScratchRegisterScope scratch(masm);
       masm.setupUnalignedABICall(scratch);
     }
-    masm.passABIArg(lhsOutput);
+    masm.passABIArg(lhs);
     masm.passABIArg(rhs);
     if (isUnsigned) {
       masm.callWithABI<Fn, __aeabi_uidivmod>(
@@ -6040,53 +6037,57 @@ inline void EmitRemainderOrQuotient(bool isRemainder, MacroAssembler& masm,
           ABIType::Int64, CheckUnsafeCallWithABI::DontCheckOther);
     }
     if (isRemainder) {
-      masm.mov(ReturnRegVal1, lhsOutput);
+      masm.mov(ReturnRegVal1, output);
     } else {
-      masm.mov(ReturnRegVal0, lhsOutput);
+      masm.mov(ReturnRegVal0, output);
     }
 
     LiveRegisterSet ignore;
-    ignore.add(lhsOutput);
+    ignore.add(output);
     masm.PopRegsInMaskIgnore(liveRegs, ignore);
   }
 }
 
 void MacroAssembler::flexibleQuotient32(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
-  EmitRemainderOrQuotient(false, *this, rhs, srcDest, isUnsigned,
+  EmitRemainderOrQuotient(false, *this, lhs, rhs, dest, isUnsigned,
                           volatileLiveRegs);
 }
 
 void MacroAssembler::flexibleQuotientPtr(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
-  flexibleQuotient32(rhs, srcDest, isUnsigned, volatileLiveRegs);
+  flexibleQuotient32(lhs, rhs, dest, isUnsigned, volatileLiveRegs);
 }
 
 void MacroAssembler::flexibleRemainder32(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
-  EmitRemainderOrQuotient(true, *this, rhs, srcDest, isUnsigned,
+  EmitRemainderOrQuotient(true, *this, lhs, rhs, dest, isUnsigned,
                           volatileLiveRegs);
 }
 
 void MacroAssembler::flexibleRemainderPtr(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
-  flexibleRemainder32(rhs, srcDest, isUnsigned, volatileLiveRegs);
+  flexibleRemainder32(lhs, rhs, dest, isUnsigned, volatileLiveRegs);
 }
 
-void MacroAssembler::flexibleDivMod32(Register rhs, Register lhsOutput,
-                                      Register remOutput, bool isUnsigned,
+void MacroAssembler::flexibleDivMod32(Register lhs, Register rhs,
+                                      Register divOutput, Register remOutput,
+                                      bool isUnsigned,
                                       const LiveRegisterSet& volatileLiveRegs) {
-  // Currently this helper can't handle this situation.
-  MOZ_ASSERT(lhsOutput != rhs);
+  MOZ_ASSERT(lhs != divOutput && lhs != remOutput, "lhs is preserved");
+  MOZ_ASSERT(rhs != divOutput && rhs != remOutput, "rhs is preserved");
 
   if (ARMFlags::HasIDIV()) {
-    mov(lhsOutput, remOutput);
-    remainder32(rhs, remOutput, isUnsigned);
-    quotient32(rhs, lhsOutput, isUnsigned);
+    if (isUnsigned) {
+      as_udiv(divOutput, lhs, rhs);
+    } else {
+      as_sdiv(divOutput, lhs, rhs);
+    }
+    as_mls(remOutput, lhs, divOutput, rhs);
   } else {
     // Ensure that the output registers are saved and restored properly.
     LiveRegisterSet liveRegs = volatileLiveRegs;
@@ -6100,7 +6101,7 @@ void MacroAssembler::flexibleDivMod32(Register rhs, Register lhsOutput,
       ScratchRegisterScope scratch(*this);
       setupUnalignedABICall(scratch);
     }
-    passABIArg(lhsOutput);
+    passABIArg(lhs);
     passABIArg(rhs);
     if (isUnsigned) {
       callWithABI<Fn, __aeabi_uidivmod>(ABIType::Int64,
@@ -6109,11 +6110,11 @@ void MacroAssembler::flexibleDivMod32(Register rhs, Register lhsOutput,
       callWithABI<Fn, __aeabi_idivmod>(ABIType::Int64,
                                        CheckUnsafeCallWithABI::DontCheckOther);
     }
-    moveRegPair(ReturnRegVal0, ReturnRegVal1, lhsOutput, remOutput);
+    moveRegPair(ReturnRegVal0, ReturnRegVal1, divOutput, remOutput);
 
     LiveRegisterSet ignore;
     ignore.add(remOutput);
-    ignore.add(lhsOutput);
+    ignore.add(divOutput);
     PopRegsInMaskIgnore(liveRegs, ignore);
   }
 }
@@ -6188,7 +6189,33 @@ void MacroAssembler::nearbyIntFloat32(RoundingMode mode, FloatRegister src,
 
 void MacroAssembler::copySignDouble(FloatRegister lhs, FloatRegister rhs,
                                     FloatRegister output) {
-  MOZ_CRASH("not supported on this platform");
+  ScratchRegisterScope scratch(*this);
+
+  // Transfer top word of |rhs| into GPR.
+  as_vxfer(scratch, InvalidReg, rhs, Assembler::FloatToCore, Assembler::Always,
+           1);
+
+  // Move |lhs| with sign-bit cleared into |output|.
+  ma_vabs(lhs, output);
+
+  // Negate |output| if sign bit of |rhs| is set.
+  as_cmp(scratch, Imm8(0));
+  ma_vneg(output, output, Assembler::LessThan);
+}
+
+void MacroAssembler::copySignFloat32(FloatRegister lhs, FloatRegister rhs,
+                                     FloatRegister output) {
+  ScratchRegisterScope scratch(*this);
+
+  // Transfer |rhs| into GPR.
+  ma_vxfer(rhs, scratch);
+
+  // Move |lhs| with sign-bit cleared into |output|.
+  ma_vabs_f32(lhs, output);
+
+  // Negate |output| if sign bit of |rhs| is set.
+  as_cmp(scratch, Imm8(0));
+  ma_vneg_f32(output, output, Assembler::LessThan);
 }
 
 void MacroAssembler::shiftIndex32AndAdd(Register indexTemp32, int shift,

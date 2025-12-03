@@ -8,7 +8,6 @@ package org.mozilla.geckoview;
 
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.os.Build;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
@@ -18,7 +17,6 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
 import androidx.collection.ArrayMap;
 import java.lang.annotation.Retention;
@@ -466,7 +464,6 @@ public class Autofill {
      * @param structure The view structure to fill
      * @param flags The autofill flags
      */
-    @RequiresApi(Build.VERSION_CODES.M)
     @UiThread
     public void fillViewStructure(
         @NonNull final View view, @NonNull final ViewStructure structure, final int flags) {
@@ -482,7 +479,6 @@ public class Autofill {
      * @param structure The view structure to fill
      * @param flags The autofill flags
      */
-    @RequiresApi(Build.VERSION_CODES.M)
     @UiThread
     public void fillViewStructure(
         final @NonNull Node node,
@@ -500,25 +496,21 @@ public class Autofill {
         return;
       }
 
-      if (Build.VERSION.SDK_INT >= 26) {
-        structure.setAutofillId(view.getAutofillId(), data.id);
-        structure.setWebDomain(node.getDomain());
-        structure.setAutofillValue(AutofillValue.forText(data.value));
-      }
+      structure.setAutofillId(view.getAutofillId(), data.id);
+      structure.setWebDomain(node.getDomain());
+      structure.setAutofillValue(AutofillValue.forText(data.value));
 
       structure.setId(data.id, null, null, null);
       // This dimensions doesn't seem to used for autofill service.
       structure.setDimens(0, 0, 0, 0, node.getDimensions().width(), node.getDimensions().height());
 
-      if (Build.VERSION.SDK_INT >= 26) {
-        final ViewStructure.HtmlInfo.Builder htmlBuilder =
-            structure.newHtmlInfoBuilder(node.getTag());
-        for (final String key : node.getAttributes().keySet()) {
-          htmlBuilder.addAttribute(key, String.valueOf(node.getAttribute(key)));
-        }
-
-        structure.setHtmlInfo(htmlBuilder.build());
+      final ViewStructure.HtmlInfo.Builder htmlBuilder =
+          structure.newHtmlInfoBuilder(node.getTag());
+      for (final String key : node.getAttributes().keySet()) {
+        htmlBuilder.addAttribute(key, String.valueOf(node.getAttribute(key)));
       }
+
+      structure.setHtmlInfo(htmlBuilder.build());
 
       structure.setChildCount(node.getChildren().size());
       int childCount = 0;
@@ -537,10 +529,7 @@ public class Autofill {
           structure.setFocusable(node.getFocusable());
           structure.setFocused(node.equals(getFocused()));
           structure.setVisibility(isVisible(node) ? View.VISIBLE : View.INVISIBLE);
-
-          if (Build.VERSION.SDK_INT >= 26) {
-            structure.setAutofillType(View.AUTOFILL_TYPE_TEXT);
-          }
+          structure.setAutofillType(View.AUTOFILL_TYPE_TEXT);
           break;
         default:
           if (childCount > 0) {
@@ -551,7 +540,7 @@ public class Autofill {
           break;
       }
 
-      if (Build.VERSION.SDK_INT < 26 || !"input".equals(node.getTag())) {
+      if (!"input".equals(node.getTag())) {
         return;
       }
       // LastPass will fill password to the field where setAutofillHints

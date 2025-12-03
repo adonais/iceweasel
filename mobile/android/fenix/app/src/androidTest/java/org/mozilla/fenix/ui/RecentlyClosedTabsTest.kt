@@ -43,7 +43,7 @@ class RecentlyClosedTabsTest : TestSetup() {
     @Test
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1956220"])
     fun openRecentlyClosedItemTest() {
-        val website = getGenericAsset(mockWebServer, 1)
+        val website = mockWebServer.getGenericAsset(1)
 
         homeScreen {
         }.openNavigationToolbar {
@@ -75,7 +75,7 @@ class RecentlyClosedTabsTest : TestSetup() {
     @Test
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1956220"])
     fun deleteRecentlyClosedTabsItemTest() {
-        val website = getGenericAsset(mockWebServer, 1)
+        val website = mockWebServer.getGenericAsset(1)
 
         homeScreen {
         }.openNavigationToolbar {
@@ -103,8 +103,8 @@ class RecentlyClosedTabsTest : TestSetup() {
     @Ignore("disabled - https://bugzilla.mozilla.org/show_bug.cgi?id=1989405")
     @Test
     fun openMultipleRecentlyClosedTabsTest() {
-        val firstPage = getGenericAsset(mockWebServer, 1)
-        val secondPage = getGenericAsset(mockWebServer, 2)
+        val firstPage = mockWebServer.getGenericAsset(1)
+        val secondPage = mockWebServer.getGenericAsset(2)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(firstPage.url) {
@@ -139,8 +139,8 @@ class RecentlyClosedTabsTest : TestSetup() {
     @Ignore("disabled - https://bugzilla.mozilla.org/show_bug.cgi?id=1989405")
     @Test
     fun openRecentlyClosedTabsInPrivateBrowsingTest() {
-        val firstPage = getGenericAsset(mockWebServer, 1)
-        val secondPage = getGenericAsset(mockWebServer, 2)
+        val firstPage = mockWebServer.getGenericAsset(1)
+        val secondPage = mockWebServer.getGenericAsset(2)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(firstPage.url) {
@@ -176,8 +176,8 @@ class RecentlyClosedTabsTest : TestSetup() {
     @Test
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1956220"])
     fun shareMultipleRecentlyClosedTabsTest() {
-        val firstPage = getGenericAsset(mockWebServer, 1)
-        val secondPage = getGenericAsset(mockWebServer, 2)
+        val firstPage = mockWebServer.getGenericAsset(1)
+        val secondPage = mockWebServer.getGenericAsset(2)
         val sharingApp = "Gmail"
         val urlString = "${firstPage.url}\n\n${secondPage.url}"
 
@@ -208,8 +208,8 @@ class RecentlyClosedTabsTest : TestSetup() {
     @Test
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1956220"])
     fun closedPrivateTabsAreNotSavedInRecentlyClosedTabsTest() {
-        val firstPage = getGenericAsset(mockWebServer, 1)
-        val secondPage = getGenericAsset(mockWebServer, 2)
+        val firstPage = mockWebServer.getGenericAsset(1)
+        val secondPage = mockWebServer.getGenericAsset(2)
 
         homeScreen {}.togglePrivateBrowsingMode()
         navigationToolbar {
@@ -234,8 +234,8 @@ class RecentlyClosedTabsTest : TestSetup() {
     @Test
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1956220"])
     fun deletingBrowserHistoryClearsRecentlyClosedTabsListTest() {
-        val firstPage = getGenericAsset(mockWebServer, 1)
-        val secondPage = getGenericAsset(mockWebServer, 2)
+        val firstPage = mockWebServer.getGenericAsset(1)
+        val secondPage = mockWebServer.getGenericAsset(2)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(firstPage.url) {

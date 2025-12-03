@@ -30,7 +30,6 @@
 #include "sslproto.h"
 #include "plhash.h"
 #include "mozilla/Sprintf.h"
-#include "mozilla/Unused.h"
 
 using namespace mozilla;
 using namespace mozilla::psm;
@@ -402,7 +401,7 @@ bool ConfigureSSLServerSocket(PRFileDesc* socket, server_info_t* si,
       LOG_ERROR(("Failed to add issuer to issuerList\n"));
       return false;
     }
-    Unused << issuer.release();  // Ownership transferred to issuerList.
+    (void)issuer.release();  // Ownership transferred to issuerList.
     if (SSL_SetTrustAnchors(ssl_socket, issuerList.get()) != SECSuccess) {
       LOG_ERROR(
           ("Failed to set certificate_authorities list for client "

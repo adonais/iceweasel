@@ -82,6 +82,13 @@ export class UrlbarProviderRecentSearches extends UrlbarProvider {
     }
   }
 
+  /**
+   * Starts querying.
+   *
+   * @param {UrlbarQueryContext} queryContext
+   * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
+   *   Callback invoked by the provider to add a new result.
+   */
   async startQuery(queryContext, addCallback) {
     let engine = lazy.UrlbarSearchUtils.getDefaultEngine(
       queryContext.isPrivate

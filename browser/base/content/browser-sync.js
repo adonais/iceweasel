@@ -2418,7 +2418,8 @@ var gSync = {
     }
   },
 
-  /** Checks if the current list of attached clients to the Mozilla account
+  /**
+   * Checks if the current list of attached clients to the Mozilla account
    * has a service associated with the passed in Id
    *  @param {string} clientId
    *   A known static Id from FxA that identifies the service it's associated with

@@ -9,7 +9,6 @@
 
 #  include "MediaDataDemuxer.h"
 #  include "MediaResource.h"
-#  include "mozilla/Maybe.h"
 #  include "mozilla/Monitor.h"
 
 namespace mozilla {

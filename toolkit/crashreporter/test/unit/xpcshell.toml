@@ -61,6 +61,13 @@ reason = "Test covering Linux-specific PSI (Pressure Stall Information) annotati
 run-if = ["os == 'linux'"]
 reason = "Still broken on macOS and not yet supported on Windows"
 
+["test_crash_stl.js"]
+skip-if = [
+  "os == 'win'",
+  "os != 'mac' && !debug"
+]
+reason = "STL hardening is only enabled on non-Windows debug builds and MacOS"
+
 ["test_crash_terminator.js"]
 
 ["test_crash_uncaught_exception.js"]

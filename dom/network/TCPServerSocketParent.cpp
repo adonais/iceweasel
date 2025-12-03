@@ -9,7 +9,6 @@
 #include "TCPServerSocket.h"
 #include "TCPSocket.h"
 #include "TCPSocketParent.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/TCPServerSocketEvent.h"
 #include "nsJSUtils.h"
@@ -75,8 +74,7 @@ nsresult TCPServerSocketParent::SendCallbackAccept(TCPSocketParent* socket) {
       // successfully, otherwise |socket| could be leaked.
       socket->AddIPDLReference();
 
-      mozilla::Unused << PTCPServerSocketParent::SendCallbackAccept(
-          WrapNotNull(socket));
+      (void)PTCPServerSocketParent::SendCallbackAccept(WrapNotNull(socket));
     } else {
       NS_ERROR("Sending data from PTCPSocketParent was failed.");
     }
@@ -101,7 +99,7 @@ void TCPServerSocketParent::ActorDestroy(ActorDestroyReason why) {
 }
 
 mozilla::ipc::IPCResult TCPServerSocketParent::RecvRequestDelete() {
-  mozilla::Unused << Send__delete__(this);
+  (void)Send__delete__(this);
   return IPC_OK();
 }
 

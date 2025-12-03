@@ -94,6 +94,7 @@ export class DateTimePickerParent extends JSWindowActorParent {
       }
     }
 
+    this._cleanupPicker();
     let doc = window.document;
     let panel = doc.getElementById("DateTimePickerPanel");
     if (!panel) {
@@ -116,34 +117,16 @@ export class DateTimePickerParent extends JSWindowActorParent {
     this._oldFocus = doc.activeElement;
     this._picker = new lazy.DateTimePickerPanel(panel);
     this._picker.openPicker(type, rect, detail);
-    this.addPickerListeners();
-  }
-
-  // Close the picker and do some cleanup.
-  close() {
-    this._picker.closePicker();
-    // Restore focus to where it was before the picker opened.
-    this._oldFocus?.focus();
-    this._oldFocus = null;
-    this.removePickerListeners();
-    this._picker = null;
-  }
-
-  // Listen to picker's event.
-  addPickerListeners() {
-    if (!this._picker) {
-      return;
-    }
     this._picker.element.addEventListener("popuphidden", this);
     this._picker.element.addEventListener("DateTimePickerValueChanged", this);
     this._picker.element.addEventListener("DateTimePickerValueCleared", this);
   }
 
-  // Stop listening to picker's event.
-  removePickerListeners() {
+  _cleanupPicker() {
     if (!this._picker) {
       return;
     }
+    this._picker.closePicker();
     this._picker.element.removeEventListener("popuphidden", this);
     this._picker.element.removeEventListener(
       "DateTimePickerValueChanged",
@@ -153,5 +136,14 @@ export class DateTimePickerParent extends JSWindowActorParent {
       "DateTimePickerValueCleared",
       this
     );
+    this._picker = null;
+  }
+
+  // Close the picker and do some cleanup.
+  close() {
+    this._cleanupPicker();
+    // Restore focus to where it was before the picker opened.
+    this._oldFocus?.focus();
+    this._oldFocus = null;
   }
 }

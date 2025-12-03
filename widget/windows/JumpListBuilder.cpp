@@ -502,7 +502,7 @@ void JumpListBuilder::DoCheckForRemovals(
 
   // Abort any ongoing list building that might not have been committed,
   // otherwise BeginList will give us problems.
-  Unused << mJumpListBackend->AbortList();
+  (void)mJumpListBackend->AbortList();
 
   nsTArray<nsString> urisToRemove;
   RefPtr<IObjectArray> objArray;
@@ -520,7 +520,7 @@ void JumpListBuilder::DoCheckForRemovals(
   RemoveIconCacheAndGetJumplistShortcutURIs(objArray, urisToRemove);
 
   // We began a list in order to get the removals, which we can now abort.
-  Unused << mJumpListBackend->AbortList();
+  (void)mJumpListBackend->AbortList();
 
   errorHandler.release();
 
@@ -556,7 +556,7 @@ void JumpListBuilder::DoPopulateJumpList(
 
   // Abort any ongoing list building that might not have been committed,
   // otherwise BeginList will give us problems.
-  Unused << mJumpListBackend->AbortList();
+  (void)mJumpListBackend->AbortList();
 
   nsTArray<nsString> urisToRemove;
   RefPtr<IObjectArray> objArray;

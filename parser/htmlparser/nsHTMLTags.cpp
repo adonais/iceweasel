@@ -9,7 +9,6 @@
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsUnicharUtils.h"
-#include "mozilla/HashFunctions.h"
 #include <algorithm>
 
 using namespace mozilla;

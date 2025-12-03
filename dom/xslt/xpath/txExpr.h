@@ -6,7 +6,6 @@
 #ifndef TRANSFRMX_EXPR_H
 #define TRANSFRMX_EXPR_H
 
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "nsAtom.h"
 #include "nsString.h"
@@ -172,7 +171,7 @@ class Expr {
   }                                                            \
   void _class::setSubExprAt(uint32_t aPos, Expr* aExpr) {      \
     NS_ASSERTION(aPos < 1, "setting bad subexpression index"); \
-    mozilla::Unused << _Expr1.release();                       \
+    (void)_Expr1.release();                                    \
     _Expr1 = mozilla::WrapUnique(aExpr);                       \
   }
 
@@ -192,10 +191,10 @@ class Expr {
   void _class::setSubExprAt(uint32_t aPos, Expr* aExpr) {         \
     NS_ASSERTION(aPos < 2, "setting bad subexpression index");    \
     if (aPos == 0) {                                              \
-      mozilla::Unused << _Expr1.release();                        \
+      (void)_Expr1.release();                                     \
       _Expr1 = mozilla::WrapUnique(aExpr);                        \
     } else {                                                      \
-      mozilla::Unused << _Expr2.release();                        \
+      (void)_Expr2.release();                                     \
       _Expr2 = mozilla::WrapUnique(aExpr);                        \
     }                                                             \
   }
@@ -514,7 +513,7 @@ class LocationStep : public Expr, public PredicateList {
 
   txNodeTest* getNodeTest() { return mNodeTest.get(); }
   void setNodeTest(txNodeTest* aNodeTest) {
-    mozilla::Unused << mNodeTest.release();
+    (void)mNodeTest.release();
     mNodeTest = mozilla::WrapUnique(aNodeTest);
   }
   LocationStepType getAxisIdentifier() { return mAxisIdentifier; }

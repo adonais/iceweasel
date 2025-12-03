@@ -19,7 +19,6 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/TaskQueue.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/FetchPriority.h"
@@ -445,7 +444,7 @@ void FetchDriver::UpdateReferrerInfoFromNewChannel(nsIChannel* aChannel) {
 
   nsAutoCString computedReferrerSpec;
   mRequest->SetReferrerPolicy(referrerInfo->ReferrerPolicy());
-  Unused << referrerInfo->GetComputedReferrerSpec(computedReferrerSpec);
+  (void)referrerInfo->GetComputedReferrerSpec(computedReferrerSpec);
   mRequest->SetReferrer(computedReferrerSpec);
 }
 
@@ -1402,7 +1401,7 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) {
   if (nsCOMPtr<nsIThreadRetargetableRequest> rr = do_QueryInterface(aRequest)) {
     RefPtr<TaskQueue> queue =
         TaskQueue::Create(sts.forget(), "FetchDriver STS Delivery Queue");
-    Unused << NS_WARN_IF(NS_FAILED(rr->RetargetDeliveryTo(queue)));
+    (void)NS_WARN_IF(NS_FAILED(rr->RetargetDeliveryTo(queue)));
   }
   return NS_OK;
 }
@@ -1719,8 +1718,7 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
 
     // Fetch 4.4.11
     bool rewriteToGET = false;
-    Unused << oldHttpChannel->ShouldStripRequestBodyHeader(method,
-                                                           &rewriteToGET);
+    (void)oldHttpChannel->ShouldStripRequestBodyHeader(method, &rewriteToGET);
 
     // we need to strip Authentication headers for cross-origin requests
     // Ref: https://fetch.spec.whatwg.org/#http-redirect-fetch

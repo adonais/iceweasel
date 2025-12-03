@@ -32,7 +32,6 @@
 #include "base/string_util.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/ipc/FileDescriptor.h"
 #include "nsAppDirectoryServiceDefs.h"

@@ -18,6 +18,8 @@ ChromeUtils.defineESModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
 });
 
+const CLIPBOARD_URL_FLAVORS = ["text/x-moz-url", "text/plain"];
+
 /**
  * A download element shell is responsible for handling the commands and the
  * displayed data for a single download view element.
@@ -607,7 +609,11 @@ DownloadsPlacesView.prototype = {
       case "cmd_selectAll":
         return true;
       case "cmd_paste":
-        return this._canDownloadClipboardURL();
+        // We check later whether content is valid for pasting, or ignore it.
+        return Services.clipboard.hasDataMatchingFlavors(
+          CLIPBOARD_URL_FLAVORS,
+          Ci.nsIClipboard.kGlobalClipboard
+        );
       case "downloadsCmd_clearDownloads":
         return this.canClearDownloads(this._richlistbox);
       default:
@@ -635,8 +641,7 @@ DownloadsPlacesView.prototype = {
     );
     trans.init(null);
 
-    let flavors = ["text/x-moz-url", "text/plain"];
-    flavors.forEach(trans.addDataFlavor);
+    CLIPBOARD_URL_FLAVORS.forEach(trans.addDataFlavor);
 
     Services.clipboard.getData(trans, Services.clipboard.kGlobalClipboard);
 
@@ -653,18 +658,6 @@ DownloadsPlacesView.prototype = {
     } catch (ex) {}
 
     return ["", ""];
-  },
-
-  _canDownloadClipboardURL() {
-    let [url /* ,name */] = this._getURLFromClipboardData();
-    return url != "";
-  },
-
-  _downloadURLFromClipboard() {
-    let [url, name] = this._getURLFromClipboardData();
-    let browserWin = BrowserWindowTracker.getTopWindow();
-    let initiatingDoc = browserWin ? browserWin.document : document;
-    DownloadURL(url, name, initiatingDoc);
   },
 
   // nsIController
@@ -718,7 +711,12 @@ DownloadsPlacesView.prototype = {
   },
 
   cmd_paste() {
-    this._downloadURLFromClipboard();
+    let [url, name] = this._getURLFromClipboardData();
+    if (url) {
+      let browserWin = BrowserWindowTracker.getTopWindow();
+      let initiatingDoc = browserWin ? browserWin.document : document;
+      DownloadURL(url, name, initiatingDoc);
+    }
   },
 
   downloadsCmd_clearDownloads() {

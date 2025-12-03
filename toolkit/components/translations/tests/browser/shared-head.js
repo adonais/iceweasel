@@ -1380,11 +1380,15 @@ class MockedA11yUtils {
  */
 async function ensureWindowSize(win, width, height) {
   if (
-    Math.abs(win.outerWidth - width) < 1 &&
-    Math.abs(win.outerHeight - height) < 1
+    Math.abs(win.outerWidth - width) <= 1 &&
+    Math.abs(win.outerHeight - height) <= 1
   ) {
     return;
   }
+
+  info(
+    `Resizing to ${width}x${height} (currently ${win.outerWidth}x${win.outerHeight})`
+  );
 
   const resizePromise = BrowserTestUtils.waitForEvent(win, "resize");
 
@@ -2518,7 +2522,7 @@ class TestTranslationsTelemetry {
           if (typeof expected === "function") {
             ok(
               expected(event.extra[key]),
-              `Telemetry event ${name} value for ${key} should match the expected predicate`
+              `Telemetry event ${name} value for ${key} should match the expected predicate: got ${event.extra[key]}`
             );
           } else {
             is(
@@ -2541,7 +2545,7 @@ class TestTranslationsTelemetry {
         if (typeof expected === "function") {
           ok(
             expected(events[eventCount - 1].extra[key]),
-            `Telemetry event ${name} value for ${key} should match the expected predicate`
+            `Telemetry event ${name} value for ${key} should match the expected predicate: got ${events[eventCount - 1].extra[key]}`
           );
         } else {
           is(

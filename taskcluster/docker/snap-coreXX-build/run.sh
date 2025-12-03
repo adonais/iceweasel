@@ -114,7 +114,7 @@ if [ "${USE_SNAP_FROM_STORE_OR_MC}" = "0" ]; then
   # Get the value and overwrite the snap's content.
   MAX_CPUS=$(nproc)
   sed -ri "s|\\\$CRAFT_PARALLEL_BUILD_COUNT|${MAX_CPUS}|g" snapcraft.yaml
-  grep "make -j" snapcraft.yaml
+  grep "MACH build .*-j${MAX_CPUS}" snapcraft.yaml
 
   SNAPCRAFT_BUILD_ENVIRONMENT_MEMORY="${MAX_MEMORY_GB}G" \
     snapcraft --destructive-mode --verbosity verbose --build-for "${ARCH}"

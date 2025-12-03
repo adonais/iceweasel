@@ -8,7 +8,7 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.helpers.HomeActivityTestRule
-import org.mozilla.fenix.helpers.TestAssetHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
@@ -85,7 +85,7 @@ class SettingsPrivacyTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1024594
     @Test
     fun allowAppToSendNotifications() {
-        val defaultWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
 
         // Clear all existing notifications
         notificationShade {
@@ -121,6 +121,44 @@ class SettingsPrivacyTest : TestSetup() {
             verifyDailyUsagePingToggle(composeTestRule, isChecked = true)
             clickDailyUsagePingToggle(composeTestRule)
             verifyDailyUsagePingToggle(composeTestRule, isChecked = false)
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3215044
+    @Test
+    fun verifyTheCrashReportsOptionsTest() {
+        homeScreen {
+        }.openThreeDotMenu {
+        }.openSettings {
+        }.openSettingsSubMenuDataCollection {
+            verifyTheCrashReportsSection(composeTestRule)
+            verifyTheCrashReportOptionStates(
+                composeTestRule,
+                isAskBeforeSendingCrashReportsEnabled = true,
+                isAutomaticallySendCrashReportsEnabled = false,
+                isNeverSendCrashReportsEnabled = false,
+            )
+            clickTheCrashReportsRadioButton(composeTestRule, "Send automatically")
+            verifyTheCrashReportOptionStates(
+                composeTestRule,
+                isAskBeforeSendingCrashReportsEnabled = false,
+                isAutomaticallySendCrashReportsEnabled = true,
+                isNeverSendCrashReportsEnabled = false,
+            )
+            clickTheCrashReportsRadioButton(composeTestRule, "Never send")
+            verifyTheCrashReportOptionStates(
+                composeTestRule,
+                isAskBeforeSendingCrashReportsEnabled = false,
+                isAutomaticallySendCrashReportsEnabled = false,
+                isNeverSendCrashReportsEnabled = true,
+            )
+            clickTheCrashReportsRadioButton(composeTestRule, "Ask before sending")
+            verifyTheCrashReportOptionStates(
+                composeTestRule,
+                isAskBeforeSendingCrashReportsEnabled = true,
+                isAutomaticallySendCrashReportsEnabled = false,
+                isNeverSendCrashReportsEnabled = false,
+            )
         }
     }
 }

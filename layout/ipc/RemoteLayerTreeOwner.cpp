@@ -118,7 +118,7 @@ bool RemoteLayerTreeOwner::AttachWindowRenderer() {
 }
 
 void RemoteLayerTreeOwner::OwnerContentChanged() {
-  Unused << AttachWindowRenderer();
+  (void)AttachWindowRenderer();
 }
 
 void RemoteLayerTreeOwner::GetTextureFactoryIdentifier(

@@ -8,7 +8,6 @@
 #define nsAlgorithm_h___
 
 #include <cstdint>
-#include "mozilla/Assertions.h"
 
 // We use these instead of std::min/max because we can't include the algorithm
 // header in all of XPCOM because the stl wrappers will error out when included

@@ -11,7 +11,6 @@
 #include "SVGLengthList.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Unused.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
 #include "nsTArray.h"

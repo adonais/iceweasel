@@ -91,7 +91,7 @@ class ErrorPagesTest {
         )
 
         val expectedImageName = if (errorType.imageNameRes != null) {
-            testContext.resources.getString(errorType.imageNameRes!!) + ".svg"
+            testContext.resources.getString(errorType.imageNameRes) + ".svg"
         } else {
             ""
         }

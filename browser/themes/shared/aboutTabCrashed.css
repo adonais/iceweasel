@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #reportSent {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 #reportBox {

@@ -406,6 +406,11 @@
     "dark": "{Colors$color/cyan/10}",
     "forcedColors": "{Theme$color/accent/primary/hover}"
   },
+  "color/accent/primary/selected": {
+    "light": "{Colors$color/blue/60}",
+    "dark": "{Colors$color/cyan/30}",
+    "forcedColors": "{HCM Theme$SelectedItem}"
+  },
   "focus/outline": {
     "light": "{Primitives$focus/outline/width} solid {Theme$focus/outline/color}",
     "dark": "{Primitives$focus/outline/width} solid {Theme$focus/outline/color}",
@@ -528,5 +533,10 @@
     "light": "{Colors$color/red/70}",
     "dark": "{Colors$color/red/20}",
     "forcedColors": "inherit"
+  },
+  "text/color/accent/primary/selected": {
+    "light": "{Colors$color/white}",
+    "dark": "{Colors$color/gray/100}",
+    "forcedColors": "{HCM Theme$SelectedItemText}"
   }
 }

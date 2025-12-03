@@ -43,6 +43,9 @@ class nsAppShell : public nsBaseAppShell {
                                                     gpointer aUserData);
   static void DBusConnectClientResponse(GObject* aObject, GAsyncResult* aResult,
                                         gpointer aUserData);
+  static void DBusConnectionCheck();
+  static void SetSessionDBus(GDBusConnection* aDBusConnectionSession);
+  static void SetSystemDBus(GDBusConnection* aDBusConnectionSystem);
 #endif
 
   static void InstallTermSignalHandler();
@@ -64,6 +67,10 @@ class nsAppShell : public nsBaseAppShell {
   RefPtr<GCancellable> mLogin1ProxyCancellable;
   RefPtr<GDBusProxy> mTimedate1Proxy;
   RefPtr<GCancellable> mTimedate1ProxyCancellable;
+  RefPtr<GDBusConnection> mDBusConnectionSession;
+  RefPtr<GDBusConnection> mDBusConnectionSystem;
+  RefPtr<GCancellable> mDBusGetCancellableSession;
+  RefPtr<GCancellable> mDBusGetCancellableSystem;
 #endif
 };
 

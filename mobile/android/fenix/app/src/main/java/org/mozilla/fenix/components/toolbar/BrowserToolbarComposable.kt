@@ -134,7 +134,9 @@ class BrowserToolbarComposable(
                     ) {
                         tabStripContent()
                         BrowserToolbar(toolbarStore)
-                        searchSuggestionsContent(Modifier.weight(1f))
+                        if (customTabSession == null) {
+                            searchSuggestionsContent(Modifier.weight(1f))
+                        }
                     }
 
                     false -> Column(
@@ -143,12 +145,16 @@ class BrowserToolbarComposable(
                             .wrapContentHeight(),
                     ) {
                         if (shouldUseBottomToolbar) {
-                            searchSuggestionsContent(Modifier.weight(1f))
+                            if (customTabSession == null) {
+                                searchSuggestionsContent(Modifier.weight(1f))
+                            }
                             BrowserToolbar(toolbarStore)
                             navigationBarContent?.invoke()
                         } else {
                             BrowserToolbar(toolbarStore)
-                            searchSuggestionsContent(Modifier.weight(1f))
+                            if (customTabSession == null) {
+                                searchSuggestionsContent(Modifier.weight(1f))
+                            }
                         }
                     }
                 }

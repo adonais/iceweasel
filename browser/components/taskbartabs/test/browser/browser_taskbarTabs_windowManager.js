@@ -10,7 +10,7 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyServiceGetters(this, {
-  WinTaskbar: ["@mozilla.org/windows-taskbar;1", "nsIWinTaskbar"],
+  WinTaskbar: ["@mozilla.org/windows-taskbar;1", Ci.nsIWinTaskbar],
 });
 
 const registry = new TaskbarTabsRegistry();

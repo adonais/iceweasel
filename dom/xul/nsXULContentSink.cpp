@@ -37,7 +37,6 @@
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsUnicharUtils.h"
-#include "nsViewManager.h"
 #include "nsXMLContentSink.h"
 #include "nsXULElement.h"
 #include "nsXULPrototypeDocument.h"  // XXXbe temporary

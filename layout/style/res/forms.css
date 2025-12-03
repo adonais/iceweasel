@@ -184,6 +184,7 @@ input::-moz-text-control-preview {
   resize: none;
   word-wrap: normal;
   white-space: pre;
+  hyphens: none;
   /* Make the line-height equal to the available height */
   line-height: -moz-block-height !important;
 }

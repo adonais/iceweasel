@@ -26,7 +26,6 @@ const gExperimentalPane = {
 
     this._onCheckboxChanged = this._onCheckboxChanged.bind(this);
     this._onNimbusUpdate = this._onNimbusUpdate.bind(this);
-    this._onStudiesEnabledChanged = this._onStudiesEnabledChanged.bind(this);
     this._resetAllFeatures = this._resetAllFeatures.bind(this);
 
     setEventListener(
@@ -35,10 +34,6 @@ const gExperimentalPane = {
       this._resetAllFeatures
     );
 
-    Services.obs.addObserver(
-      this._onStudiesEnabledChanged,
-      ExperimentAPI.STUDIES_ENABLED_CHANGED
-    );
     window.addEventListener("unload", () => this._removeObservers());
 
     await this._maybeRenderLabsRecipes();
@@ -169,24 +164,8 @@ const gExperimentalPane = {
     }
   },
 
-  async _onStudiesEnabledChanged() {
-    const studiesEnabled = ExperimentAPI.studiesEnabled;
-
-    if (studiesEnabled) {
-      await this._maybeRenderLabsRecipes();
-    } else {
-      this._setCategoryVisibility(true);
-      this._removeLabsRecipes();
-      this._firefoxLabs = null;
-    }
-  },
-
   _removeObservers() {
     ExperimentAPI.manager.store.off("update", this._onNimbusUpdate);
-    Services.obs.removeObserver(
-      this._onStudiesEnabledChanged,
-      ExperimentAPI.STUDIES_ENABLED_CHANGED
-    );
   },
 
   // Reset the features to their default values

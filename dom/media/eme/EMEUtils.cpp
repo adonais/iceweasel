@@ -36,7 +36,7 @@ LogModule* GetEMEVerboseLog() {
 void CopyArrayBufferViewOrArrayBufferData(
     const dom::BufferSource& aBufferOrView, nsTArray<uint8_t>& aOutData) {
   aOutData.Clear();
-  Unused << dom::AppendTypedArrayDataTo(aBufferOrView, aOutData);
+  (void)dom::AppendTypedArrayDataTo(aBufferOrView, aOutData);
 }
 
 bool IsClearkeyKeySystem(const nsAString& aKeySystem) {
@@ -250,7 +250,7 @@ void DeprecationWarningLog(const dom::Document* aDocument,
   warnings.InsertOrUpdate(aMsgName, true);
   AutoTArray<nsString, 1> params;
   nsString& uri = *params.AppendElement();
-  Unused << aDocument->GetDocumentURI(uri);
+  (void)aDocument->GetDocumentURI(uri);
   nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "Media"_ns,
                                   aDocument, nsContentUtils::eDOM_PROPERTIES,
                                   aMsgName, params);

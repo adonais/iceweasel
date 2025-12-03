@@ -7,6 +7,7 @@
 #include "CocoaCompositorWidget.h"
 
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/layers/NativeLayer.h"
 #include "mozilla/layers/NativeLayerRootRemoteMacChild.h"
 #include "mozilla/widget/PlatformWidgetTypes.h"
 #include "nsIWidget.h"
@@ -32,8 +33,7 @@ void CocoaCompositorWidget::Init(CompositorWidgetInitData&& aInitData) {
   mChildEndpoint = std::move(cocoaInitData.childEndpoint());
 }
 
-RefPtr<mozilla::layers::NativeLayerRoot>
-CocoaCompositorWidget::GetNativeLayerRoot() {
+mozilla::layers::NativeLayerRoot* CocoaCompositorWidget::GetNativeLayerRoot() {
   if (!mNativeLayerRoot) {
     CreateNativeLayerRoot();
     MOZ_ASSERT(mNativeLayerRoot);

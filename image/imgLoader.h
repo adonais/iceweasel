@@ -7,7 +7,6 @@
 #ifndef mozilla_image_imgLoader_h
 #define mozilla_image_imgLoader_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"

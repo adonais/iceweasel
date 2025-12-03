@@ -95,3 +95,8 @@ suites:
             "browser_addManyNodes.js": ""
             "browser_reflowPseudoelements.js": ""
             "browser_removeManySpellingErrors.js": ""
+
+    toolkit/components/places/tests/browser/performance:
+        description: "Performance tests for Toolkit: Places"
+        tests:
+            "Calculate Frecency Speed": ""

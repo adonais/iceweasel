@@ -10,6 +10,30 @@ task-defaults:
         script: build-llvm-symbolizer.sh
         toolchain-artifact: public/build/llvm-symbolizer.tar.zst
 
+linux32-llvm-symbolizer-19:
+    description: "llvm-symbolizer for Linux"
+    treeherder:
+        symbol: TL32(llvm-symbolizer-19)
+    run:
+        arguments:
+            - i686-unknown-linux-gnu
+            - build/build-clang/clang-19.json
+            - build/build-clang/llvm-symbolizer-19.json
+        resources:
+            - build/build-clang/clang-19.json
+            - build/build-clang/llvm-symbolizer-19.json
+            - taskcluster/scripts/misc/build-llvm-common.sh
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default: linux32-llvm-symbolizer
+    fetches:
+        fetch:
+            - clang-19
+        toolchain:
+            - linux64-clang-19-stage1
+            - linux32-toolchain-sysroot
+
 linux64-llvm-symbolizer-19:
     description: "llvm-symbolizer for Linux"
     treeherder:
@@ -106,6 +130,26 @@ win64-llvm-symbolizer-19:
             - linux64-clang-19-stage1
             - vs-toolchain
 
+linux32-llvm-symbolizer-20:
+    description: "llvm-symbolizer for Linux"
+    treeherder:
+        symbol: TL32(llvm-symbolizer-20)
+    run:
+        arguments:
+            - i686-unknown-linux-gnu
+            - build/build-clang/clang-20.json
+            - build/build-clang/llvm-symbolizer-19.json
+        resources:
+            - build/build-clang/clang-20.json
+            - build/build-clang/llvm-symbolizer-19.json
+            - taskcluster/scripts/misc/build-llvm-common.sh
+    fetches:
+        fetch:
+            - clang-20
+        toolchain:
+            - linux64-clang-20-stage1
+            - linux32-toolchain-sysroot
+
 linux64-llvm-symbolizer-20:
     description: "llvm-symbolizer for Linux"
     treeherder:
@@ -185,6 +229,32 @@ win64-llvm-symbolizer-20:
         toolchain:
             - linux64-clang-20-stage1
             - vs-toolchain
+
+linux32-llvm-symbolizer-trunk:
+    description: "llvm-symbolizer for Linux"
+    attributes:
+        cached_task: false
+    treeherder:
+        symbol: TL32(llvm-symbolizer-trunk)
+    run:
+        arguments:
+            - i686-unknown-linux-gnu
+            - build/build-clang/clang-trunk.json
+            - build/build-clang/llvm-symbolizer-trunk.json
+        resources:
+            - build/build-clang/clang-trunk.json
+            - build/build-clang/llvm-symbolizer-trunk.json
+            - taskcluster/scripts/misc/build-llvm-common.sh
+        toolchain-alias:
+            by-project:
+                toolchains: linux32-llvm-symbolizer
+                default: null
+    fetches:
+        fetch:
+            - clang-trunk
+        toolchain:
+            - linux64-clang-trunk-stage1
+            - linux32-toolchain-sysroot
 
 linux64-llvm-symbolizer-trunk:
     description: "llvm-symbolizer for Linux"

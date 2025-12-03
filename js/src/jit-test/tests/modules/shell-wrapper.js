@@ -156,7 +156,7 @@ assertEq(i.starExportEntries[0].localName, null);
 assertEq(i.starExportEntries[0].lineNumber, 2);
 assertEq(i.starExportEntries[0].columnNumber, 8);
 
-// ==== dfsIndex and dfsAncestorIndex getters ====
+// ==== dfsAncestorIndex getter ====
 const j = registerModule('j', parseModule(`
 export const v1 = 10;
 import {v2} from 'k'
@@ -170,18 +170,12 @@ export const v3 = 10;
 import {v2} from 'k'
 import {v1} from 'j'
 `));
-assertEq(j.dfsIndex, undefined);
 assertEq(j.dfsAncestorIndex, undefined);
-assertEq(k.dfsIndex, undefined);
 assertEq(k.dfsAncestorIndex, undefined);
-assertEq(l.dfsIndex, undefined);
 assertEq(l.dfsAncestorIndex, undefined);
 moduleLink(l);
-assertEq(j.dfsIndex, 2);
 assertEq(j.dfsAncestorIndex, 1);
-assertEq(k.dfsIndex, 1);
 assertEq(k.dfsAncestorIndex, 1);
-assertEq(l.dfsIndex, 0);
 assertEq(l.dfsAncestorIndex, 0);
 
 // ==== async and promises getters ====
@@ -189,11 +183,11 @@ const m = parseModule(`
 `);
 assertEq(m.hasTopLevelAwait, false);
 assertEq(m.topLevelCapability, undefined);
-assertEq(m.asyncEvaluatingPostOrder, undefined);
+assertEq(m.asyncEvaluationOrder, -1);
 assertEq(m.asyncParentModules[0], undefined);
 assertEq(m.pendingAsyncDependencies, undefined);
 testGetter(m, "hasTopLevelAwait");
 testGetter(m, "topLevelCapability");
-testGetter(m, "asyncEvaluatingPostOrder");
+testGetter(m, "asyncEvaluationOrder");
 testGetter(m, "asyncParentModules");
 testGetter(m, "pendingAsyncDependencies");

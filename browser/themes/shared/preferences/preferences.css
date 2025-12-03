@@ -13,6 +13,7 @@
    */
   --heading-font-size-xlarge: var(--font-size-xlarge);
   --heading-font-size-large: var(--font-size-large);
+  --heading-font-size-medium: var(--font-size-medium);
   user-select: text;
 }
 
@@ -459,7 +460,7 @@ richlistitem[selected] .actionsMenu:focus-visible {
 }
 
 #homeContentsGroup > [data-subcategory] .section-checkbox {
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
 }
 
 #homeContentsGroup > [data-subcategory] > vbox menulist {
@@ -495,8 +496,8 @@ a[is="moz-support-link"]:not(.sidebar-footer-link, [hidden]) {
 
 #engineList > treechildren::-moz-tree-image(engineShown, checked, selected),
 #blocklistsTree > treechildren::-moz-tree-image(selectionCol, checked, selected) {
-  fill: var(--in-content-item-selected-text);
-  stroke: var(--in-content-item-selected);
+  fill: var(--text-color-accent-primary-selected);
+  stroke: var(--color-accent-primary-selected);
 }
 
 @media (forced-colors) {
@@ -631,7 +632,7 @@ html|dialog,
 }
 
 .dialogTitle {
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--heading-font-weight);
   text-align: center;
   user-select: none;
 }
@@ -1466,6 +1467,10 @@ richlistitem .text-link:hover {
   margin: 0 0 var(--space-small);
 }
 
+.subsection-heading {
+  margin-bottom: var(--space-small);
+}
+
 .section-header-last {
   margin: 0 0 var(--space-large);
 }
@@ -1482,22 +1487,3 @@ richlistitem .text-link:hover {
     font-size: var(--font-size-small);
   }
 }
-
-/* START SRD temp page header styles (bug 1948415) */
-.page-header {
-  gap: var(--space-small);
-  align-items: center;
-
-  &:not([hidden]) {
-    display: flex;
-  }
-
-  > h2 {
-    margin: 0;
-  }
-
-  > moz-button:first-of-type:dir(rtl) {
-    scale: -1 1;
-  }
-}
-/* END SRD temp page header styles (bug 1948415) */

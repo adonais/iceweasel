@@ -83,35 +83,32 @@ export class FormAutofillSection {
     return this.fieldDetails.map(field => field.fieldName);
   }
 
-  /*
+  /**
    * Examine the section is a valid section or not based on its fieldDetails or
    * other information. This method must be overrided.
    *
    * @returns {boolean} True for a valid section, otherwise false
-   *
    */
   isValidSection() {
     throw new TypeError("isValidSection method must be overrided");
   }
 
-  /*
+  /**
    * Examine the section is an enabled section type or not based on its
    * preferences. This method must be overrided.
    *
    * @returns {boolean} True for an enabled section type, otherwise false
-   *
    */
   isEnabled() {
     throw new TypeError("isEnabled method must be overrided");
   }
 
-  /*
+  /**
    * Examine the section is createable for storing the profile. This method
    * must be overrided.
    *
-   * @param {Object} _record The record for examining createable
+   * @param {object} _record The record for examining createable
    * @returns {boolean} True for the record is createable, otherwise false
-   *
    */
   isRecordCreatable(_record) {
     throw new TypeError("isRecordCreatable method must be overridden");

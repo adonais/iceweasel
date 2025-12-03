@@ -8,6 +8,8 @@ support-files = [
 
 ["browser_Addon.js"]
 
+["browser_NavigableManager.js"]
+
 ["browser_NavigationManager.js"]
 
 ["browser_NavigationManager_committed.js"]

@@ -46,6 +46,7 @@ using BlackGrayEdgeVector = Vector<TenuredCell*, 0, SystemAllocPolicy>;
 using ZoneVector = Vector<JS::Zone*, 4, SystemAllocPolicy>;
 
 class AutoCallGCCallbacks;
+class AutoUpdateBarriersForSweeping;
 class AutoGCSession;
 class AutoHeapSession;
 class AutoTraceSession;
@@ -546,7 +547,7 @@ class GCRuntime {
   bool didCompactZones() const { return isCompacting && zonesCompacted; }
 
   bool areGrayBitsValid() const { return grayBitsValid; }
-  void setGrayBitsInvalid() { grayBitsValid = false; }
+  void setGrayBitsInvalid();
 
   mozilla::TimeStamp lastGCStartTime() const { return lastGCStartTime_; }
   mozilla::TimeStamp lastGCEndTime() const { return lastGCEndTime_; }
@@ -686,7 +687,9 @@ class GCRuntime {
   static void* refillFreeList(JS::Zone* zone, AllocKind thingKind);
   void attemptLastDitchGC();
 
-  bool isSymbolReferencedByUncollectedZone(JS::Symbol* sym);
+  // Return whether |sym| is marked at least |color| in the atom marking state
+  // for uncollected zones.
+  bool isSymbolReferencedByUncollectedZone(JS::Symbol* sym, MarkColor color);
 
   // Test mark queue.
 #ifdef DEBUG
@@ -940,6 +943,8 @@ class GCRuntime {
   void freeFromBackgroundThread(AutoLockHelperThreadState& lock);
   void sweepBackgroundThings(ZoneList& zones);
   void prepareForSweepSlice(JS::GCReason reason);
+  void disableIncrementalBarriers();
+  void enableIncrementalBarriers();
   void assertBackgroundSweepingFinished();
 #ifdef DEBUG
   bool zoneInCurrentSweepGroup(Zone* zone) const;
@@ -1055,6 +1060,9 @@ class GCRuntime {
   GCSchedulingTunables tunables;
   GCSchedulingState schedulingState;
   MainThreadData<bool> fullGCRequested;
+  // If an enterWeakMarking slice takes too long, suppress yielding during the
+  // next slice.
+  MainThreadData<bool> finishMarkingDuringSweeping;
 
   // Helper thread configuration.
   MainThreadData<double> helperThreadRatio;
@@ -1262,6 +1270,8 @@ class GCRuntime {
       weakCachesToSweep;
   MainThreadData<bool> abortSweepAfterCurrentGroup;
   MainThreadOrGCTaskData<IncrementalProgress> sweepMarkResult;
+  MainThreadData<bool> disableBarriersForSweeping;
+  friend class AutoUpdateBarriersForSweeping;
 
   /*
    * During incremental foreground finalization, we may have a list of arenas of
@@ -1292,13 +1302,6 @@ class GCRuntime {
 
   /* The test marking queue might want to be marking a particular color. */
   mozilla::Maybe<js::gc::MarkColor> queueMarkColor;
-
-  // During gray marking, delay AssertCellIsNotGray checks by
-  // recording the cell pointers here and checking after marking has
-  // finished.
-  MainThreadData<Vector<const Cell*, 0, SystemAllocPolicy>>
-      cellsToAssertNotGray;
-  friend void js::gc::detail::AssertCellIsNotGray(const Cell*);
 #endif
 
   friend class SweepGroupsIter;

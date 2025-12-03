@@ -306,7 +306,7 @@ class TestAgent {
         audio_conduit_(
             AudioSessionConduit::Create(call_, test_utils->sts_target())),
         transport_(new LoopbackTransport) {
-    Unused << WaitFor(InvokeAsync(call_->mCallThread, __func__, [&] {
+    (void)WaitFor(InvokeAsync(call_->mCallThread, __func__, [&] {
       audio_conduit_->InitControl(&control_);
       return GenericPromise::CreateAndResolve(true, "TestAgent()");
     }));
@@ -350,7 +350,7 @@ class TestAgent {
       audio_pipeline_->Shutdown();
     }
     if (audio_conduit_) {
-      Unused << WaitFor(audio_conduit_->Shutdown());
+      (void)WaitFor(audio_conduit_->Shutdown());
     }
     if (call_) {
       call_->Destroy();
@@ -415,7 +415,7 @@ class TestAgentSend : public TestAgent {
         MediaPipelineTransmit::Create(
             test_pc, transport_, AbstractThread::MainThread(),
             test_utils->sts_target(), false, audio_conduit_);
-    Unused << WaitFor(InvokeAsync(call_->mCallThread, __func__, [&] {
+    (void)WaitFor(InvokeAsync(call_->mCallThread, __func__, [&] {
       audio_pipeline->InitControl(&control_);
       return GenericPromise::CreateAndResolve(true, __func__);
     }));
@@ -448,7 +448,7 @@ class TestAgentReceive : public TestAgent {
         test_utils->sts_target(),
         static_cast<AudioSessionConduit*>(audio_conduit_.get()), nullptr,
         TrackingId(), PRINCIPAL_HANDLE_NONE, PrincipalPrivacy::NonPrivate);
-    Unused << WaitFor(InvokeAsync(call_->mCallThread, __func__, [&] {
+    (void)WaitFor(InvokeAsync(call_->mCallThread, __func__, [&] {
       audio_pipeline->InitControl(&control_);
       return GenericPromise::CreateAndResolve(true, __func__);
     }));

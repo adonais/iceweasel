@@ -11,7 +11,6 @@
 #include "nsCOMPtr.h"
 #include "nsIByteRangeRequest.h"
 #include "nsIMultiPartChannel.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/IncrementalTokenizer.h"
 #include "nsHttpResponseHead.h"
 #include "mozilla/UniquePtr.h"

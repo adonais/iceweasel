@@ -38,11 +38,15 @@ tags = "search-telemetry"
 ["browser_quicksuggest_ping_merinoAndNullValues.js"]
 tags = "search-telemetry"
 
+["browser_quicksuggest_realtime_flight_status.js"]
+
 ["browser_quicksuggest_realtime_market.js"]
 
 ["browser_quicksuggest_realtime_optin.js"]
 
 ["browser_quicksuggest_realtime_yelp.js"]
+
+["browser_quicksuggest_sports.js"]
 
 ["browser_quicksuggest_yelp.js"]
 

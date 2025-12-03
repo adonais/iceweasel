@@ -24,14 +24,12 @@ export class LoginManagerStorage extends LoginManagerStorage_json {
       this.#jsonStorage = new LoginManagerStorage_json();
       this.#rustStorage = new LoginManagerRustStorage();
 
-      new LoginManagerRustMirror(this.#jsonStorage, this.#rustStorage);
-
-      this.#initializationPromise = new Promise(resolve =>
-        this.#jsonStorage
-          .initialize()
-          .then(() => this.#rustStorage.initialize())
-          .then(resolve)
-      );
+      this.#initializationPromise = this.#jsonStorage
+        .initialize()
+        .then(() => this.#rustStorage.initialize())
+        .then(() => {
+          new LoginManagerRustMirror(this.#jsonStorage, this.#rustStorage);
+        });
     }
 
     this.#initializationPromise.then(() => callback?.());

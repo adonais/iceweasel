@@ -96,11 +96,11 @@ struct MapTypeToTraceKind {
   D(Script,       js::BaseScript,      true,      true)        \
   D(Shape,        js::Shape,           true,      false)       \
   D(String,       JSString,            false,     false)       \
-  D(Symbol,       JS::Symbol,          false,     false)       \
+  D(Symbol,       JS::Symbol,          true,      true)        \
   D(BigInt,       JS::BigInt,          false,     false)       \
   D(RegExpShared, js::RegExpShared,    true,      true)        \
   D(GetterSetter, js::GetterSetter,    true,      true)        \
-  D(PropMap,      js::PropMap,         false,     false)
+  D(PropMap,      js::PropMap,         true,      false)
 // clang-format on
 
 // Returns true if the JS::TraceKind is represented as a node in cycle collector

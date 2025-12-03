@@ -148,7 +148,7 @@ static bool TestInvalidFileName(nsIFile* aBase, const char* aName) {
 // Test nsIFile::Create, verifying that the file exists and did not exist
 // before, and leaving it there for future tests
 static bool TestCreate(nsIFile* aBase, const char* aName, int32_t aType,
-                       int32_t aPerm) {
+                       int32_t aPerm, nsIFile** aNewFile = nullptr) {
   nsCOMPtr<nsIFile> file = NewFile(aBase);
   if (!file) return false;
 
@@ -172,6 +172,10 @@ static bool TestCreate(nsIFile* aBase, const char* aName, int32_t aType,
   EXPECT_TRUE(exists) << "File " << name.get() << " was not created";
   if (!exists) {
     return false;
+  }
+
+  if (aNewFile) {
+    file.forget(aNewFile);
   }
 
   return true;
@@ -347,6 +351,8 @@ static bool TestMove(nsIFile* aBase, nsIFile* aDestDir, const char* aName,
   // Ensure ACE inheritance is correct.
   auto [childPathStr, childDacl, childSecDesc] =
       GetSecurityInfoStructured(file);
+  EXPECT_FALSE(childSecDesc->Control & SE_DACL_PROTECTED)
+      << "SE_DACL_PROTECTED bit should not be set on the security descriptor";
   bool isDir = false;
   EXPECT_NS_SUCCEEDED(file->IsDirectory(&isDir));
   EXPECT_TRUE(nsLocalFile::ChildAclMatchesAclInheritedFromParent(
@@ -615,6 +621,22 @@ static void SetupAndTestFunctions(const nsAString& aDirName,
   // Test that dir moves also get the ACL reset when required.
   ASSERT_TRUE(TestCreate(subdir, "subdir2", nsIFile::DIRECTORY_TYPE, 0700));
   ASSERT_TRUE(TestMove(subdir, base, "subdir2", "subdir2"));
+
+  // If we set the SE_DACL_PROTECTED bit on the file's security descriptor then
+  // no ACEs will be inherited in the moved file or the new ACL we create to
+  // compare it with. So we need an extra test to catch this case.
+  nsCOMPtr<nsIFile> file9;
+  ASSERT_TRUE(TestCreate(subdir, "file9.txt", nsIFile::NORMAL_FILE_TYPE, 0600,
+                         getter_AddRefs(file9)));
+  auto [file9Path, pFile9Dacl, f9sd] = GetSecurityInfoStructured(file9);
+  ASSERT_EQ(::SetNamedSecurityInfoW(
+                file9Path.get(), SE_FILE_OBJECT,
+                DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION,
+                nullptr, nullptr, pFile9Dacl.get(), nullptr),
+            (ULONG)ERROR_SUCCESS);
+  auto [f9p, f9d, file9SecDescAfter] = GetSecurityInfoStructured(file9);
+  ASSERT_TRUE(file9SecDescAfter->Control & SE_DACL_PROTECTED);
+  ASSERT_TRUE(TestMove(subdir, base, "file9.txt", "file9.txt"));
 #endif
 
   // Test copying across directories

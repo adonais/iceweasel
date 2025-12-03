@@ -7,7 +7,6 @@
 #include "mozilla/dom/SVGFilterElement.h"
 
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/SVGFilterElementBinding.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGUnitTypesBinding.h"

@@ -13,6 +13,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/WorkerBinding.h"
 #include "mozilla/dom/WorkerCommon.h"
+#include "mozilla/dom/WorkerLoadContext.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/workerinternals/WorkerModuleLoader.h"
 #include "nsIContentPolicy.h"
@@ -34,7 +35,6 @@ namespace dom {
 
 class ClientInfo;
 class Document;
-class ThreadSafeRequestHandle;
 struct WorkerLoadInfo;
 class WorkerPrivate;
 class SerializedStackHolder;
@@ -202,7 +202,7 @@ class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
 
   already_AddRefed<ScriptLoadRequest> CreateScriptLoadRequest(
       const nsString& aScriptURL, const mozilla::Encoding* aDocumentEncoding,
-      bool aIsMainScript);
+      bool aIsMainScript, nsresult* aRv);
 
   bool DispatchLoadScript(ScriptLoadRequest* aRequest);
 

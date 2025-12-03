@@ -8,7 +8,6 @@
 #define mozilla_RestyleManager_h
 
 #include "mozilla/AutoRestore.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/OverflowChangedTracker.h"
 #include "mozilla/ServoElementSnapshot.h"
 #include "mozilla/ServoElementSnapshotTable.h"

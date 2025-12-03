@@ -407,7 +407,7 @@ newtab-wallpaper-abstract-purple-green = Gradient fioletowego i zielonego świa
 newtab-wallpaper-abstract-blue-purple-waves = Niebieskie i fioletowe faliste kształty
 newtab-wallpaper-abstract-black-waves = Czarne faliste kształty
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Zdjęcia
 newtab-wallpaper-beach-at-sunrise = Plaża o wschodzie słońca
@@ -436,6 +436,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -676,10 +680,6 @@ newtab-widget-timer-mode-focus =
     .label = Skupienie
 newtab-widget-timer-mode-break =
     .label = Przerwa
-newtab-widget-timer-play =
-    .title = Rozpocznij
-newtab-widget-timer-pause =
-    .title = Wstrzymaj
 newtab-widget-timer-label-play =
     .label = Rozpocznij
 newtab-widget-timer-label-pause =
@@ -696,7 +696,7 @@ newtab-widget-message-title = Nie trać koncentracji dzięki listom i wbudowane
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Od szybkich przypomnień po codzienne listy zadań, od sesji skupienia po przerwy na rozciągnięcie — nie trać koncentracji ani czasu.
 newtab-promo-card-title = Wspieraj { -brand-product-name(case: "acc") }
-newtab-promo-card-body = Nasi sponsorzy wspierają naszą misję budowania lepszej sieci
+newtab-promo-card-body = Nasi sponsorzy wspierają naszą misję budowania lepszej sieci.
 newtab-promo-card-cta = Więcej informacji
 newtab-promo-card-dismiss-button =
     .title = Zamknij

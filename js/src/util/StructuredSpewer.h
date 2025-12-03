@@ -9,7 +9,6 @@
 
 #ifdef JS_STRUCTURED_SPEW
 
-#  include "mozilla/Atomics.h"
 #  include "mozilla/Attributes.h"
 #  include "mozilla/EnumeratedArray.h"
 #  include "mozilla/Maybe.h"

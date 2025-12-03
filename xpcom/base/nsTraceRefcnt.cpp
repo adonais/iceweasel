@@ -41,7 +41,6 @@
 #  include <unistd.h>
 #endif
 
-#include "mozilla/Atomics.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BlockingResourceBase.h"
 #include "mozilla/PoisonIOInterposer.h"

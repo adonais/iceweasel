@@ -12,8 +12,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
 import androidx.navigation.fragment.findNavController
 import mozilla.components.feature.downloads.AbstractFetchDownloadService
-import org.mozilla.fenix.HomeActivity
-import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
 import org.mozilla.fenix.components.lazyStore
@@ -72,8 +70,7 @@ class DownloadFragment : Fragment() {
         }
     }
 
-    private fun openItem(item: FileItem, mode: BrowsingMode? = null) {
-        mode?.let { (activity as HomeActivity).browsingModeManager.mode = it }
+    private fun openItem(item: FileItem) {
         context?.let {
             val canOpenFile = AbstractFetchDownloadService.openFile(
                 applicationContext = it.applicationContext,

@@ -262,19 +262,15 @@ async function openAndSetupTestPage() {
     [TEST_TOP_PAGE, TEST_THIRD_PARTY_PAGE],
     async (firstPartySrc, thirdPartySrc) => {
       let firstPartyFrame = content.document.createElement("iframe");
-      let loading = new content.Promise(resolve => {
-        firstPartyFrame.onload = resolve;
-      });
-      content.document.body.appendChild(firstPartyFrame);
+      let loading = ContentTaskUtils.waitForEvent(firstPartyFrame, "load");
       firstPartyFrame.src = firstPartySrc;
+      content.document.body.appendChild(firstPartyFrame);
       await loading;
 
       let thirdPartyFrame = content.document.createElement("iframe");
-      loading = new content.Promise(resolve => {
-        thirdPartyFrame.onload = resolve;
-      });
-      content.document.body.appendChild(thirdPartyFrame);
+      loading = ContentTaskUtils.waitForEvent(thirdPartyFrame, "load");
       thirdPartyFrame.src = thirdPartySrc;
+      content.document.body.appendChild(thirdPartyFrame);
       await loading;
 
       return {
@@ -299,11 +295,9 @@ async function openAndSetupTestPageForPopup() {
     [TEST_THIRD_PARTY_PAGE],
     async thirdPartySrc => {
       let thirdPartyFrame = content.document.createElement("iframe");
-      let loading = new content.Promise(resolve => {
-        thirdPartyFrame.onload = resolve;
-      });
-      content.document.body.appendChild(thirdPartyFrame);
+      const loading = ContentTaskUtils.waitForEvent(thirdPartyFrame, "load");
       thirdPartyFrame.src = thirdPartySrc;
+      content.document.body.appendChild(thirdPartyFrame);
       await loading;
 
       let popupBC = await SpecialPowers.spawn(

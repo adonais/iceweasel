@@ -15,7 +15,6 @@
 #include <xmmintrin.h>
 #endif
 
-#include "mozilla/Attributes.h"
 #include "mozilla/BindgenUniquePtr.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Span.h"

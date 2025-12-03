@@ -44,6 +44,7 @@ file-whitespace:
         - dom/smil/crashtests
         - dom/smil/test
         - dom/security/test
+        - dom/serializers/tests
         - dom/svg/crashtests
         - dom/svg/test
         - dom/webauthn/winwebauthn/webauthn.h

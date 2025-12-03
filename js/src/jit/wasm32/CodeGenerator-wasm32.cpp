@@ -37,8 +37,6 @@ void CodeGenerator::visitNegI(LNegI* ins) { MOZ_CRASH(); }
 void CodeGenerator::visitNegI64(LNegI64* ins) { MOZ_CRASH(); }
 void CodeGenerator::visitNegD(LNegD* ins) { MOZ_CRASH(); }
 void CodeGenerator::visitNegF(LNegF* ins) { MOZ_CRASH(); }
-void CodeGenerator::visitCopySignD(LCopySignD* ins) { MOZ_CRASH(); }
-void CodeGenerator::visitCopySignF(LCopySignF* ins) { MOZ_CRASH(); }
 void CodeGenerator::visitAddI(LAddI* ins) { MOZ_CRASH(); }
 void CodeGenerator::visitAddIntPtr(LAddIntPtr* ins) { MOZ_CRASH(); }
 void CodeGenerator::visitAddI64(LAddI64* lir) { MOZ_CRASH(); }

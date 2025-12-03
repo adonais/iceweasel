@@ -75,7 +75,7 @@ def rename_after_close(fname, *args, **kwargs):
     manager.
     """
     path = pathlib.Path(fname)
-    tmp = path.with_name("%s.tmp" % path.name)
+    tmp = path.with_name(f"{path.name}.tmp")
     try:
         with tmp.open(*args, **kwargs) as fh:
             yield fh
@@ -135,13 +135,11 @@ def retrier(attempts=5, sleeptime=10, max_sleeptime=300, sleepscale=1.5, jitter=
     jitter = jitter or 0  # py35 barfs on the next line if jitter is None
     if jitter > sleeptime:
         # To prevent negative sleep times
-        raise Exception(
-            "jitter ({}) must be less than sleep time ({})".format(jitter, sleeptime)
-        )
+        raise Exception(f"jitter ({jitter}) must be less than sleep time ({sleeptime})")
 
     sleeptime_real = sleeptime
     for _ in range(attempts):
-        log("attempt %i/%i" % (_ + 1, attempts))
+        log(f"attempt {_ + 1}/{attempts}")
 
         yield sleeptime_real
 
@@ -159,9 +157,7 @@ def retrier(attempts=5, sleeptime=10, max_sleeptime=300, sleepscale=1.5, jitter=
 
         # Don't need to sleep the last time
         if _ < attempts - 1:
-            log(
-                "sleeping for %.2fs (attempt %i/%i)" % (sleeptime_real, _ + 1, attempts)
-            )
+            log(f"sleeping for {sleeptime_real:.2f}s (attempt {_ + 1}/{attempts})")
             time.sleep(sleeptime_real)
 
 
@@ -178,7 +174,7 @@ def stream_download(url, sha256=None, size=None, headers=None):
     content, it should be streamed to a file or memory and only operated
     on after the generator is exhausted without raising.
     """
-    log("Downloading %s" % url)
+    log(f"Downloading {url}")
     headers = headers or []
 
     h = hashlib.sha256()
@@ -194,7 +190,7 @@ def stream_download(url, sha256=None, size=None, headers=None):
     kwargs = {}
     if certifi:
         ssl_context = ssl.create_default_context(cafile=certifi.where())
-        kwargs["context"] = context = ssl_context
+        kwargs["context"] = ssl_context
     with urllib.request.urlopen(req, timeout=60, **kwargs) as fh:
         if not url.endswith(".gz") and fh.info().get("Content-Encoding") == "gzip":
             fh = gzip.GzipFile(fileobj=fh)
@@ -206,14 +202,12 @@ def stream_download(url, sha256=None, size=None, headers=None):
                     content_length = int(content_length)
                 except ValueError:
                     raise IntegrityError(
-                        "content-length header for %s is not an integer; got %s"
-                        % (url, content_length)
+                        f"content-length header for {url} is not an integer; got {content_length}"
                     )
                 if size:
                     if size != content_length:
                         raise IntegrityError(
-                            "size mismatch on %s: wanted %d; content-length is %d, x-cache-status is: %s"
-                            % (
+                            "size mismatch on {}: wanted {}; content-length is {}, x-cache-status is: {}".format(
                                 url,
                                 size,
                                 content_length,
@@ -236,25 +230,20 @@ def stream_download(url, sha256=None, size=None, headers=None):
     duration = time.time() - t0
     digest = h.hexdigest()
 
-    log(
-        "%s resolved to %d bytes with sha256 %s in %.3fs"
-        % (url, length, digest, duration)
-    )
+    log(f"{url} resolved to {length} bytes with sha256 {digest} in {duration:.3f}s")
 
     if size:
         if size == length:
-            log("Verified size of %s" % url)
+            log(f"Verified size of {url}")
         else:
-            raise IntegrityError(
-                "size mismatch on %s: wanted %d; got %d" % (url, size, length)
-            )
+            raise IntegrityError(f"size mismatch on {url}: wanted {size}; got {length}")
 
     if sha256:
         if digest == sha256:
-            log("Verified sha256 integrity of %s" % url)
+            log(f"Verified sha256 integrity of {url}")
         else:
             raise IntegrityError(
-                "sha256 mismatch on %s: wanted %s; got %s" % (url, sha256, digest)
+                f"sha256 mismatch on {url}: wanted {sha256}; got {digest}"
             )
 
 
@@ -271,7 +260,7 @@ def download_to_path(url, path, sha256=None, size=None, headers=None):
 
     for _ in retrier(attempts=5, sleeptime=60):
         try:
-            log("Downloading %s to %s" % (url, path))
+            log(f"Downloading {url} to {path}")
 
             with rename_after_close(path, "wb") as fh:
                 for chunk in stream_download(
@@ -281,7 +270,7 @@ def download_to_path(url, path, sha256=None, size=None, headers=None):
 
             return
         except Exception as e:
-            log("Download failed: {}".format(e))
+            log(f"Download failed: {e}")
             continue
 
     raise Exception("Download failed, no more retries!")
@@ -292,7 +281,7 @@ def download_to_memory(url, sha256=None, size=None):
 
     for _ in retrier(attempts=5, sleeptime=60):
         data = b""
-        log("Downloading %s" % (url))
+        log(f"Downloading {url}")
 
         try:
             for chunk in stream_download(url, sha256=sha256, size=size):
@@ -300,7 +289,7 @@ def download_to_memory(url, sha256=None, size=None):
 
             return data
         except Exception as e:
-            log("Download failed: {}".format(e))
+            log(f"Download failed: {e}")
             continue
 
     raise Exception("Download failed, no more retries!")
@@ -313,8 +302,8 @@ def gpg_verify_path(path: pathlib.Path, public_key_data: bytes, signature_data: 
     bytes with GPG public key data. ``signature_data`` contains a signed
     GPG document to use with ``gpg --verify``.
     """
-    log("Validating GPG signature of %s" % path)
-    log("GPG key data:\n%s" % public_key_data.decode("ascii"))
+    log(f"Validating GPG signature of {path}")
+    log("GPG key data:\n{}".format(public_key_data.decode("ascii")))
 
     with tempfile.TemporaryDirectory() as td:
         try:
@@ -326,7 +315,7 @@ def gpg_verify_path(path: pathlib.Path, public_key_data: bytes, signature_data: 
 
             log("Verifying GPG signature...")
             subprocess.run(
-                gpg_args + ["--verify", "-", "%s" % path],
+                gpg_args + ["--verify", "-", f"{path}"],
                 input=signature_data,
                 check=True,
             )
@@ -343,7 +332,7 @@ def gpg_verify_path(path: pathlib.Path, public_key_data: bytes, signature_data: 
 
 class ArchiveTypeNotSupported(Exception):
     def __init__(self, path: pathlib.Path):
-        super(Exception, self).__init__("Archive type not supported for %s" % path)
+        super(Exception, self).__init__(f"Archive type not supported for {path}")
 
 
 def open_stream(path: pathlib.Path):
@@ -373,7 +362,7 @@ def open_stream(path: pathlib.Path):
             headers[:512], tarfile.ENCODING, "surrogateescape"
         ):
             return "tar", fh
-    except Exception as e:
+    except Exception:
         pass
     raise ArchiveTypeNotSupported(path)
 
@@ -395,7 +384,7 @@ def extract_archive(path, dest_dir):
     path = path.resolve()
     dest_dir = dest_dir.resolve()
 
-    log("Extracting %s to %s" % (path, dest_dir))
+    log(f"Extracting {path} to {dest_dir}")
     t0 = time.time()
 
     # We pipe input to the decompressor program so that we can apply
@@ -421,7 +410,7 @@ def extract_archive(path, dest_dir):
         args = ["unzip", "-q", "-o", str(path)]
         pipe_stdin = False
     else:
-        raise ValueError("unknown archive format: %s" % path)
+        raise ValueError(f"unknown archive format: {path}")
 
     if args:
         with ifh, subprocess.Popen(
@@ -438,9 +427,9 @@ def extract_archive(path, dest_dir):
                 p.stdin.write(chunk)
 
         if p.returncode:
-            raise Exception("%r exited %d" % (args, p.returncode))
+            raise Exception(f"{args!r} exited {p.returncode}")
 
-    log("%s extracted in %.3fs" % (path, time.time() - t0))
+    log(f"{path} extracted in {time.time() - t0:.3f}s")
 
 
 def should_repack_archive(
@@ -483,14 +472,16 @@ def should_repack_archive(
     return True
 
 
-EXECUTABLE_SIGNATURES = set([
-    b"\xFE\xED\xFA\xCE",  # mach-o 32-bits big endian
-    b"\xCE\xFA\xED\xFE",  # mach-o 32-bits little endian
-    b"\xFE\xED\xFA\xCF",  # mach-o 64-bits big endian
-    b"\xCF\xFA\xED\xFE",  # mach-o 64-bits little endian
-    b"\xCA\xFE\xBA\xBE",  # mach-o FAT binary
-    b"\x7F\x45\x4C\x46",  # Elf binary
-])
+EXECUTABLE_SIGNATURES = set(
+    [
+        b"\xfe\xed\xfa\xce",  # mach-o 32-bits big endian
+        b"\xce\xfa\xed\xfe",  # mach-o 32-bits little endian
+        b"\xfe\xed\xfa\xcf",  # mach-o 64-bits big endian
+        b"\xcf\xfa\xed\xfe",  # mach-o 64-bits little endian
+        b"\xca\xfe\xba\xbe",  # mach-o FAT binary
+        b"\x7f\x45\x4c\x46",  # Elf binary
+    ]
+)
 
 
 def repack_archive(
@@ -513,7 +504,7 @@ def repack_archive(
             raise
     typ = archive_type(dest)
     if not typ:
-        raise Exception("Archive type not supported for %s" % dest.name)
+        raise Exception(f"Archive type not supported for {dest.name}")
 
     if dest.suffixes[-2:] != [".tar", ".zst"]:
         raise Exception("Only producing .tar.zst archives is supported.")
@@ -525,7 +516,7 @@ def repack_archive(
                 stripped = "/".join(name.split("/")[strip_components:])
                 if not stripped:
                     raise Exception(
-                        "Stripping %d components would remove files" % strip_components
+                        f"Stripping {strip_components} components would remove files"
                     )
                 name = stripped
             return prefix + name
@@ -585,7 +576,7 @@ def repack_archive(
                     elif stat.S_ISREG(mode) or stat.S_IFMT(mode) == 0:
                         tar.addfile(tarinfo, zip.open(filename))
                     else:
-                        raise Exception("Unsupported file mode %o" % stat.S_IFMT(mode))
+                        raise Exception(f"Unsupported file mode {stat.S_IFMT(mode):o}")
 
         elif orig_typ == "tar":
             if typ == "zip":
@@ -612,6 +603,10 @@ def repack_archive(
                         if tarinfo.isfile():
                             tar.addfile(tarinfo, origtar.extractfile(tarinfo))
                         else:
+                            # Hard links are relative to the root of the archive,
+                            # so the filter needs to be applied to its destination.
+                            if tarinfo.islnk():
+                                tarinfo.linkname = filter(tarinfo.linkname)
                             tar.addfile(tarinfo)
             else:
                 # We only change compression here. The tar stream is unchanged.
@@ -641,7 +636,7 @@ def fetch_and_extract(url, dest_dir, extract=True, sha256=None, size=None):
 
     try:
         extract_archive(dest_path, dest_dir)
-        log("Removing %s" % dest_path)
+        log(f"Removing {dest_path}")
         dest_path.unlink()
     except ArchiveTypeNotSupported:
         pass
@@ -683,10 +678,14 @@ def _github_submodule_required(repo: str, commit: str):
         if e.status == 404:
             return False
         # If we get a non 2xx status code that isn't a 404, something has gone horribly wrong on the github side, log it and return True
-        log("Got {} from github while checking for submodules in {} which was unexpected. Cannot check whether the repo has submodules or not".format(e.status, repo))
+        log(
+            f"Got {e.status} from github while checking for submodules in {repo} which was unexpected. Cannot check whether the repo has submodules or not"
+        )
         return True
     except Exception as e:
-        log("Got an unexpected `{}` exception while checking for submodules in {}. Cannot check whether the repo has submodules or not".format(e, repo))
+        log(
+            f"Got an unexpected `{e}` exception while checking for submodules in {repo}. Cannot check whether the repo has submodules or not"
+        )
         return True
 
 
@@ -718,7 +717,7 @@ def git_checkout_archive(
                     ["git", "ls-remote", repo, "refs/heads/" + commit]
                 )
                 revision, _ = ref_output.decode().split(maxsplit=1)
-            log("Fetching revision {}".format(revision))
+            log(f"Fetching revision {revision}")
             return _git_checkout_github_archive(dest_path, repo, commit, prefix)
 
     with tempfile.TemporaryDirectory() as td:
@@ -729,7 +728,7 @@ def git_checkout_archive(
         # This could be faster with a shallow clone. However, Git requires a ref
         # to initiate a clone. Since the commit-ish may not refer to a ref, we
         # simply perform a full clone followed by a checkout.
-        print("cloning %s to %s" % (repo, git_dir))
+        print(f"cloning {repo} to {git_dir}")
 
         env = os.environ.copy()
         keypath = ""
@@ -738,7 +737,7 @@ def git_checkout_archive(
                 os.environ.get("TASKCLUSTER_PROXY_URL"),
                 "secrets",
                 "v1",
-                "secret/{keypath}".format(keypath=ssh_key),
+                f"secret/{ssh_key}",
             )
             taskcluster_secret = b"".join(stream_download(taskcluster_secret_url))
             taskcluster_secret = json.loads(taskcluster_secret)
@@ -748,11 +747,7 @@ def git_checkout_archive(
             keypath.write_text(sshkey)
             keypath.chmod(0o600)
 
-            env = {
-                "GIT_SSH_COMMAND": "ssh -o 'StrictHostKeyChecking no' -i {keypath}".format(
-                    keypath=keypath
-                )
-            }
+            env = {"GIT_SSH_COMMAND": f"ssh -o 'StrictHostKeyChecking no' -i {keypath}"}
 
         subprocess.run(["git", "clone", "-n", repo, str(git_dir)], check=True, env=env)
 
@@ -795,7 +790,7 @@ def git_checkout_archive(
         if keypath:
             os.remove(keypath)
 
-        print("creating archive %s of commit %s" % (dest_path, commit))
+        print(f"creating archive {dest_path} of commit {commit}")
         exclude_dot_git = [] if include_dot_git else ["--exclude=.git"]
         proc = subprocess.Popen(
             [
@@ -873,7 +868,11 @@ def command_static_url(args):
             dl_dest, dest, args.strip_components, args.add_prefix
         ):
             repack_archive(
-                dl_dest, dest, args.strip_components, args.add_prefix, args.force_archive
+                dl_dest,
+                dest,
+                args.strip_components,
+                args.add_prefix,
+                args.force_archive,
             )
         elif dl_dest != dest:
             log(f"Renaming {dl_dest} to {dest}")
@@ -888,16 +887,14 @@ def command_static_url(args):
         raise
 
     if dl_dest != dest and dl_dest.exists():
-        log("Removing %s" % dl_dest)
+        log(f"Removing {dl_dest}")
         dl_dest.unlink()
 
 
 def api(root_url, service, version, path):
     # taskcluster-lib-urls is not available when this script runs, so
     # simulate its behavior:
-    return "{root_url}/api/{service}/{version}/{path}".format(
-        root_url=root_url, service=service, version=version, path=path
-    )
+    return f"{root_url}/api/{service}/{version}/{path}"
 
 
 def get_hash(fetch, root_url):
@@ -951,7 +948,13 @@ def command_task_artifacts(args):
             }
         ],
     }
-    print("PERFHERDER_DATA: {}".format(json.dumps(perfherder_data)), file=sys.stderr)
+    print(f"PERFHERDER_DATA: {json.dumps(perfherder_data)}", file=sys.stderr)
+    upload_dir = os.environ.get("UPLOAD_DIR")
+    if os.environ.get("MOZ_AUTOMATION", "0") == "1" and upload_dir:
+        upload_path = pathlib.Path(upload_dir) / "perfherder-data-fetch-content.json"
+        upload_path.parent.mkdir(parents=True, exist_ok=True)
+        with upload_path.open("w") as f:
+            json.dump(perfherder_data, f)
 
 
 def main():
@@ -984,7 +987,7 @@ def main():
     )
     url.add_argument(
         "--gpg-sig-url",
-        help="URL containing signed GPG document validating " "URL to fetch",
+        help="URL containing signed GPG document validating URL to fetch",
     )
     url.add_argument(
         "--gpg-key-env", help="Environment variable containing GPG key to validate"
@@ -999,7 +1002,7 @@ def main():
     url.add_argument(
         "--add-prefix",
         default="",
-        help="Prefix to add to file names in the downloaded " "archive",
+        help="Prefix to add to file names in the downloaded archive",
     )
     url.add_argument(
         "-H",
@@ -1007,7 +1010,7 @@ def main():
         default=[],
         action="append",
         dest="headers",
-        help="Header to send as part of the request, can be passed " "multiple times",
+        help="Header to send as part of the request, can be passed multiple times",
     )
     url.add_argument(
         "--force-archive",

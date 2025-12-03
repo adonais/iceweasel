@@ -8,7 +8,6 @@
 #define DOM_SVG_SVGANIMATEMOTIONELEMENT_H_
 
 #include "SVGMotionSMILAnimationFunction.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/SVGAnimationElement.h"
 
 nsresult NS_NewSVGAnimateMotionElement(

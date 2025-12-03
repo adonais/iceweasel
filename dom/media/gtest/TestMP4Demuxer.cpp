@@ -1,4 +1,5 @@
 /* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -8,11 +9,9 @@
 #include "MockMediaResource.h"
 #include "VideoUtils.h"
 #include "gtest/gtest.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/TaskQueue.h"
-#include "mozilla/Unused.h"
 
 using namespace mozilla;
 using media::TimeUnit;
@@ -140,7 +139,7 @@ class MP4DemuxerBinding {
   void DispatchTask(FunctionType aFun) {
     RefPtr<Runnable> r =
         NS_NewRunnableFunction("MP4DemuxerBinding::DispatchTask", aFun);
-    Unused << mTaskQueue->Dispatch(r.forget());
+    (void)mTaskQueue->Dispatch(r.forget());
   }
 
   virtual ~MP4DemuxerBinding() = default;

@@ -95,6 +95,8 @@ export class LoginManagerStorage_json {
       if (loginsBackupEnabled) {
         backupPath = PathUtils.join(profileDir, "logins-backup.json");
       }
+      // Note that LoginStore is based on JSONFile which brings its own
+      // shutdown blocker to finalize properly, so we do not need one here.
       this._store = new lazy.LoginStore(jsonPath, backupPath);
 
       // The ProfileDataUpgrader can possibly set this pref. As we don't know
@@ -118,10 +120,11 @@ export class LoginManagerStorage_json {
   }
 
   /**
-   * Internal method used by regression tests only.  It is called before
-   * replacing this storage module with a new instance.
+   * Internal method used by tests only. It is called before replacing
+   * this storage module with a new instance. It avoids to finalize the
+   * underlying DeferredTask as it is still needed for the next tests.
    */
-  terminate() {
+  testSaveForReplace() {
     this._store._saver.disarm();
     return this._store._save();
   }

@@ -88,8 +88,8 @@ add_task(async function test_records_obtained_from_server_are_stored_in_db() {
   const timestamp = await client.db.getLastModified();
   equal(timestamp, 3000, "timestamp was stored");
 
-  const { signature } = await client.db.getMetadata();
-  equal(signature.signature, "abcdef", "metadata was stored");
+  const { signatures } = await client.db.getMetadata();
+  equal(signatures[0].signature, "abcdef", "metadata was stored");
 });
 add_task(clear_state);
 
@@ -1510,10 +1510,12 @@ wNuvFqc=
           metadata: {
             id: "password-fields",
             last_modified: 1234,
-            signature: {
-              signature: "abcdef",
-              x5u: `http://localhost:${port}/fake-x5u`,
-            },
+            signatures: [
+              {
+                signature: "abcdef",
+                x5u: `http://localhost:${port}/fake-x5u`,
+              },
+            ],
           },
           changes: [
             {
@@ -1537,7 +1539,7 @@ wNuvFqc=
         status: { status: 200, statusText: "OK" },
         responseBody: {
           metadata: {
-            signature: {},
+            signatures: [{}],
           },
           timestamp: 4000,
           changes: [
@@ -1568,7 +1570,7 @@ wNuvFqc=
         status: { status: 200, statusText: "OK" },
         responseBody: {
           metadata: {
-            signature: {},
+            signatures: [{}],
           },
           timestamp: 5000,
           changes: [
@@ -1675,10 +1677,12 @@ wNuvFqc=
         status: { status: 200, statusText: "OK" },
         responseBody: {
           metadata: {
-            signature: {
-              signature: "some-sig",
-              x5u: `http://localhost:${port}/fake-x5u`,
-            },
+            signatures: [
+              {
+                signature: "some-sig",
+                x5u: `http://localhost:${port}/fake-x5u`,
+              },
+            ],
           },
           timestamp: 3000,
           changes: [
@@ -1703,10 +1707,12 @@ wNuvFqc=
         status: { status: 200, statusText: "OK" },
         responseBody: {
           metadata: {
-            signature: {
-              signature: "some-sig",
-              x5u: `http://localhost:${port}/fake-x5u`,
-            },
+            signatures: [
+              {
+                signature: "some-sig",
+                x5u: `http://localhost:${port}/fake-x5u`,
+              },
+            ],
           },
           timestamp: 3001,
           changes: [
@@ -1733,10 +1739,12 @@ wNuvFqc=
         metadata: {
           id: "language-dictionaries",
           last_modified: 1234,
-          signature: {
-            signature: "xyz",
-            x5u: `http://localhost:${port}/fake-x5u`,
-          },
+          signatures: [
+            {
+              signature: "xyz",
+              x5u: `http://localhost:${port}/fake-x5u`,
+            },
+          ],
         },
         changes: [
           {
@@ -1772,10 +1780,12 @@ wNuvFqc=
           metadata: {
             id: "with-local-fields",
             last_modified: 1234,
-            signature: {
-              signature: "xyz",
-              x5u: `http://localhost:${port}/fake-x5u`,
-            },
+            signatures: [
+              {
+                signature: "xyz",
+                x5u: `http://localhost:${port}/fake-x5u`,
+              },
+            ],
           },
           changes: [
             {
@@ -1798,7 +1808,7 @@ wNuvFqc=
         responseBody: {
           timestamp: 3000,
           metadata: {
-            signature: {},
+            signatures: [{}],
           },
           changes: [
             {

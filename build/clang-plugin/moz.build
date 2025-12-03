@@ -134,6 +134,9 @@ if CONFIG["HOST_OS_ARCH"] == "WINNT":
     # but as of writing, it's not necessary for the plugin code, so enable
     # the escape hatch, at least until we generally upgrade to VS 2019.
     HOST_DEFINES["LLVM_FORCE_USE_OLD_TOOLCHAIN"] = True
+    # Clang 20+ needs /Zc:dllexportInlines- to work around CLANG_ABI issues with inline methods
+    if CONFIG["HOST_CC_VERSION"] and int(CONFIG["HOST_CC_VERSION"].split(".")[0]) >= 20:
+        extra_cxxflags += ["/Zc:dllexportInlines-"]
 else:
     extra_cxxflags = ["-fno-rtti", "-fno-exceptions"]
 

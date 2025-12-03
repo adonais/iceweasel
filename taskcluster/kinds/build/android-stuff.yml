@@ -5,6 +5,7 @@
 task-defaults:
     tags:
         android-stuff: "true"
+    run-on-repo-type: [hg]
     run:
         mozconfig-variant: null
 

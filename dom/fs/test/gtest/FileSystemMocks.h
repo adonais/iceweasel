@@ -19,7 +19,6 @@
 #include "jsapi.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMException.h"

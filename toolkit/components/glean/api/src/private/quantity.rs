@@ -116,7 +116,9 @@ impl Quantity for QuantityMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<i64> for QuantityMetric {
+impl glean::TestGetValue for QuantityMetric {
+    type Output = i64;
+
     /// **Test-only API.**
     ///
     /// Get the currently stored value.

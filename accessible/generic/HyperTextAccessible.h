@@ -59,11 +59,6 @@ class HyperTextAccessible : public AccessibleWrap,
                              LocalAccessible* aChild) override;
   virtual Relation RelationByType(RelationType aType) const override;
 
-  /**
-   * Return whether the associated content is editable.
-   */
-  bool IsEditable() const;
-
   // HyperTextAccessible (static helper method)
 
   // Convert content offset to rendered text offset

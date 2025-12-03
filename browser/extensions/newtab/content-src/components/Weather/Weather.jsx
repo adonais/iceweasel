@@ -11,6 +11,7 @@ import React, { useState } from "react";
 
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
+const PREF_SYSTEM_SHOW_WEATHER = "system.showWeather";
 
 function WeatherPlaceholder() {
   const [isSeen, setIsSeen] = useState(false);
@@ -242,11 +243,16 @@ export class _Weather extends React.PureComponent {
     });
   };
 
+  isEnabled() {
+    const { values } = this.props.Prefs;
+    const systemValue = values[PREF_SYSTEM_SHOW_WEATHER];
+    const experimentValue = values.trainhopConfig?.weather?.enabled;
+    return systemValue || experimentValue;
+  }
+
   render() {
     // Check if weather should be rendered
-    const isWeatherEnabled = this.props.Prefs.values["system.showWeather"];
-
-    if (!isWeatherEnabled) {
+    if (!this.isEnabled()) {
       return false;
     }
 
@@ -275,21 +281,16 @@ export class _Weather extends React.PureComponent {
 
     const showDetailedView = Prefs.values["weather.display"] === "detailed";
 
-    const isOptInEnabled = Prefs.values["system.showWeatherOptIn"];
-    const optInDisplayed = Prefs.values["weather.optInDisplayed"];
-    const nimbusOptInDisplayed =
-      Prefs.values.trainhopConfig?.weather?.optInDisplayed;
-    const optInUserChoice = Prefs.values["weather.optInAccepted"];
-    const nimbusOptInUserChoice =
-      Prefs.values.trainhopConfig?.weather?.optInAccepted;
-    const staticWeather = Prefs.values["weather.staticData.enabled"];
-    const nimbusStaticWeather =
-      Prefs.values.trainhopConfig?.weather?.staticDataEnabled;
+    const weatherOptIn = Prefs.values["system.showWeatherOptIn"];
+    const nimbusWeatherOptInEnabled =
+      Prefs.values.trainhopConfig?.weather?.weatherOptInEnabled;
 
-    const optInPrompt = nimbusOptInDisplayed ?? optInDisplayed ?? false;
-    const userChoice = nimbusOptInUserChoice ?? optInUserChoice ?? false;
-    const isUserWeatherEnabled = Prefs.values.showWeather;
-    const staticDataEnabled = nimbusStaticWeather ?? staticWeather ?? false;
+    const optInDisplayed = Prefs.values["weather.optInDisplayed"];
+    const optInUserChoice = Prefs.values["weather.optInAccepted"];
+    const staticWeather = Prefs.values["weather.staticData.enabled"];
+
+    // Conditionals for rendering feature based on prefs + nimbus experiment variables
+    const isOptInEnabled = weatherOptIn || nimbusWeatherOptInEnabled;
 
     // Opt-in dialog should only show if:
     // - weather enabled on customization menu
@@ -297,21 +298,20 @@ export class _Weather extends React.PureComponent {
     // - opt-in prompt is enabled
     // - user hasn't accepted the opt-in yet
     const shouldShowOptInDialog =
-      isUserWeatherEnabled && isOptInEnabled && optInPrompt && !userChoice;
+      isOptInEnabled && optInDisplayed && !optInUserChoice;
 
     // Show static weather data only if:
     // - weather is enabled on customization menu
     // - weather opt-in pref is enabled
     // - static weather data is enabled
-    const showStaticData =
-      isUserWeatherEnabled && isOptInEnabled && staticDataEnabled;
+    const showStaticData = isOptInEnabled && staticWeather;
 
     // Note: The temperature units/display options will become secondary menu items
     const WEATHER_SOURCE_CONTEXT_MENU_OPTIONS = [
       ...(Prefs.values["weather.locationSearchEnabled"]
         ? ["ChangeWeatherLocation"]
         : []),
-      ...(Prefs.values["system.showWeatherOptIn"] ? ["DetectLocation"] : []),
+      ...(isOptInEnabled ? ["DetectLocation"] : []),
       ...(Prefs.values["weather.temperatureUnits"] === "f"
         ? ["ChangeTempUnitCelsius"]
         : ["ChangeTempUnitFahrenheit"]),
@@ -325,7 +325,7 @@ export class _Weather extends React.PureComponent {
       ...(Prefs.values["weather.locationSearchEnabled"]
         ? ["ChangeWeatherLocation"]
         : []),
-      ...(Prefs.values["system.showWeatherOptIn"] ? ["DetectLocation"] : []),
+      ...(isOptInEnabled ? ["DetectLocation"] : []),
       "HideWeather",
       "OpenLearnMoreURL",
     ];

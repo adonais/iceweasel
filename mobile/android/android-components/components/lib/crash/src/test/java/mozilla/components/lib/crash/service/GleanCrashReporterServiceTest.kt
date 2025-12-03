@@ -10,6 +10,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.testing.WorkManagerTestInitHelper
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
@@ -605,26 +606,26 @@ class GleanCrashReporterServiceTest {
 
         val stackTracesGlean = """
         {
-            "crashType": "main",
-            "crashAddress": "0xf001ba11",
-            "crashThread": 1,
-            "mainModule": 0,
+            "crash_type": "main",
+            "crash_address": "0xf001ba11",
+            "crash_thread": 1,
+            "main_module": 0,
             "modules": [
             {
-                "baseAddress": "0x00000000",
-                "endAddress": "0x00004000",
-                "codeId": "8675309",
-                "debugFile": "",
-                "debugId": "18675309",
+                "base_address": "0x00000000",
+                "end_address": "0x00004000",
+                "code_id": "8675309",
+                "debug_file": "",
+                "debug_id": "18675309",
                 "filename": "foo.exe",
                 "version": "1.0.0"
             },
             {
-                "baseAddress": "0x00004000",
-                "endAddress": "0x00008000",
-                "codeId": "42",
-                "debugFile": "foo.pdb",
-                "debugId": "43",
+                "base_address": "0x00004000",
+                "end_address": "0x00008000",
+                "code_id": "42",
+                "debug_file": "foo.pdb",
+                "debug_id": "43",
                 "filename": "foo.dll",
                 "version": "1.1.0"
             }
@@ -632,14 +633,14 @@ class GleanCrashReporterServiceTest {
             "threads": [
             {
                 "frames": [
-                { "moduleIndex": 0, "ip": "0x10", "trust": "context" },
-                { "moduleIndex": 0, "ip": "0x20", "trust": "cfi" }
+                { "module_index": 0, "ip": "0x10", "trust": "context" },
+                { "module_index": 0, "ip": "0x20", "trust": "cfi" }
                 ]
             },
             {
                 "frames": [
-                { "moduleIndex": 1, "ip": "0x4010", "trust": "context" },
-                { "moduleIndex": 0, "ip": "0x30", "trust": "cfi" }
+                { "module_index": 1, "ip": "0x4010", "trust": "context" },
+                { "module_index": 0, "ip": "0x30", "trust": "cfi" }
                 ]
             }
             ]
@@ -701,7 +702,7 @@ class GleanCrashReporterServiceTest {
                         mapOf(
                             "phase" to JsonPrimitive("abcd"),
                             "conditions" to JsonPrimitive("[{\"foo\":\"bar\"}]"),
-                            "brokenAddBlockers" to JsonArray(listOf(JsonPrimitive("foo"))),
+                            "broken_add_blockers" to JsonArray(listOf(JsonPrimitive("foo"))),
                         ),
                     ),
                     GleanCrash.asyncShutdownTimeout.testGetValue(),
@@ -717,7 +718,7 @@ class GleanCrashReporterServiceTest {
                     GleanCrash.quotaManagerShutdownTimeout.testGetValue(),
                 )
                 assertEquals(
-                    Json.decodeFromString<JsonObject>(stackTracesGlean),
+                    Json.decodeFromString<JsonElement>(stackTracesGlean),
                     GleanCrash.stackTraces.testGetValue(),
                 )
                 pingReceived = true
@@ -785,7 +786,7 @@ class GleanCrashReporterServiceTest {
                     assertEquals(
                         JsonObject(
                             mapOf(
-                                "typeName" to JsonPrimitive("java.lang.RuntimeException"),
+                                "type_name" to JsonPrimitive("java.lang.RuntimeException"),
                                 "message" to JsonPrimitive("Test"),
                             ),
                         ),
@@ -794,7 +795,7 @@ class GleanCrashReporterServiceTest {
                     assertEquals(
                         JsonObject(
                             mapOf(
-                                "typeName" to JsonPrimitive("java.io.IOException"),
+                                "type_name" to JsonPrimitive("java.io.IOException"),
                                 "message" to JsonPrimitive("IO"),
                             ),
                         ),

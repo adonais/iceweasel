@@ -10,10 +10,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/00c4bd7039dc8992d
  1 file changed, 1 insertion(+)
 
 diff --git a/modules/video_capture/linux/video_capture_v4l2.cc b/modules/video_capture/linux/video_capture_v4l2.cc
-index b56a06f14b..4c128cc7be 100644
+index fa354dd994..1a58b0aa04 100644
 --- a/modules/video_capture/linux/video_capture_v4l2.cc
 +++ b/modules/video_capture/linux/video_capture_v4l2.cc
-@@ -62,6 +62,7 @@ VideoCaptureModuleV4L2::VideoCaptureModuleV4L2()
+@@ -66,6 +66,7 @@ VideoCaptureModuleV4L2::VideoCaptureModuleV4L2()
        _deviceId(-1),
        _deviceFd(-1),
        _buffersAllocatedByDevice(-1),

@@ -4,7 +4,7 @@
 
 "use strict";
 
-/*
+/**
  * Parses an RTP packet
  * @param buffer an ArrayBuffer that contains the packet
  * @return { type: "rtp", header: {...}, payload: a DataView }

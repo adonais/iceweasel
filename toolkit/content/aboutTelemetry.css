@@ -47,7 +47,7 @@ body {
   display: flex;
   flex-direction: column;
   font-size: 17px;
-  font-weight: 600;
+  font-weight: var(--heading-font-weight);
   pointer-events: none;
   padding: 12px 8px;
 }
@@ -214,7 +214,7 @@ section:not(.active) {
 
 .stack-title {
   font-size: medium;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   text-decoration: underline;
 }
 

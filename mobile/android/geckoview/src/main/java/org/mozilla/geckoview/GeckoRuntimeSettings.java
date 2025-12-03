@@ -6,10 +6,9 @@
 
 package org.mozilla.geckoview;
 
-import static android.os.Build.VERSION;
-
 import android.app.Service;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.LocaleList;
 import android.os.Parcel;
@@ -76,9 +75,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     /**
      * Path to configuration file from which GeckoView will read configuration options such as Gecko
      * process arguments, environment variables, and preferences.
-     *
-     * <p>Note: this feature is only available for <code>{@link VERSION#SDK_INT} &gt; 21</code>, on
-     * older devices this will be silently ignored.
      *
      * @param configFilePath Configuration file path to read from, or <code>null</code> to use
      *     default location <code>/data/local/tmp/$PACKAGE-geckoview-config.yaml</code>.
@@ -681,6 +677,27 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       getSettings().mIsolatedProcess = enabled;
       return this;
     }
+
+    /**
+     * Set whether App Zygote preloading should be enabled or not. This must be set before startup.
+     *
+     * <p>Will take precedence over{@link #isolatedProcessEnabled(boolean) } if both are enabled.
+     *
+     * <p>Only settable on SDK 29 or higher.
+     *
+     * @param enabled A flag determining whether or not to enable App Zygote preloading.
+     * @return The builder instance.
+     */
+    public @NonNull Builder appZygoteProcessEnabled(final boolean enabled) {
+      if (enabled && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+        Log.w(LOGTAG, "Cannot set app Zygote preloading to true below SDK 29 (Android 10)!");
+        getSettings().mAppZygoteProcess = false;
+        return this;
+      }
+      getSettings().mAppZygoteProcess = enabled;
+
+      return this;
+    }
   }
 
   private GeckoRuntime mRuntime;
@@ -815,6 +832,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   /* package */ boolean mUseMaxScreenDepth;
   /* package */ boolean mLowMemoryDetection = true;
   /* package */ boolean mIsolatedProcess = false;
+  /* package */ boolean mAppZygoteProcess = false;
   /* package */ float mDisplayDensityOverride = -1.0f;
   /* package */ int mDisplayDpiOverride;
   /* package */ int mScreenWidthOverride;
@@ -867,6 +885,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     mUseMaxScreenDepth = settings.mUseMaxScreenDepth;
     mLowMemoryDetection = settings.mLowMemoryDetection;
     mIsolatedProcess = settings.mIsolatedProcess;
+    mAppZygoteProcess = settings.mAppZygoteProcess;
     mDisplayDensityOverride = settings.mDisplayDensityOverride;
     mDisplayDpiOverride = settings.mDisplayDpiOverride;
     mScreenWidthOverride = settings.mScreenWidthOverride;
@@ -903,8 +922,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   /**
    * Path to configuration file from which GeckoView will read configuration options such as Gecko
    * process arguments, environment variables, and preferences.
-   *
-   * <p>Note: this feature is only available for <code>{@link VERSION#SDK_INT} &gt; 21</code>.
    *
    * @return Path to configuration file from which GeckoView will read configuration options, or
    *     <code>null</code> for default location <code>/data/local/tmp/$PACKAGE-geckoview-config.yaml
@@ -1484,18 +1501,12 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   }
 
   private static String[] getSystemLocalesForAcceptLanguage() {
-    if (VERSION.SDK_INT >= 24) {
-      final LocaleList localeList = LocaleList.getDefault();
-      final String[] locales = new String[localeList.size()];
-      for (int i = 0; i < localeList.size(); i++) {
-        // accept-language should be language or language-region format.
-        locales[i] = LocaleUtils.getLanguageTagForAcceptLanguage(localeList.get(i));
-      }
-      return locales;
+    final LocaleList localeList = LocaleList.getDefault();
+    final String[] locales = new String[localeList.size()];
+    for (int i = 0; i < localeList.size(); i++) {
+      // accept-language should be language or language-region format.
+      locales[i] = LocaleUtils.getLanguageTagForAcceptLanguage(localeList.get(i));
     }
-    final String[] locales = new String[1];
-    final Locale locale = Locale.getDefault();
-    locales[0] = LocaleUtils.getLanguageTagForAcceptLanguage(locale);
     return locales;
   }
 
@@ -2381,6 +2392,15 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     return mIsolatedProcess;
   }
 
+  /**
+   * Gets whether the App Zygote process is enabled or not for preloading.
+   *
+   * @return True if App Zygote preloading is enabled.
+   */
+  public boolean getAppZygoteProcessEnabled() {
+    return mAppZygoteProcess;
+  }
+
   @Override // Parcelable
   public void writeToParcel(final Parcel out, final int flags) {
     super.writeToParcel(out, flags);
@@ -2392,6 +2412,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     ParcelableUtils.writeBoolean(out, mUseMaxScreenDepth);
     ParcelableUtils.writeBoolean(out, mLowMemoryDetection);
     ParcelableUtils.writeBoolean(out, mIsolatedProcess);
+    ParcelableUtils.writeBoolean(out, mAppZygoteProcess);
     out.writeFloat(mDisplayDensityOverride);
     out.writeInt(mDisplayDpiOverride);
     out.writeInt(mScreenWidthOverride);
@@ -2412,6 +2433,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     mUseMaxScreenDepth = ParcelableUtils.readBoolean(source);
     mLowMemoryDetection = ParcelableUtils.readBoolean(source);
     mIsolatedProcess = ParcelableUtils.readBoolean(source);
+    mAppZygoteProcess = ParcelableUtils.readBoolean(source);
     mDisplayDensityOverride = source.readFloat();
     mDisplayDpiOverride = source.readInt();
     mScreenWidthOverride = source.readInt();

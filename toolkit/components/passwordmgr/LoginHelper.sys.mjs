@@ -1413,9 +1413,11 @@ export const LoginHelper = {
    * @returns {Object[]} An entry for each processed row containing how the row was processed and the login data.
    */
   async maybeImportLogins(loginDatas) {
+    // by setting this flag we ensure no events are submitted
     this.importing = true;
+    const processor = new ImportRowProcessor();
+
     try {
-      const processor = new ImportRowProcessor();
       for (let rawLoginData of loginDatas) {
         // Do some sanitization on a clone of the loginData.
         let loginData = ChromeUtils.shallowClone(rawLoginData);
@@ -1710,6 +1712,7 @@ export const LoginHelper = {
    * Send a notification when stored data is changed.
    */
   notifyStorageChanged(changeType, data) {
+    // do not emit individual events during csv import
     if (this.importing) {
       return;
     }

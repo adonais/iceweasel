@@ -6,120 +6,117 @@
 
 namespace mozilla::dom::sanitizer {
 
-bool CanonicalName::IsDataAttribute() const {
+template <typename CanonicalName, typename SanitizerName>
+static void SetSanitizerName(const CanonicalName& aName,
+                             SanitizerName& aSanitizerName) {
+  aName->LocalName()->ToString(aSanitizerName.mName);
+  if (nsAtom* ns = aName->GetNamespace()) {
+    ns->ToString(aSanitizerName.mNamespace);
+  } else {
+    aSanitizerName.mNamespace.SetIsVoid(true);
+  }
+}
+
+bool CanonicalAttribute::IsDataAttribute() const {
   return StringBeginsWith(nsDependentAtomString(mLocalName), u"data-"_ns) &&
          !mNamespace;
 }
 
-SanitizerAttributeNamespace CanonicalName::ToSanitizerAttributeNamespace()
+SanitizerAttributeNamespace CanonicalAttribute::ToSanitizerAttributeNamespace()
     const {
   SanitizerAttributeNamespace result;
-  mLocalName->ToString(result.mName);
-  if (mNamespace) {
-    mNamespace->ToString(result.mNamespace);
-  } else {
-    result.mNamespace.SetIsVoid(true);
-  }
+  SetSanitizerName(this, result);
+  return result;
+}
+
+SanitizerElementNamespace CanonicalElement::ToSanitizerElementNamespace()
+    const {
+  SanitizerElementNamespace result;
+  SetSanitizerName(this, result);
   return result;
 }
 
 SanitizerElementNamespaceWithAttributes
-CanonicalElementWithAttributes::ToSanitizerElementNamespaceWithAttributes()
-    const {
+CanonicalElement::ToSanitizerElementNamespaceWithAttributes(
+    const CanonicalElementAttributes& aElementAttributes) const {
   SanitizerElementNamespaceWithAttributes result;
-  mLocalName->ToString(result.mName);
-  if (mNamespace) {
-    mNamespace->ToString(result.mNamespace);
-  } else {
-    result.mNamespace.SetIsVoid(true);
+  SetSanitizerName(this, result);
+  if (aElementAttributes.mAttributes) {
+    result.mAttributes.Construct(
+        ToSanitizerAttributes(*aElementAttributes.mAttributes));
   }
-  if (mAttributes) {
-    result.mAttributes.Construct(ToSanitizerAttributes(*mAttributes));
-  }
-  if (mRemoveAttributes) {
+  if (aElementAttributes.mRemoveAttributes) {
     result.mRemoveAttributes.Construct(
-        ToSanitizerAttributes(*mRemoveAttributes));
+        ToSanitizerAttributes(*aElementAttributes.mRemoveAttributes));
   }
   return result;
 }
 
-SanitizerElementNamespace CanonicalName::ToSanitizerElementNamespace() const {
-  SanitizerElementNamespace result;
-  mLocalName->ToString(result.mName);
-  if (mNamespace) {
-    mNamespace->ToString(result.mNamespace);
-  } else {
-    result.mNamespace.SetIsVoid(true);
+template <typename CanonicalName>
+static std::ostream& Write(std::ostream& aStream, const CanonicalName& aName) {
+  nsAutoCString localName;
+  aName.LocalName()->ToUTF8String(localName);
+  aStream << '"' << localName << '"';
+  if (nsAtom* ns = aName.GetNamespace()) {
+    nsAutoCString nameSpace;
+    ns->ToUTF8String(nameSpace);
+    return aStream << " (namespace: \"" << nameSpace << "\")";
   }
-  return result;
+  return aStream << " (namespace: null)";
 }
 
-// TODO(bug 1989215): This is obviously quadratic. Fix this!
-template <typename ValueType>
-bool ListSet<ValueType>::HasDuplicates() const {
-  for (size_t i = 0; i + 1 < mValues.Length(); i++) {
-    if (mValues.IndexOf(mValues[i], i + 1) != mValues.NoIndex) {
-      return true;
-    }
-  }
-  return false;
+std::ostream& operator<<(std::ostream& aStream,
+                         const CanonicalAttribute& aName) {
+  return Write(aStream, aName);
 }
 
-template class ListSet<CanonicalName>;
-template class ListSet<CanonicalElementWithAttributes>;
+std::ostream& operator<<(std::ostream& aStream, const CanonicalElement& aName) {
+  return Write(aStream, aName);
+}
 
-bool CanonicalElementWithAttributes::EqualAttributes(
-    const CanonicalElementWithAttributes& aOther) const {
-  MOZ_ASSERT(*this == aOther);
-
+bool CanonicalElementAttributes::Equals(
+    const CanonicalElementAttributes& aOther) const {
   if (mAttributes.isSome() != aOther.mAttributes.isSome() ||
       mRemoveAttributes.isSome() != aOther.mRemoveAttributes.isSome()) {
     return false;
   }
 
   if (mAttributes) {
-    if (mAttributes->Values() != aOther.mAttributes->Values()) {
+    if (mAttributes->Count() != aOther.mAttributes->Count()) {
       return false;
+    }
+
+    for (const CanonicalAttribute& attr : *mAttributes) {
+      if (!aOther.mAttributes->Contains(attr)) {
+        return false;
+      }
     }
   }
 
   if (mRemoveAttributes) {
-    if (mRemoveAttributes->Values() != aOther.mRemoveAttributes->Values()) {
+    if (mRemoveAttributes->Count() != aOther.mRemoveAttributes->Count()) {
       return false;
+    }
+
+    for (const CanonicalAttribute& attr : *mRemoveAttributes) {
+      if (!aOther.mRemoveAttributes->Contains(attr)) {
+        return false;
+      }
     }
   }
 
   return true;
 }
 
-CanonicalElementWithAttributes CanonicalElementWithAttributes::Clone() const {
-  CanonicalElementWithAttributes elem(CanonicalName::Clone());
-
-  if (mAttributes) {
-    nsTArray<CanonicalName> attributes;
-    for (const auto& attr : mAttributes->Values()) {
-      attributes.AppendElement(attr.Clone());
-    }
-    elem.mAttributes = Some(ListSet(std::move(attributes)));
-  }
-
-  if (mRemoveAttributes) {
-    nsTArray<CanonicalName> attributes;
-    for (const auto& attr : mRemoveAttributes->Values()) {
-      attributes.AppendElement(attr.Clone());
-    }
-    elem.mRemoveAttributes = Some(ListSet(std::move(attributes)));
-  }
-
-  return elem;
-}
-
 nsTArray<OwningStringOrSanitizerAttributeNamespace> ToSanitizerAttributes(
-    const ListSet<CanonicalName>& aList) {
+    const CanonicalAttributeSet& aSet) {
   nsTArray<OwningStringOrSanitizerAttributeNamespace> attributes;
-  for (const CanonicalName& canonical : aList.Values()) {
-    attributes.AppendElement()->SetAsSanitizerAttributeNamespace() =
+  for (const CanonicalAttribute& canonical : aSet) {
+    OwningStringOrSanitizerAttributeNamespace owning;
+    owning.SetAsSanitizerAttributeNamespace() =
         canonical.ToSanitizerAttributeNamespace();
+    attributes.InsertElementSorted(owning,
+                                   SanitizerComparator<decltype(owning)>());
   }
   return attributes;
 }

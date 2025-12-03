@@ -9,7 +9,6 @@
 #include "nsIStorageStream.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
 
 class nsIURI;

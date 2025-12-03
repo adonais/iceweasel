@@ -15,7 +15,6 @@
 #include "mozilla/intl/DateTimePart.h"
 #include "mozilla/intl/Locale.h"
 #include "mozilla/intl/TimeZone.h"
-#include "mozilla/Range.h"
 #include "mozilla/Span.h"
 
 #include "jsdate.h"

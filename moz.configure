@@ -634,7 +634,25 @@ def possible_makes(make, host):
     return candidates
 
 
-check_prog("GMAKE", possible_makes, bootstrap="mozmake")
+gmake = check_prog("GMAKE", possible_makes, bootstrap="mozmake")
+
+
+@depends(gmake)
+@checking("for gmake version")
+def gmake_version(prog):
+    out = check_cmd_output(prog, "--version")
+    version_line = out.splitlines()[0]
+    if not version_line.startswith("GNU Make"):
+        die("GNU make is required")
+    return Version(version_line[8:].strip())
+
+
+@depends(gmake_version)
+def check_gmake_version(version):
+    make_min_ver = Version("3.81")
+    if version < make_min_ver:
+        die(f"GNU Make {make_min_ver} or higher is required")
+
 
 # watchman detection
 # ==============================================================

@@ -274,10 +274,16 @@ class MOZ_STACK_CLASS CallSetup {
   BindingCallContext& GetCallContext() { return *mCallContext; }
 
  private:
+  CallSetup(CallbackObjectBase* aCallback, ErrorResult& aRv,
+            const char* aExecutionReason,
+            CallbackObjectBase::ExceptionHandling aExceptionHandling,
+            JS::Realm* aRealm, bool aIsJSImplementedWebIDL,
+            CycleCollectedJSContext* aCCJS);
   // Private delegating constructor for common initialization
   CallSetup(ErrorResult& aRv,
             CallbackObjectBase::ExceptionHandling aExceptionHandling,
-            JS::Realm* aRealm, bool aIsMainThread);
+            JS::Realm* aRealm, bool aIsMainThread,
+            CycleCollectedJSContext* aCCJS);
 
   // We better not get copy-constructed
   CallSetup(const CallSetup&) = delete;

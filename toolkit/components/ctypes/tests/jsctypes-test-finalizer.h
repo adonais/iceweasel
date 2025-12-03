@@ -3,7 +3,6 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jsctypes-test.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Types.h"
 
 #define EXPORT_CDECL(type) MOZ_EXPORT type

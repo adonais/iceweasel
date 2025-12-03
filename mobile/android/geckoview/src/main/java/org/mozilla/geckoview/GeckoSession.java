@@ -4075,7 +4075,6 @@ public class GeckoSession {
      * @param session The GeckoSession that initiated the callback.
      * @param icon The pointer icon sent from the content.
      */
-    @RequiresApi(Build.VERSION_CODES.N)
     @UiThread
     default void onPointerIconChange(
         @NonNull final GeckoSession session, @NonNull final PointerIcon icon) {
@@ -6073,8 +6072,7 @@ public class GeckoSession {
         if (Type.FOLDER == type && uris[0] != null) {
           GeckoBundle[] filesInWebKitDirectory = filesInWebKitDirectory = new GeckoBundle[0];
           try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
-                && DocumentsContract.isTreeUri(uris[0])) {
+            if (DocumentsContract.isTreeUri(uris[0])) {
               filesInWebKitDirectory =
                   IntentUtils.traverseTreeUri(context, uris[0]).stream()
                       .map(f -> f.toGeckoBundle())
@@ -6097,7 +6095,7 @@ public class GeckoSession {
           return uri.getPath();
         }
         if ("content".equals(uri.getScheme())) {
-          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && DocumentsContract.isTreeUri(uri)) {
+          if (DocumentsContract.isTreeUri(uri)) {
             return IntentUtils.resolveTreeUri(context, uri);
           }
           if (DocumentsContract.isDocumentUri(context, uri)) {
@@ -7894,10 +7892,6 @@ public class GeckoSession {
       final int defaultCursor, final @Nullable Bitmap customCursor, final float x, final float y) {
     ThreadUtils.assertOnUiThread();
 
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-      return;
-    }
-
     final PointerIcon icon;
     if (customCursor != null) {
       try {
@@ -7920,9 +7914,6 @@ public class GeckoSession {
   /* package */ void startDragAndDrop(final Bitmap bitmap) {
     ThreadUtils.assertOnUiThread();
 
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-      return;
-    }
     final View view = getTextInput().getView();
     if (view == null) {
       return;
@@ -7934,9 +7925,6 @@ public class GeckoSession {
   /* package */ void updateDragImage(final Bitmap bitmap) {
     ThreadUtils.assertOnUiThread();
 
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-      return;
-    }
     final View view = getTextInput().getView();
     if (view == null) {
       return;

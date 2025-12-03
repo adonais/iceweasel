@@ -9,7 +9,6 @@
 
 #include <cstddef>
 
-#include "mozilla/Attributes.h"
 #include "nsError.h"
 
 namespace mozilla {

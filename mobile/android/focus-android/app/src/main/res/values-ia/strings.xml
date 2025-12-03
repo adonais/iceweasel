@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -149,7 +156,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s te pone al commando.</p> <p>Usa lo como un navigator private: <ul> <li>Cerca e naviga directemente in le app</li> <li>Bloca le traciatores (o actualisa le parametros pro permitter traciatores)</li> <li>Eliminar pro deler le cookies e tamben le chronologia de recercas e de navigation</li> </ul> </p> <p>%1$s es producite per Mozilla. Nostre mission es promover un Internet san e aperte.<br/> <a href=\"%2$s\">Pro saper plus</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s te pone al commando.</p>\n<p>Usa lo como un navigator private:\n<ul>\n<li>Cerca e naviga directemente in le app</li>\n<li>Bloca le traciatores (o actualisa le parametros pro permitter traciatores)</li>\n<li>Eliminar pro deler le cookies e tamben le chronologia de recercas e de navigation</li>\n</ul> </p>\n<p>%1$s es producite per Mozilla. Nostre mission es promover un Internet san e aperte.<br/>\n<a href=\"%2$s\">Pro saper plus</a></p>]]></string>
   <!-- A link to SUMO at the bottom of About Focus screen. -->
   <string name="about_screen_learn_more">Pro saper plus</string>
   <!-- Header for the Privacy and Security settings menu -->
@@ -875,7 +882,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Isto pote esser un problema con le configuration del servitor, o pote esser que un persona tenta de usurpar le identitate del servitor. <br/><br/> Si tu te ha connectite a iste servitor con successo in le passato, le error pote esser temporari.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Il es possibile que alcuno tenta usurpar le identitate del sito e pote esser riscose continuar.</label> <br><br> <label>%1$s non considera digne de fide <b>%2$s</b> perque su emissor de certificatos es incognite, le certificato es auto-signate, o le servitor non invia le correcte certificatos intermedie.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Il es possibile que alcuno tenta usurpar le identitate del sito e pote esser riscose continuar.</label> <br><br>\n<label>%1$s non considera digne de fide <b>%2$s</b> perque su emissor de certificatos es incognite, le certificato es auto-signate, o le servitor non invia le correcte certificatos intermedie.</label>]]></string>
   <!--
     Sessions List
 

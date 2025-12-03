@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_MessagePort_h
 #define mozilla_dom_MessagePort_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/DOMTypes.h"

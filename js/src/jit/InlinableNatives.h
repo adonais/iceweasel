@@ -39,6 +39,8 @@
   _(ArrayPush)                                     \
   _(ArraySlice)                                    \
                                                    \
+  _(ArrayBufferByteLength)                         \
+                                                   \
   _(AtomicsCompareExchange)                        \
   _(AtomicsExchange)                               \
   _(AtomicsLoad)                                   \
@@ -79,6 +81,8 @@
   _(DataViewSetFloat64)                            \
   _(DataViewSetBigInt64)                           \
   _(DataViewSetBigUint64)                          \
+  _(DataViewByteLength)                            \
+  _(DataViewByteOffset)                            \
                                                    \
   _(DateGetTime)                                   \
   _(DateGetFullYear)                               \
@@ -108,6 +112,7 @@
   _(MapGet)                                        \
   _(MapHas)                                        \
   _(MapSet)                                        \
+  _(MapSize)                                       \
                                                    \
   _(MathAbs)                                       \
   _(MathFloor)                                     \
@@ -152,6 +157,14 @@
                                                    \
   _(ReflectGetPrototypeOf)                         \
                                                    \
+  _(RegExpDotAll)                                  \
+  _(RegExpGlobal)                                  \
+  _(RegExpHasIndices)                              \
+  _(RegExpIgnoreCase)                              \
+  _(RegExpMultiline)                               \
+  _(RegExpSticky)                                  \
+  _(RegExpUnicode)                                 \
+  _(RegExpUnicodeSets)                             \
   _(RegExpMatcher)                                 \
   _(RegExpSearcher)                                \
   _(RegExpSearcherLastLimit)                       \
@@ -167,6 +180,8 @@
   _(SetHas)                                        \
   _(SetAdd)                                        \
   _(SetSize)                                       \
+                                                   \
+  _(SharedArrayBufferByteLength)                   \
                                                    \
   _(String)                                        \
   _(StringToString)                                \
@@ -184,6 +199,8 @@
   _(StringEndsWith)                                \
   _(StringToLowerCase)                             \
   _(StringToUpperCase)                             \
+  _(StringToLocaleLowerCase)                       \
+  _(StringToLocaleUpperCase)                       \
   _(StringTrim)                                    \
   _(StringTrimStart)                               \
   _(StringTrimEnd)                                 \
@@ -201,6 +218,9 @@
   _(TypedArrayFill)                                \
   _(TypedArraySet)                                 \
   _(TypedArraySubarray)                            \
+  _(TypedArrayLength)                              \
+  _(TypedArrayByteLength)                          \
+  _(TypedArrayByteOffset)                          \
                                                    \
   _(TestBailout)                                   \
   _(TestAssertFloat32)                             \

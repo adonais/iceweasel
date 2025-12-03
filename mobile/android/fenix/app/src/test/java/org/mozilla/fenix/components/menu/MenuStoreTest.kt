@@ -131,18 +131,18 @@ class MenuStoreTest {
         )
 
         assertEquals(selectedTab, state.browserMenuState!!.selectedTab)
-        assertNull(state.browserMenuState!!.bookmarkState.guid)
-        assertFalse(state.browserMenuState!!.bookmarkState.isBookmarked)
-        assertFalse(state.browserMenuState!!.isPinned)
+        assertNull(state.browserMenuState.bookmarkState.guid)
+        assertFalse(state.browserMenuState.bookmarkState.isBookmarked)
+        assertFalse(state.browserMenuState.isPinned)
 
         var newState = state.copyWithBrowserMenuState {
             it.copy(selectedTab = firefoxTab)
         }
 
         assertEquals(firefoxTab, newState.browserMenuState!!.selectedTab)
-        assertNull(state.browserMenuState!!.bookmarkState.guid)
-        assertFalse(state.browserMenuState!!.bookmarkState.isBookmarked)
-        assertFalse(state.browserMenuState!!.isPinned)
+        assertNull(state.browserMenuState.bookmarkState.guid)
+        assertFalse(state.browserMenuState.bookmarkState.isBookmarked)
+        assertFalse(state.browserMenuState.isPinned)
 
         val bookmarkState = BookmarkState(guid = "id", isBookmarked = true)
         val isPinned = true
@@ -151,8 +151,8 @@ class MenuStoreTest {
         }
 
         assertEquals(firefoxTab, newState.browserMenuState!!.selectedTab)
-        assertEquals(bookmarkState, newState.browserMenuState!!.bookmarkState)
-        assertEquals(isPinned, newState.browserMenuState!!.isPinned)
+        assertEquals(bookmarkState, newState.browserMenuState.bookmarkState)
+        assertEquals(isPinned, newState.browserMenuState.isPinned)
     }
 
     @Test

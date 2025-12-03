@@ -25,7 +25,15 @@
   }
 }
 
-:root[customtitlebar]:not([lwtheme]) {
+:root[customtitlebar]:not([lwtheme], [builtintheme]) {
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media (-moz-windows-mica) or ((-moz-windows-accent-color-in-titlebar) and -moz-pref("browser.theme.windows.accent-color-in-tabs.enabled")) {
+    --toolbox-bgcolor: ActiveCaption;
+    --toolbox-textcolor: CaptionText;
+    --toolbox-bgcolor-inactive: InactiveCaption;
+    --toolbox-textcolor-inactive: InactiveCaptionText;
+  }
+
   @media (-moz-windows-mica) {
     background-color: transparent;
     /* stylelint-disable-next-line media-query-no-invalid */
@@ -265,7 +273,7 @@
 /* All tabs menupopup */
 
 .alltabs-item[selected="true"] {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 #UITourTooltipButtons {

@@ -7,7 +7,6 @@
 #include "mozilla/dom/SVGUseElement.h"
 
 #include "SVGGeometryProperty.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGUseFrame.h"

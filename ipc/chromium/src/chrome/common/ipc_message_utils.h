@@ -32,8 +32,6 @@ class nsCOMPtr;
 
 namespace mozilla::ipc {
 class IProtocol;
-template <typename P>
-struct IPDLParamTraits;
 namespace shared_memory {
 class Cursor;
 }
@@ -704,34 +702,10 @@ template <typename P, typename F>
   return ReadSequenceParamImpl<P>(reader, allocator(length), length);
 }
 
-// Temporary fallback class to allow types to declare serialization using the
-// IPDLParamTraits type class. Will be removed once all remaining
-// IPDLParamTraits implementations are gone. (bug 1754009)
-
-template <class P>
-struct ParamTraitsIPDLFallback {
-  template <class R>
-  static auto Write(MessageWriter* writer, R&& p)
-      -> decltype(mozilla::ipc::IPDLParamTraits<P>::Write(writer,
-                                                          writer->GetActor(),
-                                                          std::forward<R>(p))) {
-    mozilla::ipc::IPDLParamTraits<P>::Write(writer, writer->GetActor(),
-                                            std::forward<R>(p));
-  }
-  template <class R>
-  static auto Read(MessageReader* reader, R* r)
-      -> decltype(mozilla::ipc::IPDLParamTraits<P>::Read(reader,
-                                                         reader->GetActor(),
-                                                         r)) {
-    return mozilla::ipc::IPDLParamTraits<P>::Read(reader, reader->GetActor(),
-                                                  r);
-  }
-};
-
 // Fundamental types.
 
 template <class P>
-struct ParamTraitsFundamental : ParamTraitsIPDLFallback<P> {};
+struct ParamTraitsFundamental;
 
 template <>
 struct ParamTraitsFundamental<bool> {
@@ -1187,8 +1161,13 @@ struct ParamTraitsMozilla<nsresult> {
   }
 };
 
-// See comments for the IPDLParamTraits specializations for RefPtr<T> and
-// nsCOMPtr<T> for more details.
+// When being passed `RefPtr<T>` or `nsCOMPtr<T>`, forward to a specialization
+// for the underlying target type. The parameter type will be passed as `T*`,
+// and result as `RefPtr<T>*`.
+//
+// This is done explicitly to ensure that the deleted `&&` overload for
+// `operator T*` is not selected in generic contexts, and to support
+// deserializing into `nsCOMPtr<T>`.
 template <class T>
 struct ParamTraitsMozilla<RefPtr<T>> {
   static void Write(MessageWriter* writer, const RefPtr<T>& p) {

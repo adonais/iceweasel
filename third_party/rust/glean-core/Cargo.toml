@@ -13,7 +13,7 @@
 edition = "2021"
 rust-version = "1.82"
 name = "glean-core"
-version = "65.2.3"
+version = "66.1.2"
 authors = [
     "Jan-Erik Rediger <jrediger@mozilla.com>",
     "The Glean Team <glean-team@mozilla.com>",
@@ -40,7 +40,7 @@ license = "MPL-2.0"
 repository = "https://github.com/mozilla/glean"
 
 [package.metadata.glean]
-glean-parser = "17.2.0"
+glean-parser = "18.0.6"
 
 [lib]
 name = "glean_core"
@@ -53,6 +53,10 @@ path = "examples/rkv-open.rs"
 [[test]]
 name = "boolean"
 path = "tests/boolean.rs"
+
+[[test]]
+name = "clientid_textfile"
+path = "tests/clientid_textfile.rs"
 
 [[test]]
 name = "collection_enabled"
@@ -191,7 +195,7 @@ version = "1.0"
 features = ["v4"]
 
 [dependencies.zeitstempel]
-version = "0.1.0"
+version = "0.2.0"
 
 [dev-dependencies.ctor]
 version = "0.2.2"

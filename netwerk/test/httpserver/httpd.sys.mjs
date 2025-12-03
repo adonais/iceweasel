@@ -1199,8 +1199,9 @@ function Connection(
    */
   this.request = null;
 
-  /** This allows a connection to disambiguate between a peer initiating a
-   *  close and the socket being forced closed on shutdown.
+  /**
+   * This allows a connection to disambiguate between a peer initiating a
+   * close and the socket being forced closed on shutdown.
    */
   this._closed = false;
 
@@ -3725,7 +3726,7 @@ function Response(connection) {
   /**
    * Informational response:
    * For example 103 Early Hint
-   **/
+   */
   this._informationalResponseHttpVersion = nsHttpVersion.HTTP_1_1;
   this._informationalResponseHttpCode = 0;
   this._informationalResponseHttpDescription = "";

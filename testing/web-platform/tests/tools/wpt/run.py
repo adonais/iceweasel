@@ -1012,7 +1012,7 @@ def run(venv, **kwargs):
     setup_cls, wptrunner_kwargs = setup_wptrunner(venv, **kwargs)
 
     try:
-        rv = run_single(venv, **wptrunner_kwargs) > 0
+        rv = run_single(venv, **wptrunner_kwargs)
     finally:
         setup_cls.teardown()
 

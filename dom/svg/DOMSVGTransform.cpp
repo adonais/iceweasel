@@ -10,7 +10,6 @@
 #include "SVGAttrTearoffTable.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/dom/DOMMatrix.h"
 #include "mozilla/dom/DOMMatrixBinding.h"
 #include "mozilla/dom/SVGMatrix.h"

@@ -58,11 +58,11 @@ class AwesomeBarFeatureTest {
 
         verify(awesomeBar).onInputStarted()
 
-        listener!!.onTextChanged("Hello")
+        listener.onTextChanged("Hello")
 
         verify(awesomeBar).onInputChanged("Hello")
 
-        listener!!.onStopEditing()
+        listener.onStopEditing()
 
         verify(awesomeBar).onInputCancelled()
     }
@@ -297,7 +297,7 @@ class AwesomeBarFeatureTest {
         assertFalse(completeInvoked)
         startInvoked = false
 
-        listener!!.onStopEditing()
+        listener.onStopEditing()
 
         assertFalse(startInvoked)
         assertTrue(completeInvoked)
@@ -323,8 +323,8 @@ class AwesomeBarFeatureTest {
 
         assertTrue("Nothing to cancel when editing has started.", listener!!.onCancelEditing())
 
-        listener!!.onStartEditing()
+        listener.onStartEditing()
 
-        assertFalse("Cancelling because edit has started.", listener!!.onCancelEditing())
+        assertFalse("Cancelling because edit has started.", listener.onCancelEditing())
     }
 }

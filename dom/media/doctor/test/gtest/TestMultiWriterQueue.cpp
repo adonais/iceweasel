@@ -10,7 +10,6 @@
 
 #include "DDTimeStamp.h"
 #include "MultiWriterQueue.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/gtest/MozAssertions.h"
 #include "nsDeque.h"
 #include "nsIThread.h"

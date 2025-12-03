@@ -345,7 +345,8 @@ function _createNullPrincipalFromTabUserContextId(tab = null) {
 }
 
 export const URILoadingHelper = {
-  /* openLinkIn opens a URL in a place specified by the parameter |where|.
+  /**
+   * openLinkIn opens a URL in a place specified by the parameter |where|.
    *
    * The params object is the same as for `openLinkIn` and documented below.
    *
@@ -666,7 +667,7 @@ export const URILoadingHelper = {
       targetBrowser.focus();
     }
   },
-  /*
+  /**
    * Resolve the initial browser window to use for a load, based on `where`.
    *
    * @param {string} where

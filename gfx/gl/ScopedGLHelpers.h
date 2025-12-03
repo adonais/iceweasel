@@ -7,7 +7,6 @@
 #define SCOPEDGLHELPERS_H_
 
 #include "GLDefs.h"
-#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
 namespace gl {

@@ -47,7 +47,7 @@ open class SavedLoginsStorageController(
             deleteLoginJob = async {
                 passwordsStorage.delete(loginId)
             }
-            deleteLoginJob?.await()
+            deleteLoginJob.await()
             deleteLoginFromState(loginId)
             withContext(Dispatchers.Main) {
                 navController.popBackStack(R.id.savedLoginsFragment, false)
@@ -76,7 +76,7 @@ open class SavedLoginsStorageController(
             saveLoginJob = async {
                 id = add(loginEntryForAdd(originText, usernameText, passwordText))
             }
-            saveLoginJob?.await()
+            saveLoginJob.await()
             withContext(Dispatchers.Main) {
                 if (id.isNullOrEmpty()) {
                     navController.popBackStack(R.id.savedLoginsFragment, false)
@@ -89,7 +89,7 @@ open class SavedLoginsStorageController(
         }
         saveLoginJob?.invokeOnCompletion {
             if (it is CancellationException) {
-                saveLoginJob?.cancel()
+                saveLoginJob.cancel()
             }
         }
     }
@@ -130,7 +130,7 @@ open class SavedLoginsStorageController(
             saveLoginJob = async {
                 save(loginId, loginEntryForSave(loginId, usernameText, passwordText))
             }
-            saveLoginJob?.await()
+            saveLoginJob.await()
             withContext(Dispatchers.Main) {
                 val directions =
                     EditLoginFragmentDirections.actionEditLoginFragmentToLoginDetailFragment(
@@ -141,7 +141,7 @@ open class SavedLoginsStorageController(
         }
         saveLoginJob?.invokeOnCompletion {
             if (it is CancellationException) {
-                saveLoginJob?.cancel()
+                saveLoginJob.cancel()
             }
         }
     }
@@ -256,8 +256,8 @@ open class SavedLoginsStorageController(
             deferredLogins = async {
                 passwordsStorage.list()
             }
-            val logins = deferredLogins?.await()
-            logins?.let {
+            val logins = deferredLogins.await()
+            logins.let {
                 withContext(Dispatchers.Main) {
                     loginsFragmentStore.dispatch(
                         LoginsAction.UpdateLoginsList(

@@ -10,7 +10,6 @@
 #include "js/MemoryMetrics.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Try.h"

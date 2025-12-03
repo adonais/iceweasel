@@ -6,7 +6,6 @@
 
 #include "gc/Allocator.h"
 
-#include "mozilla/DebugOnly.h"
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/TimeStamp.h"
 

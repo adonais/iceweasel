@@ -527,6 +527,25 @@ del {
   text-decoration: line-through;
 }
 
+u:lang(ja),
+u:lang(ko),
+u:lang(zh),
+s:lang(ja),
+s:lang(ko),
+s:lang(zh),
+ins:lang(ja),
+ins:lang(ko),
+ins:lang(zh),
+del:lang(ja),
+del:lang(ko),
+del:lang(zh),
+strike:lang(ja),
+strike:lang(ko),
+strike:lang(zh) {
+  /* stylelint-disable-next-line */
+  text-decoration-inset: auto;
+}
+
 big {
   font-size: larger;
 }

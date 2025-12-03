@@ -41,6 +41,7 @@ class NavigationDestination final : public nsISupports, public nsWrapperCache {
   bool SameDocument() const;
   void GetState(JSContext* aCx, JS::MutableHandle<JS::Value> aRetVal,
                 ErrorResult& aRv) const;
+  void SetState(nsIStructuredCloneContainer* aState);
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -48,6 +49,7 @@ class NavigationDestination final : public nsISupports, public nsWrapperCache {
 
   NavigationHistoryEntry* GetEntry() const;
   nsIURI* GetURL() const;
+  void SetURL(nsIURI* aURI);
 
  private:
   ~NavigationDestination() = default;

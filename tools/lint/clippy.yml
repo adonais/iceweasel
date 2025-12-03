@@ -88,6 +88,7 @@ clippy:
         - xpcom/rust/gtest/nsstring/
         - security/manager/ssl/cert_storage/
         - intl/locale/rust/fluent-langneg-ffi/
+        - intl/locale/rust/locale_service_glue/
         - intl/locale/rust/unic-langid-ffi/
         - toolkit/components/places/bookmark_sync/
         - xpcom/rust/nserror/

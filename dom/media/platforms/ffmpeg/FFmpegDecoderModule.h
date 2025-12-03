@@ -177,7 +177,7 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
           !decoder->IsHardwareAccelerated()) {
         MOZ_LOG(sPDMLog, LogLevel::Debug,
                 ("FFmpeg video decoder can't perform hw decoding, abort!"));
-        Unused << decoder->Shutdown();
+        (void)decoder->Shutdown();
         decoder = nullptr;
       }
     }

@@ -36,6 +36,14 @@ ChromeUtils.defineLazyGetter(this, "MerinoTestUtils", () => {
   return module;
 });
 
+ChromeUtils.defineLazyGetter(this, "GeolocationTestUtils", () => {
+  const { GeolocationTestUtils: module } = ChromeUtils.importESModule(
+    "resource://testing-common/GeolocationTestUtils.sys.mjs"
+  );
+  module.init(this);
+  return module;
+});
+
 ChromeUtils.defineLazyGetter(this, "PlacesFrecencyRecalculator", () => {
   return Cc["@mozilla.org/places/frecency-recalculator;1"].getService(
     Ci.nsIObserver

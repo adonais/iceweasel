@@ -134,29 +134,22 @@ function waitForBrowserWindowActive(win) {
   });
 }
 
-function openAndWaitForContextMenu(popup, button, onShown) {
-  return new Promise(resolve => {
-    function onPopupShown() {
-      info("onPopupShown");
-      popup.removeEventListener("popupshown", onPopupShown);
+async function openAndWaitForContextMenu(popup, button, onShown) {
+  const menuShownPromise = BrowserTestUtils.waitForPopupEvent(popup, "shown");
+  button.scrollIntoView();
 
-      onShown && onShown();
-      resolve(popup);
-    }
-
-    popup.addEventListener("popupshown", onPopupShown);
-
-    info("wait for the context menu to open");
-
-    button.scrollIntoView();
-    const eventDetails = { type: "contextmenu", button: 2 };
-    EventUtils.synthesizeMouseAtCenter(
-      button,
-      eventDetails,
-      // eslint-disable-next-line mozilla/use-ownerGlobal
-      button.ownerDocument.defaultView
-    );
-  });
+  const eventDetails = { type: "contextmenu", button: 2 };
+  EventUtils.synthesizeMouseAtCenter(
+    button,
+    eventDetails,
+    // eslint-disable-next-line mozilla/use-ownerGlobal
+    button.ownerDocument.defaultView
+  );
+  await menuShownPromise;
+  if (onShown) {
+    await onShown();
+  }
+  return popup;
 }
 
 function isActiveElement(el) {

@@ -318,7 +318,7 @@ internal class SaveLoginDialogFragment : PromptDialogFragment() {
             val validationDelegate =
                 feature?.loginValidationDelegate ?: return@validate
             validateDeferred = validationDelegate.shouldUpdateOrCreateAsync(entry)
-            val result = validateDeferred?.await()
+            val result = validateDeferred.await()
             withContext(Main) {
                 when (result) {
                     Result.CanBeCreated -> {
@@ -344,14 +344,11 @@ internal class SaveLoginDialogFragment : PromptDialogFragment() {
                             context?.getString(R.string.mozac_feature_prompt_update_confirmation),
                         )
                     }
-                    else -> {
-                        // no-op
-                    }
                 }
             }
             validateStateUpdate?.invokeOnCompletion {
                 if (it is CancellationException) {
-                    validateDeferred?.cancel()
+                    validateDeferred.cancel()
                 }
             }
         }

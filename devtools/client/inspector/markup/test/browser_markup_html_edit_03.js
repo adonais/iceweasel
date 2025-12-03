@@ -50,7 +50,7 @@ async function testEscapeCancels(inspector) {
   const onHtmlEditorCreated = once(inspector.markup, "begin-editing");
   EventUtils.sendKey("F2", inspector.markup._frame.contentWindow);
   await onHtmlEditorCreated;
-  ok(inspector.markup.htmlEditor._visible, "HTML Editor is visible");
+  ok(inspector.markup.htmlEditor.isVisible, "HTML Editor is visible");
 
   is(
     await getContentPageElementProperty(SELECTOR, "outerHTML"),
@@ -63,7 +63,7 @@ async function testEscapeCancels(inspector) {
   const onEditorHiddem = once(inspector.markup.htmlEditor, "popuphidden");
   EventUtils.sendKey("ESCAPE", inspector.markup.htmlEditor.doc.defaultView);
   await onEditorHiddem;
-  ok(!inspector.markup.htmlEditor._visible, "HTML Editor is not visible");
+  ok(!inspector.markup.htmlEditor.isVisible, "HTML Editor is not visible");
 
   is(
     await getContentPageElementProperty(SELECTOR, "outerHTML"),
@@ -77,7 +77,7 @@ async function testF2Commits(inspector) {
   inspector.markup._frame.contentDocument.documentElement.focus();
   EventUtils.sendKey("F2", inspector.markup._frame.contentWindow);
   await onEditorShown;
-  ok(inspector.markup.htmlEditor._visible, "HTML Editor is visible");
+  ok(inspector.markup.htmlEditor.isVisible, "HTML Editor is visible");
 
   is(
     await getContentPageElementProperty(SELECTOR, "outerHTML"),
@@ -90,7 +90,7 @@ async function testF2Commits(inspector) {
   EventUtils.sendKey("F2", inspector.markup._frame.contentWindow);
   await onMutations;
 
-  ok(!inspector.markup.htmlEditor._visible, "HTML Editor is not visible");
+  ok(!inspector.markup.htmlEditor.isVisible, "HTML Editor is not visible");
 
   is(
     await getContentPageElementProperty(SELECTOR, "outerHTML"),

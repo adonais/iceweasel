@@ -28,6 +28,7 @@ import mozilla.components.feature.accounts.push.CloseTabsUseCases
 import mozilla.components.feature.downloads.ui.DownloadCancelDialogFragment
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.lib.state.DelicateAction
+import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.Collections
@@ -91,6 +92,7 @@ interface TabManagerController : SyncedTabsController, InactiveTabsController, T
     /**
      * Deletes the [TabSessionState] with the specified [tabId] or calls [DownloadCancelDialogFragment]
      * if user tries to close the last private tab while private downloads are active.
+     * This method has no effect if the tab does not exist.
      *
      * @param tabId The id of the [TabSessionState] to be removed from the Tab Manager.
      * @param source app feature from which the tab with [tabId] was closed.
@@ -140,7 +142,8 @@ interface TabManagerController : SyncedTabsController, InactiveTabsController, T
     fun handleNavigateToRecentlyClosed()
 
     /**
-     * Sets the current state of selected tabs into the inactive state.
+     * Marks all selected tabs with the [TabSessionState.lastAccess] to 15 days or [numDays];
+     * enough time to have a tab considered as inactive.
      *
      * ⚠️ DO NOT USE THIS OUTSIDE OF DEBUGGING/TESTING.
      *
@@ -177,11 +180,37 @@ interface TabManagerController : SyncedTabsController, InactiveTabsController, T
      * Navigates to the sign into Sync flow
      */
     fun handleSignInClicked()
+
+    /**
+     * Called when clicking the account settings button.
+     */
+    fun onAccountSettingsClicked()
+
+    /**
+     * Called when clicking the tab settings button.
+     */
+    fun onTabSettingsClicked()
+
+    /**
+     * Called when clicking the close all tabs button.
+     */
+    fun onCloseAllTabsClicked(private: Boolean)
+
+    /**
+     * Called when cancelling private downloads confirmed.
+     */
+    fun onCloseAllPrivateTabsWarningConfirmed(private: Boolean)
+
+    /**
+     * Called when opening the recently closed tabs menu button.
+     */
+    fun onOpenRecentlyClosedClicked()
 }
 
 /**
  * Default implementation of [TabManagerController].
  *
+ * @param accountManager [FxaAccountManager] used to determine signed in status.
  * @param activity [HomeActivity] used to perform top-level app actions.
  * @param appStore [AppStore] used to dispatch any [AppAction].
  * @param tabsTrayStore [TabsTrayStore] used to read/update the [TabsTrayState].
@@ -191,7 +220,6 @@ interface TabManagerController : SyncedTabsController, InactiveTabsController, T
  * @param navController [NavController] used to navigate away from the tab manager.
  * @param navigateToHomeAndDeleteSession Lambda used to return to the Homescreen and delete the current session.
  * @param profiler [Profiler] used to add profiler markers.
- * @param navigationInteractor [NavigationInteractor] used to perform navigation actions with side effects.
  * @param tabsUseCases Use case wrapper for interacting with tabs.
  * @param fenixBrowserUseCases [FenixBrowserUseCases] used for adding new homepage tabs.
  * @param bookmarksStorage Storage layer for retrieving and saving bookmarks.
@@ -208,6 +236,7 @@ interface TabManagerController : SyncedTabsController, InactiveTabsController, T
  */
 @Suppress("TooManyFunctions", "LongParameterList")
 class DefaultTabManagerController(
+    private val accountManager: FxaAccountManager,
     private val activity: HomeActivity,
     private val appStore: AppStore,
     private val tabsTrayStore: TabsTrayStore,
@@ -217,7 +246,6 @@ class DefaultTabManagerController(
     private val navController: NavController,
     private val navigateToHomeAndDeleteSession: (String) -> Unit,
     private val profiler: Profiler?,
-    private val navigationInteractor: NavigationInteractor,
     private val tabsUseCases: TabsUseCases,
     private val fenixBrowserUseCases: FenixBrowserUseCases,
     private val bookmarksStorage: BookmarksStorage,
@@ -269,7 +297,7 @@ class DefaultTabManagerController(
             )
         }
 
-        navigationInteractor.onTabManagerDismissed()
+        TabsTray.closed.record(NoExtras())
         profiler?.addMarker(
             "DefaultTabManagerController.onNewTabTapped",
             startTime,
@@ -288,9 +316,6 @@ class DefaultTabManagerController(
         tabsTrayStore.dispatch(TabsTrayAction.PageSelected(page))
     }
 
-    /**
-     * Dismisses the tab manager and navigates to the browser.
-     */
     override fun handleNavigateToBrowser() {
         if (navController.currentDestination?.id == R.id.browserFragment) {
             return
@@ -300,9 +325,6 @@ class DefaultTabManagerController(
         }
     }
 
-    /**
-     * Dismisses the tab manager and navigates to the homepage.
-     */
     override fun handleNavigateToHome() {
         if (navController.currentDestination?.id == R.id.homeFragment) {
             return
@@ -314,13 +336,6 @@ class DefaultTabManagerController(
         }
     }
 
-    /**
-     * Deletes the [TabSessionState] with the specified [tabId].
-     *
-     * @param tabId The id of the [TabSessionState] to be removed from Tab Manager.
-     * @param source app feature from which the tab with [tabId] was closed.
-     * This method has no effect if the tab does not exist.
-     */
     override fun handleTabDeletion(tabId: String, source: String?) {
         deleteTab(tabId, source, isConfirmed = false)
     }
@@ -395,21 +410,10 @@ class DefaultTabManagerController(
         }
     }
 
-    /**
-     * Dismisses the tab manager and navigates to the Recently Closed section in the History fragment.
-     */
     override fun handleNavigateToRecentlyClosed() {
         navController.navigate(R.id.recentlyClosedFragment)
     }
 
-    /**
-     * Marks all selected tabs with the [TabSessionState.lastAccess] to 15 days or [numDays]; enough time to
-     * have a tab considered as inactive.
-     *
-     * ⚠️ DO NOT USE THIS OUTSIDE OF DEBUGGING/TESTING.
-     *
-     * @param numDays The number of days to mark a tab's last access date.
-     */
     @OptIn(DelicateAction::class)
     override fun handleForceSelectedTabsAsInactiveClicked(numDays: Long) {
         val tabs = tabsTrayStore.state.mode.selectedTabs
@@ -649,10 +653,69 @@ class DefaultTabManagerController(
         )
     }
 
+    override fun onAccountSettingsClicked() {
+        val isSignedIn = accountManager.authenticatedAccount() != null
+
+        val direction = if (isSignedIn) {
+            TabManagementFragmentDirections.actionGlobalAccountSettingsFragment()
+        } else {
+            TabManagementFragmentDirections.actionGlobalTurnOnSync(
+                entrypoint = FenixFxAEntryPoint.NavigationInteraction,
+            )
+        }
+        navController.navigate(direction)
+    }
+
+    override fun onTabSettingsClicked() {
+        navController.navigate(
+            TabManagementFragmentDirections.actionGlobalTabSettingsFragment(),
+        )
+    }
+
+    override fun onCloseAllTabsClicked(private: Boolean) {
+        closeAllTabs(private = private, isConfirmed = false)
+    }
+
+    override fun onCloseAllPrivateTabsWarningConfirmed(private: Boolean) {
+        closeAllTabs(private = private, isConfirmed = true)
+    }
+
+    override fun onOpenRecentlyClosedClicked() {
+        navController.navigate(
+            TabManagementFragmentDirections.actionGlobalRecentlyClosed(),
+        )
+        Events.recentlyClosedTabsOpened.record(NoExtras())
+    }
+
     /**
      * Marks the inactive tabs auto close dialog as shown and to not be displayed again.
      */
     private fun markDialogAsShown() {
         settings.hasInactiveTabsAutoCloseDialogBeenDismissed = true
+    }
+
+    /**
+     * Close all tabs.
+     *
+     * @param private Whether to close all of the Private tabs or all of the Normal tabs.
+     * @param isConfirmed: whether the user has confirmed the warning message
+     */
+    private fun closeAllTabs(private: Boolean, isConfirmed: Boolean) {
+        val sessionsToClose = if (private) {
+            ALL_PRIVATE_TABS
+        } else {
+            ALL_NORMAL_TABS
+        }
+
+        if (private && !isConfirmed) {
+            val privateDownloads = browserStore.state.downloads.filter {
+                it.value.private && it.value.isActiveDownload()
+            }
+            if (privateDownloads.isNotEmpty()) {
+                showCancelledDownloadWarning(privateDownloads.size, null, null)
+                return
+            }
+        }
+        dismissTabManagerAndNavigateHome(sessionsToClose)
     }
 }

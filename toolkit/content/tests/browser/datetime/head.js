@@ -44,8 +44,12 @@ class DateTimeTestHelper {
     if (openMethod === "click") {
       await SpecialPowers.spawn(bc, [], () => {
         const input = content.document.querySelector("input");
-        const shadowRoot = SpecialPowers.wrap(input).openOrClosedShadowRoot;
-        shadowRoot.getElementById("calendar-button").click();
+        if (input.type == "time") {
+          input.click();
+        } else {
+          const shadowRoot = SpecialPowers.wrap(input).openOrClosedShadowRoot;
+          shadowRoot.getElementById("calendar-button").click();
+        }
       });
     } else if (openMethod === "showPicker") {
       await SpecialPowers.spawn(bc, [], function () {
@@ -149,18 +153,28 @@ registerCleanupFunction(() => {
 const BTN_MONTH_YEAR = "#month-year-label",
   BTN_NEXT_MONTH = ".next",
   BTN_PREV_MONTH = ".prev",
+  BTN_NEXT_HOUR = "#spinner-hour-next",
+  BTN_PREV_HOUR = "#spinner-hour-previous",
+  BTN_NEXT_MIN = "#spinner-minute-next",
+  BTN_PREV_MIN = "#spinner-minute-previous",
+  BTN_NEXT_TIME = "#spinner-time-next",
+  BTN_PREV_TIME = "#spinner-time-previous",
   BTN_CLEAR = "#clear-button",
   DAY_SELECTED = ".selection",
   DAY_TODAY = ".today",
   DAYS_VIEW = ".days-view",
   DIALOG_PICKER = "#date-picker",
+  DIALOG_TIME_PICKER = "#time-picker",
   MONTH_YEAR = ".month-year",
   MONTH_YEAR_NAV = ".month-year-nav",
   MONTH_YEAR_VIEW = ".month-year-view",
   SPINNER_MONTH = "#spinner-month",
   SPINNER_YEAR = "#spinner-year",
-  WEEK_HEADER = ".week-header",
-  TIMEPICKER = "#time-picker";
+  SPINNER_HOUR = "#spinner-hour",
+  SPINNER_MIN = "#spinner-minute",
+  SPINNER_TIME = "#spinner-time",
+  TIMEPICKER = "#time-picker",
+  WEEK_HEADER = ".week-header";
 const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   month: "long",

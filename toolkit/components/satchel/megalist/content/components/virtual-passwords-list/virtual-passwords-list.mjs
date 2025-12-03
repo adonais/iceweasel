@@ -5,6 +5,12 @@
 import { html, repeat } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
+  clearTimeout: "resource://gre/modules/Timer.sys.mjs",
+});
+
 /**
  * TODO: This code is duplicated from fxview-tab-list.mjs.
  * The duplication is intentional to keep the variable-height changes
@@ -13,6 +19,9 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
  * shared component.
  */
 class VirtualPasswordsList extends MozLitElement {
+  #scroller = null;
+  #onScrollEndTimer = null;
+
   static properties = {
     items: { type: Array },
     template: { type: Function },
@@ -54,8 +63,17 @@ class VirtualPasswordsList extends MozLitElement {
     this.isVisible = false;
     this.version = 0;
 
+    // Ignore IntersectionObserver callbacks during scrolling.
+    // Rapid scrolling causes frequent visibility changes, which can trigger
+    // excessive IO callbacks and hurt performance. While scrolling, we rely
+    // on scroll position to determine which items should be rendered instead.
+    this.ignoreIO = false;
+
     this.intersectionObserver = new IntersectionObserver(
       ([entry]) => {
+        if (this.ignoreIO) {
+          return;
+        }
         this.isVisible = entry.isIntersecting;
       },
       { root: this.ownerDocument }
@@ -138,6 +156,50 @@ class VirtualPasswordsList extends MozLitElement {
           this.items.slice(i, i + this.maxRenderCountEstimate)
         );
       }
+    }
+  }
+
+  get scroller() {
+    return this.#scroller;
+  }
+
+  set scroller(element) {
+    if (this.isSubList || this.#scroller === element) {
+      return;
+    }
+
+    if (this.#scroller) {
+      this.#scroller.removeEventListener("scroll", this.onScroll);
+    }
+
+    this.#scroller = element;
+    this.#scroller.addEventListener("scroll", () => this.onScroll());
+  }
+
+  onScroll() {
+    if (!this.children.length) {
+      return;
+    }
+
+    if (this.#onScrollEndTimer) {
+      // reset the timer
+      lazy.clearTimeout(this.#onScrollEndTimer);
+    } else {
+      Array.from(this.children).forEach(child => (child.ignoreIO = true));
+    }
+
+    this.#onScrollEndTimer = lazy.setTimeout(() => {
+      Array.from(this.children).forEach(child => (child.ignoreIO = false));
+      this.#onScrollEndTimer = null;
+    }, 1000);
+
+    const index = parseInt(
+      this.scroller.scrollTop / this.children[0].clientHeight,
+      10
+    );
+
+    for (let i = 0; i < this.children.length; i++) {
+      this.children[i].isVisible = i <= index + 1 && i >= index - 1;
     }
   }
 

@@ -7,7 +7,6 @@
 #ifndef gc_Cell_h
 #define gc_Cell_h
 
-#include "mozilla/Atomics.h"
 #include "mozilla/EndianUtils.h"
 
 #include <type_traits>

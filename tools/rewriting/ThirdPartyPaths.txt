@@ -36,6 +36,7 @@ dom/media/platforms/ffmpeg/ffmpeg58/
 dom/media/platforms/ffmpeg/ffmpeg59/
 dom/media/platforms/ffmpeg/ffmpeg60/
 dom/media/platforms/ffmpeg/ffmpeg61/
+dom/media/platforms/ffmpeg/ffmpeg62/
 dom/media/platforms/ffmpeg/libav53/
 dom/media/platforms/ffmpeg/libav54/
 dom/media/platforms/ffmpeg/libav55/
@@ -148,7 +149,6 @@ modules/zlib/
 mozglue/misc/decimal/
 mozglue/static/lz4/.*
 mozglue/tests/glibc_printf_tests/
-netwerk/dns/nsIDNKitInterface.h
 netwerk/sctp/src/
 netwerk/srtp/src/
 nsprpub/
@@ -199,7 +199,7 @@ toolkit/components/utils/mozjexl.sys.mjs
 toolkit/components/viaduct/fetch_msg_types.pb.cc
 toolkit/components/viaduct/fetch_msg_types.pb.h
 toolkit/content/vendor/react/
-toolkit/content/widgets/vendor/lit.all.mjs
+toolkit/content/widgets/vendor/
 toolkit/crashreporter/breakpad-client/
 toolkit/crashreporter/google-breakpad/
 toolkit/modules/third_party/

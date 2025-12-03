@@ -9,6 +9,7 @@ import android.os.Bundle
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.navigation.findNavController
+import androidx.navigation.fragment.navArgs
 import androidx.preference.CheckBoxPreference
 import androidx.preference.DropDownPreference
 import androidx.preference.Preference
@@ -31,6 +32,7 @@ import org.mozilla.fenix.utils.view.addToRadioGroup
  * to open info about the tracking protection [org.mozilla.fenix.settings.TrackingProtectionFragment].
  */
 class TrackingProtectionFragment : PreferenceFragmentCompat() {
+    private val args by navArgs<TrackingProtectionFragmentArgs>()
 
     private val exceptionsClickListener = Preference.OnPreferenceClickListener {
         val directions =
@@ -154,6 +156,10 @@ class TrackingProtectionFragment : PreferenceFragmentCompat() {
                     return super.onPreferenceChange(preference, newValue)
                 }
             }
+        }
+
+        args.preferenceToScrollTo?.let {
+            scrollToPreference(it)
         }
     }
 

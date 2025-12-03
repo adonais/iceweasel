@@ -20,7 +20,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "gActivityDistributor",
   "@mozilla.org/network/http-activity-distributor;1",
-  "nsIHttpActivityDistributor"
+  Ci.nsIHttpActivityDistributor
 );
 
 ChromeUtils.defineESModuleGetters(lazy, {

@@ -172,6 +172,10 @@ export const FEATURES = {
     engineId: "wllamapreview",
     fluentId: "mlmodel-link-preview",
   },
+  // see browser/components/genai/SmartAssistEngine.sys.mjs
+  "smart-intent": {
+    engineId: "smart-intent",
+  },
 };
 
 /**
@@ -1121,8 +1125,8 @@ export class EngineProcess {
  * Creates a new `MLEngine` instance with the provided options.
  *
  * @param {object} options - Configuration options for the ML engine.
- * @param {?function(ProgressAndStatusCallbackParams):void} notificationsCallback A function to call to indicate notifications.
- * @param {?AbortSignal} abortSignal - AbortSignal to cancel the download.
+ * @param {?function(ProgressAndStatusCallbackParams):void} [notificationsCallback] - A function to call to indicate notifications.
+ * @param {?AbortSignal} [abortSignal] - AbortSignal to cancel the download.
  */
 export async function createEngine(
   options,

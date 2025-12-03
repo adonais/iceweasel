@@ -8,7 +8,6 @@
 
 #include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/cache/AutoUtils.h"
 #include "mozilla/dom/cache/ManagerId.h"
 #include "mozilla/dom/cache/ReadStream.h"

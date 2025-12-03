@@ -8,7 +8,6 @@
 #define mozilla_dom_CountQueuingStrategy_h
 
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BaseQueuingStrategy.h"
 #include "mozilla/dom/BindingDeclarations.h"

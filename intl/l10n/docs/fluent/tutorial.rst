@@ -677,7 +677,7 @@ Testing other locales
 Installing Nightly in a different locale
 ----------------------------------------
 
-Localized Nightly builds are `listed on the mozilla.org website`_.
+Localized Nightly builds are listed on `firefox.com`_.
 
 Installing language packs on local builds
 -----------------------------------------
@@ -708,6 +708,16 @@ However, if you really need to use this, you can:
 4. Open the Firefox Settings UI.
 5. Switch to your chosen language.
 
+Building localized builds for single and multi-locale repacks
+-------------------------------------------------------------
+
+Instructions on how to build localization repacks are available on :doc:`/build/buildsystem/locales`.
+
+Including specific localization repacks to a Try Server push
+------------------------------------------------------------
+
+Instructions are available in the `Firefox L10N FAQs`_.
+
 Finding a regression in a localized build
 -----------------------------------------
 
@@ -720,8 +730,9 @@ build, you could run something like:::
 
 and that should run localized nightlies.
 
-.. _listed on the mozilla.org website: https://www.mozilla.org/firefox/all/#product-desktop-nightly
+.. _firefox.com: https://www.firefox.com/en-US/download/all/desktop-nightly/
 .. _the FTP listing for langpacks: https://ftp.mozilla.org/pub/firefox/nightly/latest-mozilla-central-l10n/linux-x86_64/xpi/
+.. _Firefox L10N FAQs: https://mozilla-l10n.github.io/documentation/products/firefox_desktop/firefox_l10n_faqs.html#how-can-i-test-a-different-locale
 .. _mozregression: https://mozilla.github.io/mozregression/
 
 Inner Structure of Fluent

@@ -51,18 +51,6 @@ AccessibleData DocAccessibleChild::SerializeAcc(LocalAccessible* aAcc) {
     // XXX: We need to do this because this requires a state check.
     genericTypes |= eNumericValue;
   }
-  if (aAcc->IsTextLeaf() || aAcc->IsImage()) {
-    // Ideally, we'd set eActionable for any Accessible with an ancedstor
-    // action. However, that requires an ancestor walk which is too expensive
-    // here. eActionable is only used by ATK. For now, we only expose ancestor
-    // actions on text leaf and image Accessibles. This means that we don't
-    // support "clickAncestor" for ATK.
-    if (aAcc->ActionCount()) {
-      genericTypes |= eActionable;
-    }
-  } else if (aAcc->HasPrimaryAction()) {
-    genericTypes |= eActionable;
-  }
 
   RefPtr<AccAttributes> fields;
   // Even though we send moves as a hide and a show, we don't want to
@@ -256,7 +244,7 @@ mozilla::ipc::IPCResult DocAccessibleChild::RecvVerifyCache(
 mozilla::ipc::IPCResult DocAccessibleChild::RecvDoActionAsync(
     const uint64_t& aID, const uint8_t& aIndex) {
   if (LocalAccessible* acc = IdToAccessible(aID)) {
-    Unused << acc->DoAction(aIndex);
+    (void)acc->DoAction(aIndex);
   }
 
   return IPC_OK();

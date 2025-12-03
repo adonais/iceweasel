@@ -5,7 +5,6 @@
 #ifndef nsTableRowFrame_h__
 #define nsTableRowFrame_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/WritingModes.h"
 #include "nsContainerFrame.h"
 #include "nsTableRowGroupFrame.h"

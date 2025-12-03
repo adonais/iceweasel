@@ -342,7 +342,7 @@ class nsDocumentViewer final : public nsIDocumentViewer,
    * @param aContainerView the container view to hook our root view up
    * to as a child, or null if this will be the root view manager
    */
-  nsresult MakeWindow(const nsSize& aSize, nsView* aContainerView);
+  void MakeWindow(const nsSize& aSize, nsView* aContainerView);
 
   /**
    * Create our device context
@@ -385,11 +385,6 @@ class nsDocumentViewer final : public nsIDocumentViewer,
   void DestroyPresContext();
 
   void InvalidatePotentialSubDocDisplayItem();
-
-  // Whether we should attach to the top level widget. This is true if we
-  // are sharing/recycling a single base widget and not creating multiple
-  // child widgets.
-  bool ShouldAttachToTopLevel();
 
   std::tuple<const nsIFrame*, int32_t> GetCurrentSheetFrameAndNumber() const;
 
@@ -796,6 +791,7 @@ nsresult nsDocumentViewer::InitInternal(
   nsAutoScriptBlocker blockScripts;
 
   mParentWidget = aParentWidget;  // not ref counted
+
   mBounds = aBounds;
 
   nsresult rv = NS_OK;
@@ -849,10 +845,9 @@ nsresult nsDocumentViewer::InitInternal(
       // into nsSubDocumentFrame code through reflows caused by
       // FlushPendingNotifications() calls down the road...
 
-      rv = MakeWindow(nsSize(mPresContext->DevPixelsToAppUnits(aBounds.width),
-                             mPresContext->DevPixelsToAppUnits(aBounds.height)),
-                      containerView);
-      NS_ENSURE_SUCCESS(rv, rv);
+      MakeWindow(nsSize(mPresContext->DevPixelsToAppUnits(aBounds.width),
+                        mPresContext->DevPixelsToAppUnits(aBounds.height)),
+                 containerView);
       Hide();
 
 #ifdef NS_PRINT_PREVIEW
@@ -1466,8 +1461,7 @@ nsDocumentViewer::Open(nsISupports* aState, nsISHEntry* aSHEntry) {
   // page B, we detach. So page A's view has no widget. If we then go
   // back to it, and it is in the bfcache, we will use that view, which
   // doesn't have a widget. The attach call here will properly attach us.
-  if (nsIWidget::UsePuppetWidgets() && mPresContext &&
-      ShouldAttachToTopLevel()) {
+  if (mParentWidget && mPresContext) {
     // If the old view is already attached to our parent, detach
     DetachFromTopLevelWidget();
 
@@ -1940,7 +1934,7 @@ nsDocumentViewer::SetBoundsWithFlags(const LayoutDeviceIntRect& aBounds,
   if (mWindow && !mAttachedToParent) {
     // Resize the widget, but don't trigger repaint. Layout will generate
     // repaint requests during reflow.
-    mWindow->Resize(aBounds.x, aBounds.y, aBounds.width, aBounds.height, false);
+    mWindow->Resize(aBounds / mWindow->GetDesktopToDeviceScale(), false);
   } else if (mPresContext && mViewManager) {
     // Ensure presContext's deviceContext is up to date, as we sometimes get
     // here before a resolution-change notification has been fully handled
@@ -2008,7 +2002,7 @@ nsDocumentViewer::Move(int32_t aX, int32_t aY) {
   NS_ENSURE_TRUE(mDocument, NS_ERROR_NOT_AVAILABLE);
   mBounds.MoveTo(aX, aY);
   if (mWindow) {
-    mWindow->Move(aX, aY);
+    mWindow->Move(mBounds.TopLeft() / mWindow->GetDesktopToDeviceScale());
   }
   return NS_OK;
 }
@@ -2097,12 +2091,9 @@ nsDocumentViewer::Show() {
       return rv;
     }
 
-    rv = MakeWindow(nsSize(mPresContext->DevPixelsToAppUnits(mBounds.width),
-                           mPresContext->DevPixelsToAppUnits(mBounds.height)),
-                    containerView);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
+    MakeWindow(nsSize(mPresContext->DevPixelsToAppUnits(mBounds.width),
+                      mPresContext->DevPixelsToAppUnits(mBounds.height)),
+               containerView);
 
     if (mPresContext) {
       Hide();
@@ -2217,50 +2208,30 @@ nsDocumentViewer::ClearHistoryEntry() {
 
 //-------------------------------------------------------
 
-nsresult nsDocumentViewer::MakeWindow(const nsSize& aSize,
-                                      nsView* aContainerView) {
+void nsDocumentViewer::MakeWindow(const nsSize& aSize, nsView* aContainerView) {
   if (GetIsPrintPreview()) {
-    return NS_OK;
+    return;
   }
 
-  const bool shouldAttach = ShouldAttachToTopLevel();
-  if (shouldAttach) {
-    // If the old view is already attached to our parent, detach
-    DetachFromTopLevelWidget();
-  }
-
-  mViewManager = new nsViewManager();
-
-  nsDeviceContext* dx = mPresContext->DeviceContext();
-
-  nsresult rv = mViewManager->Init(dx);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  mViewManager = new nsViewManager(mPresContext->DeviceContext());
 
   // The root view is always at 0,0.
-  nsRect tbounds(nsPoint(0, 0), aSize);
+  nsRect tbounds(nsPoint(), aSize);
   // Create a view
   nsView* view = mViewManager->CreateView(tbounds, aContainerView);
-  if (!view) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  MOZ_ASSERT(view);
 
   // Create a widget if we were given a parent widget or don't have a
   // container view that we can hook up to without a widget.
   // Don't create widgets for ResourceDocs (external resources & svg images),
   // because when they're displayed, they're painted into *another* document's
   // widget.
-  if (!mDocument->IsResourceDoc() && (mParentWidget || !aContainerView)) {
-    if (shouldAttach) {
+  if (!mDocument->IsResourceDoc()) {
+    MOZ_ASSERT_IF(!aContainerView, mParentWidget);
+    if (mParentWidget) {
       // Reuse the top level parent widget.
-      rv = view->AttachToTopLevelWidget(mParentWidget);
+      view->AttachToTopLevelWidget(mParentWidget);
       mAttachedToParent = true;
-    } else {
-      rv = view->CreateWidget(mParentWidget, true, false);
-    }
-    if (NS_FAILED(rv)) {
-      return rv;
     }
   }
 
@@ -2273,8 +2244,6 @@ nsresult nsDocumentViewer::MakeWindow(const nsSize& aSize,
   // go to the scrolled view as soon as the Window is created instead of going
   // to the browser window (this enables keyboard scrolling of the document)
   // mWindow->SetFocus();
-
-  return rv;
 }
 
 void nsDocumentViewer::DetachFromTopLevelWidget() {
@@ -2997,7 +2966,7 @@ nsDocumentViewer::PrintPreviewScrollToPage(int16_t aType, int32_t aPageNum) {
   }
 
   auto [seqFrame, sheetCount] = mPrintJob->GetSeqFrameAndCountSheets();
-  Unused << sheetCount;
+  (void)sheetCount;
   if (!seqFrame) {
     return NS_ERROR_FAILURE;
   }
@@ -3016,7 +2985,7 @@ nsDocumentViewer::PrintPreviewScrollToPage(int16_t aType, int32_t aPageNum) {
     case nsIWebBrowserPrint::PRINTPREVIEW_PREV_PAGE:
     case nsIWebBrowserPrint::PRINTPREVIEW_NEXT_PAGE: {
       auto [currentFrame, currentSheetNumber] = GetCurrentSheetFrameAndNumber();
-      Unused << currentSheetNumber;
+      (void)currentSheetNumber;
       if (!currentFrame) {
         return NS_OK;
       }
@@ -3062,7 +3031,7 @@ nsDocumentViewer::GetCurrentSheetFrameAndNumber() const {
 
   // in PP mPrtPreview->mPrintObject->mSeqFrame is null
   auto [seqFrame, sheetCount] = mPrintJob->GetSeqFrameAndCountSheets();
-  Unused << sheetCount;
+  (void)sheetCount;
   if (!seqFrame) {
     return {nullptr, 0};
   }
@@ -3130,7 +3099,7 @@ nsDocumentViewer::GetPrintPreviewCurrentPageNumber(int32_t* aNumber) {
   }
 
   auto [currentFrame, currentSheetNumber] = GetCurrentSheetFrameAndNumber();
-  Unused << currentFrame;
+  (void)currentFrame;
   if (!currentSheetNumber) {
     return NS_ERROR_FAILURE;
   }
@@ -3231,23 +3200,6 @@ nsDocumentViewer::GetPrintPreviewNumPages(int32_t* aPrintPreviewNumPages) {
 // Walks the document tree and tells each DocShell whether Printing/PP is
 // happening
 #endif  // NS_PRINTING
-
-bool nsDocumentViewer::ShouldAttachToTopLevel() {
-  if (!mParentWidget) {
-    return false;
-  }
-
-  // We always attach when using puppet widgets
-  if (nsIWidget::UsePuppetWidgets() || mParentWidget->IsPuppetWidget()) {
-    return true;
-  }
-#ifdef DEBUG
-  nsIWidgetListener* parentListener = mParentWidget->GetWidgetListener();
-  MOZ_ASSERT(!parentListener || !parentListener->GetView(),
-             "Expect a top level widget");
-#endif
-  return true;
-}
 
 //------------------------------------------------------------
 // XXX this always returns false for subdocuments
@@ -3398,10 +3350,9 @@ NS_IMETHODIMP nsDocumentViewer::SetPrintSettingsForSubdocument(
     rv = mPresContext->Init(mDeviceContext);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = MakeWindow(nsSize(mPresContext->DevPixelsToAppUnits(mBounds.width),
-                           mPresContext->DevPixelsToAppUnits(mBounds.height)),
-                    FindContainerView());
-    NS_ENSURE_SUCCESS(rv, rv);
+    MakeWindow(nsSize(mPresContext->DevPixelsToAppUnits(mBounds.width),
+                      mPresContext->DevPixelsToAppUnits(mBounds.height)),
+               FindContainerView());
 
     MOZ_TRY(InitPresentationStuff(true));
   }
@@ -3533,7 +3484,7 @@ void nsDocumentViewer::SetPrintPreviewPresentation(nsViewManager* aViewManager,
   mPresContext = aPresContext;
   mPresShell = aPresShell;
 
-  if (ShouldAttachToTopLevel()) {
+  if (mParentWidget) {
     DetachFromTopLevelWidget();
     nsView* rootView = mViewManager->GetRootView();
     rootView->AttachToTopLevelWidget(mParentWidget);

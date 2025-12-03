@@ -861,7 +861,7 @@ void DoSelectClientAuthCertificate(NSSSocketControl* info,
                        serverCertBytes(std::move(serverCertBytes)),
                        caNamesBytes(std::move(caNamesBytes)), browserId](
                           net::SocketProcessBackgroundChild* aActor) mutable {
-                        Unused << aActor->SendInitSelectTLSClientAuthCert(
+                        (void)aActor->SendInitSelectTLSClientAuthCert(
                             std::move(endpoint), hostname, originAttributes,
                             port, providerFlags, providerTlsFlags,
                             ByteArray(serverCertBytes), caNamesBytes,
@@ -1037,7 +1037,7 @@ bool SelectTLSClientAuthCertParent::Dispatch(
                 std::move(potentialClientCertificates),
                 std::move(potentialClientCertificateChains),
                 std::move(caNamesArray), continuation, browserId));
-        Unused << NS_DispatchToMainThread(selectClientAuthCertificate);
+        (void)NS_DispatchToMainThread(selectClientAuthCertificate);
       }));
   return NS_SUCCEEDED(rv);
 }
@@ -1054,8 +1054,8 @@ void SelectTLSClientAuthCertParent::TLSClientAuthCertSelected(
     selectedCertChainBytes.AppendElement(ByteArray(certBytes));
   }
 
-  Unused << SendTLSClientAuthCertSelected(aSelectedCertBytes,
-                                          selectedCertChainBytes);
+  (void)SendTLSClientAuthCertSelected(aSelectedCertBytes,
+                                      selectedCertChainBytes);
   Close();
 }
 
@@ -1086,7 +1086,7 @@ ipc::IPCResult SelectTLSClientAuthCertChild::RecvTLSClientAuthCertSelected(
     return IPC_OK();
   }
   nsresult rv = socketThread->Dispatch(mContinuation, NS_DISPATCH_NORMAL);
-  Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 
   return IPC_OK();
 }

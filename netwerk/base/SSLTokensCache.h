@@ -32,7 +32,7 @@ struct SessionCacheInfo {
   Maybe<nsTArray<nsTArray<uint8_t>>> mSucceededCertChainBytes;
   Maybe<bool> mIsBuiltCertChainRootBuiltInRoot;
   nsITransportSecurityInfo::OverridableErrorCategory mOverridableErrorCategory;
-  Maybe<nsTArray<nsTArray<uint8_t>>> mFailedCertChainBytes;
+  Maybe<nsTArray<nsTArray<uint8_t>>> mHandshakeCertificatesBytes;
 };
 
 class SSLTokensCache : public nsIMemoryReporter {

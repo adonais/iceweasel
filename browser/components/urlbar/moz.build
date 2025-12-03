@@ -67,6 +67,7 @@ MOZ_SRC_FILES += [
     "private/AddonSuggestions.sys.mjs",
     "private/AmpSuggestions.sys.mjs",
     "private/DynamicSuggestions.sys.mjs",
+    "private/FlightStatusSuggestions.sys.mjs",
     "private/GeolocationUtils.sys.mjs",
     "private/ImportantDatesSuggestions.sys.mjs",
     "private/ImpressionCaps.sys.mjs",
@@ -74,6 +75,7 @@ MOZ_SRC_FILES += [
     "private/MDNSuggestions.sys.mjs",
     "private/MLSuggest.sys.mjs",
     "private/RealtimeSuggestProvider.sys.mjs",
+    "private/SportsSuggestions.sys.mjs",
     "private/SuggestBackendMerino.sys.mjs",
     "private/SuggestBackendMl.sys.mjs",
     "private/SuggestBackendRust.sys.mjs",
@@ -85,6 +87,7 @@ MOZ_SRC_FILES += [
 ]
 
 TESTING_JS_MODULES += [
+    "tests/quicksuggest/GeolocationTestUtils.sys.mjs",
     "tests/quicksuggest/MerinoTestUtils.sys.mjs",
     "tests/quicksuggest/QuickSuggestTestUtils.sys.mjs",
     "tests/quicksuggest/RemoteSettingsServer.sys.mjs",

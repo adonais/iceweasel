@@ -4,7 +4,6 @@
 
 
 import logging
-import os
 import sys
 from concurrent import futures
 
@@ -12,7 +11,7 @@ from slugid import nice as slugid
 
 from taskgraph.util import json
 from taskgraph.util.parameterization import resolve_timestamps
-from taskgraph.util.taskcluster import CONCURRENCY, get_session
+from taskgraph.util.taskcluster import CONCURRENCY, get_session, get_taskcluster_client
 from taskgraph.util.time import current_json_time
 
 logger = logging.getLogger(__name__)
@@ -104,9 +103,6 @@ def create_tasks(graph_config, taskgraph, label_to_taskid, params, decision_task
 
 
 def create_task(session, task_id, label, task_def):
-    # create the task using 'http://taskcluster/queue', which is proxied to the queue service
-    # with credentials appropriate to this task.
-
     # Resolve timestamps
     now = current_json_time(datetime_format=True)
     task_def = resolve_timestamps(now, task_def)
@@ -123,16 +119,5 @@ def create_task(session, task_id, label, task_def):
         return
 
     logger.info(f"Creating task with taskId {task_id} for {label}")
-    proxy_url = os.environ.get("TASKCLUSTER_PROXY_URL", "http://taskcluster").rstrip(
-        "/"
-    )
-    res = session.put(
-        f"{proxy_url}/queue/v1/task/{task_id}",
-        json=task_def,
-    )
-    if res.status_code != 200:
-        try:
-            logger.error(res.json()["message"])
-        except Exception:
-            logger.error(res.text)
-        res.raise_for_status()
+    queue = get_taskcluster_client("queue")
+    queue.createTask(task_id, task_def)

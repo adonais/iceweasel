@@ -9,8 +9,6 @@
 
 #include "js/TypeDecls.h"
 #include "js/loader/ModuleLoaderBase.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/OriginTrials.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/dom/BindingDeclarations.h"

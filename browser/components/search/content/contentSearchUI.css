@@ -98,7 +98,7 @@
 
 .contentSearchSearchWithHeaderSearchText {
   white-space: pre;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .contentSearchOneOffItem {

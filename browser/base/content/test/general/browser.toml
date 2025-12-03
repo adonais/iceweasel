@@ -44,7 +44,7 @@ support-files = [
 ["browser_addCertException.js"]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
-["browser_backButtonFitts.js"]
+["browser_backOrSidebarButtonFitts.js"]
 https_first_disabled = true
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
@@ -328,10 +328,6 @@ https_first_disabled = true
 https_first_disabled = true
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
-["browser_plainTextLinks.js"]
-skip-if = ["a11y_checks"] # Bugs 1858041 and 1835079 for causing intermittent crashes
-# DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
-
 ["browser_printpreview.js"]
 skip-if = [
   "os == 'win'",
@@ -370,8 +366,11 @@ support-files = ["test_remoteTroubleshoot.html"]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_save_link-perwindowpb.js"]
-skip-if = ["debug && os == 'win'"]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
+skip-if = [
+  "debug && os == 'win'",
+  "verify-standalone",
+]
 
 ["browser_save_link_when_window_navigates.js"]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.

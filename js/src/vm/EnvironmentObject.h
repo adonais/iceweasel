@@ -1470,7 +1470,8 @@ class DebugEnvironments {
   Zone* zone_;
 
   /* The map from (non-debug) environments to debug environments. */
-  ObjectWeakMap proxiedEnvs;
+  using ProxiedEnvironmentsMap = WeakMap<JSObject*, JSObject*, ZoneAllocPolicy>;
+  ProxiedEnvironmentsMap proxiedEnvs;
 
   /*
    * The map from live frames which have optimized-away environments to the

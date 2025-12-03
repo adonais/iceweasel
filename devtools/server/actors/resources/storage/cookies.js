@@ -230,6 +230,9 @@ class CookiesStorageActor extends BaseStorageActor {
       // because creationTime is in micro seconds
       creationTime: cookie.creationTime / 1000,
 
+      // because updateTime is in micro seconds
+      updateTime: cookie.updateTime / 1000,
+
       size: cookie.name.length + (cookie.value || "").length,
 
       // - do -
@@ -279,7 +282,7 @@ class CookiesStorageActor extends BaseStorageActor {
    * this is either null, a single cookie or an array of cookies.
    * @param {nsICookieNotification_Action} action - The cookie operation, see
    * nsICookieNotification for details.
-   **/
+   */
   onCookieChanged(cookie, action) {
     const {
       COOKIE_ADDED,
@@ -362,6 +365,7 @@ class CookiesStorageActor extends BaseStorageActor {
       { name: "sameSite", editable: false, hidden: false },
       { name: "lastAccessed", editable: false, hidden: false },
       { name: "creationTime", editable: false, hidden: true },
+      { name: "updateTime", editable: false, hidden: true },
       { name: "hostOnly", editable: false, hidden: true },
     ];
 
@@ -474,6 +478,7 @@ class CookiesStorageActor extends BaseStorageActor {
    *            host: ".mozilla.org",
    *            expires: "Mon, 02 Jun 2025 12:37:37 GMT",
    *            creationTime: "Tue, 18 Nov 2014 16:21:18 GMT",
+   *            updateTime: "Tue, 18 Nov 2014 16:21:18 GMT",
    *            lastAccessed: "Wed, 17 Feb 2016 10:06:23 GMT",
    *            value: "%7BHelloo%7D",
    *            isDomain: "true",

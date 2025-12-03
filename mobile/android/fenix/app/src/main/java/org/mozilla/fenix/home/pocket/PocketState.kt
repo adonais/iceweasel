@@ -5,6 +5,7 @@
 package org.mozilla.fenix.home.pocket
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import mozilla.components.compose.base.SelectableChipColors
@@ -48,7 +49,7 @@ data class PocketState(
         @Composable
         internal fun build(appState: AppState, settings: Settings) = with(appState) {
             var textColor = FirefoxTheme.colors.textPrimary
-            var linkTextColor = FirefoxTheme.colors.textAccent
+            var linkTextColor = MaterialTheme.colorScheme.tertiary
 
             wallpaperState.currentWallpaper.let { currentWallpaper ->
                 currentWallpaper.textColor?.let {

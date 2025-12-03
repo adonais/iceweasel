@@ -138,10 +138,12 @@ add_task(async function test_bad_signature_does_not_lead_to_empty_list() {
           timestamp: 42,
           changes: [],
           metadata: {
-            signature: {
-              signature: "bad-signature",
-              x5u,
-            },
+            signatures: [
+              {
+                signature: "bad-signature",
+                x5u,
+              },
+            ],
           },
         })
       );
@@ -352,11 +354,13 @@ add_task(async function test_check_synchronization_with_signatures() {
     responseBody: JSON.stringify({
       timestamp: 1000,
       metadata: {
-        signature: {
-          x5u,
-          signature:
-            "vxuAg5rDCB-1pul4a91vqSBQRXJG_j7WOYUTswxRSMltdYmbhLRH8R8brQ9YKuNDF56F-w6pn4HWxb076qgKPwgcEBtUeZAO_RtaHXRkRUUgVzAr86yQL4-aJTbv3D6u",
-        },
+        signatures: [
+          {
+            x5u,
+            signature:
+              "vxuAg5rDCB-1pul4a91vqSBQRXJG_j7WOYUTswxRSMltdYmbhLRH8R8brQ9YKuNDF56F-w6pn4HWxb076qgKPwgcEBtUeZAO_RtaHXRkRUUgVzAr86yQL4-aJTbv3D6u",
+          },
+        ],
       },
       changes: [],
     }),
@@ -424,11 +428,13 @@ add_task(async function test_check_synchronization_with_signatures() {
     responseBody: JSON.stringify({
       timestamp: 3000,
       metadata: {
-        signature: {
-          x5u,
-          signature:
-            "dwhJeypadNIyzGj3QdI0KMRTPnHhFPF_j73mNrsPAHKMW46S2Ftf4BzsPMvPMB8h0TjDus13wo_R4l432DHe7tYyMIWXY0PBeMcoe5BREhFIxMxTsh9eGVXBD1e3UwRy",
-        },
+        signatures: [
+          {
+            x5u,
+            signature:
+              "dwhJeypadNIyzGj3QdI0KMRTPnHhFPF_j73mNrsPAHKMW46S2Ftf4BzsPMvPMB8h0TjDus13wo_R4l432DHe7tYyMIWXY0PBeMcoe5BREhFIxMxTsh9eGVXBD1e3UwRy",
+          },
+        ],
       },
       changes: [RECORD2, RECORD1],
     }),
@@ -464,10 +470,12 @@ add_task(async function test_check_synchronization_with_signatures() {
     responseBody: JSON.stringify({
       timestamp: 4000,
       metadata: {
-        signature: {
-          x5u,
-          signature: THREE_ITEMS_SIG,
-        },
+        signatures: [
+          {
+            x5u,
+            signature: THREE_ITEMS_SIG,
+          },
+        ],
       },
       changes: [RECORD3, RECORD1_DELETION],
     }),
@@ -500,10 +508,12 @@ add_task(async function test_check_synchronization_with_signatures() {
     responseBody: JSON.stringify({
       timestamp: 4000,
       metadata: {
-        signature: {
-          x5u,
-          signature: THREE_ITEMS_SIG,
-        },
+        signatures: [
+          {
+            x5u,
+            signature: THREE_ITEMS_SIG,
+          },
+        ],
       },
       changes: [],
     }),
@@ -540,10 +550,12 @@ add_task(async function test_check_synchronization_with_signatures() {
     responseBody: JSON.stringify({
       timestamp: 4000,
       metadata: {
-        signature: {
-          x5u,
-          signature: THREE_ITEMS_SIG,
-        },
+        signatures: [
+          {
+            x5u,
+            signature: THREE_ITEMS_SIG,
+          },
+        ],
       },
       changes: [RECORD2, RECORD3],
     }),
@@ -554,10 +566,12 @@ add_task(async function test_check_synchronization_with_signatures() {
     responseBody: JSON.stringify({
       timestamp: 4000,
       metadata: {
-        signature: {
-          x5u,
-          signature: "aW52YWxpZCBzaWduYXR1cmUK",
-        },
+        signatures: [
+          {
+            x5u,
+            signature: "aW52YWxpZCBzaWduYXR1cmUK",
+          },
+        ],
       },
       changes: [],
     }),
@@ -665,10 +679,12 @@ add_task(async function test_check_synchronization_with_signatures() {
     responseBody: JSON.stringify({
       timestamp: 5000,
       metadata: {
-        signature: {
-          x5u,
-          signature: "aW52YWxpZCBzaWduYXR1cmUK",
-        },
+        signatures: [
+          {
+            x5u,
+            signature: "aW52YWxpZCBzaWduYXR1cmUK",
+          },
+        ],
       },
       changes: [RECORD2, RECORD3],
     }),
@@ -690,7 +706,7 @@ add_task(async function test_check_synchronization_with_signatures() {
   // the final server collection contains RECORD2 and RECORD3
   const localId = "0602b1b2-12ab-4d3a-b6fb-593244e7b035";
   await client.db.importChanges(
-    { signature: { x5u, signature: "abc" } },
+    { signatures: [{ x5u, signature: "abc" }] },
     3900,
     [
       { ...RECORD2, last_modified: 1234567890, serialNumber: "abc" },
@@ -777,10 +793,12 @@ add_task(async function test_check_synchronization_with_signatures() {
     responseBody: JSON.stringify({
       timestamp: 6000,
       metadata: {
-        signature: {
-          x5u,
-          signature: "aaaaaaaaaaaaaaaaaaaaaaaa", // sig verifier wants proper length or will crash.
-        },
+        signatures: [
+          {
+            x5u,
+            signature: "aaaaaaaaaaaaaaaaaaaaaaaa", // sig verifier wants proper length or will crash.
+          },
+        ],
       },
       changes: [
         {
@@ -795,10 +813,12 @@ add_task(async function test_check_synchronization_with_signatures() {
     responseBody: JSON.stringify({
       timestamp: 6000,
       metadata: {
-        signature: {
-          x5u,
-          signature: "aW52YWxpZCBzaWduYXR1cmUK",
-        },
+        signatures: [
+          {
+            x5u,
+            signature: "aW52YWxpZCBzaWduYXR1cmUK",
+          },
+        ],
       },
       changes: [],
     }),
@@ -912,7 +932,7 @@ add_task(async function test_check_synchronization_with_signatures() {
   // thanks to the verifier mock.
   await client.db.importChanges(
     {
-      signature: { x5u, signature: "aa" },
+      signatures: [{ x5u, signature: "aa" }],
     },
     4000,
     [

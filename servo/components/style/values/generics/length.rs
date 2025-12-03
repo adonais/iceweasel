@@ -4,7 +4,9 @@
 
 //! Generic types for CSS values related to length.
 
+use crate::logical_geometry::PhysicalSide;
 use crate::parser::{Parse, ParserContext};
+use crate::values::computed::position::TryTacticAdjustment;
 use crate::values::generics::box_::PositionProperty;
 use crate::values::generics::Optional;
 use crate::values::DashedIdent;
@@ -402,6 +404,15 @@ pub struct GenericAnchorSizeFunction<Fallback> {
     pub fallback: Optional<Fallback>,
 }
 
+impl<Fallback: TryTacticAdjustment> TryTacticAdjustment for GenericAnchorSizeFunction<Fallback> {
+    fn try_tactic_adjustment(&mut self, old_side: PhysicalSide, new_side: PhysicalSide) {
+        self.size.try_tactic_adjustment(old_side, new_side);
+        if let Some(fallback) = self.fallback.as_mut() {
+            fallback.try_tactic_adjustment(old_side, new_side);
+        }
+    }
+}
+
 impl<Fallback> ToCss for GenericAnchorSizeFunction<Fallback>
 where
     Fallback: ToCss,
@@ -554,6 +565,23 @@ pub enum AnchorSizeKeyword {
     SelfInline,
 }
 
+impl TryTacticAdjustment for AnchorSizeKeyword {
+    fn try_tactic_adjustment(&mut self, old_side: PhysicalSide, new_side: PhysicalSide) {
+        if old_side.parallel_to(new_side) {
+            return;
+        }
+        *self = match *self {
+            Self::None => Self::None,
+            Self::Width => Self::Height,
+            Self::Height => Self::Width,
+            Self::Block => Self::Inline,
+            Self::Inline => Self::Block,
+            Self::SelfBlock => Self::SelfInline,
+            Self::SelfInline => Self::SelfBlock,
+        }
+    }
+}
+
 /// Specified type for `margin` properties, which allows
 /// the use of the `anchor-size()` function.
 #[derive(
@@ -592,18 +620,6 @@ impl<LP> GenericMargin<LP> {
     #[inline]
     pub fn is_auto(&self) -> bool {
         matches!(self, Self::Auto)
-    }
-}
-
-#[cfg(feature = "servo")]
-impl GenericMargin<crate::values::computed::LengthPercentage> {
-    /// Returns true if the computed value is absolute 0 or 0%.
-    #[inline]
-    pub fn is_definitely_zero(&self) -> bool {
-        match self {
-            Self::LengthPercentage(lp) => lp.is_definitely_zero(),
-            _ => false,
-        }
     }
 }
 

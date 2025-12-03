@@ -88,6 +88,8 @@ pub enum WebDriverCommand<T: WebDriverExtensionCommand> {
     WebAuthnRemoveCredential,
     WebAuthnRemoveAllCredentials,
     WebAuthnSetUserVerified(UserVerificationParameters),
+    SetGlobalPrivacyControl(GlobalPrivacyControlParameters),
+    GetGlobalPrivacyControl,
 }
 
 pub trait WebDriverExtensionCommand: Clone + Send {
@@ -428,6 +430,10 @@ impl<U: WebDriverExtensionRoute> WebDriverMessage<U> {
             Route::WebAuthnSetUserVerified => {
                 WebDriverCommand::WebAuthnSetUserVerified(serde_json::from_str(raw_body)?)
             }
+            Route::GetGlobalPrivacyControl => WebDriverCommand::GetGlobalPrivacyControl,
+            Route::SetGlobalPrivacyControl => {
+                WebDriverCommand::SetGlobalPrivacyControl(serde_json::from_str(raw_body)?)
+            }
         };
         Ok(WebDriverMessage::new(session_id, command))
     }
@@ -713,6 +719,11 @@ pub struct AuthenticatorParameters {
 pub struct UserVerificationParameters {
     #[serde(rename = "isUserVerified")]
     pub is_user_verified: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct GlobalPrivacyControlParameters {
+    pub gpc: bool,
 }
 
 fn deserialize_to_positive_f64<'de, D>(deserializer: D) -> Result<f64, D::Error>

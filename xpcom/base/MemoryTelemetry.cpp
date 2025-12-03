@@ -507,8 +507,7 @@ nsresult MemoryTelemetry::FinishGatheringTotalMemory(
   }
 
   if (aChildSizes.Length() > 1) {
-    int32_t tabsCount;
-    MOZ_TRY_VAR(tabsCount, GetOpenTabsCount());
+    int32_t tabsCount = MOZ_TRY(GetOpenTabsCount());
 
     nsCString key;
     if (tabsCount <= 10) {

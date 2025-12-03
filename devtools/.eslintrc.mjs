@@ -172,12 +172,6 @@ export default [
     },
   },
   {
-    files: ["client/framework/**", "shared/webconsole/test/chrome/*.html"],
-    rules: {
-      "mozilla/no-aArgs": "off",
-    },
-  },
-  {
     files: ["client/framework/test/**"],
     rules: {
       "mozilla/var-only-at-top-level": "off",

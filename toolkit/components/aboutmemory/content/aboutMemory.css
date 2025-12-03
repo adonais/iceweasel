@@ -96,7 +96,7 @@ div.opsRowLabel,
 div.sidebarLabel {
   display: block;
   margin-bottom: 0.2em;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .opsRowLabel label {
@@ -167,7 +167,7 @@ a.treemapEntry {
     }
 
     > .treemapEntryProcessName {
-      font-weight: bold;
+      font-weight: var(--font-weight-bold);
     }
 
     > .treemapEntryPid {
@@ -202,7 +202,7 @@ a.treemapEntry {
 }
 
 .mrValue {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .hasKids {

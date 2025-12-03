@@ -13,7 +13,6 @@
 #include "nsStandardURL.h"
 #include "nsJARURI.h"
 #include "mozilla/chrome/RegistryMessageUtils.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/RWLock.h"
 
 class nsIIOService;

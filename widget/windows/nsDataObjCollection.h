@@ -12,7 +12,6 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsDataObj.h"
-#include "mozilla/Attributes.h"
 
 #define MULTI_MIME "Mozilla/IDataObjectCollectionFormat"
 

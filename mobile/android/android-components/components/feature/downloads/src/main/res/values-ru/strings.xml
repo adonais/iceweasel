@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Name of the "notification channel" used for displaying download notification. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_downloads_notification_channel">Загрузки</string>
@@ -19,16 +26,16 @@
     Alert dialog confirmation before downloading a previously downloaded file, this is the title.
     %1$s will be replaced with the size of the file.
   -->
-  <string name="mozac_feature_downloads_again_dialog_title">Загрузить файл снова? (%1$s)</string>
+  <string name="mozac_feature_downloads_again_dialog_title">Скачать файл снова? (%1$s)</string>
   <!--
     Alert dialog confirmation before downloading a file, this is the title.
     %1$s will be replaced with the size of the file.
   -->
-  <string name="mozac_feature_downloads_dialog_title_3">Загрузить файл? (%1$s)</string>
+  <string name="mozac_feature_downloads_dialog_title_3">Скачать файл? (%1$s)</string>
   <!-- This string is used as the title for the download confirmation dialog when the size of the file is not known. -->
-  <string name="mozac_feature_downloads_dialog_title_with_unknown_size">Загрузить файл?</string>
+  <string name="mozac_feature_downloads_dialog_title_with_unknown_size">Скачать файл?</string>
   <!-- Alert dialog confirmation before downloading a previously downloaded file, this is the title when the size of the file is not known. -->
-  <string name="mozac_feature_downloads_again_dialog_title_with_unknown_size">Загрузить файл снова?</string>
+  <string name="mozac_feature_downloads_again_dialog_title_with_unknown_size">Скачать файл снова?</string>
   <!-- Alert dialog confirmation before download a file, this is the positive action. -->
   <string name="mozac_feature_downloads_dialog_download">Загрузить</string>
   <!-- Alert dialog confirmation before downloading a file again, this is the positive action. -->
@@ -50,7 +57,7 @@
   <!-- Alert dialog confirmation before downloading a file without network connection, this is the description. -->
   <string name="mozac_feature_downloads_file_check_connection" tools:ignore="UnusedResources">Проверьте подключение к Интернету и попробуйте снова.</string>
   <!-- Error shown when the user is trying to download a invalid file. %1$s will be replaced with the name of the app. -->
-  <string name="mozac_feature_downloads_file_not_supported2">%1$s не может загрузить этот тип файла</string>
+  <string name="mozac_feature_downloads_file_not_supported2">%1$s не может скачать этот тип файла</string>
   <!-- Message that appears when the downloaded file could not be opened. -->
   <string name="mozac_feature_downloads_could_not_open_file">Не удалось открыть файл</string>
   <!-- Message that appears when the downloaded file is a specific type (%1$s) that Android doesn't support opening. -->

@@ -42,6 +42,7 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
   private final String mInstanceId;
 
   private boolean mIsolatedProcess = false;
+  private boolean mAppZygote = false;
 
   public static GeckoProcessManager getInstance() {
     return INSTANCE;
@@ -128,9 +129,8 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
         throw new RuntimeException("Invalid PID");
       }
 
-      if (type == GeckoProcessType.CONTENT
-          && GeckoProcessManager.getInstance().isIsolatedProcessEnabled()) {
-        mType = GeckoProcessType.CONTENT_ISOLATED;
+      if (type == GeckoProcessType.CONTENT) {
+        mType = GeckoProcessType.determineContentProcessType();
       } else {
         mType = type;
       }
@@ -194,7 +194,7 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
       mPid = INVALID_PID;
     }
 
-    public int getPid() {
+    public int getPid() throws AssertionError, IncompleteChildConnectionException {
       XPCOMEventTarget.assertOnLauncherThread();
       if (mChild == null) {
         throw new IncompleteChildConnectionException(
@@ -309,8 +309,11 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
     }
   }
 
-  private static boolean isContent(final GeckoProcessType type) {
-    return type == GeckoProcessType.CONTENT || type == GeckoProcessType.CONTENT_ISOLATED;
+  /** package */
+  static boolean isContent(final GeckoProcessType type) {
+    return type == GeckoProcessType.CONTENT
+        || type == GeckoProcessType.CONTENT_ISOLATED
+        || type == GeckoProcessType.CONTENT_ISOLATED_WITH_ZYGOTE;
   }
 
   private static class NonContentConnection extends ChildConnection {
@@ -426,12 +429,7 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
 
     public ContentConnection(
         @NonNull final ServiceAllocator allocator, @NonNull final PriorityLevel initialPriority) {
-      super(
-          allocator,
-          GeckoProcessManager.getInstance().isIsolatedProcessEnabled()
-              ? GeckoProcessType.CONTENT_ISOLATED
-              : GeckoProcessType.CONTENT,
-          initialPriority);
+      super(allocator, GeckoProcessType.determineContentProcessType(), initialPriority);
     }
 
     @Override
@@ -715,9 +713,19 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
     mIsolatedProcess = enabled;
   }
 
+  /** Sets whether the content service runs on isolated process with app Zygote preloading. */
+  public void setAppZygoteEnabled(final boolean enabled) {
+    mAppZygote = enabled;
+  }
+
   /** true if the content service runs on isolated process. */
   public boolean isIsolatedProcessEnabled() {
     return mIsolatedProcess;
+  }
+
+  /** true if app Zygote preloading is enabled. */
+  public boolean isAppZygoteEnabled() {
+    return mAppZygote;
   }
 
   public void crashChild(@NonNull final Selector selector) {
@@ -856,13 +864,18 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
 
     if (error instanceof StartException) {
       final StartException startError = (StartException) error;
-      if (startError.errorCode == IChildProcess.STARTED_BUSY) {
+      if (isContent(info.type) && startError.errorCode == IChildProcess.STARTED_BUSY) {
         // This process is owned by a different runtime, so we can't use
-        // it. We will keep retrying indefinitely until we find a non-busy process.
+        // it. For content processes we will keep retrying indefinitely until
+        // we find a non-busy process.
         // Note: this strategy is pretty bad, we go through each process in
         // sequence until one works, the multiple runtime case is test-only
         // for now, so that's ok. We can improve on this if we eventually
         // end up needing something fancier.
+        // For non-content processes there is only a single service defined for
+        // each process type, meaning this will never succeed while an instance
+        // of that process is alive. We therefore do *not* want to retry
+        // indefinitely. See bug 1844829.
         return start(info, retryLog);
       }
     }

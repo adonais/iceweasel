@@ -188,7 +188,9 @@ impl Counter for CounterMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<i32> for CounterMetric {
+impl glean::TestGetValue for CounterMetric {
+    type Output = i32;
+
     /// **Test-only API.**
     ///
     /// Get the currently stored value as an integer.

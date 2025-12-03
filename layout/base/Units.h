@@ -178,6 +178,7 @@ typedef gfx::SizeTyped<DesktopPixel> DesktopSize;
 typedef gfx::IntSizeTyped<DesktopPixel> DesktopIntSize;
 typedef gfx::RectTyped<DesktopPixel> DesktopRect;
 typedef gfx::IntRectTyped<DesktopPixel> DesktopIntRect;
+typedef gfx::IntMarginTyped<DesktopPixel> DesktopIntMargin;
 
 typedef gfx::CoordTyped<ExternalPixel> ExternalCoord;
 typedef gfx::IntCoordTyped<ExternalPixel> ExternalIntCoord;
@@ -706,6 +707,9 @@ struct ParentLayerPixel {};
  * - on Windows *with* per-monitor DPI support, they are physical device pixels
  *   on each screen; note that this means the scaling between CSS pixels and
  *   desktop pixels may vary across multiple displays.
+ * - on Linux, they're "Gdk points", which correspond to widget coordinates
+ *   used by Gdk and X11 or Wayland compositor and are mapped to actual
+ *   screen pixels by per-monitor screen scale.
  */
 struct DesktopPixel {};
 
@@ -948,6 +952,15 @@ gfx::MarginTyped<Dst, F> operator/(
   return gfx::MarginTyped<Dst, F>(
       aMargin.top.value / aScale.yScale, aMargin.right.value / aScale.xScale,
       aMargin.bottom.value / aScale.yScale, aMargin.left.value / aScale.xScale);
+}
+
+template <class Src, class Dst>
+gfx::MarginTyped<Dst> operator*(const gfx::IntMarginTyped<Src>& aMargin,
+                                const gfx::ScaleFactor<Src, Dst>& aScale) {
+  return gfx::MarginTyped<Dst>(float(aMargin.top.value) * aScale.scale,
+                               float(aMargin.right.value) * aScale.scale,
+                               float(aMargin.bottom.value) * aScale.scale,
+                               float(aMargin.left.value) * aScale.scale);
 }
 
 // Calculate the max or min or the ratios of the widths and heights of two

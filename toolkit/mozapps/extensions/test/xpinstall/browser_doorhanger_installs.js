@@ -1071,7 +1071,7 @@ describe("Add-on installation doorhangers", function () {
     await testBlocklistedAddon({
       stash: { softblocked: [`${id}:${version}`], blocked: [], unblocked: [] },
       expected: {
-        fluentId: "addon-install-error-soft-blocked",
+        fluentId: "addon-install-error-soft-blocked2",
         blocklistURL,
       },
     });

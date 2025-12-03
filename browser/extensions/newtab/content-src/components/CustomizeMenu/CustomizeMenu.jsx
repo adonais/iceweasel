@@ -13,9 +13,15 @@ export class _CustomizeMenu extends React.PureComponent {
     super(props);
     this.onEntered = this.onEntered.bind(this);
     this.onExited = this.onExited.bind(this);
+    this.onSubpanelToggle = this.onSubpanelToggle.bind(this);
     this.state = {
       exitEventFired: false,
+      subpanelOpen: false,
     };
+  }
+
+  onSubpanelToggle(isOpen) {
+    this.setState({ subpanelOpen: isOpen });
   }
 
   onEntered() {
@@ -52,13 +58,13 @@ export class _CustomizeMenu extends React.PureComponent {
             }}
             ref={c => (this.openButton = c)}
           >
+            <label data-l10n-id="newtab-customize-panel-icon-button-label" />
             <div>
               <img
                 role="presentation"
                 src="chrome://global/skin/icons/edit-outline.svg"
               />
             </div>
-            <label data-l10n-id="newtab-customize-panel-icon-button-label" />
           </button>
         </CSSTransition>
         <CSSTransition
@@ -69,41 +75,46 @@ export class _CustomizeMenu extends React.PureComponent {
           onExited={this.onExited}
           appear={true}
         >
-          <div
-            className="customize-menu"
-            role="dialog"
-            data-l10n-id="newtab-settings-dialog-label"
-          >
-            <div className="close-button-wrapper">
-              <moz-button
-                onClick={() => this.props.onClose()}
-                id="close-button"
-                type="icon ghost"
-                data-l10n-id="newtab-custom-close-menu-button"
-                iconsrc="chrome://global/skin/icons/close.svg"
-                ref={c => (this.closeButton = c)}
-              ></moz-button>
+          <div className="customize-menu-animate-wrapper">
+            <div
+              className={`customize-menu ${
+                this.state.subpanelOpen ? "subpanel-open" : ""
+              }`}
+              role="dialog"
+              data-l10n-id="newtab-settings-dialog-label"
+            >
+              <div className="close-button-wrapper">
+                <moz-button
+                  onClick={() => this.props.onClose()}
+                  id="close-button"
+                  type="icon ghost"
+                  data-l10n-id="newtab-custom-close-menu-button"
+                  iconsrc="chrome://global/skin/icons/close.svg"
+                  ref={c => (this.closeButton = c)}
+                ></moz-button>
+              </div>
+              <ContentSection
+                openPreferences={this.props.openPreferences}
+                setPref={this.props.setPref}
+                enabledSections={this.props.enabledSections}
+                enabledWidgets={this.props.enabledWidgets}
+                wallpapersEnabled={this.props.wallpapersEnabled}
+                activeWallpaper={this.props.activeWallpaper}
+                pocketRegion={this.props.pocketRegion}
+                mayHaveTopicSections={this.props.mayHaveTopicSections}
+                mayHaveInferredPersonalization={
+                  this.props.mayHaveInferredPersonalization
+                }
+                mayHaveWeather={this.props.mayHaveWeather}
+                mayHaveTrendingSearch={this.props.mayHaveTrendingSearch}
+                mayHaveWidgets={this.props.mayHaveWidgets}
+                mayHaveTimerWidget={this.props.mayHaveTimerWidget}
+                mayHaveListsWidget={this.props.mayHaveListsWidget}
+                dispatch={this.props.dispatch}
+                exitEventFired={this.state.exitEventFired}
+                onSubpanelToggle={this.onSubpanelToggle}
+              />
             </div>
-            <ContentSection
-              openPreferences={this.props.openPreferences}
-              setPref={this.props.setPref}
-              enabledSections={this.props.enabledSections}
-              enabledWidgets={this.props.enabledWidgets}
-              wallpapersEnabled={this.props.wallpapersEnabled}
-              activeWallpaper={this.props.activeWallpaper}
-              pocketRegion={this.props.pocketRegion}
-              mayHaveTopicSections={this.props.mayHaveTopicSections}
-              mayHaveInferredPersonalization={
-                this.props.mayHaveInferredPersonalization
-              }
-              mayHaveWeather={this.props.mayHaveWeather}
-              mayHaveTrendingSearch={this.props.mayHaveTrendingSearch}
-              mayHaveWidgets={this.props.mayHaveWidgets}
-              mayHaveTimerWidget={this.props.mayHaveTimerWidget}
-              mayHaveListsWidget={this.props.mayHaveListsWidget}
-              dispatch={this.props.dispatch}
-              exitEventFired={this.state.exitEventFired}
-            />
           </div>
         </CSSTransition>
       </span>

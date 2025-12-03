@@ -12,6 +12,7 @@ SH_PROGS="afl-plot afl-cmin afl-cmin.bash afl-whatsup afl-addseeds afl-system-co
 
 cd "$MOZ_FETCHES_DIR/AFLplusplus"
 patch -p1 -i "$scripts/afl-nyx.patch"
+patch -p1 -i "$scripts/afl-llvm20.patch"
 
 make -f GNUmakefile $PROGS \
     CC="$MOZ_FETCHES_DIR/clang/bin/clang" \

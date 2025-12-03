@@ -16,6 +16,7 @@ export default {
         },
       },
     ],
+    "jsdoc/require-next-type": "error",
     "jsdoc/require-param": "error",
     "jsdoc/require-param-name": "error",
     "jsdoc/require-param-type": "error",
@@ -24,16 +25,9 @@ export default {
     "jsdoc/require-property-name": "error",
     "jsdoc/require-property-type": "error",
     "jsdoc/require-returns-check": "error",
+    // "jsdoc/require-throws-type": "error",
     "jsdoc/require-yields": "error",
     "jsdoc/require-yields-check": "error",
-  },
-  settings: {
-    jsdoc: {
-      // This changes what's allowed in JSDocs, enabling more type-inference
-      // friendly types.  This is the default in eslint-plugin-jsdoc versions
-      // since May 2023, but we're still on 39.9 and need opt-in for now.
-      // https://github.com/gajus/eslint-plugin-jsdoc/issues/834
-      mode: "typescript",
-    },
+    "jsdoc/require-yields-type": "error",
   },
 };

@@ -22,9 +22,7 @@ prefs = [
 ["browser_dbg-sourcemapped-preview.js"]
 
 ["browser_dbg-sourcemapped-scopes.js"]
-# Bug 1441545, 1536253 - very slow on debug
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bugs 1858041 and 1849028 intermittent results (fails on Try, passes on Autoland)
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent results (fails on Try, passes on Autoland)
 ]
 

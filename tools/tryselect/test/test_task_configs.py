@@ -10,7 +10,7 @@ import mozunit
 import pytest
 from tryselect.task_config import Pernosco, all_task_configs
 
-TC_URL = "https://firefox-ci-tc.services.mozilla.com"
+TC_URL = "https://taskcluster.example.com"
 TH_URL = "https://treeherder.mozilla.org"
 
 # task configs have a list of tests of the form (input, expected)
@@ -150,6 +150,12 @@ def config_patch_resolver(patch_resolver):
     return inner
 
 
+@pytest.fixture(autouse=True)
+def mock_root_url(monkeypatch):
+    monkeypatch.delenv("TASKCLUSTER_PROXY_URL", raising=False)
+    monkeypatch.setenv("TASKCLUSTER_ROOT_URL", TC_URL)
+
+
 def test_task_configs(config_patch_resolver, task_config, args, expected):
     parser = ArgumentParser()
 
@@ -201,7 +207,7 @@ def test_pernosco(patch_ssh_user):
     assert params == {"try_task_config": {"env": {"PERNOSCO": "1"}, "pernosco": True}}
 
 
-def test_exisiting_tasks(responses, patch_ssh_user):
+def test_exisiting_tasks(mocker, responses, patch_ssh_user):
     parser = ArgumentParser()
     cfg = all_task_configs["existing-tasks"]()
     cfg.add_arguments(parser)
@@ -228,7 +234,7 @@ def test_exisiting_tasks(responses, patch_ssh_user):
 
     responses.add(
         responses.GET,
-        f"{TC_URL}/api/queue/v1/task/{task_id}/artifacts/public/label-to-taskid.json",
+        f"{TC_URL}/api/queue/v1/task/{task_id}/artifacts/public%2flabel-to-taskid.json",
         json=label_to_taskid,
     )
 
@@ -254,7 +260,7 @@ def test_exisiting_tasks_task_id(responses):
 
     responses.add(
         responses.GET,
-        f"{TC_URL}/api/queue/v1/task/{task_id}/artifacts/public/label-to-taskid.json",
+        f"{TC_URL}/api/queue/v1/task/{task_id}/artifacts/public%2flabel-to-taskid.json",
         json=label_to_taskid,
     )
 
@@ -282,7 +288,7 @@ def test_exisiting_tasks_rev(responses):
 
     responses.add(
         responses.GET,
-        f"{TC_URL}/api/queue/v1/task/{task_id}/artifacts/public/label-to-taskid.json",
+        f"{TC_URL}/api/queue/v1/task/{task_id}/artifacts/public%2flabel-to-taskid.json",
         json=label_to_taskid,
     )
 

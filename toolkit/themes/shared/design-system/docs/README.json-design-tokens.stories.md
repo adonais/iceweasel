@@ -131,7 +131,7 @@ When reading through our JSON you will see many instances where we have used an 
   }
 }
 ```
-This is a workaround for a [known](https://github.com/amzn/style-dictionary/issues/119) [limitation](https://github.com/amzn/style-dictionary/issues/366) of Style Dictionary where it doesn't support nested token names that appear after a `value` key. If we want to have both `--font-weight` and `--font-weight-bold` CSS tokens they need to be represented as distinct objects with their own `value`s:
+This is a workaround for a [known](https://github.com/amzn/style-dictionary/issues/119) [limitation](https://github.com/amzn/style-dictionary/issues/366) of Style Dictionary where it doesn't support nested token names that appear after a `value` key. If we want to have both `--font-weight` and `--font-weight-semibold` CSS tokens they need to be represented as distinct objects with their own `value`s:
 
 ```json
 "font": {
@@ -139,7 +139,7 @@ This is a workaround for a [known](https://github.com/amzn/style-dictionary/issu
     "@base": {
       "value": "normal"
     },
-    "bold": {
+    "semibold": {
       "value": 600
     }
   }

@@ -16,14 +16,14 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "XreDirProvider",
   "@mozilla.org/xre/directory-provider;1",
-  "nsIXREDirProvider"
+  Ci.nsIXREDirProvider
 );
 
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "BackgroundTasks",
   "@mozilla.org/backgroundtasks;1",
-  "nsIBackgroundTasks"
+  Ci.nsIBackgroundTasks
 );
 
 ChromeUtils.defineLazyGetter(lazy, "log", () => {
@@ -134,13 +134,13 @@ let ShellServiceInternal = {
     return false;
   },
 
-  /*
+  /**
    * Check if UserChoice is impossible.
    *
    * Separated for easy stubbing in tests.
    *
-   * @return string telemetry result like "Err*", or null if UserChoice
-   * is possible.
+   * @returns {string}
+   *   Telemetry result like "Err*", or null if UserChoice is possible.
    */
   _userChoiceImpossibleTelemetryResult() {
     let winShellService = this.shellService.QueryInterface(
@@ -155,10 +155,11 @@ let ShellServiceInternal = {
     return null;
   },
 
-  /*
+  /**
    * Accommodate `setDefaultPDFHandlerOnlyReplaceBrowsers` feature.
-   * @return true if Firefox should set itself as default PDF handler, false
-   * otherwise.
+   *
+   * @returns {boolean}
+   *   True if Firefox should set itself as default PDF handler, false otherwise.
    */
   _shouldSetDefaultPDFHandler() {
     if (
@@ -247,14 +248,15 @@ let ShellServiceInternal = {
     };
   },
 
-  /*
+  /**
    * Set the default browser through the UserChoice registry keys on Windows.
    *
    * NOTE: This does NOT open the System Settings app for manual selection
    * in case of failure. If that is desired, catch the exception and call
    * setDefaultBrowser().
    *
-   * @return Promise, resolves when successful, rejects with Error on failure.
+   * @returns {Promise<void>}
+   *   Resolves when successful, rejects with Error on failure.
    */
   async setAsDefaultUserChoice() {
     if (AppConstants.platform != "win") {
@@ -602,25 +604,28 @@ let ShellServiceInternal = {
 let shellInterface;
 switch (AppConstants.platform) {
   case "win":
-    shellInterface = "nsIWindowsShellService";
+    shellInterface = Ci.nsIWindowsShellService;
     break;
   case "macosx":
-    shellInterface = "nsIMacShellService";
+    shellInterface = Ci.nsIMacShellService;
     break;
   case "linux":
-    shellInterface = "nsIGNOMEShellService";
+    shellInterface = Ci.nsIGNOMEShellService;
     break;
   default:
     lazy.log.warn(
       `No platform native shell service interface for ${AppConstants.platform} queried, add for new platforms.`
     );
-    shellInterface = "nsIShellService";
+    shellInterface = Ci.nsIShellService;
 }
 
 XPCOMUtils.defineLazyServiceGetters(ShellServiceInternal, {
-  defaultAgent: ["@mozilla.org/default-agent;1", "nsIDefaultAgent"],
+  defaultAgent: ["@mozilla.org/default-agent;1", Ci.nsIDefaultAgent],
   shellService: ["@mozilla.org/browser/shell-service;1", shellInterface],
-  macDockSupport: ["@mozilla.org/widget/macdocksupport;1", "nsIMacDockSupport"],
+  macDockSupport: [
+    "@mozilla.org/widget/macdocksupport;1",
+    Ci.nsIMacDockSupport,
+  ],
 });
 
 /**

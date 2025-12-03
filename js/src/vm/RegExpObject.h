@@ -159,8 +159,6 @@ class RegExpObject : public NativeObject {
     return flags.global() || flags.sticky();
   }
 
-  static bool isOriginalFlagGetter(JSNative native, JS::RegExpFlags* mask);
-
   static RegExpShared* getShared(JSContext* cx, Handle<RegExpObject*> regexp);
 
   bool hasShared() const { return !getFixedSlot(SHARED_SLOT).isUndefined(); }

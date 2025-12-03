@@ -11,7 +11,6 @@ complexities of worker implementations, scopes, and treeherder annotations.
 import functools
 import hashlib
 import os
-import re
 import time
 from copy import deepcopy
 from dataclasses import dataclass
@@ -20,7 +19,6 @@ from typing import Callable
 
 from voluptuous import All, Any, Extra, NotIn, Optional, Required
 
-from taskgraph import MAX_DEPENDENCIES
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.hash import hash_path
 from taskgraph.util.keyed_by import evaluate_keyed_by
@@ -43,8 +41,8 @@ RUN_TASK = os.path.join(
 )
 
 
-@functools.lru_cache(maxsize=None)
-def _run_task_suffix():
+@functools.cache
+def run_task_suffix():
     """String to append to cache names under control of run-task."""
     return hash_path(RUN_TASK)[0:20]
 
@@ -412,14 +410,14 @@ def get_branch_rev(config):
     return config.params["head_rev"]
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def get_default_priority(graph_config, project):
     return evaluate_keyed_by(
         graph_config["task-priority"], "Graph Config", {"project": project}
     )
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def get_default_deadline(graph_config, project):
     return evaluate_keyed_by(
         graph_config["task-deadline-after"], "Graph Config", {"project": project}
@@ -715,7 +713,7 @@ def build_docker_worker_payload(config, task, task_def):
         cache_version = "v3"
 
         if run_task:
-            suffix = f"{cache_version}-{_run_task_suffix()}"
+            suffix = f"{cache_version}-{run_task_suffix()}"
 
             if out_of_tree_image:
                 name_hash = hashlib.sha256(
@@ -762,8 +760,6 @@ def build_docker_worker_payload(config, task, task_def):
         payload["features"] = features
     if capabilities:
         payload["capabilities"] = capabilities
-
-    check_caches_are_volumes(task)
 
 
 @payload_builder(
@@ -1456,136 +1452,4 @@ def chain_of_trust(config, tasks):
                 cot.setdefault("inputs", {})["docker-image"] = {
                     "task-reference": "<docker-image>"
                 }
-        yield task
-
-
-@transforms.add
-def check_task_identifiers(config, tasks):
-    """Ensures that all tasks have well defined identifiers:
-    ``^[a-zA-Z0-9_-]{1,38}$``
-    """
-    e = re.compile("^[a-zA-Z0-9_-]{1,38}$")
-    for task in tasks:
-        for attrib in ("workerType", "provisionerId"):
-            if not e.match(task["task"][attrib]):
-                raise Exception(
-                    "task {}.{} is not a valid identifier: {}".format(
-                        task["label"], attrib, task["task"][attrib]
-                    )
-                )
-        yield task
-
-
-@transforms.add
-def check_task_dependencies(config, tasks):
-    """Ensures that tasks don't have more than 100 dependencies."""
-    for task in tasks:
-        number_of_dependencies = (
-            len(task["dependencies"])
-            + len(task["if-dependencies"])
-            + len(task["soft-dependencies"])
-        )
-        if number_of_dependencies > MAX_DEPENDENCIES:
-            raise Exception(
-                "task {}/{} has too many dependencies ({} > {})".format(
-                    config.kind,
-                    task["label"],
-                    number_of_dependencies,
-                    MAX_DEPENDENCIES,
-                )
-            )
-        yield task
-
-
-def check_caches_are_volumes(task):
-    """Ensures that all cache paths are defined as volumes.
-
-    Caches and volumes are the only filesystem locations whose content
-    isn't defined by the Docker image itself. Some caches are optional
-    depending on the task environment. We want paths that are potentially
-    caches to have as similar behavior regardless of whether a cache is
-    used. To help enforce this, we require that all paths used as caches
-    to be declared as Docker volumes. This check won't catch all offenders.
-    But it is better than nothing.
-    """
-    volumes = set(task["worker"]["volumes"])
-    paths = {c["mount-point"] for c in task["worker"].get("caches", [])}
-    missing = paths - volumes
-
-    if not missing:
-        return
-
-    raise Exception(
-        "task {} (image {}) has caches that are not declared as "
-        "Docker volumes: {} "
-        "(have you added them as VOLUMEs in the Dockerfile?)".format(
-            task["label"], task["worker"]["docker-image"], ", ".join(sorted(missing))
-        )
-    )
-
-
-@transforms.add
-def check_run_task_caches(config, tasks):
-    """Audit for caches requiring run-task.
-
-    run-task manages caches in certain ways. If a cache managed by run-task
-    is used by a non run-task task, it could cause problems. So we audit for
-    that and make sure certain cache names are exclusive to run-task.
-
-    IF YOU ARE TEMPTED TO MAKE EXCLUSIONS TO THIS POLICY, YOU ARE LIKELY
-    CONTRIBUTING TECHNICAL DEBT AND WILL HAVE TO SOLVE MANY OF THE PROBLEMS
-    THAT RUN-TASK ALREADY SOLVES. THINK LONG AND HARD BEFORE DOING THAT.
-    """
-    re_reserved_caches = re.compile(
-        """^
-        (checkouts|tooltool-cache)
-    """,
-        re.VERBOSE,
-    )
-
-    cache_prefix = "{trust_domain}-level-{level}-".format(
-        trust_domain=config.graph_config["trust-domain"],
-        level=config.params["level"],
-    )
-
-    suffix = _run_task_suffix()
-
-    for task in tasks:
-        payload = task["task"].get("payload", {})
-        command = payload.get("command") or [""]
-
-        main_command = command[0] if isinstance(command[0], str) else ""
-        run_task = main_command.endswith("run-task")
-
-        for cache in payload.get("cache", {}).get(
-            "task-reference", payload.get("cache", {})
-        ):
-            if not cache.startswith(cache_prefix):
-                raise Exception(
-                    "{} is using a cache ({}) which is not appropriate "
-                    "for its trust-domain and level. It should start with {}.".format(
-                        task["label"], cache, cache_prefix
-                    )
-                )
-
-            cache = cache[len(cache_prefix) :]
-
-            if not re_reserved_caches.match(cache):
-                continue
-
-            if not run_task:
-                raise Exception(
-                    f"{task['label']} is using a cache ({cache}) reserved for run-task "
-                    "change the task to use run-task or use a different "
-                    "cache name"
-                )
-
-            if suffix not in cache:
-                raise Exception(
-                    f"{task['label']} is using a cache ({cache}) reserved for run-task "
-                    "but the cache name is not dependent on the contents "
-                    "of run-task; change the cache name to conform to the "
-                    "naming requirements"
-                )
-
         yield task

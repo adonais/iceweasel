@@ -334,7 +334,7 @@ bool TRRService::MaybeSetPrivateURI(const nsACString& aURI) {
       if (!neckoParent) {
         continue;
       }
-      Unused << neckoParent->SendSetTRRDomain(host);
+      (void)neckoParent->SendSetTRRDomain(host);
     }
 
     AsyncCreateTRRConnectionInfo(mPrivateURI);
@@ -714,7 +714,7 @@ void TRRService::ConfirmationContext::SetState(
   TRRServiceChild* child = TRRServiceChild::GetSingleton();
   if (child && child->CanSend()) {
     LOG(("TRRService::SendSetConfirmationState"));
-    Unused << child->SendSetConfirmationState(mState);
+    (void)child->SendSetConfirmationState(mState);
   }
 }
 
@@ -1388,7 +1388,7 @@ void TRRService::InitTRRConnectionInfo(bool aForceReinit) {
   TRRServiceChild* child = TRRServiceChild::GetSingleton();
   if (child && child->CanSend()) {
     LOG(("TRRService::SendInitTRRConnectionInfo"));
-    Unused << child->SendInitTRRConnectionInfo(aForceReinit);
+    (void)child->SendInitTRRConnectionInfo(aForceReinit);
   }
 }
 

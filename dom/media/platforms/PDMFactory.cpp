@@ -314,7 +314,7 @@ void PDMFactory::EnsureInit() {
     // Ensure that all system variables are initialized.
     gfx::gfxVars::Initialize();
     // Prime the preferences system from the main thread.
-    Unused << BrowserTabsRemoteAutostart();
+    (void)BrowserTabsRemoteAutostart();
   };
   // There are some initialization needed to be done on the main thread.
   if (!gfx::gfxVars::IsInitialized()) {

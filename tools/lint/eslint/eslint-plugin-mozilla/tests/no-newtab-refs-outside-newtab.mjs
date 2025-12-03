@@ -3,6 +3,7 @@
 
 import rule from "../lib/rules/no-newtab-refs-outside-newtab.mjs";
 import { RuleTester } from "eslint";
+import path from "path";
 
 const ruleTester = new RuleTester();
 
@@ -31,37 +32,76 @@ ruleTester.run("no-newtab-refs-outside-newtab", rule, {
     // Valid: Usage within browser/extensions/newtab/
     validCodeInAllowedPath(
       'import foo from "resource://newtab/lib/ActivityStream.sys.mjs"',
-      "/path/to/browser/extensions/newtab/lib/SomeFile.sys.mjs"
+      path.join(
+        "path",
+        "to",
+        "browser",
+        "extensions",
+        "newtab",
+        "lib",
+        "SomeFile.sys.mjs"
+      )
     ),
     validCodeInAllowedPath(
       'ChromeUtils.importESModule("resource://newtab/common/Actions.mjs")',
-      "/path/to/browser/extensions/newtab/test/unit/test_something.js"
+      path.join(
+        "path",
+        "to",
+        "browser",
+        "extensions",
+        "newtab",
+        "test",
+        "unit",
+        "test_something.js"
+      )
     ),
     validCodeInAllowedPath(
       'Services.wm.getMostRecentWindow("chrome://newtab/content/newtab.xhtml")',
-      "/path/to/browser/extensions/newtab/lib/Feed.sys.mjs"
+      path.join(
+        "path",
+        "to",
+        "browser",
+        "extensions",
+        "newtab",
+        "lib",
+        "Feed.sys.mjs"
+      )
     ),
 
     // Valid: Usage within browser/components/newtab/
     validCodeInAllowedPath(
       'const ActivityStream = "resource://newtab/lib/ActivityStream.sys.mjs"',
-      "/path/to/browser/components/newtab/AboutNewTabResourceMapping.sys.mjs"
+      path.join(
+        "path",
+        "to",
+        "browser",
+        "components",
+        "newtab",
+        "AboutNewTabResourceMapping.sys.mjs"
+      )
     ),
     validCodeInAllowedPath(
       'ChromeUtils.defineESModuleGetters(lazy, {"ActivityStream": "resource://newtab/lib/ActivityStream.sys.mjs"})',
-      "/path/to/browser/components/newtab/SomeComponent.sys.mjs"
+      path.join(
+        "path",
+        "to",
+        "browser",
+        "components",
+        "newtab",
+        "SomeComponent.sys.mjs"
+      )
     ),
 
     // Valid: Usage in AboutNewTab.sys.mjs
     validCodeInAllowedPath(
       'ActivityStream: "resource://newtab/lib/ActivityStream.sys.mjs"',
-      "/path/to/browser/modules/AboutNewTab.sys.mjs"
+      path.join("path", "to", "browser", "modules", "AboutNewTab.sys.mjs")
     ),
 
     // Valid: Usage in AboutNewTabChild.sys.mjs
     validCodeInAllowedPath(
       '"resource://newtab/data/content/activity-stream.bundle.js"',
-      "/path/to/browser/actors/AboutNewTabChild.sys.mjs"
+      path.join("path", "to", "browser", "actors", "AboutNewTabChild.sys.mjs")
     ),
 
     // Valid: Other chrome/resource URIs that don't match newtab

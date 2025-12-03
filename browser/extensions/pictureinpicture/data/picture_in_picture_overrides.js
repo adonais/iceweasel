@@ -469,6 +469,12 @@ let AVAILABLE_PIP_OVERRIDES;
       "https://*.vimeo.com/*": {
         showHiddenTextTracks: true,
       },
+      "https://embed.vhx.tv/*": {
+        showHiddenTextTracks: true,
+      },
+      "https://embed.criterionchannel.com/*": {
+        showHiddenTextTracks: true,
+      },
     },
 
     voot: {

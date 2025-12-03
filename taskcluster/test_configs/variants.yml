@@ -140,6 +140,18 @@ no-fission:
             extra-options:
                 - "--disable-fission"
 
+geckoview-zygote:
+    description: "{description} with app Zygote preloading enabled"
+    component: "GeckoView::General"
+    expiration: "2026-03-01"
+    suffix: "zygote"
+    when:
+        <<: *gv_e10s_filter
+    merge:
+        mozharness:
+            extra-options:
+                - "--enable-isolated-zygote-process"
+
 geckoview-no-fission-no-ship:
     description: "{description} with fission disabled and ship disabled"
     component: "GeckoView::General"
@@ -516,7 +528,7 @@ async-event-dispatching:
 vertical-tabs:
     description: "{description} limited to tests identified as being applicable to also run with vertical tabs enabled"
     component: "Firefox::Tabbed Browser"
-    expiration: "2025-11-01"
+    expiration: "2026-11-01"
     suffix: "vt"
     mozinfo: "vertical_tab"
     merge:
@@ -574,3 +586,14 @@ privatebrowsing-inc-origin-init:
         mozharness:
             extra-options:
                 - "--setpref=browser.privatebrowsing.autostart=true"
+
+navigation-api:
+    description: "{description} with Navigation API enabled"
+    component: "Core::DOM: Navigation"
+    expiration: "2026-05-01"
+    suffix: "nav"
+    mozinfo: "navigationApi"
+    merge:
+        mozharness:
+            extra-options:
+                - "--setpref=dom.navigation.webidl.enabled=true"

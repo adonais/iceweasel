@@ -864,7 +864,7 @@ void nsImageLoadingContent::CloneScriptedRequests(imgRequestProxy* aRequest) {
 
     nsresult rv =
         aRequest->Clone(observer->mObserver, nullptr, getter_AddRefs(req));
-    Unused << NS_WARN_IF(NS_FAILED(rv));
+    (void)NS_WARN_IF(NS_FAILED(rv));
   } while (i > 0);
 }
 
@@ -1107,7 +1107,7 @@ nsresult nsImageLoadingContent::LoadImage(const nsAString& aNewURI, bool aForce,
   // Parse the URI string to get image URI
   nsCOMPtr<nsIURI> imageURI;
   if (!aNewURI.IsEmpty()) {
-    Unused << StringToURI(aNewURI, doc, getter_AddRefs(imageURI));
+    (void)StringToURI(aNewURI, doc, getter_AddRefs(imageURI));
   }
 
   return LoadImage(imageURI, aForce, aNotify, aImageLoadType, LoadFlags(), doc,

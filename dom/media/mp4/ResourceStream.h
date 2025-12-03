@@ -7,7 +7,6 @@
 
 #include "ByteStream.h"
 #include "MediaResource.h"
-#include "mozilla/RefPtr.h"
 
 namespace mozilla {
 

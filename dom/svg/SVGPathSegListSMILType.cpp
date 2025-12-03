@@ -8,7 +8,6 @@
 
 #include "SVGPathData.h"
 #include "SVGPathSegUtils.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/SMILValue.h"
 
 namespace mozilla {

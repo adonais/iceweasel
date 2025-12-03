@@ -42,6 +42,7 @@ namespace JS {
 template <typename T, size_t MinInlineCapacity = 0,
           typename AllocPolicy = js::TempAllocPolicy>
 class GCVector {
+ protected:
   mozilla::Vector<T, MinInlineCapacity, AllocPolicy> vector;
 
  public:
@@ -209,6 +210,22 @@ template <typename T, typename AllocPolicy>
 class MOZ_STACK_CLASS StackGCVector : public GCVector<T, 8, AllocPolicy> {
  public:
   using Base = GCVector<T, 8, AllocPolicy>;
+
+  void trace(JSTracer* trc) {
+    if constexpr (!GCPolicy<T>::mightBeInNursery()) {
+      // Skip tracing of non-nursery types in minor GC.
+      if (trc->isTenuringTracer()) {
+#ifdef DEBUG
+        for (auto& elem : this->vector) {
+          MOZ_ASSERT(GCPolicy<T>::isTenured(elem));
+        }
+#endif
+        return;
+      }
+    }
+
+    Base::trace(trc);
+  }
 
  private:
   // Inherit constructor from GCVector.

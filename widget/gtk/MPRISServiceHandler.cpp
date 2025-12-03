@@ -14,7 +14,6 @@
 #include "mozilla/dom/MediaControlUtils.h"
 #include "mozilla/GRefPtr.h"
 #include "mozilla/GUniquePtr.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
@@ -513,7 +512,7 @@ void MPRISServiceHandler::SetPlaybackState(
       "(sa{sv}as)", DBUS_MPRIS_PLAYER_INTERFACE, &builder, nullptr);
 
   LOGMPRIS("Emitting MPRIS property changes for 'PlaybackStatus'");
-  Unused << EmitPropertiesChangedSignal(parameters);
+  (void)EmitPropertiesChangedSignal(parameters);
 }
 
 GVariant* MPRISServiceHandler::GetPlaybackStatus() const {

@@ -12,7 +12,6 @@
 #include "SVGAnimatedNumber.h"
 #include "SVGAnimatedNumberPair.h"
 #include "SVGAnimatedString.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/SVGElement.h"
 #include "nsImageLoadingContent.h"
 

@@ -403,7 +403,7 @@ newtab-wallpaper-abstract-purple-green = Gradiente purpuree e verde clar
 newtab-wallpaper-abstract-blue-purple-waves = Formas undulate blau e purpuree
 newtab-wallpaper-abstract-black-waves = Formas undulate nigre
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Photos
 newtab-wallpaper-beach-at-sunrise = Plagia al levar del sol
@@ -432,6 +432,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -483,7 +487,7 @@ newtab-weather-opt-in-not-now =
 newtab-weather-opt-in-yes =
     .label = Si
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
-newtab-weather-static-city = New York City
+newtab-weather-static-city = Citate de Nove York
 
 ## Topic Labels
 
@@ -672,10 +676,6 @@ newtab-widget-timer-mode-focus =
     .label = Concentration
 newtab-widget-timer-mode-break =
     .label = Pausa
-newtab-widget-timer-play =
-    .title = Reproducer
-newtab-widget-timer-pause =
-    .title = Pausar
 newtab-widget-timer-label-play =
     .label = Reproducer
 newtab-widget-timer-label-pause =

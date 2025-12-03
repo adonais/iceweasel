@@ -61,7 +61,7 @@ class AddressManagementFragment : Fragment() {
                 val addresses = store.observeAsComposableState { state -> state.addresses }
 
                 AddressList(
-                    addresses = addresses.value ?: emptyList(),
+                    addresses = addresses.value,
                     onAddressClick = {
                         interactor.onSelectAddress(it)
                         Addresses.managementAddressTapped.record(NoExtras())

@@ -539,6 +539,9 @@ const Services = {
   },
 
   appinfo: "",
+  locale: {
+    appLocalesAsLangTags: ["en-US", "en"],
+  },
   obs: { addObserver: () => {} },
   strings: {
     createBundle() {

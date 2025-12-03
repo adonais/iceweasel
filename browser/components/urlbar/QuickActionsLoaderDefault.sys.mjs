@@ -22,7 +22,7 @@ if (AppConstants.MOZ_UPDATER) {
     lazy,
     "AUS",
     "@mozilla.org/updates/update-service;1",
-    "nsIApplicationUpdateService"
+    Ci.nsIApplicationUpdateService
   );
 }
 

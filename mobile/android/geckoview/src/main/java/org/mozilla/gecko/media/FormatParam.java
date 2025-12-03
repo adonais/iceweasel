@@ -5,7 +5,6 @@
 package org.mozilla.gecko.media;
 
 import android.media.MediaFormat;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -121,14 +120,12 @@ public final class FormatParam implements Parcelable {
     if (bundle.containsKey(MediaFormat.KEY_SLICE_HEIGHT)) {
       mFormat.setInteger(MediaFormat.KEY_SLICE_HEIGHT, bundle.getInt(MediaFormat.KEY_SLICE_HEIGHT));
     }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-      if (bundle.containsKey(MediaFormat.KEY_COLOR_RANGE)) {
-        mFormat.setInteger(MediaFormat.KEY_COLOR_RANGE, bundle.getInt(MediaFormat.KEY_COLOR_RANGE));
-      }
-      if (bundle.containsKey(MediaFormat.KEY_COLOR_STANDARD)) {
-        mFormat.setInteger(
-            MediaFormat.KEY_COLOR_STANDARD, bundle.getInt(MediaFormat.KEY_COLOR_STANDARD));
-      }
+    if (bundle.containsKey(MediaFormat.KEY_COLOR_RANGE)) {
+      mFormat.setInteger(MediaFormat.KEY_COLOR_RANGE, bundle.getInt(MediaFormat.KEY_COLOR_RANGE));
+    }
+    if (bundle.containsKey(MediaFormat.KEY_COLOR_STANDARD)) {
+      mFormat.setInteger(
+          MediaFormat.KEY_COLOR_STANDARD, bundle.getInt(MediaFormat.KEY_COLOR_STANDARD));
     }
   }
 
@@ -185,14 +182,12 @@ public final class FormatParam implements Parcelable {
     if (mFormat.containsKey(MediaFormat.KEY_SLICE_HEIGHT)) {
       bundle.putInt(MediaFormat.KEY_SLICE_HEIGHT, mFormat.getInteger(MediaFormat.KEY_SLICE_HEIGHT));
     }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-      if (mFormat.containsKey(MediaFormat.KEY_COLOR_RANGE)) {
-        bundle.putInt(MediaFormat.KEY_COLOR_RANGE, mFormat.getInteger(MediaFormat.KEY_COLOR_RANGE));
-      }
-      if (mFormat.containsKey(MediaFormat.KEY_COLOR_STANDARD)) {
-        bundle.putInt(
-            MediaFormat.KEY_COLOR_STANDARD, mFormat.getInteger(MediaFormat.KEY_COLOR_STANDARD));
-      }
+    if (mFormat.containsKey(MediaFormat.KEY_COLOR_RANGE)) {
+      bundle.putInt(MediaFormat.KEY_COLOR_RANGE, mFormat.getInteger(MediaFormat.KEY_COLOR_RANGE));
+    }
+    if (mFormat.containsKey(MediaFormat.KEY_COLOR_STANDARD)) {
+      bundle.putInt(
+          MediaFormat.KEY_COLOR_STANDARD, mFormat.getInteger(MediaFormat.KEY_COLOR_STANDARD));
     }
     return bundle;
   }

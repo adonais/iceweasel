@@ -13,6 +13,8 @@ prefs = [
   "security.allow_eval_with_system_principal=true"
 ]
 
+["browser_action.js"]
+
 ["browser_atspi_interfaces.js"]
 
 ["browser_groupPosition.js"]
@@ -20,5 +22,8 @@ prefs = [
 ["browser_prune_children.js"]
 
 ["browser_role.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && opt", # Bug 1984205
+]
 
 ["browser_table.js"]

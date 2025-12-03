@@ -487,10 +487,6 @@ add_setup(async function () {
   await setupDicts();
 });
 
-registerCleanupFunction(async () => {
-  Services.prefs.clearUserPref("network.http.dictionaries.enable");
-});
-
 // Test basic dictionary-compressed Brotli functionality
 add_task(async function test_basic_dcb_compression() {
   dump("**** test_basic_dcb_compression\n");

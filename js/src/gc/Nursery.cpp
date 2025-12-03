@@ -10,7 +10,6 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/TimeStamp.h"
 

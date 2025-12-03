@@ -7,7 +7,6 @@
 #ifndef nsDocElementCreatedNotificationRunner_h
 #define nsDocElementCreatedNotificationRunner_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/Document.h"
 #include "nsCOMPtr.h"
 #include "nsContentSink.h"

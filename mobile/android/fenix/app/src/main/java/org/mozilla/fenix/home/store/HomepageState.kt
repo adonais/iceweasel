@@ -8,7 +8,9 @@ import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.colorResource
 import mozilla.components.feature.top.sites.TopSite
+import mozilla.components.ui.icons.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.appstate.AppState
@@ -25,6 +27,7 @@ import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTabState
 import org.mozilla.fenix.home.recenttabs.RecentTab
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem
 import org.mozilla.fenix.home.topsites.TopSiteColors
+import org.mozilla.fenix.home.ui.getAttr
 import org.mozilla.fenix.search.SearchDialogFragment
 import org.mozilla.fenix.utils.Settings
 
@@ -34,9 +37,9 @@ import org.mozilla.fenix.utils.Settings
 internal sealed class HomepageState {
 
     /**
-     * Whether to show the homepage header.
+     * Data related to the header of the homepage.
      */
-    abstract val showHeader: Boolean
+    abstract val headerState: HeaderState
 
     /**
      * Flag indicating whether the first frame of the homescreen has been drawn.
@@ -51,13 +54,13 @@ internal sealed class HomepageState {
     /**
      * State type corresponding with private browsing mode.
      *
-     * @property showHeader Whether to show the homepage header.
+     * @property headerState State related to the header of the homepage.
      * @property firstFrameDrawn Flag indicating whether the first frame of the homescreen has been drawn.
      * @property isSearchInProgress Whether search is currently active on the homepage.
      * @property privateModeRedesignEnabled Whether private browsing mode redesign is enabled.
      */
     internal data class Private(
-        override val showHeader: Boolean,
+        override val headerState: HeaderState,
         override val firstFrameDrawn: Boolean = false,
         override val isSearchInProgress: Boolean,
         val privateModeRedesignEnabled: Boolean,
@@ -81,7 +84,7 @@ internal sealed class HomepageState {
      * @property showRecentlyVisited Whether to show recent history section.
      * @property showPocketStories Whether to show the pocket stories section.
      * @property showCollections Whether to show the collections section.
-     * @property showHeader Whether to show the homepage header.
+     * @property headerState State related to the header of the homepage.
      * @property searchBarVisible Whether the middle search bar should be visible or not.
      * @property searchBarEnabled Whether the middle search bar is enabled or not.
      * @property firstFrameDrawn Flag indicating whether the first frame of the homescreen has been drawn.
@@ -109,7 +112,7 @@ internal sealed class HomepageState {
         val showRecentlyVisited: Boolean,
         val showPocketStories: Boolean,
         val showCollections: Boolean,
-        override val showHeader: Boolean,
+        override val headerState: HeaderState,
         val searchBarVisible: Boolean,
         val searchBarEnabled: Boolean,
         override val firstFrameDrawn: Boolean = false,
@@ -136,7 +139,7 @@ internal sealed class HomepageState {
     internal fun isMinimalLayout(): Boolean {
         return (this as? Normal)?.run {
             !showRecentTabs && !showRecentSyncedTab && !showBookmarks && !showRecentlyVisited &&
-                    (!showCollections || collectionsState == CollectionsState.Gone) && !showHeader
+                    (!showCollections || collectionsState == CollectionsState.Gone) && !headerState.showHeader
         } ?: false
     }
 
@@ -179,12 +182,21 @@ internal sealed class HomepageState {
          * @param appState State to build the [HomepageState.Private] from.
          * @param settings [Settings] corresponding to how the homepage should be displayed.
          */
+        @Composable
         private fun buildPrivateState(
             appState: AppState,
             settings: Settings,
         ) = with(appState) {
             Private(
-                showHeader = settings.showHomepageHeader,
+                headerState = HeaderState(
+                    showHeader = settings.showHomepageHeader,
+                    wordmarkTextColor = null,
+                    privateBrowsingButtonColor = colorResource(
+                        getAttr(
+                            R.attr.mozac_ic_private_mode_circle_fill_icon_color,
+                        ),
+                    ),
+                ),
                 firstFrameDrawn = firstFrameDrawn,
                 isSearchInProgress = searchState.isSearchActive,
                 privateModeRedesignEnabled = settings.enablePrivateBrowsingModeRedesign,
@@ -231,7 +243,16 @@ internal sealed class HomepageState {
                 showPocketStories = settings.showPocketRecommendationsFeature &&
                         recommendationState.pocketStories.isNotEmpty(),
                 showCollections = settings.collections,
-                showHeader = settings.showHomepageHeader,
+                headerState = HeaderState(
+                    showHeader = settings.showHomepageHeader,
+                    wordmarkTextColor = wallpaperState.currentWallpaper.textColor?.let { Color(it) },
+                    privateBrowsingButtonColor = wallpaperState.currentWallpaper.textColor
+                        ?.let { Color(it) } ?: colorResource(
+                        getAttr(
+                            R.attr.mozac_ic_private_mode_circle_fill_icon_color,
+                        ),
+                    ),
+                ),
                 searchBarVisible = shouldShowSearchBar(appState = appState),
                 searchBarEnabled = settings.enableHomepageSearchBar &&
                         settings.toolbarPosition == ToolbarPosition.TOP &&
@@ -252,6 +273,19 @@ internal sealed class HomepageState {
         }
     }
 }
+
+/**
+ * A simple wrapper around state required for the homepage header.
+ *
+ * @property showHeader whether the header should be shown
+ * @property wordmarkTextColor an optional color for the wordmark text
+ * @property privateBrowsingButtonColor the color to use for the private browsing button
+ */
+internal data class HeaderState(
+    val showHeader: Boolean,
+    val wordmarkTextColor: Color?,
+    val privateBrowsingButtonColor: Color,
+)
 
 /**
  * Returns whether the search bar should be shown. Only show if the search dialog

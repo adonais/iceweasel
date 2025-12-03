@@ -109,11 +109,6 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro WriteRegDWORD2
 !insertmacro WriteRegStr2
 
-; This needs to be inserted after InitHashAppModelId because it uses
-; $AppUserModelID and the compiler can't handle using variables lexically before
-; they've been declared.
-!insertmacro GetInstallerRegistryPref
-
 !insertmacro un.ChangeMUIHeaderImage
 !insertmacro un.ChangeMUISidebarImage
 !insertmacro un.CheckForFilesInUse

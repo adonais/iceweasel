@@ -134,6 +134,6 @@ addon-local-install-no-addon-name-error-file-access = The add-on could not be in
 #   $appVersion (String): the application version.
 addon-install-error-incompatible = { $addonName } could not be installed because it is not compatible with { -brand-short-name } { $appVersion }.
 addon-install-error-hard-blocked = { $addonName } violates Mozilla’s policies and can’t be installed on { -brand-short-name }.
-addon-install-error-soft-blocked = { $addonName } violates Mozilla’s policies and can’t be installed on { -brand-short-name }.
+addon-install-error-soft-blocked2 = { $addonName } is restricted and can’t be installed on { -brand-short-name }.
 # Enterprise policies is a feature aimed at system administrators who want to deploy custom settings for Firefox.
 addon-install-error-admin-install-only = You cannot install { $addonName } as an end user, it can only be installed by an organization using enterprise policies.

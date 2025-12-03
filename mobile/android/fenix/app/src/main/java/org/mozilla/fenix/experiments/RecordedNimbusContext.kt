@@ -7,7 +7,10 @@ package org.mozilla.fenix.experiments
 import android.content.Context
 import android.os.Build
 import androidx.annotation.VisibleForTesting
+import mozilla.components.support.locale.LocaleManager
+import mozilla.components.support.locale.LocaleManager.getSystemDefault
 import mozilla.components.support.utils.ext.getPackageInfoCompat
+import org.json.JSONArray
 import org.json.JSONObject
 import org.mozilla.experiments.nimbus.NIMBUS_DATA_DIR
 import org.mozilla.experiments.nimbus.NimbusDeviceInfo
@@ -18,6 +21,8 @@ import org.mozilla.fenix.GleanMetrics.NimbusSystem
 import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.pocket.ContentRecommendationsFeatureHelper
+import org.mozilla.fenix.termsofuse.experimentation.TermsOfUseAdvancedTargetingHelper
+import org.mozilla.fenix.termsofuse.experimentation.utils.DefaultTermsOfUseDataProvider
 import org.mozilla.fenix.utils.Settings
 import java.io.File
 
@@ -62,8 +67,8 @@ class RecordedNimbusContext(
     val deviceModel: String = Build.MODEL,
     val userAcceptedTou: Boolean,
     val noShortcutsOrStoriesOptOuts: Boolean,
-    val userClickedTouPromptLink: Boolean,
-    val userClickedTouPromptRemindMeLater: Boolean,
+    val addonIds: List<String>,
+    val touPoints: Int?,
 ) : RecordedContext {
     /**
      * [getEventQueries] is called by the Nimbus SDK Rust code to retrieve the map of event
@@ -104,8 +109,8 @@ class RecordedNimbusContext(
                 deviceModel = deviceModel,
                 userAcceptedTou = userAcceptedTou,
                 noShortcutsOrStoriesOptOuts = noShortcutsOrStoriesOptOuts,
-                userClickedTouPromptLink = userClickedTouPromptLink,
-                userClickedTouPromptRemindMeLater = userClickedTouPromptRemindMeLater,
+                addonIds = NimbusSystem.RecordedNimbusContextObjectAddonIds(addonIds.toMutableList()),
+                touPoints = touPoints,
             ),
         )
         Pings.nimbus.submit()
@@ -151,8 +156,8 @@ class RecordedNimbusContext(
                 "device_model" to deviceModel,
                 "user_accepted_tou" to userAcceptedTou,
                 "no_shortcuts_or_stories_opt_outs" to noShortcutsOrStoriesOptOuts,
-                "user_clicked_tou_prompt_link" to userClickedTouPromptLink,
-                "user_clicked_tou_prompt_remind_me_later" to userClickedTouPromptRemindMeLater,
+                "addon_ids" to JSONArray(addonIds),
+                "tou_points" to touPoints,
             ),
         )
         return obj
@@ -174,6 +179,12 @@ class RecordedNimbusContext(
             isFirstRun: Boolean,
         ): RecordedNimbusContext {
             val settings = context.settings()
+            val langTag = LocaleManager.getCurrentLocale(context)
+                ?.toLanguageTag() ?: getSystemDefault().toLanguageTag()
+            val termsOfUseAdvancedTargetingHelper = TermsOfUseAdvancedTargetingHelper(
+                DefaultTermsOfUseDataProvider(settings),
+                langTag,
+            )
 
             val packageInfo = context.packageManager.getPackageInfoCompat(context.packageName, 0)
             val deviceInfo = NimbusDeviceInfo.default()
@@ -200,10 +211,14 @@ class RecordedNimbusContext(
                 region = calculatedAttributes.region,
                 userAcceptedTou = settings.hasAcceptedTermsOfService,
                 noShortcutsOrStoriesOptOuts = settings.noShortcutsOrStoriesOptOuts(context),
-                userClickedTouPromptLink = settings.hasClickedTermOfUsePromptLink,
-                userClickedTouPromptRemindMeLater = settings.hasClickedTermOfUsePromptRemindMeLater,
+                addonIds = getFormattedAddons(settings),
+                touPoints = termsOfUseAdvancedTargetingHelper.getTouPoints(),
             )
         }
+
+        @VisibleForTesting
+        internal fun getFormattedAddons(settings: Settings): List<String> =
+            settings.installedAddonsList.split(",").map { it.trim() }
 
         /**
          * Checks whether an eligible user has opted out of any sponsored top sites or stories.
@@ -240,6 +255,7 @@ class RecordedNimbusContext(
             isFirstRun: Boolean = false,
             eventQueries: Map<String, String> = EVENT_QUERIES,
             eventQueryValues: Map<String, Double> = mapOf(),
+            addonIds: List<String> = emptyList(),
         ): RecordedNimbusContext {
             return RecordedNimbusContext(
                 isFirstRun = isFirstRun,
@@ -258,8 +274,8 @@ class RecordedNimbusContext(
                 region = "US",
                 userAcceptedTou = true,
                 noShortcutsOrStoriesOptOuts = true,
-                userClickedTouPromptLink = true,
-                userClickedTouPromptRemindMeLater = true,
+                addonIds = addonIds,
+                touPoints = 3,
             )
         }
     }

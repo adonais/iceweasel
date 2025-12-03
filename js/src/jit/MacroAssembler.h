@@ -8,7 +8,6 @@
 #define jit_MacroAssembler_h
 
 #include "mozilla/MacroForEach.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Variant.h"
 
@@ -599,8 +598,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // immediately following the call; that is, for the return point.
   CodeOffset call(Register reg) PER_SHARED_ARCH;
   CodeOffset call(Label* label) PER_SHARED_ARCH;
+  CodeOffset call(const Address& addr) PER_SHARED_ARCH;
 
-  void call(const Address& addr) PER_SHARED_ARCH;
   void call(ImmWord imm) PER_SHARED_ARCH;
   // Call a target native function, which is neither traceable nor movable.
   void call(ImmPtr imm) PER_SHARED_ARCH;
@@ -1088,12 +1087,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void xorPtr(Imm32 imm, Register dest) PER_ARCH;
   inline void xorPtr(Imm32 imm, Register src, Register dest) PER_ARCH;
 
-  inline void and64(const Operand& src, Register64 dest)
-      DEFINED_ON(x64, mips64, loong64, riscv64);
-  inline void or64(const Operand& src, Register64 dest)
-      DEFINED_ON(x64, mips64, loong64, riscv64);
-  inline void xor64(const Operand& src, Register64 dest)
-      DEFINED_ON(x64, mips64, loong64, riscv64);
+  inline void and64(const Operand& src, Register64 dest) DEFINED_ON(x64);
+  inline void or64(const Operand& src, Register64 dest) DEFINED_ON(x64);
+  inline void xor64(const Operand& src, Register64 dest) DEFINED_ON(x64);
 
   // ===============================================================
   // Swap instructions
@@ -1140,8 +1136,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void add64(Register64 src, Register64 dest) PER_ARCH;
   inline void add64(Imm32 imm, Register64 dest) PER_ARCH;
   inline void add64(Imm64 imm, Register64 dest) PER_ARCH;
-  inline void add64(const Operand& src, Register64 dest)
-      DEFINED_ON(x64, mips64, loong64, riscv64);
+  inline void add64(const Operand& src, Register64 dest) DEFINED_ON(x64);
 
   inline void addFloat32(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
 
@@ -1166,8 +1161,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void sub64(Register64 src, Register64 dest) PER_ARCH;
   inline void sub64(Imm64 imm, Register64 dest) PER_ARCH;
-  inline void sub64(const Operand& src, Register64 dest)
-      DEFINED_ON(x64, mips64, loong64, riscv64);
+  inline void sub64(const Operand& src, Register64 dest) DEFINED_ON(x64);
 
   inline void subFloat32(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
 
@@ -1188,8 +1182,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void mul64(const Operand& src, const Register64& dest) DEFINED_ON(x64);
   inline void mul64(const Operand& src, const Register64& dest,
-                    const Register temp)
-      DEFINED_ON(x64, mips64, loong64, riscv64);
+                    const Register temp) DEFINED_ON(x64);
   inline void mul64(Imm64 imm, const Register64& dest) PER_ARCH;
   inline void mul64(Imm64 imm, const Register64& dest, const Register temp)
       DEFINED_ON(x86, x64, arm, mips64, loong64, riscv64);
@@ -1212,41 +1205,46 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // zero. rhs must not be zero, and the division must not overflow.
   //
   // On ARM, the chip must have hardware division instructions.
-  inline void quotient32(Register rhs, Register srcDest, bool isUnsigned)
+  inline void quotient32(Register lhs, Register rhs, Register dest,
+                         bool isUnsigned)
       DEFINED_ON(mips64, arm, arm64, loong64, riscv64, wasm32);
 
-  inline void quotient64(Register rhs, Register srcDest, bool isUnsigned)
+  inline void quotient64(Register lhs, Register rhs, Register dest,
+                         bool isUnsigned)
       DEFINED_ON(arm64, loong64, mips64, riscv64);
 
-  // As above, but srcDest must be eax and tempEdx must be edx.
-  inline void quotient32(Register rhs, Register srcDest, Register tempEdx,
-                         bool isUnsigned) DEFINED_ON(x86_shared);
+  // As above, but lhs and dest must be eax and tempEdx must be edx.
+  inline void quotient32(Register lhs, Register rhs, Register dest,
+                         Register tempEdx, bool isUnsigned)
+      DEFINED_ON(x86_shared);
 
   // Perform an integer division, returning the remainder part.
   // rhs must not be zero, and the division must not overflow.
   //
   // On ARM, the chip must have hardware division instructions.
-  inline void remainder32(Register rhs, Register srcDest, bool isUnsigned)
+  inline void remainder32(Register lhs, Register rhs, Register dest,
+                          bool isUnsigned)
       DEFINED_ON(mips64, arm, arm64, loong64, riscv64, wasm32);
 
-  inline void remainder64(Register rhs, Register srcDest, bool isUnsigned)
+  inline void remainder64(Register lhs, Register rhs, Register dest,
+                          bool isUnsigned)
       DEFINED_ON(arm64, loong64, mips64, riscv64);
 
-  // As above, but srcDest must be eax and tempEdx must be edx.
-  inline void remainder32(Register rhs, Register srcDest, Register tempEdx,
-                          bool isUnsigned) DEFINED_ON(x86_shared);
+  // As above, but lhs and dest must be eax and tempEdx must be edx.
+  inline void remainder32(Register lhs, Register rhs, Register dest,
+                          Register tempEdx, bool isUnsigned)
+      DEFINED_ON(x86_shared);
 
   // Perform an integer division, returning the integer part rounded toward
   // zero. rhs must not be zero, and the division must not overflow.
   //
   // This variant preserves registers, and doesn't require hardware division
   // instructions on ARM (will call out to a runtime routine).
-  //
-  // rhs is preserved, srdDest is clobbered.
-  void flexibleRemainder32(Register rhs, Register srcDest, bool isUnsigned,
-                           const LiveRegisterSet& volatileLiveRegs)
-      PER_SHARED_ARCH;
-  void flexibleRemainderPtr(Register rhs, Register srcDest, bool isUnsigned,
+  void flexibleRemainder32(
+      Register lhs, Register rhs, Register dest, bool isUnsigned,
+      const LiveRegisterSet& volatileLiveRegs) PER_SHARED_ARCH;
+  void flexibleRemainderPtr(Register lhs, Register rhs, Register dest,
+                            bool isUnsigned,
                             const LiveRegisterSet& volatileLiveRegs) PER_ARCH;
 
   // Perform an integer division, returning the integer part rounded toward
@@ -1254,25 +1252,25 @@ class MacroAssembler : public MacroAssemblerSpecific {
   //
   // This variant preserves registers, and doesn't require hardware division
   // instructions on ARM (will call out to a runtime routine).
-  //
-  // rhs is preserved, srdDest is clobbered.
-  void flexibleQuotient32(Register rhs, Register srcDest, bool isUnsigned,
-                          const LiveRegisterSet& volatileLiveRegs)
-      PER_SHARED_ARCH;
-  void flexibleQuotientPtr(Register rhs, Register srcDest, bool isUnsigned,
+  void flexibleQuotient32(
+      Register lhs, Register rhs, Register dest, bool isUnsigned,
+      const LiveRegisterSet& volatileLiveRegs) PER_SHARED_ARCH;
+  void flexibleQuotientPtr(Register lhs, Register rhs, Register dest,
+                           bool isUnsigned,
                            const LiveRegisterSet& volatileLiveRegs) PER_ARCH;
 
   // Perform an integer division, returning the integer part rounded toward
-  // zero. rhs must not be zero, and the division must not overflow. The
-  // remainder is stored into the third argument register here.
+  // zero in the third argument register. rhs must not be zero, and the division
+  // must not overflow. The remainder is stored into the fourth argument
+  // register here.
   //
   // This variant preserves registers, and doesn't require hardware division
   // instructions on ARM (will call out to a runtime routine).
   //
-  // rhs is preserved, srdDest and remOutput are clobbered.
+  // lhs and rhs are preserved, divOutput and remOutput are clobbered.
   void flexibleDivMod32(
-      Register rhs, Register srcDest, Register remOutput, bool isUnsigned,
-      const LiveRegisterSet& volatileLiveRegs) PER_SHARED_ARCH;
+      Register lhs, Register rhs, Register divOutput, Register remOutput,
+      bool isUnsigned, const LiveRegisterSet& volatileLiveRegs) PER_SHARED_ARCH;
 
   inline void divFloat32(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
   inline void divDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
@@ -1328,7 +1326,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void copySignDouble(FloatRegister lhs, FloatRegister rhs,
                       FloatRegister output) PER_SHARED_ARCH;
   void copySignFloat32(FloatRegister lhs, FloatRegister rhs,
-                       FloatRegister output) DEFINED_ON(x86_shared, arm64);
+                       FloatRegister output) PER_SHARED_ARCH;
 
   // Returns a random double in range [0, 1) in |dest|. The |rng| register must
   // hold a pointer to a mozilla::non_crypto::XorShift128PlusRNG.
@@ -2066,9 +2064,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                             Imm32 imm) PER_SHARED_ARCH;
 
  private:
-  template <typename T, typename S, typename L>
-  inline void branchPtrImpl(Condition cond, const T& lhs, const S& rhs, L label)
-      DEFINED_ON(x86_shared);
+  template <typename T, typename S>
+  inline void branchPtrImpl(Condition cond, const T& lhs, const S& rhs,
+                            Label* label) DEFINED_ON(x86_shared);
 
   void branchPtrInNurseryChunkImpl(Condition cond, Register ptr, Label* label)
       DEFINED_ON(x86);
@@ -2113,8 +2111,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   template <typename T>
   inline void branchTestPrimitiveImpl(Condition cond, const T& t, Label* label)
       DEFINED_ON(arm, arm64, x86_shared);
-  template <typename T, class L>
-  inline void branchTestMagicImpl(Condition cond, const T& t, L label)
+  template <typename T>
+  inline void branchTestMagicImpl(Condition cond, const T& t, Label* label)
       DEFINED_ON(arm, arm64, x86_shared);
 
  public:
@@ -5623,8 +5621,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
                    const TemplateObject& templateObj, bool initContents = true);
 
   void initTypedArraySlots(Register obj, Register length, Register temp1,
-                           Register temp2, LiveRegisterSet liveRegs,
-                           Label* fail,
+                           Register temp2, Label* fail,
                            const FixedLengthTypedArrayObject* templateObj);
 
   void initTypedArraySlotsInline(

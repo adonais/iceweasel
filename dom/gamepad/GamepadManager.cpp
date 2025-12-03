@@ -14,7 +14,6 @@
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/Gamepad.h"
 #include "mozilla/dom/GamepadAxisMoveEvent.h"
 #include "mozilla/dom/GamepadButtonEvent.h"

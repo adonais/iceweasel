@@ -13,6 +13,8 @@ class UserProperties {
     this.map = new Map();
   }
 
+  #propertyNames = new Set();
+
   /**
    * Get a named property for a given CSSStyleDeclaration.
    *
@@ -57,6 +59,7 @@ class UserProperties {
       props[name] = userValue;
       this.map.set(key, props);
     }
+    this.#propertyNames.add(name);
   }
 
   /**
@@ -73,12 +76,23 @@ class UserProperties {
     return !!entry && name in entry;
   }
 
+  /**
+   * Check whether a named property is stored.
+   *
+   * @param {String} name
+   *        The name of the property to check.
+   */
+  containsName(name) {
+    return this.#propertyNames.has(name);
+  }
+
   getKey(style, name) {
     return style.actorID + ":" + name;
   }
 
   clear() {
     this.map.clear();
+    this.#propertyNames.clear();
   }
 }
 

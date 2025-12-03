@@ -234,9 +234,9 @@ nsresult XULPersist::ApplyPersistentAttributesToElements(
       }
 
       if (value == kMissingAttributeToken) {
-        Unused << element->UnsetAttr(kNameSpaceID_None, attr, true);
+        (void)element->UnsetAttr(kNameSpaceID_None, attr, true);
       } else {
-        Unused << element->SetAttr(kNameSpaceID_None, attr, value, true);
+        (void)element->SetAttr(kNameSpaceID_None, attr, value, true);
       }
     }
   }

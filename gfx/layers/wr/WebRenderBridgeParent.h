@@ -18,7 +18,6 @@
 #include "mozilla/layers/PWebRenderBridgeParent.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/Result.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "mozilla/webrender/WebRenderAPI.h"

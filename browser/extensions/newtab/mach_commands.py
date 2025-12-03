@@ -469,19 +469,19 @@ def display_report(report, details=None):
 @SubCommand(
     "newtab",
     "channel-metrics-diff",
-    description="Compares and produces a JSON diff between NewTab Nightly metrics and pings, using the specified channel.",
+    description="Compares and produces a JSON diff between local NewTab metrics and pings, and the specified channel.",
     virtualenv_name="newtab",
 )
 @CommandArgument(
     "--channel",
-    default="local",
-    choices=["beta", "release", "local"],
+    default="release",
+    choices=["beta", "release"],
     help="Which channel should be used to compare NewTab metrics and pings YAML",
 )
 def channel_metrics_diff(command_context, channel):
     """
     Fetch main and a comparison branch (beta or release) metrics.yaml, compute only the new metrics,
-    and process as before. To run use: ./mach newtab channel-metrics-diff --channel [beta|release|local]
+    and process as before. To run use: ./mach newtab channel-metrics-diff --channel [beta|release]
     This will print YAML-formatted output to stdout, showing the differences in newtab metrics and pings.
     """
     METRICS_LOCAL_YAML_PATH = Path("browser", "components", "newtab", "metrics.yaml")
@@ -509,29 +509,14 @@ def channel_metrics_diff(command_context, channel):
         # Base URL for fetching YAML files from GitHub
         GITHUB_URL_TEMPLATE = "https://raw.githubusercontent.com/mozilla-firefox/firefox/refs/heads/{branch}/browser/components/newtab/{yaml}"
 
-        # 1. Fetch both main and comparison metrics and pings YAMLs and determine which branch to compare against
-        if channel == "local":
-            main_metrics_yaml = yaml.safe_load(open(METRICS_LOCAL_YAML_PATH))
-            compare_metrics_yaml = fetch_yaml(
-                GITHUB_URL_TEMPLATE.format(branch="main", yaml="metrics.yaml")
-            )
-            main_pings_yaml = yaml.safe_load(open(PINGS_LOCAL_YAML_PATH))
-            compare_pings_yaml = fetch_yaml(
-                GITHUB_URL_TEMPLATE.format(branch="main", yaml="pings.yaml")
-            )
-        else:
-            main_metrics_yaml = fetch_yaml(
-                GITHUB_URL_TEMPLATE.format(branch="main", yaml="metrics.yaml")
-            )
-            compare_metrics_yaml = fetch_yaml(
-                GITHUB_URL_TEMPLATE.format(branch=channel, yaml="metrics.yaml")
-            )
-            main_pings_yaml = fetch_yaml(
-                GITHUB_URL_TEMPLATE.format(branch="main", yaml="pings.yaml")
-            )
-            compare_pings_yaml = fetch_yaml(
-                GITHUB_URL_TEMPLATE.format(branch=channel, yaml="pings.yaml")
-            )
+        main_metrics_yaml = yaml.safe_load(open(METRICS_LOCAL_YAML_PATH))
+        compare_metrics_yaml = fetch_yaml(
+            GITHUB_URL_TEMPLATE.format(branch=channel, yaml="metrics.yaml")
+        )
+        main_pings_yaml = yaml.safe_load(open(PINGS_LOCAL_YAML_PATH))
+        compare_pings_yaml = fetch_yaml(
+            GITHUB_URL_TEMPLATE.format(branch=channel, yaml="pings.yaml")
+        )
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir_path = Path(temp_dir)

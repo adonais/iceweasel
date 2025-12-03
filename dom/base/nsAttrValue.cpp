@@ -1940,9 +1940,9 @@ bool nsAttrValue::ParseStyleAttribute(const nsAString& aString,
     }
   }
 
-  RefPtr<DeclarationBlock> decl =
-      DeclarationBlock::FromCssText(aString, data, doc->GetCompatibilityMode(),
-                                    doc->CSSLoader(), StyleCssRuleType::Style);
+  RefPtr<DeclarationBlock> decl = DeclarationBlock::FromCssText(
+      aString, data, doc->GetCompatibilityMode(), doc->GetExistingCSSLoader(),
+      StyleCssRuleType::Style);
   if (!decl) {
     return false;
   }

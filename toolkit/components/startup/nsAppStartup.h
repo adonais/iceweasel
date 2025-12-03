@@ -12,7 +12,6 @@
 #include "nsWeakReference.h"
 
 #include "nsIAppShell.h"
-#include "mozilla/Attributes.h"
 
 #if defined(XP_WIN)
 // XPerf-backed probes

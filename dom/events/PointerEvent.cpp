@@ -227,39 +227,83 @@ NS_INTERFACE_MAP_END_INHERITING(MouseEvent)
 NS_IMPL_ADDREF_INHERITED(PointerEvent, MouseEvent)
 NS_IMPL_RELEASE_INHERITED(PointerEvent, MouseEvent)
 
-void PointerEvent::GetPointerType(nsAString& aPointerType) {
+uint16_t PointerEvent::ResistantInputSource(CallerType aCallerType) const {
+  const uint16_t inputSource = mEvent->AsPointerEvent()->mInputSource;
+  if (!ShouldResistFingerprinting(aCallerType)) {
+    return inputSource;
+  }
+
+  MOZ_ASSERT(IsTrusted());
+
+  // Bug 1953665: Pen events are inconsistent between platforms.
+  // They might emit touch events on Windows and Android, but only mouse events
+  // in other platforms. In particular, touch is always disabled on macOS.
+#if defined(XP_WIN)
+  if (inputSource == MouseEvent_Binding::MOZ_SOURCE_TOUCH ||
+      inputSource == MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
+    return inputSource;
+  }
+  // Similar to nsWindow::DispatchTouchEventFromWMPointer.
+  switch (mEvent->mMessage) {
+    case ePointerMove:
+      return mEvent->AsPointerEvent()->mPressure == 0
+                 ? MouseEvent_Binding::MOZ_SOURCE_MOUSE  // hover
+                 : MouseEvent_Binding::MOZ_SOURCE_TOUCH;
+    case ePointerUp:
+    case ePointerDown:
+    case ePointerCancel:
+      return MouseEvent_Binding::MOZ_SOURCE_TOUCH;
+    default:
+      return MouseEvent_Binding::MOZ_SOURCE_MOUSE;
+  }
+#elif defined(MOZ_WIDGET_ANDROID)
+  return inputSource == MouseEvent_Binding::MOZ_SOURCE_MOUSE
+             ? MouseEvent_Binding::MOZ_SOURCE_MOUSE
+             : MouseEvent_Binding::MOZ_SOURCE_TOUCH;
+#elif defined(MOZ_WIDGET_GTK)
+  return inputSource == MouseEvent_Binding::MOZ_SOURCE_TOUCH
+             ? MouseEvent_Binding::MOZ_SOURCE_TOUCH
+             : MouseEvent_Binding::MOZ_SOURCE_MOUSE;
+#elif defined(MOZ_WIDGET_COCOA)
+  return MouseEvent_Binding::MOZ_SOURCE_MOUSE;
+#else
+  return inputSource;
+#endif
+}
+
+void PointerEvent::GetPointerType(nsAString& aPointerType,
+                                  CallerType aCallerType) const {
   if (mPointerType.isSome()) {
     aPointerType = mPointerType.value();
     return;
   }
+  ConvertPointerTypeToString(ResistantInputSource(aCallerType), aPointerType);
+}
 
-#if SPOOFED_MAX_TOUCH_POINTS <= 0
-  if (ShouldResistFingerprinting()) {
-    aPointerType.AssignLiteral("mouse");
-    return;
+int32_t PointerEvent::PointerId(CallerType aCallerType) const {
+#ifdef MOZ_WIDGET_COCOA
+  if (ShouldResistFingerprinting(aCallerType)) {
+    return PointerEventHandler::GetSpoofedPointerIdForRFP();
   }
 #endif
-
-  ConvertPointerTypeToString(mEvent->AsPointerEvent()->mInputSource,
-                             aPointerType);
+  return mEvent->AsPointerEvent()->pointerId;
 }
 
-int32_t PointerEvent::PointerId() {
-  return (ShouldResistFingerprinting(true))
-             ? PointerEventHandler::GetSpoofedPointerIdForRFP()
-             : mEvent->AsPointerEvent()->pointerId;
+double PointerEvent::Width(CallerType aCallerType) const {
+  return ShouldResistFingerprinting(aCallerType)
+             ? 1.0
+             : mEvent->AsPointerEvent()->mWidth;
 }
 
-double PointerEvent::Width() const {
-  return ShouldResistFingerprinting() ? 1.0 : mEvent->AsPointerEvent()->mWidth;
+double PointerEvent::Height(CallerType aCallerType) const {
+  return ShouldResistFingerprinting(aCallerType)
+             ? 1.0
+             : mEvent->AsPointerEvent()->mHeight;
 }
 
-double PointerEvent::Height() const {
-  return ShouldResistFingerprinting() ? 1.0 : mEvent->AsPointerEvent()->mHeight;
-}
-
-float PointerEvent::Pressure() {
-  if (mEvent->mMessage == ePointerUp || !ShouldResistFingerprinting()) {
+float PointerEvent::Pressure(CallerType aCallerType) const {
+  if (mEvent->mMessage == ePointerUp ||
+      !ShouldResistFingerprinting(aCallerType)) {
     return mEvent->AsPointerEvent()->mPressure;
   }
 
@@ -276,14 +320,14 @@ float PointerEvent::Pressure() {
   return spoofedPressure;
 }
 
-float PointerEvent::TangentialPressure() {
-  return ShouldResistFingerprinting()
+float PointerEvent::TangentialPressure(CallerType aCallerType) const {
+  return ShouldResistFingerprinting(aCallerType)
              ? 0
              : mEvent->AsPointerEvent()->tangentialPressure;
 }
 
-int32_t PointerEvent::TiltX() {
-  if (ShouldResistFingerprinting()) {
+int32_t PointerEvent::TiltX(CallerType aCallerType) {
+  if (ShouldResistFingerprinting(aCallerType)) {
     return 0;
   }
   if (mTiltX.isSome()) {
@@ -294,8 +338,8 @@ int32_t PointerEvent::TiltX() {
   return *mTiltX;
 }
 
-int32_t PointerEvent::TiltY() {
-  if (ShouldResistFingerprinting()) {
+int32_t PointerEvent::TiltY(CallerType aCallerType) {
+  if (ShouldResistFingerprinting(aCallerType)) {
     return 0;
   }
   if (mTiltY.isSome()) {
@@ -306,12 +350,14 @@ int32_t PointerEvent::TiltY() {
   return *mTiltY;
 }
 
-int32_t PointerEvent::Twist() {
-  return ShouldResistFingerprinting() ? 0 : mEvent->AsPointerEvent()->twist;
+int32_t PointerEvent::Twist(CallerType aCallerType) const {
+  return ShouldResistFingerprinting(aCallerType)
+             ? 0
+             : mEvent->AsPointerEvent()->twist;
 }
 
-double PointerEvent::AltitudeAngle() {
-  if (ShouldResistFingerprinting()) {
+double PointerEvent::AltitudeAngle(CallerType aCallerType) {
+  if (ShouldResistFingerprinting(aCallerType)) {
     return WidgetPointerHelper::GetDefaultAltitudeAngle();
   }
   if (mAltitudeAngle.isSome()) {
@@ -322,8 +368,8 @@ double PointerEvent::AltitudeAngle() {
   return *mAltitudeAngle;
 }
 
-double PointerEvent::AzimuthAngle() {
-  if (ShouldResistFingerprinting()) {
+double PointerEvent::AzimuthAngle(CallerType aCallerType) {
+  if (ShouldResistFingerprinting(aCallerType)) {
     return WidgetPointerHelper::GetDefaultAzimuthAngle();
   }
   if (mAzimuthAngle.isSome()) {
@@ -334,15 +380,26 @@ double PointerEvent::AzimuthAngle() {
   return *mAzimuthAngle;
 }
 
-bool PointerEvent::IsPrimary() { return mEvent->AsPointerEvent()->mIsPrimary; }
+bool PointerEvent::IsPrimary() const {
+  return mEvent->AsPointerEvent()->mIsPrimary;
+}
 
-int32_t PointerEvent::PersistentDeviceId() {
+int32_t PointerEvent::PersistentDeviceId(CallerType aCallerType) {
+  const auto MaybeNonZero = [&]() {
+    return mEvent->IsTrusted() && IsPointerEventMessage(mEvent->mMessage) &&
+           !IsPointerEventMessageOriginallyMouseEventMessage(mEvent->mMessage);
+  };
+
+  if (ShouldResistFingerprinting(aCallerType)) {
+    return MaybeNonZero() && ResistantInputSource(aCallerType) ==
+                                 MouseEvent_Binding::MOZ_SOURCE_MOUSE
+               ? 1
+               : 0;
+  }
+
   if (mPersistentDeviceId.isNothing()) {
-    if (mEvent->IsTrusted() &&
-        mEvent->AsPointerEvent()->mInputSource ==
-            MouseEvent_Binding::MOZ_SOURCE_MOUSE &&
-        IsPointerEventMessage(mEvent->mMessage) &&
-        !IsPointerEventMessageOriginallyMouseEventMessage(mEvent->mMessage)) {
+    if (MaybeNonZero() && mEvent->AsPointerEvent()->mInputSource ==
+                              MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
       // Follow the behavior which Chrome has for mouse.
       mPersistentDeviceId.emplace(1);
     } else {
@@ -442,22 +499,22 @@ void PointerEvent::GetPredictedEvents(
   aPointerEvents.AppendElements(mPredictedEvents);
 }
 
-bool PointerEvent::ShouldResistFingerprinting(bool aForPointerId) const {
-  // There are three simple situations we don't need to spoof this pointer
+bool PointerEvent::ShouldResistFingerprinting(CallerType aCallerType) const {
+  // There are a few simple situations we don't need to spoof this pointer
   // event.
-  //   1. The pref privcy.resistFingerprinting' is false, we fast return here
-  //      since we don't need to do any QI of following codes.
-  //   2. This event is generated by scripts.
-  //   3. This event is a mouse pointer event.
+  //   * We are being called by a System caller
+  //   * The pref privcy.resistFingerprinting' is false, we fast return here
+  //     since we don't need to do any QI of following codes.
+  //   * This event is generated by scripts.
+  //   * This event is a mouse pointer event.
   //  We don't need to check for the system group since pointer events won't be
   //  dispatched to the system group.
-  RFPTarget target =
-      aForPointerId ? RFPTarget::PointerId : RFPTarget::PointerEvents;
-  if (!nsContentUtils::ShouldResistFingerprinting("Efficiency Check", target) ||
+  RFPTarget target = RFPTarget::PointerEvents;
+  if (aCallerType == CallerType::System ||
+      !nsContentUtils::ShouldResistFingerprinting("Efficiency Check", target) ||
       !mEvent->IsTrusted() ||
-      (mEvent->AsPointerEvent()->mInputSource ==
-           MouseEvent_Binding::MOZ_SOURCE_MOUSE &&
-       SPOOFED_MAX_TOUCH_POINTS == 0)) {
+      mEvent->AsPointerEvent()->mInputSource ==
+          MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
     return false;
   }
 

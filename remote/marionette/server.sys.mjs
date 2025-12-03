@@ -398,7 +398,7 @@ export class TCPConnection {
   }
 
   /**
-   * Delegates message to client based on the provided  {@code cmdID}.
+   * Delegates message to client based on the provided `cmdID`.
    * The message is sent over the debugger transport socket.
    *
    * The command ID is a unique identifier assigned to the client's request

@@ -1,137 +1,6 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-add_task(async function looksLikeOrigin() {
-  let tests = [
-    {
-      token: "",
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
-    },
-
-    {
-      token: "user@example.com",
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
-    },
-
-    {
-      token: "user:pass@example.com",
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.USERINFO_OR_PORT,
-    },
-
-    {
-      token: "example.com:1234",
-      // This should be `USERINFO_OR_PORT`, but it matches
-      // `REGEXP_LIKE_PROTOCOL`, so it returns `NONE`.
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
-    },
-    {
-      token: "example.com:1234",
-      args: { noPort: true },
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
-    },
-
-    {
-      token: "user@example.com:1234",
-      // This should be `USERINFO_OR_PORT`, but it matches
-      // `REGEXP_LIKE_PROTOCOL`, so it returns `NONE`.
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
-    },
-    {
-      token: "user@example.com:1234",
-      args: { noPort: true },
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
-    },
-
-    {
-      token: "user:pass@example.com:1234",
-      // This should be `USERINFO_OR_PORT`, but it matches
-      // `REGEXP_LIKE_PROTOCOL`, so it returns `NONE`.
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
-    },
-    {
-      token: "user:pass@example.com:1234",
-      args: { noPort: true },
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
-    },
-
-    {
-      token: "1.2.3.4",
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.IP,
-    },
-    {
-      token: "1.2.3.4",
-      args: { noIp: true },
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
-    },
-
-    {
-      token: "[2001:0db8:0000:0000:0000:8a2e:0370:7334]",
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.IP,
-    },
-    {
-      token: "[2001:0db8:0000:0000:0000:8a2e:0370:7334]",
-      args: { noIp: true },
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
-    },
-
-    {
-      token: "[2001:db8::8a2e:370:7334]",
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.IP,
-    },
-    {
-      token: "[2001:db8::8a2e:370:7334]",
-      args: { noIp: true },
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
-    },
-
-    {
-      token: "a!@#$%^&( z",
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
-    },
-
-    {
-      token: "example",
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
-    },
-
-    {
-      token: "localhost",
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.KNOWN_DOMAIN,
-    },
-    {
-      token: "localhost",
-      args: { ignoreKnownDomains: true },
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.OTHER,
-    },
-
-    {
-      token: "example.com",
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.OTHER,
-    },
-    {
-      token: "example.co",
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.OTHER,
-    },
-    {
-      token: "example.c",
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.OTHER,
-    },
-    {
-      token: "example.",
-      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.OTHER,
-    },
-  ];
-
-  for (let { token, args, expected } of tests) {
-    Assert.strictEqual(
-      UrlbarTokenizer.looksLikeOrigin(token, args),
-      expected,
-      "looksLikeOrigin should return expected value: " +
-        JSON.stringify({ token, args })
-    );
-  }
-});
-
 add_task(async function test_tokenizer() {
   let testContexts = [
     { desc: "Empty string", searchString: "", expectedTokens: [] },
@@ -642,14 +511,9 @@ add_task(async function test_tokenizer() {
       );
     }
 
-    let newQueryContext = UrlbarTokenizer.tokenize(queryContext);
-    Assert.equal(
-      queryContext,
-      newQueryContext,
-      "The queryContext object is the same"
-    );
+    let tokens = UrlbarTokenizer.tokenize(queryContext);
     Assert.deepEqual(
-      queryContext.tokens,
+      tokens,
       queryContext.expectedTokens,
       "Check the expected tokens"
     );

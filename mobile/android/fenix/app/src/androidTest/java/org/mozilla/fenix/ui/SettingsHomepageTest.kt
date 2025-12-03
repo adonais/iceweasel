@@ -5,7 +5,6 @@
 package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
@@ -59,7 +58,7 @@ class SettingsHomepageTest : TestSetup() {
             "Wikipedia",
             "Google",
         )
-        val genericURL = getGenericAsset(mockWebServer, 1)
+        val genericURL = mockWebServer.getGenericAsset(1)
 
         homeScreen {
             defaultTopSites.forEach { item ->
@@ -88,7 +87,7 @@ class SettingsHomepageTest : TestSetup() {
         composeTestRule.activityRule.applySettingsExceptions {
             it.isRecentTabsFeatureEnabled = false
         }
-        val genericURL = getGenericAsset(mockWebServer, 1)
+        val genericURL = mockWebServer.getGenericAsset(1)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(genericURL.url) {
@@ -106,7 +105,7 @@ class SettingsHomepageTest : TestSetup() {
     @SmokeTest
     @Test
     fun jumpBackInOptionTest() {
-        val genericURL = getGenericAsset(mockWebServer, 1)
+        val genericURL = mockWebServer.getGenericAsset(1)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(genericURL.url) {
@@ -124,7 +123,7 @@ class SettingsHomepageTest : TestSetup() {
     @SmokeTest
     @Test
     fun recentBookmarksOptionTest() {
-        val genericURL = getGenericAsset(mockWebServer, 1)
+        val genericURL = mockWebServer.getGenericAsset(1)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(genericURL.url) {
@@ -144,7 +143,7 @@ class SettingsHomepageTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyOpeningScreenOptionsTest() {
-        val genericURL = getGenericAsset(mockWebServer, 1)
+        val genericURL = mockWebServer.getGenericAsset(1)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(genericURL.url) {
@@ -181,7 +180,7 @@ class SettingsHomepageTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1569843
     @Test
     fun verifyOpeningScreenAfterLaunchingExternalLinkTest() {
-        val genericPage = getGenericAsset(mockWebServer, 1)
+        val genericPage = mockWebServer.getGenericAsset(1)
 
         homeScreen {
         }.openThreeDotMenu {
@@ -202,29 +201,6 @@ class SettingsHomepageTest : TestSetup() {
 
         browserScreen {
             verifyPageContent(genericPage.content)
-        }
-    }
-
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1676359
-    @Ignore("Intermittent test: https://github.com/mozilla-mobile/fenix/issues/26559")
-    @Test
-    fun verifyWallpaperChangeTest() {
-        val wallpapers = listOf(
-            "Wallpaper Item: amethyst",
-            "Wallpaper Item: cerulean",
-            "Wallpaper Item: sunrise",
-        )
-
-        for (wallpaper in wallpapers) {
-            homeScreen {
-            }.openThreeDotMenu {
-            }.openCustomizeHome {
-                openWallpapersMenu()
-                selectWallpaper(wallpaper)
-                verifySnackBarText("Wallpaper updated!")
-            }.clickSnackBarViewButton {
-                verifyWallpaperImageApplied(true)
-            }
         }
     }
 }

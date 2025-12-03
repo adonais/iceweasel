@@ -42,8 +42,6 @@ glean.attribution:
       - baseline
       - events
     expires: never
-    no_lint:
-      - BASELINE_PING
     structure:
       type: object
       properties:
@@ -62,6 +60,10 @@ glean.attribution:
     send_in_pings:
       - metrics
       - update
+      - baseline
+      - events
+    no_lint:
+      - BASELINE_PING
 
 glean.distribution:
   ext:
@@ -86,8 +88,6 @@ glean.distribution:
       - baseline
       - events
     expires: never
-    no_lint:
-      - BASELINE_PING
     structure:
       type: object
       properties:
@@ -106,3 +106,7 @@ glean.distribution:
     send_in_pings:
       - metrics
       - update
+      - baseline
+      - events
+    no_lint:
+      - BASELINE_PING

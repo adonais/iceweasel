@@ -68,9 +68,7 @@
 #ifndef xpcprivate_h___
 #define xpcprivate_h___
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CycleCollectedJSContext.h"
@@ -81,6 +79,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/PodOperations.h"
 #include "mozilla/mozalloc.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/TimeStamp.h"

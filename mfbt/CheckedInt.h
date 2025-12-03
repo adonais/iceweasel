@@ -12,7 +12,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CheckedArithmetic.h"
-#include "mozilla/IntegerTypeTraits.h"
 
 #include <cstdint>
 #include <limits>

@@ -6,7 +6,6 @@
 #define mozilla_places_VisitInfo_h__
 
 #include "mozIAsyncHistory.h"
-#include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 
 class nsIURI;

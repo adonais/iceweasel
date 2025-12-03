@@ -4,9 +4,71 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import os
+
 import mozunit
 import pytest
-from manifestparser.toml import Carry
+from manifestparser import ManifestParser
+from manifestparser.toml import Carry, alphabetize_toml_str, replace_tbd_skip_if
+from tomlkit.toml_document import TOMLDocument
+
+here = os.path.dirname(os.path.abspath(__file__))
+
+
+def test_replace_tbd_skip_if():
+    parser = ManifestParser(use_toml=True, document=True)
+    before = "replace-tbd-before.toml"
+    before_path = os.path.join(here, before)
+    parser.read(before_path)
+    assert before_path in parser.source_documents
+    manifest = parser.source_documents[before_path]
+    assert manifest is not None
+    assert isinstance(manifest, TOMLDocument)
+
+    filename = "non-existant.js"
+    condition = "os == 'android' && asan"
+    bugid = "100"
+    updated: bool = False
+    with pytest.raises(Exception) as e:
+        updated = replace_tbd_skip_if(manifest, filename, condition, bugid)
+        assert updated  # Fail here if no exception thrown
+    assert str(e.value) == "TOML manifest does not contain section: non-existant.js"
+    filename = "DEFAULT"
+    with pytest.raises(Exception) as e:
+        updated = replace_tbd_skip_if(manifest, filename, condition, bugid)
+        assert updated  # Fail here if no exception thrown
+    assert (
+        str(e.value)
+        == "TOML manifest for section: DEFAULT does not contain a skip-if condition"
+    )
+
+    filename = "bug_100.js"
+    updated = replace_tbd_skip_if(manifest, filename, condition, bugid)
+    assert updated
+
+    filename = "bug_3.js"
+    condition = "os == 'linux'"
+    bugid = "33333"
+    updated = replace_tbd_skip_if(manifest, filename, condition, bugid)
+    assert updated
+
+    filename = "test_bar.html"
+    condition = "os == 'linux'"
+    bugid = "222"
+    updated = replace_tbd_skip_if(manifest, filename, condition, bugid)
+    assert updated
+
+    filename = "test_extend_linux.js"
+    condition = "os == 'mac'"
+    bugid = "111"
+    updated = replace_tbd_skip_if(manifest, filename, condition, bugid)
+    assert updated
+
+    manifest_str = alphabetize_toml_str(manifest)
+    after = "replace-tbd-after.toml"
+    after_path = os.path.join(here, after)
+    after_str = open(after_path, encoding="utf-8").read()
+    assert manifest_str == after_str
 
 
 @pytest.fixture(scope="session")

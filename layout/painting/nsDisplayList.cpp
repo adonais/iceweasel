@@ -42,7 +42,6 @@
 #include "mozilla/HashTable.h"
 #include "mozilla/Likely.h"
 #include "mozilla/LookAndFeel.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
@@ -63,7 +62,6 @@
 #include "mozilla/StaticPrefs_print.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/ViewportFrame.h"
 #include "mozilla/ViewportUtils.h"
 #include "mozilla/dom/BrowserChild.h"
@@ -2137,25 +2135,19 @@ nsRect nsDisplayList::GetBuildingRect() const {
   return result;
 }
 
-WindowRenderer* nsDisplayListBuilder::GetWidgetWindowRenderer(nsView** aView) {
-  if (aView) {
-    *aView = RootReferenceFrame()->GetView();
-  }
+WindowRenderer* nsDisplayListBuilder::GetWidgetWindowRenderer() {
   if (RootReferenceFrame() !=
       nsLayoutUtils::GetDisplayRootFrame(RootReferenceFrame())) {
     return nullptr;
   }
-  nsIWidget* window = RootReferenceFrame()->GetNearestWidget();
-  if (window) {
+  if (nsIWidget* window = RootReferenceFrame()->GetNearestWidget()) {
     return window->GetWindowRenderer();
   }
   return nullptr;
 }
 
-WebRenderLayerManager* nsDisplayListBuilder::GetWidgetLayerManager(
-    nsView** aView) {
-  WindowRenderer* renderer = GetWidgetWindowRenderer();
-  if (renderer) {
+WebRenderLayerManager* nsDisplayListBuilder::GetWidgetLayerManager() {
+  if (WindowRenderer* renderer = GetWidgetWindowRenderer()) {
     return renderer->AsWebRender();
   }
   return nullptr;
@@ -2209,9 +2201,8 @@ void nsDisplayList::PaintRoot(nsDisplayListBuilder* aBuilder, gfxContext* aCtx,
   WindowRenderer* renderer = nullptr;
   bool widgetTransaction = false;
   bool doBeginTransaction = true;
-  nsView* view = nullptr;
   if (aFlags & PAINT_USE_WIDGET_LAYERS) {
-    renderer = aBuilder->GetWidgetWindowRenderer(&view);
+    renderer = aBuilder->GetWidgetWindowRenderer();
     if (renderer) {
       // The fallback renderer doesn't retain any content, so it's
       // not meaningful to use it when drawing to an external context.
@@ -3614,7 +3605,7 @@ void nsDisplayBackgroundImage::PaintInternal(nsDisplayListBuilder* aBuilder,
           aBuilder->GetBackgroundPaintFlags(), mLayer, CompositionOp::OP_OVER,
           1.0f);
   params.bgClipRect = aClipRect;
-  Unused << nsCSSRendering::PaintStyleImageLayer(params, *aCtx);
+  (void)nsCSSRendering::PaintStyleImageLayer(params, *aCtx);
 
   if (clip == StyleGeometryBox::Text) {
     ctx->PopGroupAndBlend();
@@ -4303,7 +4294,7 @@ void nsDisplayBorder::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
                                ? PaintBorderFlags::SyncDecodeImages
                                : PaintBorderFlags();
 
-  Unused << nsCSSRendering::PaintBorder(
+  (void)nsCSSRendering::PaintBorder(
       mFrame->PresContext(), *aCtx, mFrame, GetPaintRect(aBuilder, aCtx),
       nsRect(offset, mFrame->GetSize()), mFrame->Style(), flags,
       mFrame->GetSkipSides());
@@ -7542,8 +7533,7 @@ bool nsDisplayTransform::UntransformRect(const nsRect& aTransformedBounds,
       NSAppUnitsToFloatPixels(aChildBounds.height, aAppUnitsPerPixel));
 
   result = inverse->ProjectRectBounds(result, childGfxBounds);
-  *aOutRect = nsLayoutUtils::RoundGfxRectToAppRect(ThebesRect(result),
-                                                   aAppUnitsPerPixel);
+  *aOutRect = nsLayoutUtils::RoundGfxRectToAppRect(result, aAppUnitsPerPixel);
   return true;
 }
 
@@ -7571,7 +7561,7 @@ bool nsDisplayTransform::UntransformRect(nsDisplayListBuilder* aBuilder,
   /* We want to untransform the matrix, so invert the transformation first! */
   result = GetInverseTransform().ProjectRectBounds(result, childGfxBounds);
 
-  *aOutRect = nsLayoutUtils::RoundGfxRectToAppRect(ThebesRect(result), factor);
+  *aOutRect = nsLayoutUtils::RoundGfxRectToAppRect(result, factor);
 
   return true;
 }

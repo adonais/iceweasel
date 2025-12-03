@@ -5,6 +5,7 @@
 package org.mozilla.fenix.components.menu.compose
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,12 +18,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -33,10 +34,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
+
+private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(28.dp)
 
 /**
  * A full-width banner shown in the menu prompting the user to set Firefox as their default browser.
@@ -47,22 +51,23 @@ import mozilla.components.ui.icons.R as iconsR
  *
  * @param onDismiss Invoked when the user taps the dismiss icon (“X”).
  * @param onClick Invoked when the user taps anywhere else on the banner.
+ * @param modifier [Modifier] to be applied to the layout.
  */
 @Composable
 fun MenuBanner(
     onDismiss: () -> Unit,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val appName = stringResource(R.string.app_name)
-    val shape = RoundedCornerShape(28.dp)
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .clip(shape)
             .clickable(onClick = onClick),
-        color = FirefoxTheme.colors.layer3,
+        shape = ROUNDED_CORNER_SHAPE,
+        color = MaterialTheme.colorScheme.surfaceDimVariant,
     ) {
         Box {
             Row {
@@ -74,7 +79,7 @@ fun MenuBanner(
                     Text(
                         text = stringResource(id = R.string.browser_menu_default_banner_title, appName),
                         style = FirefoxTheme.typography.body1,
-                        color = FirefoxTheme.colors.textPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 3,
                     )
@@ -84,11 +89,12 @@ fun MenuBanner(
                     Text(
                         text = stringResource(id = R.string.browser_menu_default_banner_subtitle_2),
                         style = FirefoxTheme.typography.caption,
-                        color = FirefoxTheme.colors.textSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 3,
                     )
                 }
+
                 Image(
                     painter = painterResource(id = R.drawable.firefox_as_default_banner_illustration),
                     contentDescription = null,
@@ -100,6 +106,7 @@ fun MenuBanner(
                         ),
                 )
             }
+
             IconButton(
                 onClick = onDismiss,
                 modifier = Modifier
@@ -113,7 +120,7 @@ fun MenuBanner(
                     modifier = Modifier
                         .padding(top = 8.dp, end = 12.dp)
                         .align(Alignment.TopEnd),
-                    tint = FirefoxTheme.colors.iconPrimary,
+                    tint = MaterialTheme.colorScheme.secondary,
                 )
             }
         }
@@ -124,15 +131,13 @@ fun MenuBanner(
 @Composable
 private fun MenuBannerPreview() {
     FirefoxTheme {
-        Column(
+        MenuBanner(
+            onDismiss = {},
+            onClick = {},
             modifier = Modifier
-                .padding(16.dp),
-        ) {
-            MenuBanner(
-                onDismiss = {},
-                onClick = {},
-            )
-        }
+                .background(color = MaterialTheme.colorScheme.surface)
+                .padding(all = FirefoxTheme.layout.space.static200),
+        )
     }
 }
 
@@ -140,14 +145,12 @@ private fun MenuBannerPreview() {
 @Composable
 private fun MenuBannerPrivatePreview() {
     FirefoxTheme(theme = Theme.Private) {
-        Column(
+        MenuBanner(
+            onDismiss = {},
+            onClick = {},
             modifier = Modifier
-                .padding(16.dp),
-        ) {
-            MenuBanner(
-                onDismiss = {},
-                onClick = {},
-            )
-        }
+                .background(color = MaterialTheme.colorScheme.surface)
+                .padding(all = FirefoxTheme.layout.space.static200),
+        )
     }
 }

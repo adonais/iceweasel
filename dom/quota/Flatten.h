@@ -63,6 +63,8 @@ struct FlatIter {
            (mOuterIter != mOuterEnd && mInnerIter != aOther.mInnerIter);
   }
 
+  bool operator==(const FlatIter& aOther) const { return !(*this != aOther); }
+
  private:
   void InitInner() {
     while (mOuterIter != mOuterEnd) {

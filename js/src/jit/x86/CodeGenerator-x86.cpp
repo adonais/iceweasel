@@ -813,6 +813,45 @@ void CodeGeneratorX86::visitOutOfLineTruncateFloat32(
   masm.jump(ool->rejoin());
 }
 
+void CodeGenerator::visitMulI64(LMulI64* lir) {
+  Register64 lhs = ToRegister64(lir->lhs());
+  LInt64Allocation rhs = lir->rhs();
+
+  MOZ_ASSERT(ToOutRegister64(lir) == lhs);
+
+  if (IsConstant(rhs)) {
+    int64_t constant = ToInt64(rhs);
+    switch (constant) {
+      case -1:
+        masm.neg64(lhs);
+        return;
+      case 0:
+        masm.xor64(lhs, lhs);
+        return;
+      case 1:
+        // nop
+        return;
+      case 2:
+        masm.add64(lhs, lhs);
+        return;
+      default:
+        if (constant > 0) {
+          // Use shift if constant is power of 2.
+          int32_t shift = mozilla::FloorLog2(constant);
+          if (int64_t(1) << shift == constant) {
+            masm.lshift64(Imm32(shift), lhs);
+            return;
+          }
+        }
+        Register temp = ToTempRegisterOrInvalid(lir->temp0());
+        masm.mul64(Imm64(constant), lhs, temp);
+    }
+  } else {
+    Register temp = ToTempRegisterOrInvalid(lir->temp0());
+    masm.mul64(ToOperandOrRegister64(rhs), lhs, temp);
+  }
+}
+
 void CodeGenerator::visitDivOrModI64(LDivOrModI64* lir) {
   MOZ_ASSERT(gen->compilingWasm());
   MOZ_ASSERT(ToRegister(lir->instance()) == InstanceReg);
@@ -955,6 +994,113 @@ void CodeGeneratorX86::emitBigIntPtrMod(LBigIntPtrMod* ins, Register dividend,
   masm.cdq();
 
   masm.idiv(divisor);
+}
+
+void CodeGenerator::visitShiftIntPtr(LShiftIntPtr* ins) {
+  Register lhs = ToRegister(ins->lhs());
+  const LAllocation* rhs = ins->rhs();
+  Register out = ToRegister(ins->output());
+
+  if (rhs->isConstant()) {
+    MOZ_ASSERT(out == lhs);
+
+    int32_t shift = ToIntPtr(rhs) & 0x1F;
+    switch (ins->bitop()) {
+      case JSOp::Lsh:
+        if (shift) {
+          masm.lshiftPtr(Imm32(shift), lhs);
+        }
+        break;
+      case JSOp::Rsh:
+        if (shift) {
+          masm.rshiftPtrArithmetic(Imm32(shift), lhs);
+        }
+        break;
+      case JSOp::Ursh:
+        if (shift) {
+          masm.rshiftPtr(Imm32(shift), lhs);
+        }
+        break;
+      default:
+        MOZ_CRASH("Unexpected shift op");
+    }
+  } else {
+    Register shift = ToRegister(rhs);
+    MOZ_ASSERT_IF(out != lhs, Assembler::HasBMI2());
+
+    switch (ins->bitop()) {
+      case JSOp::Lsh:
+        if (out != lhs) {
+          masm.shlxl(lhs, shift, out);
+        } else {
+          masm.lshiftPtr(shift, lhs);
+        }
+        break;
+      case JSOp::Rsh:
+        if (out != lhs) {
+          masm.sarxl(lhs, shift, out);
+        } else {
+          masm.rshiftPtrArithmetic(shift, lhs);
+        }
+        break;
+      case JSOp::Ursh:
+        if (out != lhs) {
+          masm.shrxl(lhs, shift, out);
+        } else {
+          masm.rshiftPtr(shift, lhs);
+        }
+        break;
+      default:
+        MOZ_CRASH("Unexpected shift op");
+    }
+  }
+}
+
+void CodeGenerator::visitShiftI64(LShiftI64* lir) {
+  Register64 lhs = ToRegister64(lir->lhs());
+  const LAllocation* rhs = lir->rhs();
+
+  MOZ_ASSERT(ToOutRegister64(lir) == lhs);
+
+  if (rhs->isConstant()) {
+    int32_t shift = int32_t(rhs->toConstant()->toInt64() & 0x3F);
+    switch (lir->bitop()) {
+      case JSOp::Lsh:
+        if (shift) {
+          masm.lshift64(Imm32(shift), lhs);
+        }
+        break;
+      case JSOp::Rsh:
+        if (shift) {
+          masm.rshift64Arithmetic(Imm32(shift), lhs);
+        }
+        break;
+      case JSOp::Ursh:
+        if (shift) {
+          masm.rshift64(Imm32(shift), lhs);
+        }
+        break;
+      default:
+        MOZ_CRASH("Unexpected shift op");
+    }
+    return;
+  }
+
+  Register shift = ToRegister(rhs);
+  MOZ_ASSERT(shift == ecx);
+  switch (lir->bitop()) {
+    case JSOp::Lsh:
+      masm.lshift64(shift, lhs);
+      break;
+    case JSOp::Rsh:
+      masm.rshift64Arithmetic(shift, lhs);
+      break;
+    case JSOp::Ursh:
+      masm.rshift64(shift, lhs);
+      break;
+    default:
+      MOZ_CRASH("Unexpected shift op");
+  }
 }
 
 void CodeGenerator::visitWasmSelectI64(LWasmSelectI64* lir) {

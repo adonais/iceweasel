@@ -218,7 +218,7 @@
         }
 
         h1 {
-          font-weight: 600;
+          font-weight: var(--heading-font-weight);
         }
 
         .inline-icon-container {
@@ -472,7 +472,7 @@
           padding: 4px 16px;
           margin: 0;
           font-size: 0.813em;
-          font-weight: 600;
+          font-weight: var(--font-weight-semibold);
           line-height: 16px;
           min-height: var(--button-min-height);
           text-decoration: none;

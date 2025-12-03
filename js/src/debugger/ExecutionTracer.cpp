@@ -668,6 +668,8 @@ void ValueSummaries::writeHeader(JS::ValueType type, uint8_t flags) {
   JS::ValueSummary header;
   header.type = type;
   header.flags = flags;
+  MOZ_ASSERT(*reinterpret_cast<uint8_t*>(&header) !=
+             JS::ObjectSummary::GETTER_SETTER_MAGIC);
   valueData_->writeBytes(reinterpret_cast<const uint8_t*>(&header),
                          sizeof(header));
 }

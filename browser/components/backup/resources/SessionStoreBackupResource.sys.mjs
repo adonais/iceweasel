@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 import {
   BackupResource,
   bytesToFuzzyKilobytes,
@@ -10,8 +12,27 @@ import {
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
+  TabStateFlusher: "resource:///modules/sessionstore/TabStateFlusher.sys.mjs",
 });
+
+ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
+  return console.createInstance({
+    prefix: "SessionStoreBackupResource",
+    maxLogLevel: Services.prefs.getBoolPref("browser.backup.log", false)
+      ? "Debug"
+      : "Warn",
+  });
+});
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "TAB_FLUSH_TIMEOUT",
+  "browser.backup.tab-flush-timeout",
+  5000
+);
 
 /**
  * Class representing Session store related files within a user profile.
@@ -39,20 +60,18 @@ export class SessionStoreBackupResource extends BackupResource {
     return this._sessionStore || lazy.SessionStore;
   }
 
-  async backup(
-    stagingPath,
-    profilePath = PathUtils.profileDir,
-    _isEncrypting = false
-  ) {
+  get filteredSessionStoreState() {
     let sessionStoreState = this.#sessionStore.getCurrentState(true);
-    let sessionStorePath = PathUtils.join(stagingPath, "sessionstore.jsonlz4");
-
     // Preserving session cookies in a backup used on a different machine
     // may break behavior for websites. So we leave them out of the backup.
     sessionStoreState.cookies = [];
 
     // Remove session storage.
     if (sessionStoreState.windows) {
+      // We don't want to backup private windows
+      sessionStoreState.windows = sessionStoreState.windows.filter(
+        w => !w?.isPrivate
+      );
       sessionStoreState.windows.forEach(win => {
         if (win.tabs) {
           win.tabs.forEach(tab => delete tab.storage);
@@ -70,7 +89,38 @@ export class SessionStoreBackupResource extends BackupResource {
       });
     }
 
-    await IOUtils.writeJSON(sessionStorePath, sessionStoreState, {
+    return sessionStoreState;
+  }
+
+  async backup(
+    stagingPath,
+    profilePath = PathUtils.profileDir,
+    _isEncrypting = false
+  ) {
+    // Flush tab state so backups receive the correct url to restore.
+    await Promise.race([
+      Promise.allSettled(
+        lazy.BrowserWindowTracker.orderedWindows.map(
+          lazy.TabStateFlusher.flushWindow
+        )
+      ),
+      new Promise((_, reject) =>
+        lazy.setTimeout(reject, lazy.TAB_FLUSH_TIMEOUT, { timeout: true })
+      ),
+    ]).catch(e => {
+      if (e?.timeout) {
+        lazy.logConsole.warn("Timed out waiting while flushing tab state.");
+      } else {
+        lazy.logConsole.error(
+          "Unrecognized error while flushing tab state.",
+          e
+        );
+      }
+    });
+
+    let sessionStorePath = PathUtils.join(stagingPath, "sessionstore.jsonlz4");
+
+    await IOUtils.writeJSON(sessionStorePath, this.filteredSessionStoreState, {
       compress: true,
     });
     await BackupResource.copyFiles(profilePath, stagingPath, [

@@ -692,7 +692,7 @@ class IceTestPeer : public sigslot::has_slots<> {
   bool gathering_complete() {
     auto lock = mGatheringStates.Lock();
     for (const auto& [id, state] : lock.ref()) {
-      Unused << id;
+      (void)id;
       if (state != NrIceMediaStream::ICE_STREAM_GATHER_COMPLETE) {
         return false;
       }

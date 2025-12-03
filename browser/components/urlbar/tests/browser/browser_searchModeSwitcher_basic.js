@@ -6,6 +6,11 @@ add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.scotchBonnet.enableOverride", true]],
   });
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(
+      "browser.urlbar.perplexity.hasBeenInSearchMode"
+    );
+  });
 });
 
 add_task(async function open_settings() {
@@ -865,6 +870,25 @@ add_task(async function test_search_mode_switcher_private_engine_icon() {
   await BrowserTestUtils.closeWindow(privateWin);
   await searchExtension.unload();
   await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function open_with_option() {
+  info("Open the urlbar and searchmode switcher popup with arrow+option key");
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "",
+  });
+
+  let promiseMenuOpen = BrowserTestUtils.waitForPopupEvent(
+    UrlbarTestUtils.searchModeSwitcherPopup(window),
+    "shown"
+  );
+  EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true });
+  await promiseMenuOpen;
+
+  let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
+  EventUtils.synthesizeKey("KEY_Escape");
+  await popupHidden;
 });
 
 function getSeachModeSwitcherIcon(window) {

@@ -80,6 +80,9 @@
 @BINPATH@/@DLL_PREFIX@minidump_analyzer@DLL_SUFFIX@
 #endif
 
+; GMP clearkey plugin
+@BINPATH@/@DLL_PREFIX@clearkey@DLL_SUFFIX@
+
 [browser]
 ; [Base Browser Files]
 @BINPATH@/application.ini

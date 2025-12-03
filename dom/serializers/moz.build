@@ -33,6 +33,7 @@ UNIFIED_SOURCES += [
 
 TEST_DIRS += [
     "gtest",
+    "tests/mochitest",
 ]
 
 FINAL_LIBRARY = "xul"

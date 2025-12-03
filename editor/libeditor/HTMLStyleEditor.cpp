@@ -1944,8 +1944,7 @@ HTMLEditor::AutoInlineStyleSetter::ExtendOrShrinkRangeToApplyTheStyle(
   if (range.EndRef().IsInContentNode()) {
     const WSScanResult nextContentData =
         WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::EditableNodes, range.EndRef(),
-            BlockInlineCheck::UseComputedDisplayOutsideStyle);
+            {WSRunScanner::Option::OnlyEditableNodes}, range.EndRef());
     if (nextContentData.ReachedInvisibleBRElement() &&
         nextContentData.BRElementPtr()->GetParentElement() &&
         HTMLEditUtils::IsInlineContent(

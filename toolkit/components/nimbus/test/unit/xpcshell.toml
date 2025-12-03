@@ -33,6 +33,7 @@ prefs = [
 ["test_ExperimentManager_lifecycle.js"]
 
 ["test_ExperimentManager_prefs.js"]
+requesttimeoutfactor = 6  # Slow and high CPU use on Linux and Windows
 skip-if = ["os == 'win' && msix"] # Bug 1991153
 
 ["test_ExperimentManager_unenroll.js"]
@@ -48,8 +49,10 @@ skip-if = ["os == 'win' && msix"] # Bug 1991153
 ["test_RemoteSettingsExperimentLoader.js"]
 
 ["test_RemoteSettingsExperimentLoader_updateRecipes.js"]
+requesttimeoutfactor = 2  # Slow on Windows
 
 ["test_TargetingContextRecorder.js"]
+requesttimeoutfactor = 2  # Slow on Windows
 skip-if = [
   "artifact",
   "os == 'win' && msix", # Bug 1991153
@@ -58,10 +61,12 @@ skip-if = [
 ["test_localization.js"]
 
 ["test_nimbusTelemetry.js"]
+requesttimeoutfactor = 3  # Slow on Windows msix
 
 ["test_policy.js"]
 
 ["test_prefFlips.js"]
+requesttimeoutfactor = 2  # Slow on Linux and Windows
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1960885
   "os == 'win' && msix", # Bug 1991153

@@ -100,7 +100,7 @@ fun DebugDrawer(
             composable(route = DEBUG_DRAWER_HOME_ROUTE) {
                 toolbarTitle = stringResource(id = R.string.debug_drawer_title)
                 backButtonVisible = false
-                DebugDrawerHome(destinations = destinations)
+                DebugDrawerHome(destinations = destinations.filter { !it.isChildDestination })
             }
 
             destinations.forEach { destination ->

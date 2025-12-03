@@ -27,6 +27,7 @@ This is the nascent documentation of the Firefox front-end code.
    places/index
    components/asrouter/docs/index
    search/index
+   ipprotection/index
    base/tabbrowser/index
    touchbar/index
    components/uitour/docs/index

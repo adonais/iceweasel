@@ -42,7 +42,7 @@ nsresult BoundStorageKey::Init(Namespace aNamespace,
     ::mozilla::ipc::Endpoint<PBoundStorageKeyParent> parentEP;
 
     auto rv = PBoundStorageKey::CreateEndpoints(&parentEP, &childEP);
-    Unused << NS_WARN_IF(NS_FAILED(rv));
+    (void)NS_WARN_IF(NS_FAILED(rv));
 
     PBackgroundChild* bgActor = BackgroundChild::GetOrCreateForCurrentThread();
     if (NS_WARN_IF(!bgActor)) {

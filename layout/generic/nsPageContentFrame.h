@@ -6,7 +6,6 @@
 #ifndef nsPageContentFrame_h___
 #define nsPageContentFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "mozilla/ViewportFrame.h"
 
 class nsPageFrame;

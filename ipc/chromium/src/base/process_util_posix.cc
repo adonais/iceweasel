@@ -31,7 +31,6 @@
 #include "base/dir_reader_posix.h"
 
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 // For PR_DuplicateEnvironment:
 #include "prenv.h"
 #include "prmem.h"

@@ -12,7 +12,8 @@ use crate::spatial_tree::{CoordinateSystem, SpatialNodeIndex, TransformUpdateSta
 use crate::spatial_tree::CoordinateSystemId;
 use euclid::{Vector2D, SideOffsets2D};
 use crate::scene::SceneProperties;
-use crate::util::{LayoutFastTransform, MatrixHelpers, ScaleOffset, TransformedRectKind, PointHelpers};
+use crate::util::{LayoutFastTransform, MatrixHelpers, ScaleOffset, TransformedRectKind};
+use crate::util::{PointHelpers, VectorHelpers};
 
 /// The kind of a spatial node uid. These are required because we currently create external
 /// nodes during DL building, but the internal nodes aren't created until scene building.
@@ -338,6 +339,13 @@ impl SpatialNode {
 
         for element in offsets.iter_mut() {
             element.offset = -element.offset - scrolling.external_scroll_offset;
+
+            // Once the final scroll offset (APZ + content external offset) is
+            // calculated, we need to snap it to a device pixel. We already snap
+            // the final transforms in `update_transform`. However, we need to
+            // ensure the offsets are also snapped so that if the offset is used
+            // in a nested sticky frame, it is pre-snapped.
+            element.offset = element.offset.snap();
         }
 
         if scrolling.offsets == offsets {
@@ -687,7 +695,10 @@ impl SpatialNode {
                                          info.previously_applied_offset.x,
                                          &info.horizontal_offset_bounds);
 
-        sticky_offset
+        // Reapply the content-process side sticky offset, which was removed
+        // from the primitive bounds attached to this node, so that interning
+        // sees stable values.
+        sticky_offset + info.previously_applied_offset
     }
 
     pub fn prepare_state_for_children(&self, state: &mut TransformUpdateState) {

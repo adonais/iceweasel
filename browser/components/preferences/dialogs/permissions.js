@@ -16,7 +16,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "contentBlockingAllowList",
   "@mozilla.org/content-blocking-allow-list;1",
-  "nsIContentBlockingAllowList"
+  Ci.nsIContentBlockingAllowList
 );
 
 const permissionExceptionsL10n = {
@@ -44,6 +44,10 @@ const permissionExceptionsL10n = {
     window: "permissions-exceptions-addons-window2",
     description: "permissions-exceptions-addons-desc",
   },
+  "ipp-vpn": {
+    window: "ip-protection-exceptions-dialog-window",
+    description: "ip-protection-exclusions-desc",
+  },
 };
 
 function Permission(principal, type, capability) {
@@ -64,6 +68,7 @@ var gPermissionManager = {
   _removeButton: null,
   _removeAllButton: null,
   _forcedHTTP: null,
+  _capabilityFilter: null,
 
   onLoad() {
     let params = window.arguments[0];
@@ -80,6 +85,7 @@ var gPermissionManager = {
    * @param {boolean} params.disableETPVisible Display the "Add Exception" button in the dialog (Only for ETP permissions)
    * @param {boolean} params.hideStatusColumn Hide the "Status" column in the dialog
    * @param {boolean} params.forcedHTTP Save inputs whose URI has a HTTPS scheme with a HTTP scheme (Used by HTTPS-Only)
+   * @param {number} params.capabilityFilter Display permissions that have the specified capability only. See Ci.nsIPermissionManager.
    */
   async init(params) {
     if (!this._isObserving) {
@@ -101,9 +107,30 @@ var gPermissionManager = {
     this._btnHttpsOnlyOff = document.getElementById("btnHttpsOnlyOff");
     this._btnHttpsOnlyOffTmp = document.getElementById("btnHttpsOnlyOffTmp");
 
+    this._capabilityFilter = params.capabilityFilter;
+
     let permissionsText = document.getElementById("permissionsText");
 
-    let l10n = permissionExceptionsL10n[this._type];
+    let l10n;
+
+    // For ipp-vpn, we want to override strings based on capability.
+    // Valid capabilities for this permission are ALLOW and DENY.
+    if (this._type === "ipp-vpn") {
+      if (params.capabilityFilter === Ci.nsIPermissionManager.ALLOW_ACTION) {
+        l10n = {
+          window: "ip-protection-exceptions-dialog-window",
+          description: "ip-protection-exclusions-desc",
+        };
+      } else {
+        l10n = {
+          window: "ip-protection-exceptions-dialog-window",
+          description: "ip-protection-inclusions-desc",
+        };
+      }
+    } else {
+      l10n = permissionExceptionsL10n[this._type];
+    }
+
     document.l10n.setAttributes(permissionsText, l10n.description);
     document.l10n.setAttributes(document.documentElement, l10n.window);
 
@@ -327,6 +354,12 @@ var gPermissionManager = {
       return;
     }
     if (!this._isCapabilitySupported(perm.capability)) {
+      return;
+    }
+
+    // If filtering is enabled, don't bother showing permissions that don't have
+    // the capability we want.
+    if (this._capabilityFilter && perm.capability !== this._capabilityFilter) {
       return;
     }
 

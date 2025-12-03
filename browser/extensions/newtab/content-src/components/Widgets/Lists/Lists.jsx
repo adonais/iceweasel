@@ -387,7 +387,32 @@ function Lists({ dispatch, handleUserInteraction }) {
     if (!selectedList?.label && selectedList?.tasks?.length === 0) {
       const updatedLists = { ...lists };
       delete updatedLists[selected];
+
+      const listKeys = Object.keys(updatedLists);
+      const key = listKeys[listKeys.length - 1];
+      batch(() => {
+        dispatch(
+          ac.AlsoToMain({
+            type: at.WIDGETS_LISTS_UPDATE,
+            data: { lists: updatedLists },
+          })
+        );
+        dispatch(
+          ac.AlsoToMain({
+            type: at.WIDGETS_LISTS_CHANGE_SELECTED,
+            data: key,
+          })
+        );
+        dispatch(
+          ac.OnlyToMain({
+            type: at.WIDGETS_LISTS_USER_EVENT,
+            data: { userAction: USER_ACTION_TYPES.LIST_DELETE },
+          })
+        );
+      });
     }
+
+    handleListInteraction();
   }
 
   function handleDeleteList() {

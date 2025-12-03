@@ -117,7 +117,7 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
                 onNeedToRequestPermissions = { permissions ->
                     requestPermissions(permissions, REQUEST_CODE_DOWNLOAD_PERMISSIONS)
                 },
-                customFirstPartyDownloadDialog = { filename, contentSize, positiveAction, negativeAction ->
+                customFirstPartyDownloadDialog = { filename, contentSize, _, positiveAction, negativeAction, _ ->
                     run {
                         if (downloadDialog == null) {
                             val title = if (contentSize.value > 0L) {

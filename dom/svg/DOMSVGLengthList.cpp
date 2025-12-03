@@ -73,7 +73,7 @@ void DOMSVGLengthList::IndexedSetter(uint32_t index, DOMSVGLength& newValue,
                                      ErrorResult& aRv) {
   // Need to take a ref to the return value so it does not leak.
   RefPtr<DOMSVGLength> ignored = ReplaceItem(newValue, index, aRv);
-  Unused << ignored;
+  (void)ignored;
 }
 
 JSObject* DOMSVGLengthList::WrapObject(JSContext* cx,

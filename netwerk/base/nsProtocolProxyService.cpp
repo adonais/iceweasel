@@ -5,8 +5,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SimpleChannel.h"
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/AutoRestore.h"
 
 #include "nsProtocolProxyService.h"
@@ -43,7 +41,6 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/Tokenizer.h"
-#include "mozilla/Unused.h"
 
 //----------------------------------------------------------------------------
 
@@ -679,7 +676,7 @@ class AsyncGetPACURIRequestOrSystemWPADSetting final : public nsIRunnable {
         mResetPACThread(aResetPACThread),
         mSystemWPADAllowed(aSystemWPADAllowed) {
     MOZ_ASSERT(NS_IsMainThread());
-    Unused << mIsMainThreadOnly;
+    (void)mIsMainThreadOnly;
   }
 
   NS_IMETHOD Run() override {
@@ -1710,12 +1707,12 @@ nsProtocolProxyService::NewProxyInfoWithAuth(
 
 NS_IMETHODIMP
 nsProtocolProxyService::NewMASQUEProxyInfo(
-    const nsACString& aHost, int32_t aPort, const nsACString& aPathTemplate,
+    const nsACString& aHost, int32_t aPort, const nsACString& aMasqueTemplate,
     const nsACString& aProxyAuthorizationHeader,
     const nsACString& aConnectionIsolationKey, uint32_t aFlags,
     uint32_t aFailoverTimeout, nsIProxyInfo* aFailoverProxy,
     nsIProxyInfo** aResult) {
-  return NewProxyInfo_Internal(kProxyType_MASQUE, aHost, aPort, aPathTemplate,
+  return NewProxyInfo_Internal(kProxyType_MASQUE, aHost, aPort, aMasqueTemplate,
                                ""_ns, ""_ns, aProxyAuthorizationHeader,
                                aConnectionIsolationKey, aFlags,
                                aFailoverTimeout, aFailoverProxy, 0, aResult);
@@ -2088,7 +2085,7 @@ nsresult nsProtocolProxyService::GetProtocolInfo(nsIURI* uri,
 
 nsresult nsProtocolProxyService::NewProxyInfo_Internal(
     const char* aType, const nsACString& aHost, int32_t aPort,
-    const nsACString& aPathTemplate, const nsACString& aUsername,
+    const nsACString& aMasqueTemplate, const nsACString& aUsername,
     const nsACString& aPassword, const nsACString& aProxyAuthorizationHeader,
     const nsACString& aConnectionIsolationKey, uint32_t aFlags,
     uint32_t aFailoverTimeout, nsIProxyInfo* aFailoverProxy,
@@ -2106,7 +2103,7 @@ nsresult nsProtocolProxyService::NewProxyInfo_Internal(
   proxyInfo->mType = aType;
   proxyInfo->mHost = aHost;
   proxyInfo->mPort = aPort;
-  proxyInfo->mPathTemplate = aPathTemplate;
+  proxyInfo->mMasqueTemplate = aMasqueTemplate;
   proxyInfo->mUsername = aUsername;
   proxyInfo->mPassword = aPassword;
   proxyInfo->mFlags = aFlags;
@@ -2358,7 +2355,7 @@ bool nsProtocolProxyService::ApplyFilter(
 
   if (filterLink->filter) {
     nsCOMPtr<nsIURI> uri;
-    Unused << GetProxyURI(channel, getter_AddRefs(uri));
+    (void)GetProxyURI(channel, getter_AddRefs(uri));
     if (!uri) {
       return false;
     }

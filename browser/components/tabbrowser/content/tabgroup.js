@@ -186,42 +186,26 @@
               tab.setAttribute("aria-setsize", tabCount);
             });
             this.hasActiveTab = hasActiveTab;
-
-            // When a group containing the active tab is collapsed,
-            // the overflow count displays the number of additional tabs
-            // in the group adjacent to the active tab.
-            let overflowCountLabel = this.overflowContainer.querySelector(
-              ".tab-group-overflow-count"
-            );
-            if (tabCount > 1) {
-              gBrowser.tabLocalization
-                .formatValue("tab-group-overflow-count", {
-                  tabCount: tabCount - 1,
-                })
-                .then(result => (overflowCountLabel.textContent = result));
-              gBrowser.tabLocalization
-                .formatValue("tab-group-overflow-count-tooltip", {
-                  tabCount: tabCount - 1,
-                })
-                .then(result => {
-                  overflowCountLabel.setAttribute("tooltiptext", result);
-                  overflowCountLabel.setAttribute("aria-description", result);
-                });
-              this.toggleAttribute("hasmultipletabs", true);
-            } else {
-              overflowCountLabel.textContent = "";
-              this.toggleAttribute("hasmultipletabs", false);
-            }
+            this.#updateOverflowLabel();
+            this.#updateLastTabOrSplitViewAttr();
           }
           for (const mutation of mutations) {
             for (const addedNode of mutation.addedNodes) {
-              if (addedNode.tagName == "tab") {
+              if (gBrowser.isTab(addedNode)) {
                 this.#updateTabAriaHidden(addedNode);
+              } else if (gBrowser.isSplitViewWrapper(addedNode)) {
+                for (const splitViewTab of addedNode.tabs) {
+                  this.#updateTabAriaHidden(splitViewTab);
+                }
               }
             }
             for (const removedNode of mutation.removedNodes) {
-              if (removedNode.tagName == "tab") {
+              if (gBrowser.isTab(removedNode)) {
                 this.#updateTabAriaHidden(removedNode);
+              } else if (gBrowser.isSplitViewWrapper(removedNode)) {
+                for (const splitViewTab of removedNode.tabs) {
+                  this.#updateTabAriaHidden(splitViewTab);
+                }
               }
             }
           }
@@ -333,6 +317,7 @@
       this.toggleAttribute("collapsed", val);
       this.#updateLabelAriaAttributes();
       this.#updateTooltip();
+      this.#updateOverflowLabel();
       for (const tab of this.tabs) {
         this.#updateTabAriaHidden(tab);
       }
@@ -414,10 +399,66 @@
      * @param {MozTabbrowserTab} tab
      */
     #updateTabAriaHidden(tab) {
-      if (tab.group?.collapsed && !tab.selected) {
+      if (tab.splitview) {
+        if (
+          tab.group?.collapsed &&
+          !tab.splitview.tabs.some(splitViewTab => splitViewTab.selected)
+        ) {
+          tab.splitview.setAttribute("aria-hidden", "true");
+        } else {
+          tab.splitview.removeAttribute("aria-hidden");
+        }
+      } else if (tab.group?.collapsed && !tab.selected) {
         tab.setAttribute("aria-hidden", "true");
       } else {
         tab.removeAttribute("aria-hidden");
+      }
+    }
+
+    #updateOverflowLabel() {
+      // When a group containing the active tab is collapsed,
+      // the overflow count displays the number of additional tabs
+      // in the group adjacent to the active tab.
+      if (this.overflowContainer) {
+        let overflowCountLabel = this.overflowContainer.querySelector(
+          ".tab-group-overflow-count"
+        );
+        let tabs = this.tabs;
+        let tabCount = tabs.length;
+        const overflowOffset =
+          this.hasActiveTab && gBrowser.selectedTab.splitview ? 2 : 1;
+
+        this.toggleAttribute("hasmultipletabs", tabCount > overflowOffset);
+
+        gBrowser.tabLocalization
+          .formatValue("tab-group-overflow-count", {
+            tabCount: tabCount - overflowOffset,
+          })
+          .then(result => (overflowCountLabel.textContent = result));
+        gBrowser.tabLocalization
+          .formatValue("tab-group-overflow-count-tooltip", {
+            tabCount: tabCount - overflowOffset,
+          })
+          .then(result => {
+            overflowCountLabel.setAttribute("tooltiptext", result);
+            overflowCountLabel.setAttribute("aria-description", result);
+          });
+      }
+    }
+
+    #updateLastTabOrSplitViewAttr() {
+      const LAST_ITEM_ATTRIBUTE = "last-tab-or-split-view";
+      let lastTab = this.tabs[this.tabs.length - 1];
+      let currentLastTabOrSplitView = lastTab.splitview
+        ? lastTab.splitview
+        : lastTab;
+
+      let prevLastTabOrSplitView = this.querySelector(
+        `[${LAST_ITEM_ATTRIBUTE}]`
+      );
+      if (prevLastTabOrSplitView !== currentLastTabOrSplitView) {
+        prevLastTabOrSplitView?.toggleAttribute(LAST_ITEM_ATTRIBUTE);
+        currentLastTabOrSplitView.toggleAttribute(LAST_ITEM_ATTRIBUTE);
       }
     }
 
@@ -425,7 +466,13 @@
      * @returns {MozTabbrowserTab[]}
      */
     get tabs() {
-      return Array.from(this.children).filter(node => node.matches("tab"));
+      let childrenArray = Array.from(this.children);
+      for (let i = childrenArray.length - 1; i >= 0; i--) {
+        if (childrenArray[i].tagName == "tab-split-view-wrapper") {
+          childrenArray.splice(i, 1, ...childrenArray[i].tabs);
+        }
+      }
+      return childrenArray.filter(node => node.matches("tab"));
     }
 
     /**
@@ -622,6 +669,8 @@
       if (previousTab.group === this) {
         this.#updateTabAriaHidden(previousTab);
       }
+
+      this.#updateOverflowLabel();
     }
 
     /**

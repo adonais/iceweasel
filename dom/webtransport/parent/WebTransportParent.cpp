@@ -9,7 +9,6 @@
 #include "Http3WebTransportSession.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/WebTransportBinding.h"
 #include "mozilla/dom/WebTransportLog.h"
@@ -246,7 +245,7 @@ NS_IMETHODIMP BidiReceiveStream::OnBidirectionalStreamReady(
   }
 
   uint64_t id;
-  Unused << aStream->GetStreamId(&id);
+  (void)aStream->GetStreamId(&id);
   nsCOMPtr<nsIAsyncInputStream> inputStream;
   aStream->GetInputStream(getter_AddRefs(inputStream));
   MOZ_ASSERT(inputStream);
@@ -331,7 +330,7 @@ UniReceiveStream::OnUnidirectionalStreamReady(
   }
 
   uint64_t id;
-  Unused << aStream->GetStreamId(&id);
+  (void)aStream->GetStreamId(&id);
   nsCOMPtr<nsIAsyncOutputStream> outputStream;
   aStream->GetOutputStream(getter_AddRefs(outputStream));
   MOZ_ASSERT(outputStream);
@@ -582,8 +581,7 @@ NS_IMETHODIMP WebTransportParent::OnStopSending(uint64_t aStreamId,
     mBidiStreamCallbackMap.Remove(aStreamId);
   }
   if (CanSend()) {
-    Unused << SendOnStreamResetOrStopSending(aStreamId,
-                                             StopSendingError(aError));
+    (void)SendOnStreamResetOrStopSending(aStreamId, StopSendingError(aError));
   }
   return NS_OK;
 }
@@ -601,7 +599,7 @@ NS_IMETHODIMP WebTransportParent::OnResetReceived(uint64_t aStreamId,
     mBidiStreamCallbackMap.Remove(aStreamId);
   }
   if (CanSend()) {
-    Unused << SendOnStreamResetOrStopSending(aStreamId, ResetError(aError));
+    (void)SendOnStreamResetOrStopSending(aStreamId, ResetError(aError));
   }
   return NS_OK;
 }
@@ -614,7 +612,7 @@ void WebTransportParent::NotifyRemoteClosed(bool aCleanly, uint32_t aErrorCode,
       __func__, [self = RefPtr{this}, aErrorCode, reason = nsCString{aReason},
                  aCleanly]() {
         // Tell the content side we were closed by the server
-        Unused << self->SendRemoteClosed(aCleanly, aErrorCode, reason);
+        (void)self->SendRemoteClosed(aCleanly, aErrorCode, reason);
         // Let the other end shut down the IPC channel after RecvClose()
       }));
 }
@@ -650,8 +648,8 @@ WebTransportParent::OnIncomingUnidirectionalStreamAvailable(
   LOG(("%p Sending UnidirectionalStream pipe to content", this));
   // pass the DataPipeReceiver to the content process
   uint64_t id;
-  Unused << aStream->GetStreamId(&id);
-  Unused << SendIncomingUnidirectionalStream(id, receiver);
+  (void)aStream->GetStreamId(&id);
+  (void)SendIncomingUnidirectionalStream(id, receiver);
 
   return NS_OK;
 }
@@ -707,8 +705,8 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
   LOG(("%p Sending BidirectionalStream pipe to content", this));
   // pass the DataPipeSender to the content process
   uint64_t id;
-  Unused << aStream->GetStreamId(&id);
-  Unused << SendIncomingBidirectionalStream(id, inputReceiver, outputSender);
+  (void)aStream->GetStreamId(&id);
+  (void)SendIncomingBidirectionalStream(id, inputReceiver, outputSender);
   return NS_OK;
 }
 
@@ -737,7 +735,7 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
   MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
   MOZ_ASSERT(mWebTransport);
 
-  Unused << aExpirationTime;
+  (void)aExpirationTime;
 
   MOZ_ASSERT(!mOutgoingDatagramResolver);
   mOutgoingDatagramResolver = std::move(aResolver);
@@ -752,7 +750,7 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
   static uint64_t sDatagramId = 1;
   LOG_VERBOSE(("Sending datagram %" PRIu64 ", length %zu", sDatagramId,
                aData.Length()));
-  Unused << mWebTransport->SendDatagram(aData, sDatagramId++);
+  (void)mWebTransport->SendDatagram(aData, sDatagramId++);
 
   return IPC_OK();
 }
@@ -765,7 +763,7 @@ NS_IMETHODIMP WebTransportParent::OnDatagramReceived(
   LOG(("WebTransportParent received datagram length = %zu", aData.Length()));
 
   TimeStamp ts = TimeStamp::Now();
-  Unused << SendIncomingDatagram(aData, ts);
+  (void)SendIncomingDatagram(aData, ts);
 
   return NS_OK;
 }
@@ -776,8 +774,8 @@ WebTransportParent::OnOutgoingDatagramOutCome(
   MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
   // XXX - do we need better error mappings for failures?
   nsresult result = NS_ERROR_FAILURE;
-  Unused << result;
-  Unused << aId;
+  (void)result;
+  (void)aId;
 
   if (aOutCome == WebTransportSessionEventListener::DatagramOutcome::SENT) {
     result = NS_OK;

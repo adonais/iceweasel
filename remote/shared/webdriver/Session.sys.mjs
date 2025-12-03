@@ -16,6 +16,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
+  NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   registerProcessDataActor:
     "chrome://remote/content/shared/webdriver/process-actors/WebDriverProcessDataParent.sys.mjs",
   RootMessageHandler:
@@ -37,7 +38,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "aomStartup",
   "@mozilla.org/addons/addon-manager-startup;1",
-  "amIAddonManagerStartup"
+  Ci.amIAddonManagerStartup
 );
 
 // Global singleton that holds active WebDriver sessions
@@ -68,6 +69,7 @@ export class WebDriverSession {
   #http;
   #id;
   #messageHandler;
+  #navigableSeenNodes;
   #path;
 
   static SESSION_FLAG_BIDI = "bidi";
@@ -275,9 +277,12 @@ export class WebDriverSession {
 
     // Maps a Navigable (browsing context or content browser for top-level
     // browsing contexts) to a Set of nodeId's.
-    this.navigableSeenNodes = new WeakMap();
+    this.#navigableSeenNodes = new WeakMap();
 
     lazy.registerProcessDataActor();
+
+    // Start the tracking of browsing contexts to create Navigable ids.
+    lazy.NavigableManager.startTracking();
 
     webDriverSessions.set(this.#id, this);
   }
@@ -285,9 +290,13 @@ export class WebDriverSession {
   destroy() {
     webDriverSessions.delete(this.#id);
 
+    // Stop the tracking of browsing contexts when no WebDriver
+    // session exists anymore.
+    lazy.NavigableManager.stopTracking();
+
     lazy.unregisterProcessDataActor();
 
-    this.navigableSeenNodes = null;
+    this.#navigableSeenNodes = null;
 
     lazy.Certificates.enableSecurityChecks();
 
@@ -358,6 +367,10 @@ export class WebDriverSession {
     }
 
     return this.#messageHandler;
+  }
+
+  get navigableSeenNodes() {
+    return this.#navigableSeenNodes;
   }
 
   get pageLoadStrategy() {
@@ -538,7 +551,7 @@ export function getSeenNodesForBrowsingContext(sessionId, browsingContext) {
   }
 
   const navigable =
-    lazy.TabManager.getNavigableForBrowsingContext(browsingContext);
+    lazy.NavigableManager.getNavigableForBrowsingContext(browsingContext);
   const session = getWebDriverSessionById(sessionId);
 
   if (!session.navigableSeenNodes.has(navigable)) {

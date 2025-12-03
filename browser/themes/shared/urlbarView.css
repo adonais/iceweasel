@@ -449,6 +449,14 @@
     > .urlbarView-row-buttons
     > &:not([open]):first-child:empty {
     display: none;
+
+    /* The realtime suggestions' style will be broken if the width will be
+       changed by hover. Thus we use the visibility instead of display to keep
+       the element size */
+    .urlbarView-row[dynamicType^="realtime-"] > .urlbarView-row-buttons > & {
+      display: unset;
+      visibility: hidden;
+    }
   }
 
   /* Labeled result menu button */
@@ -481,7 +489,7 @@
   border-radius: var(--urlbar-inner-border-radius);
   padding: 0.5em 1em;
   font-size: 0.93em;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
   background-clip: padding-box;
   min-height: 16px;
   min-width: 6em;
@@ -719,7 +727,11 @@
     visibility: hidden;
     width: 0;
     margin-inline: 0;
-    padding-inline: 0;
+    /* The !important is for the switch-to-tab chiclet when action-override is set.
+       Farther down below we add extra padding on .urlbarView-switchToTab to
+       account for the tab icon. Without !important here, that padding is
+       visible even when the chiclet is hidden due to action-override. */
+    padding-inline: 0 !important;
     border-inline: 0;
   }
 }
@@ -1198,7 +1210,7 @@
 
 .urlbarView-action-btn {
   font-size: smaller;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
   border-radius: var(--toolbarbutton-border-radius);
   border: 1px solid transparent;
   padding: 0.4em 0.6em;
@@ -1292,7 +1304,7 @@
       padding: var(--space-xlarge);
 
       > .urlbarView-row-body-top > .urlbarView-row-body-top-no-wrap > .urlbarView-title {
-        font-weight: var(--font-weight-bold);
+        font-weight: var(--heading-font-weight);
       }
     }
   }
@@ -1318,6 +1330,18 @@
 .urlbarView-realtime-root {
   --green-status-color: light-dark(var(--color-green-60), var(--color-green-20));
   --red-status-color: light-dark(var(--color-red-70), var(--color-red-40));
+  --violet-bg-color: light-dark(var(--color-violet-0), var(--color-violet-80));
+  --violet-fg-color: light-dark(var(--color-violet-60), var(--color-violet-10));
+
+  @media (prefers-contrast) {
+    --violet-bg-color: var(--urlbar-box-focus-bgcolor);
+    --violet-fg-color: currentColor;
+  }
+
+  align-items: center;
+
+  /* Realtime suggestions can contain many items, which should always wrap. */
+  flex-wrap: wrap;
 
   /* Remove the usual inner padding. Each item in the row will have its own. */
   padding: 0;
@@ -1355,7 +1379,6 @@
       width: var(--urlbarView-top-pick-large-icon-box-size);
       height: var(--urlbarView-top-pick-large-icon-box-size);
       margin-inline-end: var(--space-medium);
-      background-color: var(--market-image-bg-color);
       border: 1px solid transparent;
       border-radius: var(--border-radius-small);
 
@@ -1383,11 +1406,36 @@
         color: var(--urlbarView-secondary-text-color);
       }
 
-      > .urlbarView-realtime-description-top > .urlbarView-realtime-description-separator::before,
-      > .urlbarView-realtime-description-bottom > .urlbarView-realtime-description-separator::before {
-        margin-inline: var(--space-xsmall);
-        content: "·";
-        display: inline;
+      > .urlbarView-realtime-description-top > .urlbarView-realtime-description-separator-dot,
+      > .urlbarView-realtime-description-top > .urlbarView-realtime-description-separator-dash,
+      > .urlbarView-realtime-description-bottom > .urlbarView-realtime-description-separator-dot,
+      > .urlbarView-realtime-description-bottom > .urlbarView-realtime-description-separator-dash {
+        /* stylelint-disable-next-line max-nesting-depth */
+        &::before {
+          margin-inline: var(--space-xsmall);
+          display: inline;
+        }
+
+        /* stylelint-disable-next-line max-nesting-depth */
+        &:has(+ span:empty) {
+          display: none;
+        }
+      }
+
+      > .urlbarView-realtime-description-top > .urlbarView-realtime-description-separator-dot,
+      > .urlbarView-realtime-description-bottom > .urlbarView-realtime-description-separator-dot {
+        /* stylelint-disable-next-line max-nesting-depth */
+        &::before {
+          content: "·";
+        }
+      }
+
+      > .urlbarView-realtime-description-top > .urlbarView-realtime-description-separator-dash,
+      > .urlbarView-realtime-description-bottom > .urlbarView-realtime-description-separator-dash {
+        /* stylelint-disable-next-line max-nesting-depth */
+        &::before {
+          content: "–";
+        }
       }
     }
   }
@@ -1395,41 +1443,45 @@
 
 /* Market suggestions specific */
 
-.urlbarView-row[dynamicType="market"] > .urlbarView-realtime-root > .urlbarView-realtime-item {
+.urlbarView-row[dynamicType="realtime-market"] > .urlbarView-realtime-root > .urlbarView-realtime-item {
   --market-image-bg-color: var(--urlbar-box-focus-bgcolor);
   --market-image-down-bg-color: light-dark(var(--color-red-0), var(--color-red-90));
   --market-image-up-bg-color: light-dark(var(--color-green-0), var(--color-green-90));
 
-  > .urlbarView-realtime-image-container[is-arrow] {
-    border-color: color-mix(in srgb, currentColor 10%, transparent);
+  > .urlbarView-realtime-image-container {
+    background-color: var(--market-image-bg-color);
 
-    .urlbarView-realtime-item[change="down"] > & {
-      fill: var(--red-status-color);
-      border-color: color-mix(in srgb, var(--red-status-color) 10%, transparent);
-      background-color: var(--market-image-down-bg-color);
-    }
-    .urlbarView-realtime-item[change="up"] > & {
-      fill: var(--green-status-color);
-      border-color: color-mix(in srgb, var(--green-status-color) 10%, transparent);
-      background-color: var(--market-image-up-bg-color);
-    }
+    &[is-arrow] {
+      border-color: color-mix(in srgb, currentColor 10%, transparent);
 
-    > .urlbarView-realtime-image {
-      width: 20px;
-      height: 20px;
+      .urlbarView-realtime-item[change="down"] > & {
+        fill: var(--red-status-color);
+        border-color: color-mix(in srgb, var(--red-status-color) 10%, transparent);
+        background-color: var(--market-image-down-bg-color);
+      }
+      .urlbarView-realtime-item[change="up"] > & {
+        fill: var(--green-status-color);
+        border-color: color-mix(in srgb, var(--green-status-color) 10%, transparent);
+        background-color: var(--market-image-up-bg-color);
+      }
+
+      > .urlbarView-realtime-image {
+        width: 20px;
+        height: 20px;
+      }
     }
   }
 
   > .urlbarView-realtime-description {
     > .urlbarView-realtime-description-top {
       > .urlbarView-market-name {
-        font-weight: var(--font-weight-bold);
+        font-weight: var(--font-weight-semibold);
       }
     }
 
     > .urlbarView-realtime-description-bottom {
       > .urlbarView-market-todays-change-perc {
-        font-weight: var(--font-weight-bold);
+        font-weight: var(--font-weight-semibold);
       }
 
       > .urlbarView-market-last-price {
@@ -1462,7 +1514,7 @@
 
 /* Yelp realtime suggestions specific */
 
-.urlbarView-row[dynamicType="yelpRealtime"] > .urlbarView-realtime-root > .urlbarView-realtime-item {
+.urlbarView-row[dynamicType="realtime-yelpRealtime"] > .urlbarView-realtime-root > .urlbarView-realtime-item {
   --star-size: 12px;
 
   > .urlbarView-realtime-image-container > .urlbarView-realtime-image {
@@ -1473,7 +1525,7 @@
 
   > .urlbarView-realtime-description {
     > .urlbarView-realtime-description-top > .urlbarView-yelpRealtime-title {
-      font-weight: var(--font-weight-bold);
+      font-weight: var(--heading-font-weight);
     }
 
     > .urlbarView-realtime-description-bottom {
@@ -1508,6 +1560,153 @@
         > .urlbarView-yelpRealtime-description-business-hours
         > span {
         color: var(--red-status-color);
+      }
+    }
+  }
+}
+
+/* Flight status suggestions specific */
+
+.urlbarView-row[dynamicType="realtime-flightStatus"] > .urlbarView-realtime-root > .urlbarView-realtime-item {
+  > .urlbarView-realtime-image-container {
+    --airline-fallback-icon-color: #bac2ca;
+
+    border-color: color-mix(in srgb, currentColor 10%, transparent);
+    background-color: var(--urlbar-box-focus-bgcolor);
+
+    &[backgroundImageId] {
+      background-position: center;
+      -moz-context-properties: fill, stroke;
+      fill: var(--airline-color, currentColor);
+      stroke: var(--airline-color, currentColor);
+    }
+
+    &[backgroundImageId="0"] {
+      background-image: url(chrome://browser/skin/urlbar/flight-inflight-progress-0.svg);
+    }
+
+    &[backgroundImageId="1"] {
+      background-image: url(chrome://browser/skin/urlbar/flight-inflight-progress-1.svg);
+    }
+
+    &[backgroundImageId="2"] {
+      background-image: url(chrome://browser/skin/urlbar/flight-inflight-progress-2.svg);
+    }
+
+    &[backgroundImageId="3"] {
+      background-image: url(chrome://browser/skin/urlbar/flight-inflight-progress-3.svg);
+    }
+
+    &[backgroundImageId="4"] {
+      background-image: url(chrome://browser/skin/urlbar/flight-inflight-progress-4.svg);
+    }
+
+    &[hasForegroundImage] {
+      /* Move up the progress image if exists */
+      background-position-y: bottom 12px;
+      /* Move the foreground image to the end corner */
+      display: flex;
+      justify-content: end;
+      align-items: end;
+    }
+
+    > .urlbarView-realtime-image[fallback] {
+      width: 26px;
+      height: 26px;
+      flex-basis: 26px;
+      fill: var(--airline-fallback-icon-color);
+    }
+  }
+
+  > .urlbarView-realtime-description {
+    > .urlbarView-realtime-description-top > .urlbarView-flightStatus-time {
+      font-weight: var(--font-weight-semibold);
+      margin-inline-end: var(--space-small);
+    }
+
+    > .urlbarView-realtime-description-bottom {
+      > .urlbarView-flightStatus-status {
+        font-weight: var(--font-weight-semibold);
+      }
+
+      .urlbarView-row:not([selected])
+        > .urlbarView-realtime-root
+        > .urlbarView-realtime-item:is([status="ontime"], [status="inflight"], [status="arrived"]):not([selected])
+        > .urlbarView-realtime-description
+        > &
+        > .urlbarView-flightStatus-status {
+        color: var(--green-status-color);
+      }
+
+      .urlbarView-row:not([selected])
+        > .urlbarView-realtime-root
+        > .urlbarView-realtime-item:is([status="cancelled"], [status="delayed"]):not([selected])
+        > .urlbarView-realtime-description
+        > &
+        > .urlbarView-flightStatus-status {
+        color: var(--red-status-color);
+      }
+    }
+  }
+}
+
+/* Realtime sports suggestions */
+
+.urlbarView-row[dynamicType="realtime-sports"] > .urlbarView-realtime-root > .urlbarView-realtime-item {
+  > .urlbarView-realtime-image-container[is-fallback] {
+    flex-direction: column;
+
+    background-color: var(--violet-bg-color);
+    background-position: center;
+    background-repeat: no-repeat;
+    border-color: color-mix(in srgb, currentColor 10%, transparent);
+    color: var(--violet-fg-color);
+    fill: var(--violet-fg-color);
+    -moz-context-properties: fill;
+
+    > .urlbarView-sports-scheduled-date-chiclet-day {
+      font-size: 1.25em;
+    }
+
+    /* Fallback icons per sport but only for games not in the future */
+    .urlbarView-realtime-item:not([status="scheduled"]) > & {
+      .urlbarView-realtime-item[sport="NBA"] > &,
+      .urlbarView-realtime-item[sport="NHL"] > &,
+      .urlbarView-realtime-item[sport="NFL"] > & {
+        /* stylelint-disable-next-line max-nesting-depth */
+        > .urlbarView-sports-scheduled-date-chiclet-day,
+        > .urlbarView-sports-scheduled-date-chiclet-month {
+          display: none;
+        }
+      }
+      .urlbarView-realtime-item[sport="NBA"] > & {
+        background-image: url("chrome://browser/skin/urlbar/sports-basketball.svg");
+      }
+      .urlbarView-realtime-item[sport="NHL"] > & {
+        background-image: url("chrome://browser/skin/urlbar/sports-hockey.svg");
+      }
+      .urlbarView-realtime-item[sport="NFL"] > & {
+        background-image: url("chrome://browser/skin/urlbar/sports-american-football.svg");
+      }
+    }
+  }
+
+  > .urlbarView-realtime-description {
+    > .urlbarView-realtime-description-top {
+      > .urlbarView-sports-team-names {
+        font-weight: var(--font-weight-bold);
+      }
+
+      > .urlbarView-sports-score {
+        font-weight: var(--font-weight-bold);
+        margin-inline-start: var(--space-xsmall);
+      }
+    }
+
+    > .urlbarView-realtime-description-bottom {
+      > .urlbarView-sports-status {
+        color: var(--green-status-color);
+        font-weight: var(--font-weight-bold);
       }
     }
   }

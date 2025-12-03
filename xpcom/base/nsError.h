@@ -11,7 +11,6 @@
 #  error nsError.h no longer supports C sources
 #endif
 
-#include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
 
 #include <stdint.h>

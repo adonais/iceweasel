@@ -11,7 +11,6 @@
 // latter is wrapped in an extern "C" declaration but ends up including
 // nsString.h (See bug 1784086)
 #include "nsString.h"
-#include "mozilla/UniquePtr.h"
 
 // Prelude of types necessary before including wgpu_ffi_generated.h
 namespace mozilla {

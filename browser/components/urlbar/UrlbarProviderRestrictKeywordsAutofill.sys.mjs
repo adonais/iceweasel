@@ -106,6 +106,13 @@ export class UrlbarProviderRestrictKeywordsAutofill extends UrlbarProvider {
     return false;
   }
 
+  /**
+   * Starts querying.
+   *
+   * @param {UrlbarQueryContext} queryContext
+   * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
+   *   Callback invoked by the provider to add a new result.
+   */
   async startQuery(queryContext, addCallback) {
     if (
       this.#autofillData &&

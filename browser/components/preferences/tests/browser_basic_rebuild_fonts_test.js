@@ -7,21 +7,17 @@ add_task(async function () {
 
   let doc = gBrowser.contentDocument;
   let contentWindow = gBrowser.contentWindow;
-  var langGroup = Services.prefs.getComplexValue(
-    "font.language.group",
-    Ci.nsIPrefLocalizedString
-  ).data;
-  is(
-    contentWindow.Preferences.get("font.language.group").value,
-    langGroup,
-    "Language group should be set correctly."
-  );
-
+  let langGroup = Services.locale.fontLanguageGroup;
   let defaultFontType = Services.prefs.getCharPref("font.default." + langGroup);
   let fontFamilyPref = "font.name." + defaultFontType + "." + langGroup;
   let fontFamily = Services.prefs.getCharPref(fontFamilyPref);
   let fontFamilyField = doc.getElementById("defaultFont");
   is(fontFamilyField.value, fontFamily, "Font family should be set correctly.");
+  is(
+    fontFamilyField.getAttribute("preference"),
+    fontFamilyPref,
+    "langGroup is used in defaultFont preference"
+  );
 
   function dispatchMenuItemCommand(menuItem) {
     const cmdEvent = doc.createEvent("xulcommandevent");

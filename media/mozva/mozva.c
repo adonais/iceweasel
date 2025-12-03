@@ -9,7 +9,6 @@
 #include <va/va.h>
 #pragma GCC visibility pop
 
-#include "mozilla/Types.h"
 #include <dlfcn.h>
 #include <pthread.h>
 #include <stdlib.h>

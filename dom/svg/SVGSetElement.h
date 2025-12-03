@@ -7,7 +7,6 @@
 #ifndef DOM_SVG_SVGSETELEMENT_H_
 #define DOM_SVG_SVGSETELEMENT_H_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/SMILSetAnimationFunction.h"
 #include "mozilla/dom/SVGAnimationElement.h"
 

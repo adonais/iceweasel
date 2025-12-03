@@ -1,6 +1,5 @@
 #include "gtest/gtest.h"
 #include "mozilla/StaticMutex.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/TimeStamp.h"
 #include "nsTArray.h"
 #include "../cache2/CacheIndex.h"

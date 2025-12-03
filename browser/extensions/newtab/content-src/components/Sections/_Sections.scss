@@ -64,7 +64,13 @@
 
   a {
     color: var(--newtab-primary-action-background);
-    font-weight: var(--font-weight-bold);
+
+    /**
+     * @backward-compat { version 146 }
+     *
+     * Replace this with `--font-weight-semibold` once 146 hits release.
+     */
+    font-weight: var(--heading-font-weight);
 
     &.more-recommendations {
       font-weight: var(--font-weight);

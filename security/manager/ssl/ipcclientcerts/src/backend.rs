@@ -4,9 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use pkcs11_bindings::*;
-use rsclientcerts::error::{Error, ErrorType};
+use rsclientcerts::cryptoki::*;
 use rsclientcerts::manager::{ClientCertsBackend, CryptokiObject, Sign};
-use rsclientcerts::util::*;
+use rsclientcerts_util::error::{Error, ErrorType};
+use rsclientcerts_util::*;
 use std::ffi::c_void;
 
 type FindObjectsCallback = Option<

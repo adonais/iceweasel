@@ -172,7 +172,6 @@ public final class GeckoLoader {
           "MOZ_ANDROID_CRASH_HANDLER=" + context.getPackageName() + "/" + crashHandler.getName());
     }
 
-    putenv("MOZ_ANDROID_DEVICE_SDK_VERSION=" + Build.VERSION.SDK_INT);
     putenv("MOZ_ANDROID_CPU_ABI=" + Build.CPU_ABI);
 
     // env from extras could have reset out linker flags; set them again.

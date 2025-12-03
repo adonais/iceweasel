@@ -37,7 +37,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 XPCOMUtils.defineLazyServiceGetters(lazy, {
   aomStartup: [
     "@mozilla.org/addons/addon-manager-startup;1",
-    "amIAddonManagerStartup",
+    Ci.amIAddonManagerStartup,
   ],
 });
 

@@ -25,7 +25,6 @@
 #include "Units.h"
 #include "gfxContext.h"
 #include "mozilla/ArenaAllocator.h"
-#include "mozilla/Array.h"
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -359,9 +358,8 @@ class nsDisplayListBuilder {
     mTemporaryItems.AppendElement(aItem);
   }
 
-  WindowRenderer* GetWidgetWindowRenderer(nsView** aView = nullptr);
-  layers::WebRenderLayerManager* GetWidgetLayerManager(
-      nsView** aView = nullptr);
+  WindowRenderer* GetWidgetWindowRenderer();
+  layers::WebRenderLayerManager* GetWidgetLayerManager();
 
   /**
    * @return true if the display is being built in order to determine which
@@ -621,11 +619,12 @@ class nsDisplayListBuilder {
     mAllowMergingAndFlattening = aAllow;
   }
 
-  void SetCompositorHitTestInfo(const gfx::CompositorHitTestInfo& aInfo) {
+  void SetInheritedCompositorHitTestInfo(
+      const gfx::CompositorHitTestInfo& aInfo) {
     mCompositorHitTestInfo = aInfo;
   }
 
-  const gfx::CompositorHitTestInfo& GetCompositorHitTestInfo() const {
+  const gfx::CompositorHitTestInfo& GetInheritedCompositorHitTestInfo() const {
     return mCompositorHitTestInfo;
   }
 

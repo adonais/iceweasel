@@ -10,7 +10,6 @@
 #include "nsIScriptableInputStream.h"
 #include "nsIInputStream.h"
 #include "nsCOMPtr.h"
-#include "mozilla/Attributes.h"
 
 #define NS_SCRIPTABLEINPUTSTREAM_CID \
   {0x7225c040, 0xa9bf, 0x11d3, {0xa1, 0x97, 0x0, 0x50, 0x4, 0x1c, 0xaf, 0x44}}

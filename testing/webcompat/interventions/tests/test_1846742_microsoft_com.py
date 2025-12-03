@@ -21,7 +21,7 @@ async def does_enter_work(client):
 
     # We now wait for the search suggestions to appear, press Down twice,
     # and Enter once. This should begin a navigation if things are working.
-    nav = await client.promise_navigation_begins(url="microsoft", timeout=2)
+    nav = await client.promise_navigation_begins(url="www.microsoft", timeout=2)
     client.await_css(SUGGESTION_CSS, is_displayed=True)
     client.keyboard.key_down("\ue05b").perform()  # Down arrow
     client.keyboard.key_down("\ue05b").perform()  # Down arrow

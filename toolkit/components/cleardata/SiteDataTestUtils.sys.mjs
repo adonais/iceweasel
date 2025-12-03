@@ -12,7 +12,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "swm",
   "@mozilla.org/serviceworkers/manager;1",
-  "nsIServiceWorkerManager"
+  Ci.nsIServiceWorkerManager
 );
 
 /**

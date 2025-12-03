@@ -6,8 +6,6 @@
 
 #ifndef jit_riscv64_constant_Constant_riscv64_h
 #define jit_riscv64_constant_Constant_riscv64_h
-#include "mozilla/Assertions.h"
-#include "mozilla/Types.h"
 
 #include <stdio.h>
 

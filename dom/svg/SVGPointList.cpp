@@ -7,7 +7,6 @@
 #include "SVGPointList.h"
 
 #include "SVGContentUtils.h"
-#include "mozilla/ArrayUtils.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsContentUtils.h"
 #include "nsTextFormatter.h"

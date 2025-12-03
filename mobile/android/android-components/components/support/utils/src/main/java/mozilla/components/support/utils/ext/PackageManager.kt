@@ -40,9 +40,12 @@ fun PackageManager.resolveActivityCompat(intent: Intent, flag: Int): ResolveInfo
 }
 
 /**
- * Get a package info with a specified flag
+ * Get a package info with a specified flag.
  *
  * @param packageName The name of the package to check for.
+ *
+ * @throws PackageManager.NameNotFoundException (API >= 33) if the package for [packageName] is not installed.
+ * @throws UnsupportedOperationException (API <= 32) if getPackageInfo is not implemented in subclass.
  */
 fun PackageManager.getPackageInfoCompat(packageName: String, flag: Int): PackageInfo {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

@@ -2668,7 +2668,7 @@ Result<CreateElementResult, nsresult> EditorBase::InsertBRElement(
         insertBRElementResultOrError.unwrap();
     insertBRElementResult.IgnoreCaretPointSuggestion();
   } else {
-    Unused << aPointToInsert.Offset();
+    (void)aPointToInsert.Offset();
     RefPtr<InsertNodeTransaction> transaction =
         InsertNodeTransaction::Create(*this, *newBRElement, aPointToInsert);
     nsresult rv = transaction->DoTransaction();

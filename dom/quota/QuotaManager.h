@@ -862,7 +862,21 @@ class QuotaManager final : public BackgroundThreadObject {
 
   OriginInfosNestedTraversable GetOriginInfosWithZeroUsage() const;
 
+  /**
+   * Clears the given set of origins.
+   *
+   * @param aDoomedOriginInfos
+   *   Origins to be cleared.
+   * @param aChecker
+   *   A callable invoked for each origin before clearing. Typically used to
+   *   enforce or assert invariants at the call site.
+   * @param aMaxOriginsToClear
+   *   Optional cap on the number of origins cleared in a single run. If
+   *   Nothing(), all doomed origins are cleared.
+   */
+  template <typename Checker>
   void ClearOrigins(const OriginInfosNestedTraversable& aDoomedOriginInfos,
+                    Checker&& aChecker,
                     const Maybe<size_t>& aMaxOriginsToClear = Nothing());
 
   void CleanupTemporaryStorage();
@@ -1057,25 +1071,6 @@ class QuotaManager final : public BackgroundThreadObject {
    * recorded internally on the I/O thread when the metadata file is updated.
    */
   void IncreaseSaveOriginAccessTimeCountInternal();
-
-  // XXX These insertion helpers probably belong to GroupInfoPair
-  template <typename Iterator, typename Pred>
-  static void MaybeInsertOriginInfos(
-      Iterator aDest, const RefPtr<GroupInfo>& aTemporaryGroupInfo,
-      const RefPtr<GroupInfo>& aDefaultGroupInfo,
-      const RefPtr<GroupInfo>& aPrivateGroupInfo, Pred aPred);
-
-  template <typename Iterator>
-  static void MaybeInsertNonPersistedOriginInfos(
-      Iterator aDest, const RefPtr<GroupInfo>& aTemporaryGroupInfo,
-      const RefPtr<GroupInfo>& aDefaultGroupInfo,
-      const RefPtr<GroupInfo>& aPrivateGroupInfo);
-
-  template <typename Iterator>
-  static void MaybeInsertNonPersistedZeroUsageOriginInfos(
-      Iterator aDest, const RefPtr<GroupInfo>& aTemporaryGroupInfo,
-      const RefPtr<GroupInfo>& aDefaultGroupInfo,
-      const RefPtr<GroupInfo>& aPrivateGroupInfo);
 
   template <typename Collect, typename Pred>
   static OriginInfosFlatTraversable CollectLRUOriginInfosUntil(

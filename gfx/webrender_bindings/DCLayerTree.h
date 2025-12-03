@@ -7,6 +7,7 @@
 #ifndef MOZILLA_GFX_DCLAYER_TREE_H
 #define MOZILLA_GFX_DCLAYER_TREE_H
 
+#include <deque>
 #include <dxgiformat.h>
 #include <unordered_map>
 #include <vector>
@@ -24,6 +25,7 @@
 
 struct ID3D11Device;
 struct ID3D11DeviceContext;
+struct ID3D11Texture2D;
 struct ID3D11VideoDevice;
 struct ID3D11VideoContext;
 struct ID3D11VideoProcessor;
@@ -32,6 +34,7 @@ struct ID3D11VideoProcessorOutputView;
 struct IDCompositionColorMatrixEffect;
 struct IDCompositionFilterEffect;
 struct IDCompositionTableTransferEffect;
+struct IDCompositionTexture;
 struct IDCompositionDevice2;
 struct IDCompositionDevice3;
 struct IDCompositionSurface;
@@ -61,6 +64,7 @@ namespace wr {
 
 class DCLayerSurface;
 class DCTile;
+class DCLayerDCompositionTexture;
 class DCSurface;
 class DCSwapChain;
 class DCSurfaceVideo;
@@ -195,6 +199,7 @@ class DCLayerTree {
   DXGI_FORMAT GetOverlayFormatForSDR();
 
   bool SupportsSwapChainTearing();
+  bool SupportsDCompositionTexture();
 
   void SetUsedOverlayTypeInFrame(DCompOverlayTypes aTypes);
 
@@ -352,6 +357,9 @@ class DCSurface {
   virtual DCSurfaceHandle* AsDCSurfaceHandle() { return nullptr; }
   virtual DCLayerSurface* AsDCLayerSurface() { return nullptr; }
   virtual DCSwapChain* AsDCSwapChain() { return nullptr; }
+  virtual DCLayerDCompositionTexture* AsDCLayerDCompositionTexture() {
+    return nullptr;
+  }
 
   bool IsUpdated(const wr::CompositorSurfaceTransform& aTransform,
                  const wr::DeviceIntRect& aClipRect,
@@ -427,6 +435,50 @@ class DCLayerSurface : public DCSurface {
                        size_t aNumDirtyRects) = 0;
 
   DCLayerSurface* AsDCLayerSurface() override { return this; }
+};
+
+class DCLayerDCompositionTexture : public DCLayerSurface {
+ public:
+  DCLayerDCompositionTexture(wr::DeviceIntSize aSize, bool aIsOpaque,
+                             DCLayerTree* aDCLayerTree);
+  virtual ~DCLayerDCompositionTexture();
+
+  bool Initialize() override;
+
+  void Bind(const wr::DeviceIntRect* aDirtyRects,
+            size_t aNumDirtyRects) override;
+  bool Resize(wr::DeviceIntSize aSize) override;
+  void Present(const wr::DeviceIntRect* aDirtyRects,
+               size_t aNumDirtyRects) override;
+
+  DCLayerDCompositionTexture* AsDCLayerDCompositionTexture() override {
+    return this;
+  }
+
+  const size_t mSwapChainBufferCount;
+
+ private:
+  struct TextureHolder {
+    TextureHolder(ID3D11Texture2D* aTexture,
+                  IDCompositionTexture* aDCompositionTexture,
+                  EGLSurface aEGLSurface);
+    TextureHolder() = default;
+
+    RefPtr<ID3D11Texture2D> mTexture;
+    RefPtr<IDCompositionTexture> mDCompositionTexture;
+    EGLSurface mEGLSurface;
+  };
+
+  bool AllocateTextures();
+  void DestroyTextures();
+  UniquePtr<TextureHolder> GetNextTexture();
+  void UpdateCurrentTexture();
+
+  wr::DeviceIntSize mSize;
+  std::deque<UniquePtr<TextureHolder>> mAvailableTextureHolders;
+
+  UniquePtr<TextureHolder> mCurrentTextureHolder;
+  UniquePtr<TextureHolder> mPresentingTextureHolder;
 };
 
 class DCSwapChain : public DCLayerSurface {

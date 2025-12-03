@@ -20,8 +20,11 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,12 +35,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.text.PlatformTextStyle
-import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.theme.surfaceDimVariant
 import mozilla.components.service.fxa.manager.AccountState
 import mozilla.components.service.fxa.manager.AccountState.Authenticated
 import mozilla.components.service.fxa.manager.AccountState.Authenticating
@@ -101,46 +103,48 @@ internal fun MozillaAccountMenuItem(
             }
             .wrapContentSize()
             .clip(shape = BUTTON_SHAPE)
-            .background(color = FirefoxTheme.colors.layer3)
+            .background(color = MaterialTheme.colorScheme.surfaceDimVariant)
             .height(IntrinsicSize.Min)
             .defaultMinSize(minHeight = BUTTON_HEIGHT)
             .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            .padding(
+                horizontal = FirefoxTheme.layout.space.dynamic200,
+                vertical = FirefoxTheme.layout.space.static100,
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        AvatarIcon(account, accountState, isPrivate)
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column(
-            modifier = Modifier.weight(1f),
-        ) {
-            Text(
-                text = label,
-                color = FirefoxTheme.colors.textPrimary,
-                overflow = TextOverflow.Ellipsis,
-                style = FirefoxTheme.typography.subtitle1.merge(
-                    platformStyle = PlatformTextStyle(includeFontPadding = true),
-                ),
-                maxLines = 2,
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+            AvatarIcon(
+                account = account,
+                accountState = accountState,
+                isPrivate = isPrivate,
             )
 
-            description?.let {
+            Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static200))
+
+            Column(
+                modifier = Modifier.weight(1f),
+            ) {
                 Text(
-                    text = description,
-                    color = if (accountState is AuthenticationProblem) {
-                        FirefoxTheme.colors.textCritical
-                    } else {
-                        FirefoxTheme.colors.textSecondary
-                    },
+                    text = label,
                     overflow = TextOverflow.Ellipsis,
+                    style = FirefoxTheme.typography.body1,
                     maxLines = 2,
-                    style = FirefoxTheme.typography.body2
-                        .merge(
-                            textDirection = TextDirection.Content,
-                            platformStyle = PlatformTextStyle(includeFontPadding = true),
-                        ),
                 )
+
+                description?.let {
+                    Text(
+                        text = description,
+                        color = if (accountState is AuthenticationProblem) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 2,
+                        style = FirefoxTheme.typography.caption,
+                    )
+                }
             }
         }
     }
@@ -151,7 +155,6 @@ private fun FallbackAvatarIcon() {
     Icon(
         painter = painterResource(id = iconsR.drawable.mozac_ic_avatar_circle_24),
         contentDescription = null,
-        tint = FirefoxTheme.colors.iconPrimary,
     )
 }
 
@@ -203,12 +206,12 @@ private fun AvatarIcon(
 }
 
 @Composable
-private fun MenuHeaderPreviewContent() {
+private fun MozillaAccountMenuItemPreviewContent() {
     Column(
         modifier = Modifier
-            .background(color = FirefoxTheme.colors.layer2)
-            .padding(all = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .background(color = MaterialTheme.colorScheme.surface)
+            .padding(all = FirefoxTheme.layout.space.static200),
+        verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static200),
     ) {
         MozillaAccountMenuItem(
             account = null,
@@ -270,16 +273,16 @@ private fun MenuHeaderPreviewContent() {
 
 @PreviewLightDark
 @Composable
-private fun MenuHeaderPreview() {
+private fun MozillaAccountMenuItemPreview() {
     FirefoxTheme {
-        MenuHeaderPreviewContent()
+        MozillaAccountMenuItemPreviewContent()
     }
 }
 
 @Preview
 @Composable
-private fun MenuHeaderPrivatePreview() {
+private fun MozillaAccountMenuItemPrivatePreview() {
     FirefoxTheme(theme = Theme.Private) {
-        MenuHeaderPreviewContent()
+        MozillaAccountMenuItemPreviewContent()
     }
 }

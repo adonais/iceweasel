@@ -14,7 +14,6 @@
 #include "base/task.h"
 #include "mozIGeckoMediaPluginService.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Unused.h"
 
 namespace mozilla::gmp {
 
@@ -65,7 +64,7 @@ void GMPContentParent::VideoDecoderDestroyed(GMPVideoDecoderParent* aDecoder) {
   MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
 
   // If the constructor fails, we'll get called before it's added
-  Unused << NS_WARN_IF(!mVideoDecoders.RemoveElement(aDecoder));
+  (void)NS_WARN_IF(!mVideoDecoders.RemoveElement(aDecoder));
   CloseIfUnused();
 }
 
@@ -75,7 +74,7 @@ void GMPContentParent::VideoEncoderDestroyed(GMPVideoEncoderParent* aEncoder) {
   MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
 
   // If the constructor fails, we'll get called before it's added
-  Unused << NS_WARN_IF(!mVideoEncoders.RemoveElement(aEncoder));
+  (void)NS_WARN_IF(!mVideoEncoders.RemoveElement(aEncoder));
   CloseIfUnused();
 }
 

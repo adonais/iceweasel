@@ -10,7 +10,6 @@
 
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WritingModes.h"
 #include "nsLayoutUtils.h"
 #include "nsLineLayout.h"

@@ -7,7 +7,6 @@
 #ifndef mozilla__CryptoTask_h
 #define mozilla__CryptoTask_h
 
-#include "mozilla/Attributes.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {

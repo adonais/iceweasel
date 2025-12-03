@@ -53,22 +53,17 @@ void AndroidHardwareBufferApi::Shutdown() { sInstance = nullptr; }
 AndroidHardwareBufferApi::AndroidHardwareBufferApi() {}
 
 bool AndroidHardwareBufferApi::Load() {
-  if (__builtin_available(android 26, *)) {
-    mAHardwareBuffer_allocate = AHardwareBuffer_allocate;  // API 26
-    mAHardwareBuffer_acquire = AHardwareBuffer_acquire;    // API 26
-    mAHardwareBuffer_release = AHardwareBuffer_release;    // API 26
-    mAHardwareBuffer_describe = AHardwareBuffer_describe;  // API 26
-    mAHardwareBuffer_lock = AHardwareBuffer_lock;          // API 26
-    mAHardwareBuffer_unlock = AHardwareBuffer_unlock;      // API 26
-    mAHardwareBuffer_sendHandleToUnixSocket =
-        AHardwareBuffer_sendHandleToUnixSocket;  // API 26
-    mAHardwareBuffer_recvHandleFromUnixSocket =
-        AHardwareBuffer_recvHandleFromUnixSocket;  // API 26
-    return true;
-  } else {
-    gfxCriticalNote << "Failed to load AHardwareBuffer";
-    return false;
-  }
+  mAHardwareBuffer_allocate = AHardwareBuffer_allocate;
+  mAHardwareBuffer_acquire = AHardwareBuffer_acquire;
+  mAHardwareBuffer_release = AHardwareBuffer_release;
+  mAHardwareBuffer_describe = AHardwareBuffer_describe;
+  mAHardwareBuffer_lock = AHardwareBuffer_lock;
+  mAHardwareBuffer_unlock = AHardwareBuffer_unlock;
+  mAHardwareBuffer_sendHandleToUnixSocket =
+      AHardwareBuffer_sendHandleToUnixSocket;
+  mAHardwareBuffer_recvHandleFromUnixSocket =
+      AHardwareBuffer_recvHandleFromUnixSocket;
+  return true;
 }
 
 void AndroidHardwareBufferApi::Allocate(const AHardwareBuffer_Desc* aDesc,

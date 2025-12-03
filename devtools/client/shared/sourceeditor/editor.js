@@ -85,7 +85,6 @@ const CM_MAPPING = [
   "clearHistory",
   "defaultCharWidth",
   "extendSelection",
-  "focus",
   "getCursor",
   "getLine",
   "getScrollInfo",
@@ -755,26 +754,16 @@ class Editor extends EventEmitter {
       lezerHighlight,
     } = this.#CodeMirror6;
 
-    const tabSizeCompartment = new Compartment();
-    const indentCompartment = new Compartment();
-    const lineWrapCompartment = new Compartment();
-    const lineNumberCompartment = new Compartment();
-    const lineNumberMarkersCompartment = new Compartment();
-    const searchHighlightCompartment = new Compartment();
-    const domEventHandlersCompartment = new Compartment();
-    const foldGutterCompartment = new Compartment();
-    const languageCompartment = new Compartment();
-
     this.#compartments = {
-      tabSizeCompartment,
-      indentCompartment,
-      lineWrapCompartment,
-      lineNumberCompartment,
-      lineNumberMarkersCompartment,
-      searchHighlightCompartment,
-      domEventHandlersCompartment,
-      foldGutterCompartment,
-      languageCompartment,
+      tabSizeCompartment: new Compartment(),
+      indentCompartment: new Compartment(),
+      lineWrapCompartment: new Compartment(),
+      lineNumberCompartment: new Compartment(),
+      lineNumberMarkersCompartment: new Compartment(),
+      searchHighlightCompartment: new Compartment(),
+      domEventHandlersCompartment: new Compartment(),
+      foldGutterCompartment: new Compartment(),
+      languageCompartment: new Compartment(),
     };
 
     const { lineContentMarkerEffect, lineContentMarkerExtension } =
@@ -803,17 +792,21 @@ class Editor extends EventEmitter {
 
     const extensions = [
       bracketMatching(),
-      indentCompartment.of(indentUnit.of(indentStr)),
-      tabSizeCompartment.of(EditorState.tabSize.of(this.config.tabSize)),
-      lineWrapCompartment.of(
+      this.#compartments.indentCompartment.of(indentUnit.of(indentStr)),
+      this.#compartments.tabSizeCompartment.of(
+        EditorState.tabSize.of(this.config.tabSize)
+      ),
+      this.#compartments.lineWrapCompartment.of(
         this.config.lineWrapping ? EditorView.lineWrapping : []
       ),
       EditorState.readOnly.of(this.config.readOnly),
-      lineNumberCompartment.of(this.config.lineNumbers ? lineNumbers() : []),
+      this.#compartments.lineNumberCompartment.of(
+        this.config.lineNumbers ? lineNumbers() : []
+      ),
       codeFolding({
         placeholderText: "↔",
       }),
-      foldGutterCompartment.of([]),
+      this.#compartments.foldGutterCompartment.of([]),
       syntaxHighlighting(lezerHighlight.classHighlighter),
       EditorView.updateListener.of(v => {
         if (!cm.isDocumentLoadComplete) {
@@ -837,14 +830,16 @@ class Editor extends EventEmitter {
           this.#updateListener(v);
         }
       }),
-      domEventHandlersCompartment.of(
+      this.#compartments.domEventHandlersCompartment.of(
         EditorView.domEventHandlers(this.#createEventHandlers())
       ),
-      lineNumberMarkersCompartment.of([]),
+      this.#compartments.lineNumberMarkersCompartment.of([]),
       lineContentMarkerExtension,
       positionContentMarkerExtension,
-      searchHighlightCompartment.of(this.#searchHighlighterExtension([])),
-      languageCompartment.of(languageMode),
+      this.#compartments.searchHighlightCompartment.of(
+        this.#searchHighlighterExtension([])
+      ),
+      this.#compartments.languageCompartment.of(languageMode),
       highlightSelectionMatches(),
       // keep last so other extension take precedence
       codemirror.minimalSetup,
@@ -2444,7 +2439,7 @@ class Editor extends EventEmitter {
    *                      },
    *                      ...
    *                    }
-   **/
+   */
   async getBindingReferences(location, scope) {
     const cm = editors.get(this);
     const {
@@ -2537,10 +2532,14 @@ class Editor extends EventEmitter {
    * the 'value' argument.
    *
    * @param {String} value: The text to replace the editor content
-   * @param {String} documentId: Optional unique id represeting the specific document which is source of the text.
+   * @param {Object} options
+   * @param {String} options.documentId
+   *                 Optional unique id represeting the specific document which is source of the text.
    *                 Will be null for loading and error messages.
+   * @param {Boolean} options.saveTransactionToHistory
+   *                 This determines if the transaction for this specific text change should be added to the undo/redo history.
    */
-  async setText(value, documentId) {
+  async setText(value, { documentId, saveTransactionToHistory = true } = {}) {
     const cm = editors.get(this);
     const isWasm = typeof value !== "string" && "binary" in value;
 
@@ -2586,11 +2585,13 @@ class Editor extends EventEmitter {
 
       const {
         codemirrorView: { EditorView, lineNumbers },
+        codemirrorState: { Transaction },
       } = this.#CodeMirror6;
 
       await cm.dispatch({
         changes: { from: 0, to: cm.state.doc.length, insert: value },
         selection: { anchor: 0 },
+        annotations: [Transaction.addToHistory.of(saveTransactionToHistory)],
       });
 
       const effects = [];

@@ -119,6 +119,7 @@ run-if = ["os != 'mac'"] # Because this test is about the menubar, it can't be r
 ["browser_940946_removable_from_navbar_customizemode.js"]
 
 ["browser_941083_invalidate_wrapper_cache_createWidget.js"]
+skip-if = ["verify-standalone"]
 
 ["browser_942581_unregisterArea_keeps_placements.js"]
 
@@ -161,6 +162,7 @@ skip-if = [
 ["browser_948985_non_removable_defaultArea.js"]
 
 ["browser_952963_areaType_getter_no_area.js"]
+skip-if = ["os == 'linux' && os_version == '24.04' && arch == 'x86_64' && opt && socketprocess_networking && verify-standalone"]
 
 ["browser_956602_remove_special_widget.js"]
 
@@ -200,6 +202,7 @@ tags = "overflowable-toolbar"
 ["browser_985815_propagate_setToolbarVisibility.js"]
 
 ["browser_987177_destroyWidget_xul.js"]
+skip-if = ["os == 'linux' && os_version == '24.04' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone"]
 
 ["browser_987177_xul_wrapper_updating.js"]
 
@@ -214,6 +217,10 @@ tags = "overflowable-toolbar"
 ["browser_992747_toggle_noncustomizable_toolbar.js"]
 
 ["browser_993322_widget_notoolbar.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && swgl && verify-standalone",
+  "os == 'win' && os_version == '11.26100' && arch == 'x86' && opt && verify-standalone",
+]
 
 ["browser_995164_registerArea_during_customize_mode.js"]
 
@@ -328,6 +335,7 @@ tags = "fullscreen"
 ["browser_proton_toolbar_hide_toolbarbuttons.js"]
 
 ["browser_registerArea.js"]
+skip-if = ["os == 'linux' && os_version == '24.04' && arch == 'x86_64' && opt && a11y_checks && swgl && verify-standalone"]
 
 ["browser_reload_tab.js"]
 

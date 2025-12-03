@@ -53,7 +53,7 @@ num-traits = { version = "0.2", features = ["i128", "libm"], optional = true }
 object = { version = "0.36", default-features = false, features = ["read", "std"], optional = true }
 once_cell = { version = "1", optional = true }
 percent-encoding = { version = "2", optional = true }
-phf = { version = "0.11", features = ["macros", "phf_macros"], optional = true }
+phf = { version = "0.13", features = ["macros", "phf_macros"], optional = true }
 regex = { version = "1", optional = true }
 rkv = { version = "0.20", default-features = false, features = ["no-canonicalize-path"], optional = true }
 scroll = { version = "0.12", optional = true }

@@ -23,7 +23,6 @@
 #include "GLContextTypes.h"
 #include "GLDefs.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/UniquePtr.h"

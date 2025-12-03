@@ -7,14 +7,11 @@ loader: gecko_taskgraph.loader.test:loader
 kind-dependencies:
     - build
     - build-signing
-    - signing-apk
     - repackage-signing-shippable-l10n-msix
     - repackage-signing-msix
-    - repackage-signing
     - repackage
     - fetch
     - toolchain
-    - build-extensions
 
 transforms:
     - gecko_taskgraph.transforms.test:transforms
@@ -40,6 +37,7 @@ tasks-from:
     - xpcshell.yml
 
 task-defaults:
+    run-on-repo-type: [hg]
     attributes:
         retrigger: true
     use-python: default

@@ -213,7 +213,7 @@ void OnlineSpeechRecognitionService::EncoderInitialized() {
   rv = mWriter->GetContainerData(&mEncodedData, ContainerWriter::GET_HEADER);
   MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
 
-  Unused << rv;
+  (void)rv;
 }
 
 void OnlineSpeechRecognitionService::EncoderError() {
@@ -428,7 +428,7 @@ OnlineSpeechRecognitionService::SoundEnd() {
         }
       }));
   MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-  Unused << rv;
+  (void)rv;
 
   mEncodeTaskQueue = nullptr;
 

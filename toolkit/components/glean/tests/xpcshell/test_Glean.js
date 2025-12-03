@@ -816,12 +816,12 @@ add_task(async function test_fog_labeled_custom_distribution_works() {
     Glean.testOnly.mabelsCustomLabelLengths.monospace.testGetValue();
   Assert.equal(2, monospace.count);
   Assert.equal(43, monospace.sum);
-  Assert.deepEqual({ 0: 0, 1: 2, 268435456: 0 }, monospace.values);
+  Assert.deepEqual({ 1: 2 }, monospace.values);
   let sanserif =
     Glean.testOnly.mabelsCustomLabelLengths.sanserif.testGetValue();
   Assert.equal(1, sanserif.count);
   Assert.equal(13, sanserif.sum);
-  Assert.deepEqual({ 0: 0, 1: 1, 268435456: 0 }, sanserif.values);
+  Assert.deepEqual({ 1: 1 }, sanserif.values);
   // What about invalid/__other__?
   Assert.equal(
     undefined,

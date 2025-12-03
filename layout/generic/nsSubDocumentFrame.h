@@ -8,7 +8,6 @@
 #define NSSUBDOCUMENTFRAME_H_
 
 #include "Units.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/gfx/Matrix.h"
 #include "nsAtomicContainerFrame.h"
 #include "nsDisplayList.h"

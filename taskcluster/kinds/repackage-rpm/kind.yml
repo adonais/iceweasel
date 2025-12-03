@@ -21,6 +21,9 @@ kind-dependencies:
     - shippable-l10n-signing
     - toolchain
 
+task-defaults:
+    run-on-repo-type: [hg]
+
 only-for-build-platforms:
     - linux64-shippable/opt
     - linux64-devedition/opt

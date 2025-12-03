@@ -124,7 +124,9 @@ impl Counter for LabeledCounterMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<i32> for LabeledCounterMetric {
+impl glean::TestGetValue for LabeledCounterMetric {
+    type Output = i32;
+
     /// **Test-only API.**
     ///
     /// Get the currently stored value as an integer.

@@ -13,7 +13,7 @@
 edition = "2021"
 rust-version = "1.82"
 name = "glean"
-version = "65.2.3"
+version = "66.1.2"
 authors = [
     "Jan-Erik Rediger <jrediger@mozilla.com>",
     "The Glean Team <glean-team@mozilla.com>",
@@ -64,6 +64,10 @@ name = "health_ping"
 path = "tests/health_ping.rs"
 
 [[test]]
+name = "health_ping_file_overwrite"
+path = "tests/health_ping_file_overwrite.rs"
+
+[[test]]
 name = "init_fails"
 path = "tests/init_fails.rs"
 
@@ -104,6 +108,10 @@ name = "schema"
 path = "tests/schema.rs"
 
 [[test]]
+name = "signaling_done"
+path = "tests/signaling_done.rs"
+
+[[test]]
 name = "simple"
 path = "tests/simple.rs"
 
@@ -127,7 +135,7 @@ path = "tests/uploader_capabilities.rs"
 version = "0.5"
 
 [dependencies.glean-core]
-version = "65.2.3"
+version = "66.1.2"
 
 [dependencies.inherent]
 version = "1"

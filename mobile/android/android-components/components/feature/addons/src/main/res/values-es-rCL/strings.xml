@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this file,
+  You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
   <string name="mozac_feature_addons_permissions_one_site_description">Acceder a tus datos para %1$s</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
@@ -25,7 +32,7 @@
   -->
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Acceder a tus datos en otros dominios</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
-  <string name="mozac_feature_addons_permissions_all_domain_count_description" tools:ignore="PluralsCandidate">Acceder a tus datos para sitios en %1$d dominios</string>
+  <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">Acceder a tus datos para sitios en %1$d dominios</string>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d de %3$d</string>
   <!-- Description for the "privacy" WebExtensions API permission. -->
@@ -367,7 +374,9 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">%1$s no se pudo instalar porque solo puede instalarlo una organización que utilice políticas empresariales, lo cual no es compatible con esta plataforma.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1">%1$s viola las políticas de Mozilla y no puede ser instalado en %2$s.</string>
+  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s viola las políticas de Mozilla y no puede ser instalado en %2$s.</string>
+  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
+  <string name="mozac_feature_addons_soft_blocked_2">%1$s está restringido y no se puede instalar en %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Fallo la activación de %1$s</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -413,9 +422,13 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">Esta extensión está bloqueada por violar las políticas de Mozilla y ha sido deshabilitada.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1">Esta extensión está restringida por violar las políticas de Mozilla y ha sido deshabilitada. La puedes habilitar, pero podría ser riesgoso.</string>
+  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Esta extensión está restringida por violar las políticas de Mozilla y ha sido deshabilitada. La puedes habilitar, pero podría ser riesgoso.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
+  <string name="mozac_feature_addons_status_softblocked_2">Esta extensión está restringida y ha sido desactivada. Puedes activarla, pero esto podría ser arriesgado.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled">Esta extensión viola las políticas de Mozilla. Usarla podría ser riesgoso.</string>
+  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Esta extensión viola las políticas de Mozilla. Usarla podría ser riesgoso.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
+  <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Esta extensión está restringida. Su uso puede ser arriesgado.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">%1$s no pudo ser verificado como seguro y ha sido desactivado.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

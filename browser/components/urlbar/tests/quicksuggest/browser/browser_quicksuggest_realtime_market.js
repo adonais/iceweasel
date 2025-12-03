@@ -98,7 +98,7 @@ add_setup(async function () {
       ["market.featureGate", true],
       ["suggest.market", true],
       ["suggest.quickactions", false],
-      ["suggest.quicksuggest.nonsponsored", true],
+      ["suggest.quicksuggest.all", true],
     ],
   });
 });

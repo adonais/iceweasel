@@ -37,6 +37,26 @@ try-browsertime:
             --browsertime-node ${MOZ_FETCHES_DIR}/node/node.exe
             --output $MOZ_FETCHES_DIR/../artifacts
 
+browsertime-sample:
+    description: Run the sample browsertime sample test in CI
+    treeherder:
+        symbol: perftest(bt-sample)
+        tier: 2
+    attributes:
+        cron: false
+    run-on-projects: [mozilla-central]
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3.exe python/mozperftest/mozperftest/runner.py
+            --browsertime-binary ${MOZ_FETCHES_DIR}/firefox/firefox.exe
+            --flavor desktop-browser
+            --browsertime-geckodriver ${MOZ_FETCHES_DIR}/geckodriver.exe
+            --browsertime-node ${MOZ_FETCHES_DIR}/node/node.exe
+            --output $MOZ_FETCHES_DIR/../artifacts
+            python/mozperftest/mozperftest/tests/data/samples/perftest_example.js
+
 # We'd like not to have to specify each test separately here.  See bug 1865852.
 service-worker:
     description: Run service worker tests

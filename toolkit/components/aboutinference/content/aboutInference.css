@@ -57,7 +57,7 @@ button:hover {
 caption {
   caption-side: top;
   padding: 10px;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 table {
@@ -91,7 +91,7 @@ textarea {
 
 legend {
   font-size: 1.5em;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   padding: 5px;
 }
 .form-container {
@@ -105,7 +105,7 @@ legend {
 
 .form-container label {
   display: inline-block;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .form-container input[type="text"],
@@ -215,6 +215,6 @@ legend {
 #modelFiles table caption {
   caption-side: bottom;
   text-align: center;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   margin-top: 1px;
 }

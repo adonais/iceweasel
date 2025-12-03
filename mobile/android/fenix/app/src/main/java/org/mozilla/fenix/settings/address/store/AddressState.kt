@@ -5,12 +5,12 @@
 package org.mozilla.fenix.settings.address.store
 
 import mozilla.components.browser.state.search.RegionState
+import mozilla.components.concept.engine.autofill.AddressStructure
 import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.UpdatableAddressFields
 import mozilla.components.lib.state.State
-import org.mozilla.fenix.settings.address.AddressUtils
-import org.mozilla.fenix.settings.address.Country
-import org.mozilla.fenix.settings.address.DEFAULT_COUNTRY
+
+private const val DEFAULT_COUNTRY = "US"
 
 /**
  * Represents the state of the deletion dialog.
@@ -28,20 +28,44 @@ sealed class DialogState {
 }
 
 /**
+ * Represents the various states of loading an [AddressStructure].
+ */
+sealed class AddressStructureState {
+    /**
+     * Provides convenient access to the underlying [AddressStructure]
+     */
+    abstract val structure: AddressStructure
+
+    /**
+     * The initial state before a structure is loaded
+     */
+    data object Inert : AddressStructureState() {
+        /**
+         * Provides a default address structure of an empty list of fields.
+         */
+        override val structure: AddressStructure
+            get() = AddressStructure(listOf())
+    }
+
+    /**
+     * Represents the state of a loaded [AddressStructure].
+     */
+    data class Loaded(override val structure: AddressStructure) : AddressStructureState()
+}
+
+/**
  * Represents the state of the Bookmarks list screen and its various subscreens.
  *
  * @property guidToUpdate guid of the address we are editing.
  * @property address updatable properties of the address.
+ * @property structureState the address structure used render the address edtior.
  * @property deleteDialog state for the dialog that is presented when deleting an address.
- * @property region the region used to calculate the default country.
- * @property availableCountries a map containing the available countries.
  */
 data class AddressState(
     val guidToUpdate: String?,
     val address: UpdatableAddressFields,
+    val structureState: AddressStructureState = AddressStructureState.Inert,
     val deleteDialog: DialogState = DialogState.Inert,
-    val region: RegionState? = RegionState.Default,
-    val availableCountries: Map<String, Country> = AddressUtils.countries,
 ) : State {
     /**
      * Static functions for [AddressState]
@@ -55,12 +79,18 @@ data class AddressState(
          * @param address [Address] for creating the [UpdatableAddressFields].
          */
         fun initial(
-            region: RegionState? = RegionState.Default,
+            region: RegionState? = null,
             address: Address? = null,
             ): AddressState {
+            // We want to use the country unless it is empty, we fall back to the users region unless
+            // it hasn't loaded yet meaning that we will have the Default value of XX falling back to
+            // DEFAULT_COUNTRY.
+            val countryCode = address?.country?.takeUnless { it.isEmpty() }
+                ?: (region?.takeUnless { it == RegionState.Default })?.home
+                ?: DEFAULT_COUNTRY
+
             return AddressState(
                 guidToUpdate = address?.guid,
-                region = region,
                 address = UpdatableAddressFields(
                     name = address?.name ?: "",
                     organization = address?.organization ?: "",
@@ -69,7 +99,7 @@ data class AddressState(
                     addressLevel2 = address?.addressLevel2 ?: "",
                     addressLevel1 = address?.addressLevel1 ?: "",
                     postalCode = address?.postalCode ?: "",
-                    country = address?.country ?: "",
+                    country = countryCode,
                     tel = address?.tel ?: "",
                     email = address?.email ?: "",
                 ),
@@ -77,9 +107,6 @@ data class AddressState(
         }
     }
 }
-
-internal val AddressState.selectedCountry: Country?
-    get() = availableCountries[address.country.ifBlank { DEFAULT_COUNTRY }]
 
 internal val AddressState.isEditing: Boolean
     get() = guidToUpdate != null

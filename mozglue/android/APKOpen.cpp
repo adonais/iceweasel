@@ -135,7 +135,7 @@ void abortThroughJava(const char* msg) {
   env->PopLocalFrame(nullptr);
 }
 
-MOZ_RUNINIT Bootstrap::UniquePtr gBootstrap;
+MOZ_CONSTINIT Bootstrap::UniquePtr gBootstrap;
 #ifndef MOZ_FOLD_LIBS
 static void* sqlite_handle = nullptr;
 static void* nspr_handle = nullptr;
@@ -190,8 +190,7 @@ static LoadGeckoLibsResult loadGeckoLibs() {
   getrusage(RUSAGE_SELF, &usage1);
 
   static const char* libxul = getenv("MOZ_ANDROID_LIBDIR_OVERRIDE");
-  MOZ_TRY_VAR(
-      gBootstrap,
+  gBootstrap = MOZ_TRY(
       GetBootstrap(libxul ? libxul : getUnpackedLibraryName("libxul.so").get(),
                    LibLoadingStrategy::ReadAhead));
 

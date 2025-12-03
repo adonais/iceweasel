@@ -7,7 +7,6 @@
 #ifndef nsMathMLmencloseFrame_h___
 #define nsMathMLmencloseFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "mozilla/EnumSet.h"
 #include "nsMathMLChar.h"
 #include "nsMathMLContainerFrame.h"

@@ -20,7 +20,6 @@
 #  include "nsDebug.h"
 #endif
 #include "2D.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "Point.h"
 #include "BaseRect.h"
@@ -92,15 +91,12 @@ enum class LogReason : int {
   D3D11FinalizeFrame,
   D3D10SyncLock,
   D3D11SyncLock,
-  D2D1NoWriteMap,
   JobStatusError,
   FilterInputError,
   FilterInputData,  // 10
   FilterInputRect,
   FilterInputSet,
   FilterInputFormat,
-  FilterNodeD2D1Target,
-  FilterNodeD2D1Backend,
   SourceSurfaceIncompatible,
   GlyphAllocFailedCairo,
   GlyphAllocFailedCG,
@@ -633,12 +629,6 @@ class Log final {
         case SurfaceType::DATA:
           mMessage << "SurfaceType::DATA";
           break;
-        case SurfaceType::D2D1_BITMAP:
-          mMessage << "SurfaceType::D2D1_BITMAP";
-          break;
-        case SurfaceType::D2D1_DRAWTARGET:
-          mMessage << "SurfaceType::D2D1_DRAWTARGET";
-          break;
         case SurfaceType::CAIRO:
           mMessage << "SurfaceType::CAIRO";
           break;
@@ -653,9 +643,6 @@ class Log final {
           break;
         case SurfaceType::SKIA:
           mMessage << "SurfaceType::SKIA";
-          break;
-        case SurfaceType::D2D1_1_IMAGE:
-          mMessage << "SurfaceType::D2D1_1_IMAGE";
           break;
         case SurfaceType::RECORDING:
           mMessage << "SurfaceType::RECORDING";

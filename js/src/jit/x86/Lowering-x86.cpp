@@ -226,6 +226,40 @@ void LIRGeneratorX86::lowerForMulInt64(LMulI64* ins, MMul* mir,
                                     LAllocation(AnyRegister(eax))));
 }
 
+template <class LInstr>
+void LIRGeneratorX86::lowerForShiftInt64(LInstr* ins, MDefinition* mir,
+                                         MDefinition* lhs, MDefinition* rhs) {
+  LAllocation rhsAlloc;
+  if (rhs->isConstant()) {
+    rhsAlloc = useOrConstantAtStart(rhs);
+  } else {
+    // The operands are int64, but we only care about the lower 32 bits of the
+    // RHS. The code below will load that part in ecx and will discard the upper
+    // half.
+    rhsAlloc = useLowWordFixed(rhs, ecx);
+  }
+
+  if constexpr (std::is_same_v<LInstr, LShiftI64>) {
+    ins->setLhs(useInt64RegisterAtStart(lhs));
+    ins->setRhs(rhsAlloc);
+    defineInt64ReuseInput(ins, mir, LShiftI64::LhsIndex);
+  } else {
+    ins->setInput(useInt64RegisterAtStart(lhs));
+    ins->setCount(rhsAlloc);
+    ins->setTemp0(temp());
+    defineInt64ReuseInput(ins, mir, LRotateI64::InputIndex);
+  }
+}
+
+template void LIRGeneratorX86::lowerForShiftInt64(LShiftI64* ins,
+                                                  MDefinition* mir,
+                                                  MDefinition* lhs,
+                                                  MDefinition* rhs);
+template void LIRGeneratorX86::lowerForShiftInt64(LRotateI64* ins,
+                                                  MDefinition* mir,
+                                                  MDefinition* lhs,
+                                                  MDefinition* rhs);
+
 void LIRGenerator::visitCompareExchangeTypedArrayElement(
     MCompareExchangeTypedArrayElement* ins) {
   MOZ_ASSERT(ins->elements()->type() == MIRType::Elements);

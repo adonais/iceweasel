@@ -17,7 +17,6 @@
 #include "GtkCompositorWidget.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/Tools.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/WidgetUtils.h"
 

@@ -56,7 +56,7 @@ button:disabled {
 }
 
 #errorWhatToDoTitle {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   margin-top: 2em;
 }
 
@@ -144,13 +144,13 @@ button:disabled {
 }
 
 #errorLongDesc strong {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 #errorShortDesc {
   font-size: 1.15em;
   line-height: 1.3;
-  font-weight: 400;
+  font-weight: normal;
   margin-top: 10px;
 }
 

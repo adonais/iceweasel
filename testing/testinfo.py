@@ -660,7 +660,12 @@ class TestInfoReport(TestInfo):
             filter_values = filter_values.split(",")
         else:
             filter_values = []
-        display_keys = (filter_keys or []) + ["skip-if", "fail-if", "fails-if"]
+        display_keys = (filter_keys or []) + [
+            "run-if",
+            "skip-if",
+            "fail-if",
+            "fails-if",
+        ]
         display_keys = set(display_keys)
         ifd = self.get_intermittent_failure_data(start, end)
 

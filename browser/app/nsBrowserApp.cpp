@@ -61,7 +61,6 @@
 
 #ifdef MOZ_LINUX_32_SSE2_STARTUP_ERROR
 #  include <cpuid.h>
-#  include "mozilla/Unused.h"
 
 static bool IsSSE2Available() {
   // The rest of the app has been compiled to assume that SSE2 is present
@@ -92,7 +91,7 @@ __attribute__((constructor)) static void SSE2Check() {
   // Using write() in order to avoid jemalloc-based buffering. Ignoring return
   // values, since there isn't much we could do on failure and there is no
   // point in trying to recover from errors.
-  MOZ_UNUSED(write(STDERR_FILENO, sSSE2Message, std::size(sSSE2Message) - 1));
+  (void)write(STDERR_FILENO, sSSE2Message, std::size(sSSE2Message) - 1);
   // _exit() instead of exit() to avoid running the usual "at exit" code.
   _exit(255);
 }
@@ -106,6 +105,10 @@ using namespace mozilla;
 
 #define kDesktopFolder "browser"
 
+#ifdef MOZ_BACKGROUNDTASKS
+static bool gIsBackgroundTask = false;
+#endif
+
 static MOZ_FORMAT_PRINTF(1, 2) void Output(const char* fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
@@ -113,36 +116,58 @@ static MOZ_FORMAT_PRINTF(1, 2) void Output(const char* fmt, ...) {
 #ifndef XP_WIN
   vfprintf(stderr, fmt, ap);
 #else
+  bool showMessageBox = true;
+
   char msg[2048];
   vsnprintf_s(msg, _countof(msg), _TRUNCATE, fmt, ap);
 
   wchar_t wide_msg[2048];
   MultiByteToWideChar(CP_UTF8, 0, msg, -1, wide_msg, _countof(wide_msg));
+
 #  if MOZ_WINCONSOLE
-  fwprintf_s(stderr, wide_msg);
-#  else
-  // Linking user32 at load-time interferes with the DLL blocklist (bug 932100).
-  // This is a rare codepath, so we can load user32 at run-time instead.
-  HMODULE user32 = LoadLibraryW(L"user32.dll");
-  if (user32) {
-    decltype(MessageBoxW)* messageBoxW =
-        (decltype(MessageBoxW)*)GetProcAddress(user32, "MessageBoxW");
-    if (messageBoxW) {
-      messageBoxW(nullptr, wide_msg, L"Firefox",
-                  MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
-    }
-    FreeLibrary(user32);
-  }
+  showMessageBox = false;
+#  elif defined(MOZ_BACKGROUNDTASKS)
+  // Only show a UI if this isn't a background tasks.
+  showMessageBox = !gIsBackgroundTask;
 #  endif
+
+  if (showMessageBox) {
+    // Linking user32 at load-time interferes with the DLL blocklist (bug
+    // 932100). This is a rare codepath, so we can load user32 at run-time
+    // instead.
+
+    // If we fail to display the message box, we set showMessageBox to false to
+    // fall back to printing to stderr below.
+    HMODULE user32 = LoadLibraryW(L"user32.dll");
+    if (user32) {
+      decltype(MessageBoxW)* messageBoxW =
+          (decltype(MessageBoxW)*)GetProcAddress(user32, "MessageBoxW");
+      if (messageBoxW) {
+        messageBoxW(nullptr, wide_msg, L"Firefox",
+                    MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
+      } else {
+        showMessageBox = false;
+      }
+      FreeLibrary(user32);
+    } else {
+      showMessageBox = false;
+    }
+  }
+
+  if (!showMessageBox) {
+    fwprintf_s(stderr, wide_msg);
+  }
 #endif
 
   va_end(ap);
 }
 
 /**
- * Return true if |arg| matches the given argument name.
+ * Return true if |arg| is a flag with the given string.
+ *
+ * A flag starts with one or two `-` characters, or a `/` character on windows.
  */
-static bool IsArg(const char* arg, const char* s) {
+static bool IsFlag(const char* arg, const char* s) {
   if (*arg == '-') {
     if (*++arg == '-') ++arg;
     return !strcasecmp(arg, s);
@@ -155,13 +180,27 @@ static bool IsArg(const char* arg, const char* s) {
   return false;
 }
 
-MOZ_RUNINIT Bootstrap::UniquePtr gBootstrap;
+/**
+ * Return true if any arguments are flags with the given string.
+ *
+ * A flag is defined per `IsFlag`.
+ */
+static bool HasFlag(int argc, char* argv[], const char* s) {
+  for (int i = 1; i < argc; i++) {
+    if (IsFlag(argv[i], s)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+MOZ_CONSTINIT Bootstrap::UniquePtr gBootstrap;
 
 static int do_main(int argc, char* argv[], char* envp[]) {
   // Allow firefox.exe to launch XULRunner apps via -app <application.ini>
   // Note that -app must be the *first* argument.
   const char* appDataFile = getenv("XUL_APP_FILE");
-  if ((!appDataFile || !*appDataFile) && (argc > 1 && IsArg(argv[1], "app"))) {
+  if ((!appDataFile || !*appDataFile) && (argc > 1 && IsFlag(argv[1], "app"))) {
     if (argc == 2) {
       Output("Incorrect number of arguments passed to -app");
       return 255;
@@ -177,7 +216,7 @@ static int do_main(int argc, char* argv[], char* envp[]) {
     argv[2] = argv[0];
     argv += 2;
     argc -= 2;
-  } else if (argc > 1 && IsArg(argv[1], "xpcshell")) {
+  } else if (argc > 1 && IsFlag(argv[1], "xpcshell")) {
     for (int i = 1; i < argc; i++) {
       argv[i] = argv[i + 1];
     }
@@ -270,7 +309,7 @@ static void ReserveDefaultFileDescriptors() {
   // reused for the X server display connection.
   int fd = open("/dev/null", O_RDONLY);
   for (int i = 0; i < 2; i++) {
-    mozilla::Unused << dup(fd);
+    [[maybe_unused]] int r = dup(fd);
   }
 }
 #endif
@@ -300,8 +339,14 @@ int main(int argc, char* argv[], char* envp[]) {
   ReserveDefaultFileDescriptors();
 #endif
 
+#ifdef MOZ_BACKGROUNDTASKS
+  // Check whether this is a background task very early, as the `Output`
+  // function uses this information.
+  gIsBackgroundTask = HasFlag(argc, argv, "backgroundtask");
+#endif
+
 #ifdef MOZ_BROWSER_CAN_BE_CONTENTPROC
-  if (argc > 1 && IsArg(argv[1], "contentproc")) {
+  if (argc > 1 && IsFlag(argv[1], "contentproc")) {
     // Set the process type and gecko child id.
     SetGeckoProcessType(argv[--argc]);
     SetGeckoChildID(argv[--argc]);
@@ -437,7 +482,7 @@ int main(int argc, char* argv[], char* envp[]) {
 // We will likely only ever support this as a command line argument on Windows
 // and OSX, so we're ifdefing here just to not create any expectations.
 #if defined(XP_WIN) || defined(XP_MACOSX)
-  if (argc > 1 && IsArg(argv[1], "silentmode")) {
+  if (argc > 1 && IsFlag(argv[1], "silentmode")) {
     ::putenv(const_cast<char*>("MOZ_APP_SILENT_START=1"));
 #  if defined(XP_WIN)
     // On windows We also want to set a separate variable, which we want to

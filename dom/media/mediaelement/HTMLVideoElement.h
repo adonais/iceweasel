@@ -9,7 +9,6 @@
 
 #include "ImageTypes.h"
 #include "Units.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/dom/HTMLMediaElement.h"

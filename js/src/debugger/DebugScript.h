@@ -150,7 +150,8 @@ class DebugScriptObject : public NativeObject {
 };
 
 // A weak map from JSScripts to DebugScriptObjects.
-class DebugScriptMap : public WeakMap<JSScript*, DebugScriptObject*> {
+class DebugScriptMap
+    : public WeakMap<JSScript*, DebugScriptObject*, ZoneAllocPolicy> {
  public:
   explicit DebugScriptMap(JSContext* cx) : WeakMap(cx) {}
 };

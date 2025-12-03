@@ -27,8 +27,6 @@
 #include "SVGMotionSMILAttr.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/PresShell.h"
@@ -37,7 +35,6 @@
 #include "mozilla/SVGContentUtils.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/CSSRuleBinding.h"
 #include "mozilla/dom/Document.h"
@@ -1262,8 +1259,8 @@ void MappedAttrParser::ParseMappedAttrValue(nsAtom* aMappedAttrName,
     changed = Servo_DeclarationBlock_SetPropertyById(
         &EnsureDeclarationBlock(), propertyID, &value, false,
         &EnsureExtraData(), StyleParsingMode::ALLOW_UNITLESS_LENGTH,
-        doc->GetCompatibilityMode(), doc->CSSLoader(), StyleCssRuleType::Style,
-        {});
+        doc->GetCompatibilityMode(), &doc->EnsureCSSLoader(),
+        StyleCssRuleType::Style, {});
 
     // TODO(emilio): If we want to record these from CSSOM more generally, we
     // can pass the document use counters down the FFI call. For now manually

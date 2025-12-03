@@ -17,7 +17,6 @@
 #include <utility>
 
 #include "MainThreadUtils.h"
-#include "mozilla/MacroForEach.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"

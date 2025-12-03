@@ -11,7 +11,6 @@
 #include "js/RootingAPI.h"
 #include "js/SourceText.h"
 #include "js/TypeDecls.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/CacheExpirationTime.h"
 #include "mozilla/dom/SRIMetadata.h"
@@ -22,14 +21,11 @@
 #include "mozilla/SharedSubResourceCache.h"  // mozilla::SubResourceNetworkMetadataHolder
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Variant.h"
-#include "mozilla/Vector.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIGlobalObject.h"
 #include "LoadedScript.h"
 #include "ScriptKind.h"
 #include "ScriptFetchOptions.h"
-
-class nsICacheInfoChannel;
 
 namespace mozilla::dom {
 
@@ -93,11 +89,8 @@ class ScriptLoadRequest : public nsISupports,
 
  public:
   using SRIMetadata = mozilla::dom::SRIMetadata;
-  ScriptLoadRequest(ScriptKind aKind, nsIURI* aURI,
-                    mozilla::dom::ReferrerPolicy aReferrerPolicy,
-                    ScriptFetchOptions* aFetchOptions,
-                    const SRIMetadata& aIntegrity, nsIURI* aReferrer,
-                    LoadContextBase* aContext);
+  ScriptLoadRequest(ScriptKind aKind, const SRIMetadata& aIntegrity,
+                    nsIURI* aReferrer, LoadContextBase* aContext);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ScriptLoadRequest)
@@ -114,9 +107,14 @@ class ScriptLoadRequest : public nsISupports,
   ModuleLoadRequest* AsModuleRequest();
   const ModuleLoadRequest* AsModuleRequest() const;
 
-  bool IsCacheable() const;
-
-  CacheExpirationTime ExpirationTime() const { return mExpirationTime; }
+  CacheExpirationTime ExpirationTime() const {
+    // The request's expiration time is used only when it's received from
+    // necko.  For in-memory cached, case, the
+    // SharedSubResourceCache::CompleteSubResource::mExpirationTime field is
+    // used instead.
+    MOZ_ASSERT(!IsCachedStencil());
+    return mExpirationTime;
+  }
 
   void SetMinimumExpirationTime(const CacheExpirationTime& aExpirationTime) {
     mExpirationTime.SetMinimum(aExpirationTime);
@@ -130,7 +128,6 @@ class ScriptLoadRequest : public nsISupports,
 
   enum class State : uint8_t {
     CheckingCache,
-    PendingFetchingError,
     Fetching,
     Compiling,
     Ready,
@@ -149,10 +146,6 @@ class ScriptLoadRequest : public nsISupports,
   bool IsCompiling() const { return mState == State::Compiling; }
   bool IsCanceled() const { return mState == State::Canceled; }
 
-  bool IsPendingFetchingError() const {
-    return mState == State::PendingFetchingError;
-  }
-
   // Return whether the request has been completed, either successfully or
   // otherwise.
   bool IsFinished() const {
@@ -160,21 +153,17 @@ class ScriptLoadRequest : public nsISupports,
   }
 
   mozilla::dom::RequestPriority FetchPriority() const {
-    return mFetchOptions->mFetchPriority;
-  }
-
-  enum mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
-    return mReferrerPolicy;
+    return FetchOptions()->mFetchPriority;
   }
 
   enum ParserMetadata ParserMetadata() const {
-    return mFetchOptions->mParserMetadata;
+    return FetchOptions()->mParserMetadata;
   }
 
-  const nsString& Nonce() const { return mFetchOptions->mNonce; }
+  const nsString& Nonce() const { return FetchOptions()->mNonce; }
 
   nsIPrincipal* TriggeringPrincipal() const {
-    return mFetchOptions->mTriggeringPrincipal;
+    return FetchOptions()->mTriggeringPrincipal;
   }
 
   // Convert a CheckingCache ScriptLoadRequest into a Ready one, by populating
@@ -184,22 +173,32 @@ class ScriptLoadRequest : public nsISupports,
   // Convert a CheckingCache ScriptLoadRequest into a Fetching one, by creating
   // a new LoadedScript which is matching the ScriptKind provided when
   // constructing this ScriptLoadRequest.
-  void NoCacheEntryFound();
-
-  void SetPendingFetchingError();
+  void NoCacheEntryFound(mozilla::dom::ReferrerPolicy aReferrerPolicy,
+                         ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
 
   bool PassedConditionForDiskCache() const {
-    return mDiskCachingPlan == CachingPlan::PassedCondition ||
-           mDiskCachingPlan == CachingPlan::MarkedForCache;
+    return mDiskCachingPlan == CachingPlan::PassedCondition;
   }
 
   bool PassedConditionForMemoryCache() const {
-    return mMemoryCachingPlan == CachingPlan::PassedCondition ||
-           mMemoryCachingPlan == CachingPlan::MarkedForCache;
+    return mMemoryCachingPlan == CachingPlan::PassedCondition;
   }
 
   bool PassedConditionForEitherCache() const {
     return PassedConditionForDiskCache() || PassedConditionForMemoryCache();
+  }
+
+  void MarkNotCacheable() {
+    mDiskCachingPlan = CachingPlan::NotCacheable;
+    mMemoryCachingPlan = CachingPlan::NotCacheable;
+  }
+
+  bool IsMarkedNotCacheable() const {
+    MOZ_ASSERT_IF(mDiskCachingPlan == CachingPlan::NotCacheable,
+                  mMemoryCachingPlan == CachingPlan::NotCacheable);
+    MOZ_ASSERT_IF(mDiskCachingPlan != CachingPlan::NotCacheable,
+                  mMemoryCachingPlan != CachingPlan::NotCacheable);
+    return mDiskCachingPlan == CachingPlan::NotCacheable;
   }
 
   void MarkSkippedDiskCaching() {
@@ -229,42 +228,7 @@ class ScriptLoadRequest : public nsISupports,
     mMemoryCachingPlan = CachingPlan::PassedCondition;
   }
 
-  bool IsMarkedForDiskCache() const {
-    return mDiskCachingPlan == CachingPlan::MarkedForCache;
-  }
-
-  bool IsMarkedForMemoryCache() const {
-    return mMemoryCachingPlan == CachingPlan::MarkedForCache;
-  }
-
-  bool IsMarkedForEitherCache() const {
-    return IsMarkedForDiskCache() || IsMarkedForMemoryCache();
-  }
-
- protected:
-  void MarkForCache() {
-    MOZ_ASSERT(mDiskCachingPlan == CachingPlan::PassedCondition ||
-               mMemoryCachingPlan == CachingPlan::PassedCondition);
-
-    if (mDiskCachingPlan == CachingPlan::PassedCondition) {
-      mDiskCachingPlan = CachingPlan::MarkedForCache;
-    }
-    if (mMemoryCachingPlan == CachingPlan::PassedCondition) {
-      mMemoryCachingPlan = CachingPlan::MarkedForCache;
-    }
-  }
-
- public:
-  void MarkScriptForCache(JSScript* aScript);
-
-  mozilla::CORSMode CORSMode() const { return mFetchOptions->mCORSMode; }
-
-  // Check the reference to the cache info channel, which is used by the disk
-  // cache.
-  bool HasDiskCacheReference() const { return !!mCacheInfo; }
-
-  // Drop the reference to the cache info channel.
-  void DropDiskCacheReference();
+  mozilla::CORSMode CORSMode() const { return FetchOptions()->mCORSMode; }
 
   bool HasLoadContext() const { return mLoadContext; }
   bool HasScriptLoadContext() const;
@@ -282,59 +246,6 @@ class ScriptLoadRequest : public nsISupports,
   const LoadedScript* getLoadedScript() const { return mLoadedScript.get(); }
   LoadedScript* getLoadedScript() { return mLoadedScript.get(); }
 
-  /*
-   * Set the request's mBaseURL, based on aChannel.
-   * aOriginalURI is the result of aChannel->GetOriginalURI.
-   */
-  void SetBaseURLFromChannelAndOriginalURI(nsIChannel* aChannel,
-                                           nsIURI* aOriginalURI);
-
-  const ScriptKind mKind;  // Whether this is a classic script or a module
-                           // script.
-
-  State mState;           // Are we still waiting for a load to complete?
-  bool mFetchSourceOnly;  // Request source, not cached bytecode.
-
-  // Becomes true if this has source map url.
-  //
-  // Do not access directly.
-  // Use HasSourceMapURL(), SetSourceMapURL(), and GetSourceMapURL().
-  bool mHasSourceMapURL_;
-
-  enum class CachingPlan : uint8_t {
-    // This is not yet considered for caching.
-    Uninitialized,
-
-    // This is marked for skipping the caching.
-    Skipped,
-
-    // This fits the condition for the caching (e.g. file size, fetch count).
-    PassedCondition,
-
-    // This is marked for encoding, with setting sufficient input,
-    // e.g. mScriptForCache for script.
-    MarkedForCache,
-  };
-  CachingPlan mDiskCachingPlan = CachingPlan::Uninitialized;
-  CachingPlan mMemoryCachingPlan = CachingPlan::Uninitialized;
-
-  // The referrer policy used for the initial fetch and for fetching any
-  // imported modules
-  enum mozilla::dom::ReferrerPolicy mReferrerPolicy;
-
-  CacheExpirationTime mExpirationTime = CacheExpirationTime::Never();
-
-  RefPtr<ScriptFetchOptions> mFetchOptions;
-  RefPtr<mozilla::SubResourceNetworkMetadataHolder> mNetworkMetadata;
-  const SRIMetadata mIntegrity;
-  const nsCOMPtr<nsIURI> mReferrer;
-
-  // Holds source map url for loaded scripts.
-  //
-  // Do not access directly.
-  // Use HasSourceMapURL(), SetSourceMapURL(), and GetSourceMapURL().
-  nsString mMaybeSourceMapURL_;
-
   bool HasSourceMapURL() const { return mHasSourceMapURL_; }
   const nsString& GetSourceMapURL() const {
     MOZ_ASSERT(mHasSourceMapURL_);
@@ -346,16 +257,59 @@ class ScriptLoadRequest : public nsISupports,
     mHasSourceMapURL_ = true;
   }
 
-  const nsCOMPtr<nsIURI> mURI;
+ public:
+  // Fields.
+
+  // Whether this is a classic script, a module script, or an import map.
+  const ScriptKind mKind;
+
+  // Are we still waiting for a load to complete?
+  State mState;
+
+  // Request source, not cached bytecode.
+  bool mFetchSourceOnly : 1;
+
+  // Becomes true if this has source map url.
+  //
+  // Do not access directly.
+  // Use HasSourceMapURL(), SetSourceMapURL(), and GetSourceMapURL().
+  bool mHasSourceMapURL_ : 1;
+
+  enum class CachingPlan : uint8_t {
+    // This is not yet considered for caching.
+    Uninitialized,
+
+    // This request is not cacheable (e.g. inline script, JSON module).
+    NotCacheable,
+
+    // This request is cacheable, but is marked for skipping due to
+    // not passing conditions.
+    Skipped,
+
+    // This fits the condition for the caching (e.g. file size, fetch count).
+    PassedCondition,
+  };
+  CachingPlan mDiskCachingPlan : 2;
+  CachingPlan mMemoryCachingPlan : 2;
+
+  CacheExpirationTime mExpirationTime = CacheExpirationTime::Never();
+
+  RefPtr<mozilla::SubResourceNetworkMetadataHolder> mNetworkMetadata;
+  const SRIMetadata mIntegrity;
+  const nsCOMPtr<nsIURI> mReferrer;
+
+  // Holds source map url for loaded scripts.
+  //
+  // Do not access directly.
+  // Use HasSourceMapURL(), SetSourceMapURL(), and GetSourceMapURL().
+  nsString mMaybeSourceMapURL_;
+
   nsCOMPtr<nsIPrincipal> mOriginPrincipal;
 
   // Keep the URI's filename alive during off thread parsing.
   // Also used by workers to report on errors while loading, and used by
   // worklets as the file name in compile options.
   nsAutoCString mURL;
-
-  // The base URL used for resolving relative module imports.
-  nsCOMPtr<nsIURI> mBaseURL;
 
   // The loaded script holds the source / bytecode which is loaded.
   //
@@ -364,16 +318,6 @@ class ScriptLoadRequest : public nsISupports,
   // loaded value, such that multiple request referring to the same content
   // would share the same loaded script.
   RefPtr<LoadedScript> mLoadedScript;
-
-  // Holds the top-level JSScript that corresponds to the current source, once
-  // it is parsed, and marked to be saved in the bytecode cache.
-  //
-  // NOTE: This field is not used for ModuleLoadRequest.
-  JS::Heap<JSScript*> mScriptForCache;
-
-  // Holds the Cache information, which is used to register the bytecode
-  // on the cache entry, such that we can load it the next time.
-  nsCOMPtr<nsICacheInfoChannel> mCacheInfo;
 
   // LoadContext for augmenting the load depending on the loading
   // context (DOM, Worker, etc.)

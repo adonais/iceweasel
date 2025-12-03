@@ -92,6 +92,16 @@ class ReaderProxy {
 
   bool IsEncryptedCustomIdent() const;
 
+  Maybe<uint32_t> GetMaxVideoQueueSize() {
+    return mReader->GetVideoDecodeProperties().MaxQueueSize();
+  }
+  Maybe<uint32_t> GetMinVideoQueueSize() {
+    return mReader->GetVideoDecodeProperties().MinQueueSize();
+  }
+  Maybe<uint32_t> GetSendToCompositorSize() {
+    return mReader->GetVideoDecodeProperties().SendToCompositorSize();
+  }
+
  private:
   ~ReaderProxy();
   RefPtr<MetadataPromise> OnMetadataRead(MetadataHolder&& aMetadata);

@@ -36,10 +36,6 @@ add_task(async function testFilterFeatures() {
   ];
   const cleanup = await setupLabsTest(recipes);
 
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.preferences.experimental", true]],
-  });
-
   await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "about:preferences#paneExperimental"

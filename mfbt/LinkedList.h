@@ -69,7 +69,6 @@
 #include <utility>
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RefPtr.h"
 

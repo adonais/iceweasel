@@ -45,7 +45,7 @@ $shadow-image-inset: inset 0 0 0 0.5px $black-15;
   --newtab-contextual-text-secondary-color: color-mix(in srgb, var(--newtab-contextual-text-primary-color) 70%, transparent);
 
   // A background color for weather widget to help with wallpaper contrast.
-  --newtab-weather-background-color: light-dark(rgba(255, 255, 255, 70%), rgba(35, 34, 43, 70%));
+  --newtab-weather-background-color: light-dark(rgba(255, 255, 255, 85%), rgba(66, 65, 77, 85%));
 
   // --newtab-element-*-color is used when an element needs to be set off from
   // the primary background color.

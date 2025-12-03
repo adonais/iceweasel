@@ -16,7 +16,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/bbec1b95ddb5e0096
  5 files changed, 26 insertions(+), 6 deletions(-)
 
 diff --git a/modules/audio_coding/BUILD.gn b/modules/audio_coding/BUILD.gn
-index 71ab9a1f47..292864d32c 100644
+index 51570e8c95..d900e550b7 100644
 --- a/modules/audio_coding/BUILD.gn
 +++ b/modules/audio_coding/BUILD.gn
 @@ -362,7 +362,7 @@ rtc_library("webrtc_opus_wrapper") {
@@ -48,10 +48,10 @@ index e8367393a3..a693604389 100644
      }
    }
 diff --git a/modules/video_capture/BUILD.gn b/modules/video_capture/BUILD.gn
-index 7cc8f5df17..df08cddc58 100644
+index 0aec2d94c7..83c1b21260 100644
 --- a/modules/video_capture/BUILD.gn
 +++ b/modules/video_capture/BUILD.gn
-@@ -116,7 +116,7 @@ if (!build_with_chromium || is_linux || is_chromeos) {
+@@ -118,7 +118,7 @@ if (!build_with_chromium || is_linux || is_chromeos) {
          ]
          if (build_with_mozilla) {
            configs -= [ "../portal:pipewire_base" ]
@@ -61,10 +61,10 @@ index 7cc8f5df17..df08cddc58 100644
        }
      }
 diff --git a/sdk/BUILD.gn b/sdk/BUILD.gn
-index 7aa3c3f428..2ca0a36dbb 100644
+index 11c94ec229..df32a6863d 100644
 --- a/sdk/BUILD.gn
 +++ b/sdk/BUILD.gn
-@@ -614,6 +614,20 @@ if (is_ios || is_mac) {
+@@ -632,6 +632,20 @@ if (is_ios || is_mac) {
          "CoreGraphics.framework",
          "CoreVideo.framework",
        ]
@@ -86,10 +86,10 @@ index 7aa3c3f428..2ca0a36dbb 100644
  
      if (!build_with_mozilla) {
 diff --git a/test/BUILD.gn b/test/BUILD.gn
-index 63e956ba36..d0a57657f4 100644
+index 7bd39bd85b..59bd007ce7 100644
 --- a/test/BUILD.gn
 +++ b/test/BUILD.gn
-@@ -509,6 +509,12 @@ rtc_source_set("test_support") {
+@@ -470,6 +470,12 @@ rtc_source_set("test_support") {
      "//testing/gmock",
      "//testing/gtest",
    ]

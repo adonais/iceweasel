@@ -299,43 +299,43 @@ class GeckoSitePermissionsStorage(
              * has been changed otherwise we favor the values [onDiskPermissions].
              */
             if (geckoNotification != null && geckoNotification.value != VALUE_PROMPT) {
-                combinedPermissions = combinedPermissions?.copy(
+                combinedPermissions = combinedPermissions.copy(
                     notification = geckoNotification.value.toStatus(),
                 )
             }
 
             if (geckoLocation != null && geckoLocation.value != VALUE_PROMPT) {
-                combinedPermissions = combinedPermissions?.copy(
+                combinedPermissions = combinedPermissions.copy(
                     location = geckoLocation.value.toStatus(),
                 )
             }
 
             if (geckoMedia != null && geckoMedia.value != VALUE_PROMPT) {
-                combinedPermissions = combinedPermissions?.copy(
+                combinedPermissions = combinedPermissions.copy(
                     mediaKeySystemAccess = geckoMedia.value.toStatus(),
                 )
             }
 
             if (geckoStorage != null && geckoStorage.value != VALUE_PROMPT) {
-                combinedPermissions = combinedPermissions?.copy(
+                combinedPermissions = combinedPermissions.copy(
                     localStorage = geckoStorage.value.toStatus(),
                 )
             }
 
             if (geckoCrossOriginStorageAccess != null && geckoCrossOriginStorageAccess.value != VALUE_PROMPT) {
-                combinedPermissions = combinedPermissions?.copy(
+                combinedPermissions = combinedPermissions.copy(
                     crossOriginStorageAccess = geckoCrossOriginStorageAccess.value.toStatus(),
                 )
             }
 
             if (geckoLocalDeviceAccess != null && geckoLocalDeviceAccess.value != VALUE_PROMPT) {
-                combinedPermissions = combinedPermissions?.copy(
+                combinedPermissions = combinedPermissions.copy(
                     localDeviceAccess = geckoLocalDeviceAccess.value.toStatus(),
                 )
             }
 
             if (geckoLocalNetworkAccess != null && geckoLocalNetworkAccess.value != VALUE_PROMPT) {
-                combinedPermissions = combinedPermissions?.copy(
+                combinedPermissions = combinedPermissions.copy(
                     localNetworkAccess = geckoLocalNetworkAccess.value.toStatus(),
                 )
             }
@@ -345,13 +345,13 @@ class GeckoSitePermissionsStorage(
              * the gecko storage we trust it.
              */
             if (geckoAudible != null && geckoAudible.value != VALUE_PROMPT) {
-                combinedPermissions = combinedPermissions?.copy(
+                combinedPermissions = combinedPermissions.copy(
                     autoplayAudible = geckoAudible.value.toAutoPlayStatus(),
                 )
             }
 
             if (geckoInAudible != null && geckoInAudible.value != VALUE_PROMPT) {
-                combinedPermissions = combinedPermissions?.copy(
+                combinedPermissions = combinedPermissions.copy(
                     autoplayInaudible = geckoInAudible.value.toAutoPlayStatus(),
                 )
             }

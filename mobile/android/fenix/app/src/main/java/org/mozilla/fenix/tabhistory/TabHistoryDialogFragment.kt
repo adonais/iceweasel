@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.tabhistory
 
+import android.app.Dialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -21,10 +22,20 @@ import mozilla.components.support.ktx.android.content.getColorFromAttr
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentTabHistoryDialogBinding
 import org.mozilla.fenix.ext.requireComponents
+import com.google.android.material.R as materialR
 
 class TabHistoryDialogFragment : BottomSheetDialogFragment() {
 
     var customTabSessionId: String? = null
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        return super.onCreateDialog(savedInstanceState).apply {
+            setOnShowListener {
+                val bottomSheet = findViewById<View?>(materialR.id.design_bottom_sheet)
+                bottomSheet?.setBackgroundResource(android.R.color.transparent)
+            }
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,

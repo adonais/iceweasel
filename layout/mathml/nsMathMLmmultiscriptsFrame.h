@@ -7,7 +7,6 @@
 #ifndef nsMathMLmmultiscriptsFrame_h___
 #define nsMathMLmmultiscriptsFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "nsMathMLContainerFrame.h"
 
 namespace mozilla {

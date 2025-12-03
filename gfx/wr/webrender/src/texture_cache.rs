@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use api::{DirtyRect, ExternalImageType, ImageFormat, ImageBufferKind};
-use api::{DebugFlags, ImageDescriptor};
+use api::{DebugFlags, ImageDescriptor, TextureCacheCategory};
 use api::units::*;
 #[cfg(test)]
 use api::{DocumentId, IdNamespace};
@@ -14,7 +14,7 @@ use crate::gpu_types::{ImageSource, UvRectKind};
 use crate::internal_types::{
     CacheTextureId, Swizzle, SwizzleSettings, FrameStamp, FrameId,
     TextureUpdateList, TextureUpdateSource, TextureSource,
-    TextureCacheAllocInfo, TextureCacheUpdate, TextureCacheCategory,
+    TextureCacheAllocInfo, TextureCacheUpdate,
 };
 use crate::lru_cache::LRUCache;
 use crate::profiler::{self, TransactionProfile};

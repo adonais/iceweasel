@@ -58,7 +58,7 @@ add_setup(function () {
 add_task(function test_constructor_throws() {
   Assert.throws(
     () => new UrlbarController(),
-    /Missing options: input/,
+    /options is undefined/,
     "Should throw if the input was not supplied"
   );
   Assert.throws(

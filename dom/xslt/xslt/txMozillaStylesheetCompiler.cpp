@@ -4,7 +4,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ReferrerInfo.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Document.h"
@@ -275,7 +274,7 @@ txStylesheetSink::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
 
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest);
   if (httpChannel) {
-    Unused << httpChannel->GetRequestSucceeded(&success);
+    (void)httpChannel->GetRequestSucceeded(&success);
   }
 
   nsresult result = aStatusCode;

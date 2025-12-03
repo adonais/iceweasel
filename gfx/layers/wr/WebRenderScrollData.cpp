@@ -12,8 +12,6 @@
 #include "mozilla/layers/LayersMessageUtils.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/ScrollContainerFrame.h"
-#include "mozilla/ToString.h"
-#include "mozilla/Unused.h"
 #include "nsDisplayList.h"
 #include "nsTArray.h"
 #include "UnitTransforms.h"

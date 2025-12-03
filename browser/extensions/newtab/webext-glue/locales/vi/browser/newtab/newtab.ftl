@@ -406,7 +406,7 @@ newtab-wallpaper-abstract-purple-green = Chuyển sắc ánh sáng tím và xanh
 newtab-wallpaper-abstract-blue-purple-waves = Hình dạng gợn sóng màu xanh dương và tím
 newtab-wallpaper-abstract-black-waves = Hình dạng gợn sóng màu đen
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Hình ảnh
 newtab-wallpaper-beach-at-sunrise = Bãi biển lúc bình minh
@@ -435,6 +435,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -675,10 +679,6 @@ newtab-widget-timer-mode-focus =
     .label = Tập trung
 newtab-widget-timer-mode-break =
     .label = Giải lao
-newtab-widget-timer-play =
-    .title = Bắt đầu
-newtab-widget-timer-pause =
-    .title = Tạm dừng
 newtab-widget-timer-label-play =
     .label = Bắt đầu
 newtab-widget-timer-label-pause =

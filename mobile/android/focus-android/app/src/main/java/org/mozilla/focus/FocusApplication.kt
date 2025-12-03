@@ -12,7 +12,6 @@ import androidx.annotation.OpenForTesting
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.ProcessLifecycleOwner
-import androidx.preference.PreferenceManager
 import androidx.work.Configuration.Builder
 import androidx.work.Configuration.Provider
 import kotlinx.coroutines.CoroutineScope
@@ -64,8 +63,6 @@ open class FocusApplication : LocaleAwareApplication(), Provider, CoroutineScope
 
         if (isMainProcess()) {
             initializeNimbus()
-
-            PreferenceManager.setDefaultValues(this, R.xml.settings, false)
 
             setTheme(this)
             components.engine.warmUp()

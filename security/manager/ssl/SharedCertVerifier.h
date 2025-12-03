@@ -7,7 +7,6 @@
 
 #include "CertVerifier.h"
 #include "EnterpriseRoots.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 
 namespace mozilla {

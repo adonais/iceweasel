@@ -10,7 +10,6 @@
 #include "nscore.h"
 #include "nsXPCOMCID.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Atomics.h"
 
 #ifdef __cplusplus
 #  define DECL_CLASS(c) class c

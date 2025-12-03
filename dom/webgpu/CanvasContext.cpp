@@ -153,15 +153,8 @@ void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aConfig,
   }
 #endif
 
-  // buffer count doesn't matter much, will be created on demand
-  const size_t maxBufferCount = 10;
-  for (size_t i = 0; i < maxBufferCount; ++i) {
-    mBufferIds.AppendElement(
-        ffi::wgpu_client_make_buffer_id(aConfig.mDevice->GetClient()));
-  }
-
   mCurrentTexture = aConfig.mDevice->InitSwapChain(
-      mConfiguration.get(), mRemoteTextureOwnerId.ref(), mBufferIds,
+      mConfiguration.get(), mRemoteTextureOwnerId.ref(),
       mUseSharedTextureInSwapChain, mGfxFormat, mCanvasSize);
   if (!mCurrentTexture) {
     Unconfigure();
@@ -183,12 +176,7 @@ void CanvasContext::Unconfigure() {
     auto txn_id = layers::ToRemoteTextureTxnId(mFwdTransactionTracker);
     ffi::wgpu_client_swap_chain_drop(
         mChild->GetClient(), mRemoteTextureOwnerId->mId, txn_type, txn_id);
-
-    for (auto& id : mBufferIds) {
-      ffi::wgpu_client_free_buffer_id(mChild->GetClient(), id);
-    }
   }
-  mBufferIds.Clear();
   mRemoteTextureOwnerId = Nothing();
   mFwdTransactionTracker = nullptr;
   mChild = nullptr;
@@ -270,6 +258,14 @@ Maybe<layers::SurfaceDescriptor> CanvasContext::SwapChainPresent() {
       !mCurrentTexture) {
     return Nothing();
   }
+
+  if (mCanvasElement) {
+    JSObject* obj = mCanvasElement->GetWrapper();
+    if (obj) {
+      dom::SetUseCounter(obj, eUseCounter_custom_WebgpuRenderOutput);
+    }
+  }
+
   mLastRemoteTextureId = Some(layers::RemoteTextureId::GetNext());
   mChild->SwapChainPresent(mCurrentTexture->GetId(), *mLastRemoteTextureId,
                            *mRemoteTextureOwnerId);

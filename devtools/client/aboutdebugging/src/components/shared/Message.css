@@ -58,7 +58,7 @@
 .message__body {
   align-self: center;
   font-size: var(--message-font-size);
-  font-weight: 400;
+  font-weight: normal;
   grid-area: body;
   line-height: 1.6;
 }

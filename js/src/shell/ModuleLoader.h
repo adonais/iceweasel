@@ -28,7 +28,9 @@ class ModuleLoader {
  private:
   static bool LoadImportedModule(JSContext* cx, JS::Handle<JSScript*> referrer,
                                  HandleObject moduleRequest,
-                                 HandleValue hostDefined, HandleValue payload);
+                                 HandleValue hostDefined, HandleValue payload,
+                                 uint32_t lineNumber,
+                                 JS::ColumnNumberOneOrigin columnNumber);
 
   static bool GetImportMetaProperties(JSContext* cx, HandleValue privateValue,
                                       HandleObject metaObject);

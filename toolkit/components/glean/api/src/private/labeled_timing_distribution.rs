@@ -372,7 +372,9 @@ impl TimingDistribution for LabeledTimingDistributionMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<DistributionData> for LabeledTimingDistributionMetric {
+impl glean::TestGetValue for LabeledTimingDistributionMetric {
+    type Output = DistributionData;
+
     pub fn test_get_value(&self, ping_name: Option<String>) -> Option<DistributionData> {
         self.inner.test_get_value(ping_name)
     }

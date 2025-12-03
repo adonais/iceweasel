@@ -2253,13 +2253,6 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
     return true;
   }
 
-  if (key == JSProto_JSON &&
-      !JS::Prefs::experimental_json_parse_with_source() &&
-      (id == NameToId(cx->names().isRawJSON) ||
-       id == NameToId(cx->names().rawJSON))) {
-    return true;
-  }
-
   if (key == JSProto_Math && !JS::Prefs::experimental_math_sumprecise() &&
       id == NameToId(cx->names().sumPrecise)) {
     return true;

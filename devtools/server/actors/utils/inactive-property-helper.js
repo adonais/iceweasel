@@ -11,11 +11,6 @@ loader.lazyRequireGetter(
   true
 );
 
-const INACTIVE_CSS_ENABLED = Services.prefs.getBoolPref(
-  "devtools.inspector.inactive.css.enabled",
-  false
-);
-
 const TEXT_WRAP_BALANCE_LIMIT = Services.prefs.getIntPref(
   "layout.css.text-wrap-balance.limit",
   10
@@ -832,11 +827,6 @@ class InactivePropertyHelper {
    *         the default MDN property one.
    */
   getInactiveCssDataForProperty(el, elStyle, cssRule, property) {
-    // Assume the property is used when the Inactive CSS pref is not enabled
-    if (!INACTIVE_CSS_ENABLED) {
-      return null;
-    }
-
     let fixId = "";
     let msgId = "";
     let learnMoreURL = null;

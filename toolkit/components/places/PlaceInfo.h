@@ -10,7 +10,6 @@
 #include "nsIURI.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "mozilla/Attributes.h"
 
 class mozIVisitInfo;
 

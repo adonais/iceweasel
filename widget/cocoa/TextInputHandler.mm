@@ -10,7 +10,6 @@
 
 #include "mozilla/Logging.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/MacStringHelpers.h"
 #include "mozilla/MiscEvents.h"
@@ -2046,7 +2045,7 @@ void TextInputHandler::HandleFlagsChanged(NSEvent* aNativeEvent) {
   }
 
   RefPtr<nsCocoaWindow> kungFuDeathGrip(mWidget);
-  mozilla::Unused << kungFuDeathGrip;  // Not referenced within this function
+  (void)kungFuDeathGrip;  // Not referenced within this function
 
   MOZ_LOG_KEY_OR_IME(
       LogLevel::Info,

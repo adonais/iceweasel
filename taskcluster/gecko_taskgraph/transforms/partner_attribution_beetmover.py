@@ -41,6 +41,7 @@ beetmover_description_schema = Schema(
         Required("shipping-phase"): task_description_schema["shipping-phase"],
         Optional("shipping-product"): task_description_schema["shipping-product"],
         Optional("priority"): task_description_schema["priority"],
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
     }
 )
 
@@ -107,6 +108,7 @@ def make_task_description(config, jobs):
             "dependencies": {dep_job.kind: dep_job.label},
             "attributes": attributes,
             "run-on-projects": dep_job.attributes.get("run_on_projects"),
+            "run-on-repo-type": job.get("run-on-repo-type", ["git", "hg"]),
             "shipping-phase": job["shipping-phase"],
             "shipping-product": job.get("shipping-product"),
             "worker": job["worker"],

@@ -405,7 +405,7 @@ newtab-wallpaper-abstract-purple-green = Күлгін және жасыл жар
 newtab-wallpaper-abstract-blue-purple-waves = Көк және күлгін толқынды пішіндер
 newtab-wallpaper-abstract-black-waves = Қара толқынды пішіндер
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Фотосуреттер
 newtab-wallpaper-beach-at-sunrise = Күн шыққанда жағажай
@@ -434,6 +434,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -657,10 +661,6 @@ newtab-widget-timer-mode-focus =
     .label = Фокустау
 newtab-widget-timer-mode-break =
     .label = Үзіліс
-newtab-widget-timer-play =
-    .title = Ойнату
-newtab-widget-timer-pause =
-    .title = Аялдату
 newtab-widget-timer-label-play =
     .label = Ойнату
 newtab-widget-timer-label-pause =

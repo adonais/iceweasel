@@ -8,7 +8,6 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/ResultExtensions.h"
 #include "nsContentUtils.h"
 #include "nsIInputStreamPump.h"
 

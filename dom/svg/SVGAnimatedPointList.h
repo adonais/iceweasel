@@ -8,7 +8,6 @@
 #define DOM_SVG_SVGANIMATEDPOINTLIST_H_
 
 #include "SVGPointList.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 

@@ -8,12 +8,12 @@
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 
 #include "mozilla/AppShutdown.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Components.h"
 #include "mozilla/FilePreferences.h"
 #include "mozilla/ChaosMode.h"
+#include "mozilla/HelperMacros.h"
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/IOInterposer.h"
 #include "mozilla/ipc/UtilityProcessChild.h"
@@ -34,7 +34,6 @@
 #include "mozilla/glean/SecuritySandboxMetrics.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Try.h"
-#include "mozilla/Utf8.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/JSONWriter.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -107,8 +106,6 @@
 #ifdef XP_MACOSX
 #  include "gfxPlatformMac.h"
 #endif
-
-#include "mozilla/Unused.h"
 
 #ifdef XP_WIN
 #  include "nsIWinAppHelper.h"
@@ -315,8 +312,8 @@ extern const char gToolkitBuildID[];
 
 static nsIProfileLock* gProfileLock;
 #if defined(MOZ_HAS_REMOTE)
-MOZ_RUNINIT static RefPtr<nsRemoteService> gRemoteService;
-MOZ_RUNINIT static RefPtr<nsStartupLock> gStartupLock;
+MOZ_CONSTINIT static RefPtr<nsRemoteService> gRemoteService;
+MOZ_CONSTINIT static RefPtr<nsStartupLock> gStartupLock;
 #endif
 
 int gRestartArgc;
@@ -353,7 +350,7 @@ MOZ_CONSTINIT nsString gProcessStartupShortcut;
 #endif
 
 #if defined(MOZ_WAYLAND)
-MOZ_RUNINIT std::unique_ptr<WaylandProxy> gWaylandProxy;
+MOZ_CONSTINIT std::unique_ptr<WaylandProxy> gWaylandProxy;
 #endif
 
 #include "BinaryPath.h"
@@ -384,7 +381,6 @@ bool RunningGTest() { return RunGTest; }
 using namespace mozilla;
 using namespace mozilla::widget;
 using namespace mozilla::startup;
-using mozilla::Unused;
 using mozilla::dom::ContentChild;
 using mozilla::dom::ContentParent;
 using mozilla::dom::quota::QuotaManager;
@@ -1809,8 +1805,7 @@ nsXULAppInfo::GetExtraFileForID(const nsAString& aId, nsIFile** aExtraFile) {
 NS_IMETHODIMP
 nsXULAppInfo::AnnotateCrashReport(const nsACString& key,
                                   JS::Handle<JS::Value> data, JSContext* cx) {
-  CrashReporter::Annotation annotation;
-  MOZ_TRY_VAR(annotation, GetCrashAnnotation(key));
+  CrashReporter::Annotation annotation = MOZ_TRY(GetCrashAnnotation(key));
   switch (data.type()) {
     case JS::ValueType::Int32:
       CrashReporter::RecordAnnotationU32(annotation, data.toInt32());
@@ -1844,8 +1839,7 @@ nsXULAppInfo::AnnotateCrashReport(const nsACString& key,
 
 NS_IMETHODIMP
 nsXULAppInfo::RemoveCrashReportAnnotation(const nsACString& key) {
-  CrashReporter::Annotation annotation;
-  MOZ_TRY_VAR(annotation, GetCrashAnnotation(key));
+  CrashReporter::Annotation annotation = MOZ_TRY(GetCrashAnnotation(key));
   CrashReporter::UnrecordAnnotation(annotation);
   return NS_OK;
 }
@@ -1860,8 +1854,7 @@ nsXULAppInfo::IsAnnotationValid(const nsACString& aValue, bool* aIsValid) {
 NS_IMETHODIMP
 nsXULAppInfo::IsAnnotationAllowedForPing(const nsACString& aValue,
                                          bool* aIsAllowed) {
-  CrashReporter::Annotation annotation;
-  MOZ_TRY_VAR(annotation, GetCrashAnnotation(aValue));
+  CrashReporter::Annotation annotation = MOZ_TRY(GetCrashAnnotation(aValue));
   *aIsAllowed = CrashReporter::IsAnnotationAllowedForPing(annotation);
   return NS_OK;
 }
@@ -1869,8 +1862,7 @@ nsXULAppInfo::IsAnnotationAllowedForPing(const nsACString& aValue,
 NS_IMETHODIMP
 nsXULAppInfo::IsAnnotationAllowedForReport(const nsACString& aValue,
                                            bool* aIsAllowed) {
-  CrashReporter::Annotation annotation;
-  MOZ_TRY_VAR(annotation, GetCrashAnnotation(aValue));
+  CrashReporter::Annotation annotation = MOZ_TRY(GetCrashAnnotation(aValue));
   *aIsAllowed = CrashReporter::IsAnnotationAllowedForReport(annotation);
   return NS_OK;
 }
@@ -2312,8 +2304,8 @@ static void SetupAlteredPrefetchPref() {
 }
 
 static void ReflectSkeletonUIPrefToRegistry(const char* aPref, void* aData) {
-  Unused << aPref;
-  Unused << aData;
+  (void)aPref;
+  (void)aData;
 
   RefPtr<nsToolkitProfileService> mProfileSvc;
   mProfileSvc = NS_GetToolkitProfileService();
@@ -2327,20 +2319,20 @@ static void ReflectSkeletonUIPrefToRegistry(const char* aPref, void* aData) {
     nsCString themeId;
     Preferences::GetCString(kPrefThemeId, themeId);
     if (themeId.EqualsLiteral("default-theme@mozilla.org")) {
-      Unused << SetPreXULSkeletonUIThemeId(ThemeMode::Default);
+      (void)SetPreXULSkeletonUIThemeId(ThemeMode::Default);
     } else if (themeId.EqualsLiteral("firefox-compact-dark@mozilla.org")) {
-      Unused << SetPreXULSkeletonUIThemeId(ThemeMode::Dark);
+      (void)SetPreXULSkeletonUIThemeId(ThemeMode::Dark);
     } else if (themeId.EqualsLiteral("firefox-compact-light@mozilla.org")) {
-      Unused << SetPreXULSkeletonUIThemeId(ThemeMode::Light);
+      (void)SetPreXULSkeletonUIThemeId(ThemeMode::Light);
     } else {
       shouldBeEnabled = false;
     }
   } else if (shouldBeEnabled) {
-    Unused << SetPreXULSkeletonUIThemeId(ThemeMode::Default);
+    (void)SetPreXULSkeletonUIThemeId(ThemeMode::Default);
   }
 
   if (GetPreXULSkeletonUIEnabled() != shouldBeEnabled) {
-    Unused << SetPreXULSkeletonUIEnabledIfAllowed(shouldBeEnabled);
+    (void)SetPreXULSkeletonUIEnabledIfAllowed(shouldBeEnabled);
   }
 }
 
@@ -2360,8 +2352,8 @@ NS_IMPL_ISUPPORTS(ShowProfileSelectorObserver, nsIObserver);
 NS_IMETHODIMP
 ShowProfileSelectorObserver::Observe(nsISupports* aSubject, const char* aTopic,
                                      const char16_t* aData) {
-  Unused << aSubject;
-  Unused << aData;
+  (void)aSubject;
+  (void)aData;
   if (!strcmp(aTopic, "profile-show-selector-changed")) {
     ReflectSkeletonUIPrefToRegistry(nullptr, nullptr);
   }
@@ -3036,7 +3028,7 @@ static ReturnAbortOnError ShowProfileSelector(
 
 static bool gDoMigration = false;
 static bool gDoProfileReset = false;
-MOZ_RUNINIT static nsCOMPtr<nsIToolkitProfile> gResetOldProfile;
+MOZ_CONSTINIT static nsCOMPtr<nsIToolkitProfile> gResetOldProfile;
 
 static nsresult LockProfile(nsINativeAppSupport* aNative, nsIFile* aRootDir,
                             nsIFile* aLocalDir, nsIToolkitProfile* aProfile,
@@ -3628,10 +3620,10 @@ static void WriteVersion(nsIFile* aProfileDir, const nsCString& aVersion,
   file->AppendNative(FILE_COMPATIBILITY_INFO);
 
   nsAutoCString platformDir;
-  Unused << aXULRunnerDir->GetPersistentDescriptor(platformDir);
+  (void)aXULRunnerDir->GetPersistentDescriptor(platformDir);
 
   nsAutoCString appDir;
-  if (aAppDir) Unused << aAppDir->GetPersistentDescriptor(appDir);
+  if (aAppDir) (void)aAppDir->GetPersistentDescriptor(appDir);
 
   PRFileDesc* fd;
   nsresult rv = file->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE,
@@ -3997,8 +3989,8 @@ static void SetupConsoleForBackgroundTask(
       !EnvHasValue("MOZ_BACKGROUNDTASKS_IGNORE_NO_OUTPUT")) {
     // Suppress output, somewhat crudely.  We need to suppress stderr as well
     // as stdout because assertions, of which there are many, write to stderr.
-    Unused << freopen("/dev/null", "w", stdout);
-    Unused << freopen("/dev/null", "w", stderr);
+    [[maybe_unused]] FILE* r0 = freopen("/dev/null", "w", stdout);
+    [[maybe_unused]] FILE* r1 = freopen("/dev/null", "w", stderr);
     return;
   }
 #  endif
@@ -4440,8 +4432,8 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
     // Remove the --backgroundtask arg now that it has been saved in
     // gRestartArgv.
     const char* tmpBackgroundTaskName = nullptr;
-    Unused << CheckArg("backgroundtask", &tmpBackgroundTaskName,
-                       CheckArgFlag::RemoveArg);
+    (void)CheckArg("backgroundtask", &tmpBackgroundTaskName,
+                   CheckArgFlag::RemoveArg);
   }
 #endif
 
@@ -4704,7 +4696,7 @@ bool XREMain::CheckLastStartupWasCrash() {
   // doesn't already exist, it is created, and will be removed at the end of
   // the startup crash detection window.
   AutoFDClose fd;
-  Unused << crashFile.inspect()->OpenNSPRFileDesc(
+  (void)crashFile.inspect()->OpenNSPRFileDesc(
       PR_WRONLY | PR_CREATE_FILE | PR_EXCL, 0666, getter_Transfers(fd));
   return !fd;
 }
@@ -5300,7 +5292,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   // Re-register components to catch potential changes.
   nsCOMPtr<nsIFile> flagFile;
   if (mAppData->directory) {
-    Unused << mAppData->directory->Clone(getter_AddRefs(flagFile));
+    (void)mAppData->directory->Clone(getter_AddRefs(flagFile));
   }
   if (flagFile) {
     flagFile->AppendNative(FILE_INVALIDATE_CACHES);
@@ -5409,7 +5401,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     // It's used as template to create display connections
     // for different threads.
     if (IsWaylandEnabled()) {
-      MOZ_UNUSED(WaylandDisplayGet());
+      (void)WaylandDisplayGet();
     }
 #endif
 #ifdef MOZ_WIDGET_GTK
@@ -6142,8 +6134,7 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   // If we exit gracefully, remove the startup crash canary file.
   auto cleanup = MakeScopeExit([&]() -> nsresult {
     if (mProfLD) {
-      nsCOMPtr<nsIFile> crashFile;
-      MOZ_TRY_VAR(crashFile, GetIncompleteStartupFile(mProfLD));
+      nsCOMPtr<nsIFile> crashFile = MOZ_TRY(GetIncompleteStartupFile(mProfLD));
       crashFile->Remove(false);
     }
     return NS_OK;

@@ -31,7 +31,7 @@
 #include "nsUnicharUtils.h"
 #include "nsGkAtoms.h"
 #include "nsCRT.h"
-#include "nsBaseWidget.h"
+#include "nsIWidget.h"
 
 #include "nsIContent.h"
 #include "nsIDocumentObserver.h"

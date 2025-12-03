@@ -1494,26 +1494,22 @@ void TaskController::ProcessUpdatedPriorityModifier(TaskManager* aManager) {
 
   int32_t modifier = aManager->mCurrentPriorityModifier;
 
-  std::vector<RefPtr<Task>> storedTasks;
-  // Find all relevant tasks.
-  for (auto iter = mMainThreadTasks.begin(); iter != mMainThreadTasks.end();) {
-    if ((*iter)->mTaskManager == aManager) {
-      storedTasks.push_back(*iter);
-      iter = mMainThreadTasks.erase(iter);
-    } else {
-      iter++;
+  // Find all relevant task nodes and move them to a temporary set with the
+  // new priority modifier.
+  PrioritySortedTasks managerTasks;
+  auto cur = mMainThreadTasks.begin();
+  while (cur != mMainThreadTasks.end()) {
+    // Keep a valid iterator before potentially extracting the current task.
+    auto next = std::next(cur);
+    if (cur->get()->mTaskManager == aManager) {
+      auto task = mMainThreadTasks.extract(cur);
+      task.value()->mPriorityModifier = modifier;
+      managerTasks.insert(std::move(task));
     }
+    cur = std::move(next);
   }
-
-  // Reinsert found tasks with their new priorities.
-  for (RefPtr<Task>& ref : storedTasks) {
-    // Kept alive at first by the vector and then by mMainThreadTasks.
-    Task* task = ref;
-    task->mPriorityModifier = modifier;
-    auto insertion = mMainThreadTasks.insert(std::move(ref));
-    MOZ_ASSERT(insertion.second);
-    task->mIterator = insertion.first;
-  }
+  // Merge the temporary set back to the main set.
+  mMainThreadTasks.merge(std::move(managerTasks));
 }
 
 }  // namespace mozilla

@@ -28,6 +28,7 @@ enum class AbsPosReflowFlag : uint8_t {
   IsGridContainerCB,
 };
 using AbsPosReflowFlags = EnumSet<AbsPosReflowFlag>;
+struct StylePositionArea;
 
 /**
  * This class contains the logic for being an absolute containing block.  This
@@ -56,11 +57,6 @@ class AbsoluteContainingBlock {
   }
 
   const nsFrameList& GetChildList() const { return mAbsoluteFrames; }
-  void AppendChildList(nsTArray<FrameChildList>* aLists,
-                       FrameChildListID aListID) const {
-    NS_ASSERTION(aListID == mChildListID, "wrong list ID");
-    GetChildList().AppendIfNonempty(aLists, aListID);
-  }
 
   void SetInitialChildList(nsIFrame* aDelegatingFrame, FrameChildListID aListID,
                            nsFrameList&& aChildList);
@@ -79,11 +75,12 @@ class AbsoluteContainingBlock {
    * @param aOverflowAreas, if non-null, is unioned with (in the local
    * coordinate space) the overflow areas of the absolutely positioned
    * children.
-   *
-   * @param aReflowStatus is assumed to be already-initialized, e.g. with the
-   * status of the delegating frame's main reflow. This function merges in the
-   * statuses of the absolutely positioned children's reflows.
-   *
+   * @param aReflowStatus This function merges in the statuses of the absolutely
+   * positioned children's reflows.
+   * @param aContainingBlock Rect representing the area where absolute
+   * positioned children can be positioned. Generally, this is the padding rect
+   * of `aDelegatingFrame` (Which would not have a valid mRect set during
+   * reflow), offset against the `aDelegatingFrame`'s border rect.
    * @param aFlags zero or more AbsPosReflowFlags
    */
   void Reflow(nsContainerFrame* aDelegatingFrame, nsPresContext* aPresContext,
@@ -115,24 +112,22 @@ class AbsoluteContainingBlock {
    */
   bool FrameDependsOnContainer(
       nsIFrame* aFrame, bool aCBWidthChanged, bool aCBHeightChanged,
-      AnchorPosReferenceData* aAnchorPosReferenceData = nullptr);
+      mozilla::AnchorPosResolutionCache* aAnchorPosResolutionCache = nullptr);
 
   /**
    * After an abspos child's size is known, this method can be used to
    * resolve size-dependent values in the ComputedLogicalOffsets on its
    * reflow input.
    *
-   * aLogicalCBSize is expected in the abspos child's writing-mode. aKidSize,
-   * aMargin, aOffsets, are all expected in the absolute containing block's
-   * writing-mode.
+   * aCBSize, aKidSize, aMargin, aOffsets, are all expected in the absolute
+   * containing block's writing-mode.
    *
    * aOffset is an outparam.
    */
-  void ResolveSizeDependentOffsets(ReflowInput& aKidReflowInput,
-                                   const LogicalSize& aLogicalCBSize,
-                                   const LogicalSize& aKidSize,
-                                   const LogicalMargin& aMargin,
-                                   LogicalMargin& aOffsets);
+  void ResolveSizeDependentOffsets(
+      ReflowInput& aKidReflowInput, const LogicalSize& aCBSize,
+      const LogicalSize& aKidSize, const LogicalMargin& aMargin,
+      const StylePositionArea& aResolvedPositionArea, LogicalMargin& aOffsets);
 
   /**
    * For frames that have intrinsic block sizes, since we want to use the
@@ -140,27 +135,25 @@ class AbsoluteContainingBlock {
    * InitAbsoluteConstraints because the block-size isn't computed yet. This
    * method computes the margins for them after layout.
    *
-   * aLogicalCBSize is expected in the abspos child's writing-mode. aKidSize,
-   * aMargin, aOffsets, are all expected in the absolute containing block's
-   * writing-mode.
+   * aCBSize, aKidSize, aMargin, aOffsets, are all expected in the absolute
+   * containing block's writing-mode.
    *
    * aMargin and aOffsets are both outparams (though we only touch aOffsets if
    * the position is overconstrained)
    */
   void ResolveAutoMarginsAfterLayout(ReflowInput& aKidReflowInput,
-                                     const LogicalSize& aLogicalCBSize,
+                                     const LogicalSize& aCBSize,
                                      const LogicalSize& aKidSize,
                                      LogicalMargin& aMargin,
-                                     LogicalMargin& aOffsets);
+                                     const LogicalMargin& aOffsets);
 
-  void ReflowAbsoluteFrame(nsIFrame* aDelegatingFrame,
-                           nsPresContext* aPresContext,
-                           const ReflowInput& aReflowInput,
-                           const nsRect& aOriginalContainingBlockRect,
-                           AbsPosReflowFlags aFlags, nsIFrame* aKidFrame,
-                           nsReflowStatus& aStatus,
-                           OverflowAreas* aOverflowAreas,
-                           AnchorPosReferenceData* aAnchorPosReferenceData);
+  void ReflowAbsoluteFrame(
+      nsIFrame* aDelegatingFrame, nsPresContext* aPresContext,
+      const ReflowInput& aReflowInput,
+      const nsRect& aOriginalContainingBlockRect, AbsPosReflowFlags aFlags,
+      nsIFrame* aKidFrame, nsReflowStatus& aStatus,
+      OverflowAreas* aOverflowAreas,
+      mozilla::AnchorPosResolutionCache* aAnchorPosResolutionCache = nullptr);
 
   /**
    * Mark our absolute frames dirty.

@@ -26,7 +26,8 @@ mozilla::ipc::IPCResult BroadcastChannelChild::RecvNotify(
     return IPC_OK();
   }
 
-  mBC->MessageReceived(aData);
+  RefPtr<BroadcastChannel> self = mBC;
+  self->MessageReceived(aData);
   return IPC_OK();
 }
 
@@ -37,7 +38,8 @@ mozilla::ipc::IPCResult BroadcastChannelChild::RecvRefMessageDelivered(
     return IPC_OK();
   }
 
-  mBC->MessageDelivered(aMessageID, aOtherBCs);
+  RefPtr<BroadcastChannel> self = mBC;
+  self->MessageDelivered(aMessageID, aOtherBCs);
   return IPC_OK();
 }
 

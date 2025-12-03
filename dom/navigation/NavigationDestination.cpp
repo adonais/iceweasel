@@ -90,9 +90,14 @@ void NavigationDestination::GetState(JSContext* aCx,
     // the best we can do is just re-throw the NS_ERROR_DOM_DATA_CLONE_ERR. When
     // nsStructuredCloneContainer::DeserializeToJsval throws better exceptions
     // this should too.
+    // See also: NavigationHistoryEntry::GetState
     aRv.Throw(rv);
     return;
   }
+}
+
+void NavigationDestination::SetState(nsIStructuredCloneContainer* aState) {
+  mState = aState;
 }
 
 JSObject* NavigationDestination::WrapObject(JSContext* aCx,
@@ -107,5 +112,7 @@ NavigationHistoryEntry* NavigationDestination::GetEntry() const {
 }
 
 nsIURI* NavigationDestination::GetURL() const { return mURL; }
+
+void NavigationDestination::SetURL(nsIURI* aURI) { mURL = aURI; }
 
 }  // namespace mozilla::dom

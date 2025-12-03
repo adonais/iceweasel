@@ -8,8 +8,6 @@
 
 #include <algorithm>
 
-#include "mozilla/Likely.h"
-
 #include "nsIChannel.h"
 #include "nsIFileChannel.h"
 #include "nsIObserverService.h"

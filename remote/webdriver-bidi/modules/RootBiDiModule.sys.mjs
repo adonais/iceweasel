@@ -7,6 +7,8 @@ import { Module } from "chrome://remote/content/shared/messagehandler/Module.sys
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
+  NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   WindowGlobalMessageHandler:
     "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.sys.mjs",
 });
@@ -33,6 +35,38 @@ export class RootBiDiModule extends Module {
       type: lazy.WindowGlobalMessageHandler.type,
     };
     return this.emitEvent(eventName, eventPayload, contextInfo);
+  }
+
+  /**
+   * Retrieves a browsing context based on its navigable id.
+   *
+   * @see https://w3c.github.io/webdriver-bidi/#get-a-navigable
+   *
+   * @param {string} navigableId
+   *     Unique id of the browsing context.
+   *
+   * @returns {BrowsingContext|null}
+   *     The browsing context, or null if `navigableId` is null.
+   *
+   * @throws {NoSuchFrameError}
+   *     If the browsing context cannot be found.
+   */
+  _getNavigable(navigableId) {
+    if (navigableId === null) {
+      // The WebDriver BiDi specification expects `null` to be
+      // returned if navigable id is `null`.
+      return null;
+    }
+
+    const context = lazy.NavigableManager.getBrowsingContextById(navigableId);
+
+    if (context === null) {
+      throw new lazy.error.NoSuchFrameError(
+        `Browsing Context with id ${navigableId} not found`
+      );
+    }
+
+    return context;
   }
 
   /**

@@ -281,17 +281,6 @@ void WaylandSurface::FrameCallbackHandler(struct wl_callback* aCallback,
   }
 }
 
-static void FrameCallbackHandler(void* aWaylandSurface,
-                                 struct wl_callback* aCallback,
-                                 uint32_t aTime) {
-  RefPtr waylandSurface = static_cast<WaylandSurface*>(aWaylandSurface);
-  waylandSurface->FrameCallbackHandler(aCallback, aTime,
-                                       /* aRoutedFromChildSurface */ false);
-}
-
-static const struct wl_callback_listener sWaylandSurfaceFrameListener = {
-    ::FrameCallbackHandler};
-
 void WaylandSurface::RequestFrameCallbackLocked(
     const WaylandSurfaceLock& aProofOfLock) {
   LOGVERBOSE(
@@ -317,6 +306,7 @@ void WaylandSurface::RequestFrameCallbackLocked(
         }};
     mOpaqueRegionFrameCallback = wl_surface_frame(mSurface);
     wl_callback_add_listener(mOpaqueRegionFrameCallback, &listener, this);
+    mSurfaceNeedsCommit = true;
   }
 
   if (!mFrameCallbackEnabled || !mFrameCallbackHandler.IsSet()) {
@@ -326,9 +316,15 @@ void WaylandSurface::RequestFrameCallbackLocked(
   MOZ_DIAGNOSTIC_ASSERT(mSurface, "Missing mapped surface!");
 
   if (!mFrameCallback) {
+    static const struct wl_callback_listener listener{
+        [](void* aData, struct wl_callback* callback, uint32_t time) {
+          RefPtr waylandSurface = static_cast<WaylandSurface*>(aData);
+          waylandSurface->FrameCallbackHandler(
+              callback, time,
+              /* aRoutedFromChildSurface */ false);
+        }};
     mFrameCallback = wl_surface_frame(mSurface);
-    wl_callback_add_listener(mFrameCallback, &sWaylandSurfaceFrameListener,
-                             this);
+    wl_callback_add_listener(mFrameCallback, &listener, this);
     mSurfaceNeedsCommit = true;
   }
 
@@ -741,11 +737,12 @@ bool WaylandSurface::DisableUserInputLocked(
 void WaylandSurface::OpaqueCallbackHandler() {
   WaylandSurfaceLock lock(this);
   if (mPendingOpaqueRegion) {
-    LOGVERBOSE("WaylandSurface::OpaqueCallbackHandler()");
+    LOGVERBOSE("WaylandSurface::SetOpaqueRegionCallbackHandler()");
     wl_surface_set_opaque_region(mSurface, mPendingOpaqueRegion);
     MozClearPointer(mPendingOpaqueRegion, wl_region_destroy);
     mSurfaceNeedsCommit = true;
   }
+  MozClearPointer(mOpaqueRegionFrameCallback, wl_callback_destroy);
 }
 
 void WaylandSurface::SetOpaqueLocked(const WaylandSurfaceLock& aProofOfLock) {
@@ -768,8 +765,6 @@ void WaylandSurface::SetOpaqueRegionLocked(
     return;
   }
 
-  LOGVERBOSE("WaylandSurface::SetOpaqueRegionLocked()");
-
   // Region should be in surface-logical coordinates, so we need to divide by
   // the buffer scale. We use round-in in order to be safe with subpixels.
   UnknownScaleFactor scale(GetScale());
@@ -781,8 +776,9 @@ void WaylandSurface::SetOpaqueRegionLocked(
     const auto& rect = gfx::RoundedIn(iter.Get().ToUnknownRect() / scale);
     wl_region_add(mPendingOpaqueRegion, rect.x, rect.y, rect.Width(),
                   rect.Height());
-    LOGVERBOSE("  region [%d, %d] -> [%d x %d]", rect.x, rect.y, rect.Width(),
-               rect.Height());
+    LOGVERBOSE(
+        "WaylandSurface::SetOpaqueRegionLocked() region [%d, %d] -> [%d x %d]",
+        rect.x, rect.y, rect.Width(), rect.Height());
   }
   RequestFrameCallbackLocked(aProofOfLock);
 }
@@ -1053,7 +1049,7 @@ bool WaylandSurface::RemoveOpaqueSurfaceHandlerLocked(
   return true;
 }
 
-wl_egl_window* WaylandSurface::GetEGLWindow(nsIntSize aUnscaledSize) {
+wl_egl_window* WaylandSurface::GetEGLWindow(DesktopIntSize aSize) {
   LOGWAYLAND("WaylandSurface::GetEGLWindow() eglwindow %p", (void*)mEGLWindow);
 
   WaylandSurfaceLock lock(this);
@@ -1063,10 +1059,9 @@ wl_egl_window* WaylandSurface::GetEGLWindow(nsIntSize aUnscaledSize) {
     return nullptr;
   }
 
-  auto scale = GetScale();
-  // TODO: Correct size rounding
-  nsIntSize scaledSize((int)floor(aUnscaledSize.width * scale),
-                       (int)floor(aUnscaledSize.height * scale));
+  auto scaledSize = LayoutDeviceIntSize::Round(
+      aSize * DesktopToLayoutDeviceScale(GetScale()));
+
   if (!mEGLWindow) {
     mEGLWindow =
         wl_egl_window_create(mSurface, scaledSize.width, scaledSize.height);
@@ -1080,7 +1075,7 @@ wl_egl_window* WaylandSurface::GetEGLWindow(nsIntSize aUnscaledSize) {
   }
 
   if (mEGLWindow) {
-    SetSizeLocked(lock, scaledSize, aUnscaledSize);
+    SetSizeLocked(lock, scaledSize.ToUnknownSize(), aSize.ToUnknownSize());
   }
 
   return mEGLWindow;
@@ -1088,7 +1083,7 @@ wl_egl_window* WaylandSurface::GetEGLWindow(nsIntSize aUnscaledSize) {
 
 // Return false if scale factor doesn't match buffer size.
 // We need to skip painting in such case do avoid Wayland compositor freaking.
-bool WaylandSurface::SetEGLWindowSize(nsIntSize aScaledSize) {
+bool WaylandSurface::SetEGLWindowSize(LayoutDeviceIntSize aSize) {
   WaylandSurfaceLock lock(this);
 
   // We may be called after unmap so we're missing egl window completelly.
@@ -1099,19 +1094,17 @@ bool WaylandSurface::SetEGLWindowSize(nsIntSize aScaledSize) {
     return true;
   }
 
-  auto scale = GetScale();
-  // TODO: Avoid precision lost here? Load coordinates from window?
-  nsIntSize unscaledSize((int)round(aScaledSize.width / scale),
-                         (int)round(aScaledSize.height / scale));
+  auto unscaledSize =
+      DesktopIntSize::Round(aSize / DesktopToLayoutDeviceScale(GetScale()));
 
   LOGVERBOSE(
       "WaylandSurface::SetEGLWindowSize() scaled [%d x %d] unscaled [%d x %d] "
       "scale %f",
-      aScaledSize.width, aScaledSize.height, unscaledSize.width,
-      unscaledSize.height, scale);
+      aSize.width, aSize.height, unscaledSize.width, unscaledSize.height,
+      GetScale());
 
-  wl_egl_window_resize(mEGLWindow, aScaledSize.width, aScaledSize.height, 0, 0);
-  SetSizeLocked(lock, aScaledSize, unscaledSize);
+  wl_egl_window_resize(mEGLWindow, aSize.width, aSize.height, 0, 0);
+  SetSizeLocked(lock, aSize.ToUnknownSize(), unscaledSize.ToUnknownSize());
   return true;
 }
 

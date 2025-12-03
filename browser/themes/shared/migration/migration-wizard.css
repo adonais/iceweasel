@@ -419,7 +419,7 @@ div[name="page-selection"][show-import-all] .resource-selection-details {
 
 p.migration-wizard-subheader {
   font-size: var(--embedded-wizard-subheader-font-size, 0.85em);
-  font-weight: var(--embedded-wizard-subheader-font-weight, 400);
+  font-weight: var(--embedded-wizard-subheader-font-weight, normal);
   margin-block: var(--embedded-wizard-subheader-margin-block, 0 28px);
   line-height: 1.2em;
 

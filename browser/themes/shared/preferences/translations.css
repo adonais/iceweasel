@@ -48,7 +48,7 @@
 .translations-settings-language-header {
   margin: calc(2 * var(--space-small)) 0;
   font-size: var(--font-size-root);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--heading-font-weight);
 }
 
 .translations-settings-language-list {

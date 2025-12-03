@@ -8,7 +8,6 @@
 #define mozilla_dom_FetchDriver_h
 
 #include "mozilla/ConsoleReportCollector.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"

@@ -24,7 +24,6 @@
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ServoStyleSet.h"
-#include "mozilla/Span.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_test.h"
 #include "mozilla/StyleAnimationValue.h"
@@ -43,6 +42,7 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FileBinding.h"
 #include "mozilla/dom/FunctionBinding.h"
+#include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/Touch.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
@@ -67,6 +67,7 @@
 #include "nsJSEnvironment.h"
 #include "nsJSUtils.h"
 #include "nsLayoutUtils.h"
+#include "nsMenuPopupFrame.h"
 #include "nsPresContext.h"
 #include "nsQueryContentEventResult.h"
 #include "nsQueryObject.h"
@@ -110,7 +111,6 @@
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/RDDProcessManager.h"
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/ViewportUtils.h"
@@ -426,8 +426,9 @@ nsDOMWindowUtils::UpdateLayerTree() {
     RefPtr<nsViewManager> vm = presShell->GetViewManager();
     if (nsView* view = vm->GetRootView()) {
       nsAutoScriptBlocker scriptBlocker;
-      presShell->PaintAndRequestComposite(view,
-                                          PaintFlags::PaintSyncDecodeImages);
+      presShell->PaintAndRequestComposite(
+          view->GetFrame(), view->GetWidget()->GetWindowRenderer(),
+          PaintFlags::PaintSyncDecodeImages);
       presShell->GetWindowRenderer()->WaitOnTransactionProcessed();
     }
   }
@@ -933,24 +934,15 @@ nsresult nsDOMWindowUtils::SendTouchEventCommon(
 
   nsEventStatus status = nsEventStatus_eIgnore;
   if (aToWindow) {
-    RefPtr<PresShell> presShell;
-    nsView* view = nsContentUtils::GetViewToDispatchEvent(
-        presContext, getter_AddRefs(presShell));
-    if (!presShell || !view) {
-      return NS_ERROR_FAILURE;
-    }
-    *aPreventDefault = (status == nsEventStatus_eConsumeNoDefault);
-    return presShell->HandleEvent(view->GetFrame(), &event, false, &status);
-  }
-
-  if (aAsyncEnabled == AsyncEnabledOption::ASYNC_ENABLED ||
-      StaticPrefs::test_events_async_enabled()) {
+    RefPtr<PresShell> presShell = presContext->PresShell();
+    MOZ_TRY(presShell->HandleEvent(presShell->GetRootFrame(), &event, false,
+                                   &status));
+  } else if (aAsyncEnabled == AsyncEnabledOption::ASYNC_ENABLED ||
+             StaticPrefs::test_events_async_enabled()) {
     status = widget->DispatchInputEvent(&event).mContentStatus;
   } else {
-    nsresult rv = widget->DispatchEvent(&event, status);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(widget->DispatchEvent(&event, status));
   }
-
   if (aPreventDefault) {
     *aPreventDefault = (status == nsEventStatus_eConsumeNoDefault);
   }
@@ -1287,8 +1279,12 @@ nsDOMWindowUtils::GetParsedStyleSheets(uint32_t* aSheets) {
   if (!doc) {
     return NS_ERROR_UNEXPECTED;
   }
-
-  *aSheets = doc->CSSLoader()->ParsedSheetCount();
+  css::Loader* cssLoader = doc->GetExistingCSSLoader();
+  if (cssLoader) {
+    *aSheets = cssLoader->ParsedSheetCount();
+  } else {
+    *aSheets = 0;
+  }
   return NS_OK;
 }
 
@@ -1936,8 +1932,8 @@ Result<mozilla::LayoutDeviceRect, nsresult> nsDOMWindowUtils::ConvertTo(
 NS_IMETHODIMP
 nsDOMWindowUtils::ToScreenRectInCSSUnits(float aX, float aY, float aWidth,
                                          float aHeight, DOMRect** aResult) {
-  LayoutDeviceRect devRect;
-  MOZ_TRY_VAR(devRect, ConvertTo(aX, aY, aWidth, aHeight, CoordsType::Screen));
+  LayoutDeviceRect devRect =
+      MOZ_TRY(ConvertTo(aX, aY, aWidth, aHeight, CoordsType::Screen));
 
   nsPresContext* presContext = GetPresContext();
   MOZ_ASSERT(presContext);
@@ -1960,9 +1956,8 @@ nsDOMWindowUtils::ToScreenRectInCSSUnits(float aX, float aY, float aWidth,
 NS_IMETHODIMP
 nsDOMWindowUtils::ToScreenRect(float aX, float aY, float aWidth, float aHeight,
                                DOMRect** aResult) {
-  LayoutDeviceRect devPixelsRect;
-  MOZ_TRY_VAR(devPixelsRect,
-              ConvertTo(aX, aY, aWidth, aHeight, CoordsType::Screen));
+  LayoutDeviceRect devPixelsRect =
+      MOZ_TRY(ConvertTo(aX, aY, aWidth, aHeight, CoordsType::Screen));
 
   ScreenRect rect = ViewAs<ScreenPixel>(
       devPixelsRect, PixelCastJustification::ScreenIsParentLayerForRoot);
@@ -1976,9 +1971,8 @@ nsDOMWindowUtils::ToScreenRect(float aX, float aY, float aWidth, float aHeight,
 NS_IMETHODIMP
 nsDOMWindowUtils::ToTopLevelWidgetRect(float aX, float aY, float aWidth,
                                        float aHeight, DOMRect** aResult) {
-  LayoutDeviceRect rect;
-  MOZ_TRY_VAR(rect,
-              ConvertTo(aX, aY, aWidth, aHeight, CoordsType::TopLevelWidget));
+  LayoutDeviceRect rect =
+      MOZ_TRY(ConvertTo(aX, aY, aWidth, aHeight, CoordsType::TopLevelWidget));
 
   RefPtr<DOMRect> outRect = new DOMRect(mWindow);
   outRect->SetRect(rect.x, rect.y, rect.width, rect.height);
@@ -3056,6 +3050,12 @@ nsDOMWindowUtils::DisableApzForElement(Element* aElement) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsDOMWindowUtils::IsApzDisabledForElement(Element* aElement, bool* aOutResult) {
+  *aOutResult = nsLayoutUtils::ShouldDisableApzForElement(aElement);
+  return NS_OK;
+}
+
 static nsTArray<ScrollContainerFrame*> CollectScrollableAncestors(
     nsIFrame* aStart) {
   nsTArray<ScrollContainerFrame*> result;
@@ -3518,8 +3518,8 @@ nsDOMWindowUtils::GetFileReferences(const nsAString& aDatabaseName, int64_t aId,
   nsCOMPtr<nsPIDOMWindowOuter> window = do_QueryReferent(mWindow);
   NS_ENSURE_TRUE(window, NS_ERROR_FAILURE);
 
-  quota::PrincipalMetadata principalMetadata;
-  MOZ_TRY_VAR(principalMetadata, quota::GetInfoFromWindow(window));
+  quota::PrincipalMetadata principalMetadata =
+      MOZ_TRY(quota::GetInfoFromWindow(window));
 
   RefPtr<IndexedDatabaseManager> mgr = IndexedDatabaseManager::Get();
   if (mgr) {
@@ -3845,8 +3845,8 @@ nsDOMWindowUtils::AddSheet(nsIPreloadedStyleSheet* aSheet,
   nsCOMPtr<Document> doc = GetDocument();
   NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
 
-  StyleSheet* sheet = nullptr;
-  MOZ_TRY_VAR(sheet, static_cast<PreloadedStyleSheet*>(aSheet)->GetSheet());
+  StyleSheet* sheet =
+      MOZ_TRY(static_cast<PreloadedStyleSheet*>(aSheet)->GetSheet());
 
   Document::additionalSheetType type = convertSheetType(aSheetType);
   return doc->AddAdditionalStyleSheet(type, sheet);

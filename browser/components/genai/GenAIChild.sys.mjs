@@ -144,16 +144,101 @@ export class GenAIChild extends JSWindowActorChild {
   }
 
   /**
-   * Handles incoming messages from the browser.
+   * Handles incoming messages from the browser
    *
    * @param {object} message - The message object containing name
-   * @param {string} message.name - The name of the message.
+   * @param {string} message.name - The name of the message
+   * @param {object} message.data - The data object of the message
    */
-  async receiveMessage({ name }) {
-    if (name === "GetReadableText") {
-      return await this.getContentText();
+  async receiveMessage({ name, data }) {
+    switch (name) {
+      case "GetReadableText":
+        return this.getContentText();
+      case "AutoSubmit":
+        return await this.autoSubmitClick(data);
+      default:
+        return null;
     }
-    return null;
+  }
+
+  /**
+   * Find the prompt editable element within a timeout
+   * Return the element or null
+   *
+   * @param {Window} win - the target window
+   * @param {number} [tms=1000] - time in ms
+   */
+  async findTextareaEl(win, tms = 1000) {
+    const start = win.performance.now();
+    let el;
+    while (
+      !(el = win.document.querySelector(
+        '#prompt-textarea, [contenteditable], [role="textbox"]'
+      )) &&
+      win.performance.now() - start < tms
+    ) {
+      await new Promise(r => win.requestAnimationFrame(r));
+    }
+    return el;
+  }
+
+  /**
+   * Automatically submit the prompt
+   *
+   * @param {string} promptText - the prompt to send
+   */
+  async autoSubmitClick({ promptText = "" } = {}) {
+    const win = this.contentWindow;
+    if (!win || win._autosent) {
+      return;
+    }
+
+    // Ensure the DOM is ready before querying elements
+    if (win.document.readyState === "loading") {
+      await new Promise(r =>
+        win.addEventListener("DOMContentLoaded", r, { once: true })
+      );
+    }
+
+    const editable = await this.findTextareaEl(win);
+    if (!editable) {
+      return;
+    }
+
+    if (!editable.textContent) {
+      editable.textContent = promptText;
+      editable.dispatchEvent(new win.InputEvent("input", { bubbles: true }));
+    }
+
+    // Explicitly wait for the button is ready
+    await new Promise(r => win.requestAnimationFrame(r));
+
+    // Simulating click to avoid SPA router rewriting (?prompt-textarea=)
+    const submitBtn =
+      win.document.querySelector('button[data-testid="send-button"]') ||
+      win.document.querySelector('button[aria-label="Send prompt"]') ||
+      win.document.querySelector('button[aria-label="Send message"]');
+
+    if (submitBtn) {
+      submitBtn.click();
+      win._autosent = true;
+    }
+
+    // Ensure clean up textarea only for chatGPT and mochitest
+    if (
+      win._autosent &&
+      (/chatgpt\.com/i.test(win.location.host) ||
+        win.location.pathname.includes("file_chat-autosubmit.html"))
+    ) {
+      win.setTimeout(() => {
+        if (editable.textContent) {
+          editable.textContent = "";
+          editable.dispatchEvent(
+            new win.InputEvent("input", { bubbles: true })
+          );
+        }
+      }, 500);
+    }
   }
 
   /**

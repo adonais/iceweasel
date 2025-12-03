@@ -149,7 +149,7 @@ static void LogBlockedRequest(nsIRequest* aRequest, const char* aProperty,
   // since the window id can lead to current top level window's web console.
   if (!innerWindowID) {
     if (nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest)) {
-      Unused << httpChannel->GetTopLevelContentWindowId(&innerWindowID);
+      (void)httpChannel->GetTopLevelContentWindowId(&innerWindowID);
     }
   }
   nsCORSListenerProxy::LogBlockedCORSRequest(innerWindowID, privateBrowsing,
@@ -368,7 +368,7 @@ bool CORSCacheEntry::CheckDNSCache() {
   }
 
   TimeStamp lastUpdate;
-  Unused << addrRec->GetLastUpdate(&lastUpdate);
+  (void)addrRec->GetLastUpdate(&lastUpdate);
 
   if (lastUpdate > mCreationTime) {
     return false;
@@ -996,9 +996,8 @@ nsCORSListenerProxy::AsyncOnChannelRedirect(
     nsCOMPtr<nsIHttpChannel> oldHttpChannel = do_QueryInterface(aOldChannel);
     if (oldHttpChannel) {
       nsAutoCString method;
-      Unused << oldHttpChannel->GetRequestMethod(method);
-      Unused << oldHttpChannel->ShouldStripRequestBodyHeader(method,
-                                                             &rewriteToGET);
+      (void)oldHttpChannel->GetRequestMethod(method);
+      (void)oldHttpChannel->ShouldStripRequestBodyHeader(method, &rewriteToGET);
     }
 
     rv = UpdateChannel(
@@ -1274,7 +1273,7 @@ nsresult nsCORSListenerProxy::CheckPreflightNeeded(nsIChannel* aChannel,
   }
 
   nsAutoCString method;
-  Unused << http->GetRequestMethod(method);
+  (void)http->GetRequestMethod(method);
   if (!method.LowerCaseEqualsLiteral("get") &&
       !method.LowerCaseEqualsLiteral("post") &&
       !method.LowerCaseEqualsLiteral("head")) {
@@ -1375,7 +1374,7 @@ void nsCORSPreflightListener::AddResultToCache(nsIRequest* aRequest) {
   // The "Access-Control-Max-Age" header should return an age in seconds.
   nsAutoCString headerVal;
   uint32_t age = 0;
-  Unused << http->GetResponseHeader("Access-Control-Max-Age"_ns, headerVal);
+  (void)http->GetResponseHeader("Access-Control-Max-Age"_ns, headerVal);
   if (headerVal.IsEmpty()) {
     age = PREFLIGHT_DEFAULT_EXPIRY_SECONDS;
   } else {
@@ -1422,13 +1421,12 @@ void nsCORSPreflightListener::AddResultToCache(nsIRequest* aRequest) {
   nsCOMPtr<nsIHttpChannelInternal> httpChannelInternal(
       do_QueryInterface(aRequest));
   if (httpChannelInternal) {
-    Unused << httpChannelInternal->GetIsProxyUsed(&entry->mIsProxyUsed);
+    (void)httpChannelInternal->GetIsProxyUsed(&entry->mIsProxyUsed);
   }
 
   // The "Access-Control-Allow-Methods" header contains a comma separated
   // list of method names.
-  Unused << http->GetResponseHeader("Access-Control-Allow-Methods"_ns,
-                                    headerVal);
+  (void)http->GetResponseHeader("Access-Control-Allow-Methods"_ns, headerVal);
 
   for (const nsACString& method :
        nsCCharSeparatedTokenizer(headerVal, ',').ToRange()) {
@@ -1455,8 +1453,7 @@ void nsCORSPreflightListener::AddResultToCache(nsIRequest* aRequest) {
 
   // The "Access-Control-Allow-Headers" header contains a comma separated
   // list of method names.
-  Unused << http->GetResponseHeader("Access-Control-Allow-Headers"_ns,
-                                    headerVal);
+  (void)http->GetResponseHeader("Access-Control-Allow-Headers"_ns, headerVal);
 
   for (const nsACString& header :
        nsCCharSeparatedTokenizer(headerVal, ',').ToRange()) {
@@ -1568,8 +1565,7 @@ nsresult nsCORSPreflightListener::CheckPreflightRequestApproved(
   nsAutoCString headerVal;
   // The "Access-Control-Allow-Methods" header contains a comma separated
   // list of method names.
-  Unused << http->GetResponseHeader("Access-Control-Allow-Methods"_ns,
-                                    headerVal);
+  (void)http->GetResponseHeader("Access-Control-Allow-Methods"_ns, headerVal);
   bool foundMethod = mPreflightMethod.EqualsLiteral("GET") ||
                      mPreflightMethod.EqualsLiteral("HEAD") ||
                      mPreflightMethod.EqualsLiteral("POST");
@@ -1601,8 +1597,7 @@ nsresult nsCORSPreflightListener::CheckPreflightRequestApproved(
 
   // The "Access-Control-Allow-Headers" header contains a comma separated
   // list of header names.
-  Unused << http->GetResponseHeader("Access-Control-Allow-Headers"_ns,
-                                    headerVal);
+  (void)http->GetResponseHeader("Access-Control-Allow-Headers"_ns, headerVal);
   nsTArray<nsCString> headers;
   bool wildcard = false;
   bool hasAuthorizationHeader = false;
@@ -1715,7 +1710,7 @@ nsresult nsCORSListenerProxy::StartCORSPreflight(
   nsAutoCString method;
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(aRequestChannel));
   NS_ENSURE_TRUE(httpChannel, NS_ERROR_UNEXPECTED);
-  Unused << httpChannel->GetRequestMethod(method);
+  (void)httpChannel->GetRequestMethod(method);
 
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_GetFinalChannelURI(aRequestChannel, getter_AddRefs(uri));

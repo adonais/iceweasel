@@ -17,7 +17,6 @@
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ArenaAllocatorExtensions.h"
 #include "mozilla/ArenaAllocator.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Components.h"
 #include "mozilla/dom/PContent.h"
@@ -27,6 +26,7 @@
 #include "mozilla/glean/LibprefMetrics.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/HashTable.h"
+#include "mozilla/HelperMacros.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
@@ -44,7 +44,6 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/Try.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/URLPreloader.h"
 #include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
@@ -1274,16 +1273,14 @@ class MOZ_STACK_CLASS PrefWrapper : public PrefWrapperBase {
   }
 
   nsresult GetValue(PrefValueKind aKind, bool* aResult) const {
-    PrefValueKind kind;
-    MOZ_TRY_VAR(kind, WantValueKind(PrefType::Bool, aKind));
+    PrefValueKind kind = MOZ_TRY(WantValueKind(PrefType::Bool, aKind));
 
     *aResult = GetBoolValue(kind);
     return NS_OK;
   }
 
   nsresult GetValue(PrefValueKind aKind, int32_t* aResult) const {
-    PrefValueKind kind;
-    MOZ_TRY_VAR(kind, WantValueKind(PrefType::Int, aKind));
+    PrefValueKind kind = MOZ_TRY(WantValueKind(PrefType::Int, aKind));
 
     *aResult = GetIntValue(kind);
     return NS_OK;
@@ -1305,8 +1302,7 @@ class MOZ_STACK_CLASS PrefWrapper : public PrefWrapperBase {
   }
 
   nsresult GetValue(PrefValueKind aKind, nsACString& aResult) const {
-    PrefValueKind kind;
-    MOZ_TRY_VAR(kind, WantValueKind(PrefType::String, aKind));
+    PrefValueKind kind = MOZ_TRY(WantValueKind(PrefType::String, aKind));
 
     aResult = GetStringValue(kind);
     return NS_OK;
@@ -2637,8 +2633,8 @@ nsPrefBranch::GetComplexValue(const char* aPrefName, const nsIID& aType,
         fromFile, Substring(++keyEnd, strEnd), getter_AddRefs(theFile)));
 
     nsCOMPtr<nsIRelativeFilePref> relativePref = new nsRelativeFilePref();
-    Unused << relativePref->SetFile(theFile);
-    Unused << relativePref->SetRelativeToKey(key);
+    (void)relativePref->SetFile(theFile);
+    (void)relativePref->SetRelativeToKey(key);
 
     relativePref.forget(reinterpret_cast<nsIRelativeFilePref**>(aRetVal));
     return NS_OK;
@@ -3727,8 +3723,8 @@ static Maybe<bool> TelemetryPrefValue() {
   return Some(true);
 #  else
   nsAutoCString channelPrefValue;
-  Unused << Preferences::GetCString(kChannelPref, channelPrefValue,
-                                    PrefValueKind::Default);
+  (void)Preferences::GetCString(kChannelPref, channelPrefValue,
+                                PrefValueKind::Default);
   return Some(channelPrefValue.EqualsLiteral("beta"));
 #  endif
 }
@@ -3770,8 +3766,8 @@ static bool TelemetryPrefValue() {
   // are shipped to beta users.
   if (channel.EqualsLiteral("release")) {
     nsAutoCString channelPrefValue;
-    Unused << Preferences::GetCString(kChannelPref, channelPrefValue,
-                                      PrefValueKind::Default);
+    (void)Preferences::GetCString(kChannelPref, channelPrefValue,
+                                  PrefValueKind::Default);
     if (channelPrefValue.EqualsLiteral("beta")) {
       return true;
     }
@@ -4020,7 +4016,7 @@ mozilla::ipc::ReadOnlySharedMemoryHandle Preferences::EnsureSnapshot() {
     // changed preferences, rather than the expected total number of
     // preferences.
     HashTable()->clearAndCompact();
-    Unused << HashTable()->reserve(kHashTableInitialLengthContent);
+    (void)HashTable()->reserve(kHashTableInitialLengthContent);
 
     delete sPrefNameArena;
     sPrefNameArena = newPrefNameArena;
@@ -4030,7 +4026,7 @@ mozilla::ipc::ReadOnlySharedMemoryHandle Preferences::EnsureSnapshot() {
       auto pref = toRepopulate[i];
       auto p = HashTable()->lookupForAdd(pref->Name());
       MOZ_ASSERT(!p.found());
-      Unused << HashTable()->add(p, pref);
+      (void)HashTable()->add(p, pref);
     }
   }
 
@@ -4140,7 +4136,7 @@ Preferences::ResetPrefs() {
   }
 
   HashTable()->clearAndCompact();
-  Unused << HashTable()->reserve(kHashTableInitialLengthParent);
+  (void)HashTable()->reserve(kHashTableInitialLengthParent);
 
   PrefNameArena().Clear();
 
@@ -4529,7 +4525,7 @@ already_AddRefed<nsIFile> Preferences::ReadSavedPrefs() {
   } else {
     // Store the last modified time of the file while we've got it.
     // We don't really care if this fails.
-    Unused << file->GetLastModifiedTime(&mUserPrefsFileLastModifiedAtStartup);
+    (void)file->GetLastModifiedTime(&mUserPrefsFileLastModifiedAtStartup);
 
     if (NS_FAILED(rv)) {
       // Save a backup copy of the current (invalid) prefs file, since all prefs
@@ -4750,8 +4746,7 @@ nsresult Preferences::WritePrefFile(
 static nsresult openPrefFile(nsIFile* aFile, PrefValueKind aKind) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  nsCString data;
-  MOZ_TRY_VAR(data, URLPreloader::ReadFile(aFile));
+  nsCString data = MOZ_TRY(URLPreloader::ReadFile(aFile));
 
   nsAutoString filenameUtf16;
   aFile->GetLeafName(filenameUtf16);
@@ -4851,9 +4846,8 @@ static nsresult pref_LoadPrefsInDir(nsIFile* aDir) {
 
 static nsresult pref_ReadPrefFromJar(nsZipArchive* aJarReader,
                                      const char* aName) {
-  nsCString manifest;
-  MOZ_TRY_VAR(manifest,
-              URLPreloader::ReadZip(aJarReader, nsDependentCString(aName)));
+  nsCString manifest =
+      MOZ_TRY(URLPreloader::ReadZip(aJarReader, nsDependentCString(aName)));
 
   Parser parser;
   if (!parser.Parse(PrefValueKind::Default, aName, manifest)) {
@@ -5431,11 +5425,8 @@ nsresult Preferences::Lock(const char* aPrefName) {
   ENSURE_PARENT_PROCESS("Lock", aPrefName);
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
-  Pref* pref;
-  MOZ_TRY_VAR(pref,
-              pref_LookupForModify(aPrefName, [](const PrefWrapper& aPref) {
-                return !aPref.IsLocked();
-              }));
+  Pref* pref = MOZ_TRY(pref_LookupForModify(
+      aPrefName, [](const PrefWrapper& aPref) { return !aPref.IsLocked(); }));
 
   if (pref) {
     pref->SetIsLocked(true);
@@ -5450,11 +5441,8 @@ nsresult Preferences::Unlock(const char* aPrefName) {
   ENSURE_PARENT_PROCESS("Unlock", aPrefName);
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
-  Pref* pref;
-  MOZ_TRY_VAR(pref,
-              pref_LookupForModify(aPrefName, [](const PrefWrapper& aPref) {
-                return aPref.IsLocked();
-              }));
+  Pref* pref = MOZ_TRY(pref_LookupForModify(
+      aPrefName, [](const PrefWrapper& aPref) { return aPref.IsLocked(); }));
 
   if (pref) {
     pref->SetIsLocked(false);

@@ -11,7 +11,8 @@ add_setup(async () => {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     prefs: [
       ["suggest.quicksuggest.sponsored", true],
-      ["quicksuggest.dataCollection.enabled", true],
+      ["quicksuggest.online.available", true],
+      ["quicksuggest.online.enabled", true],
     ],
   });
 });

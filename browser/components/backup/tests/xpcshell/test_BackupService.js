@@ -3,9 +3,6 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
 const { BasePromiseWorker } = ChromeUtils.importESModule(
   "resource://gre/modules/PromiseWorker.sys.mjs"
 );
@@ -22,13 +19,31 @@ const { ERRORS } = ChromeUtils.importESModule(
   "chrome://browser/content/backup/backup-constants.mjs"
 );
 
+const { TestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TestUtils.sys.mjs"
+);
+
 const LAST_BACKUP_TIMESTAMP_PREF_NAME =
   "browser.backup.scheduled.last-backup-timestamp";
 const LAST_BACKUP_FILE_NAME_PREF_NAME =
   "browser.backup.scheduled.last-backup-file";
+const BACKUP_ARCHIVE_ENABLED_PREF_NAME = "browser.backup.archive.enabled";
+const BACKUP_RESTORE_ENABLED_PREF_NAME = "browser.backup.restore.enabled";
 
 /** @type {nsIToolkitProfile} */
 let currentProfile;
+
+// Mock backup metadata
+const DATE = "2024-06-25T21:59:11.777Z";
+const IS_ENCRYPTED = true;
+const DEVICE_NAME = "test-device";
+const APP_NAME = "test-app-name";
+const APP_VERSION = "test-app-version";
+const BUILD_ID = "test-build-id";
+const OS_NAME = "test-os-name";
+const OS_VERSION = "test-os-version";
+const TELEMETRY_ENABLED = true;
+const LEGACY_CLIENT_ID = "legacy-client-id";
 
 add_setup(function () {
   currentProfile = setupProfile();
@@ -108,14 +123,6 @@ async function testCreateBackupHelper(sandbox, taskFn) {
   let fakeProfilePath = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
     "createBackupTest"
-  );
-
-  let testTelemetryStateObject = {
-    clientID: "ed209123-04a1-04a1-04a1-c0ffeec0ffee",
-  };
-  await IOUtils.writeJSON(
-    PathUtils.join(PathUtils.profileDir, "datareporting", "state.json"),
-    testTelemetryStateObject
   );
 
   Assert.ok(!bs.state.lastBackupDate, "No backup date is stored in state.");
@@ -284,6 +291,26 @@ async function testCreateBackupHelper(sandbox, taskFn) {
   // make our current profile default
   profileSvc.defaultProfile = currentProfile;
 
+  await bs.getBackupFileInfo(backupFilePath);
+  const restoreID = bs.state.restoreID;
+
+  // Intercept the telemetry that we want to check for before it gets submitted
+  // and cleared out.
+  let restoreStartedEvents;
+  let restoreCompleteEvents;
+  let restoreCompleteCallback = () => {
+    Services.obs.removeObserver(
+      restoreCompleteCallback,
+      "browser-backup-restore-complete"
+    );
+    restoreStartedEvents = Glean.browserBackup.restoreStarted.testGetValue();
+    restoreCompleteEvents = Glean.browserBackup.restoreComplete.testGetValue();
+  };
+  Services.obs.addObserver(
+    restoreCompleteCallback,
+    "browser-backup-restore-complete"
+  );
+
   let recoveredProfile = await bs.recoverFromBackupArchive(
     backupFilePath,
     null,
@@ -309,6 +336,28 @@ async function testCreateBackupHelper(sandbox, taskFn) {
     "The new profile should now be the default"
   );
 
+  Assert.equal(
+    restoreStartedEvents.length,
+    1,
+    "Should be a single restore start event after we start restoring a profile"
+  );
+  Assert.deepEqual(
+    restoreStartedEvents[0].extra,
+    { restore_id: restoreID },
+    "Restore start event should have the right data"
+  );
+
+  Assert.equal(
+    restoreCompleteEvents.length,
+    1,
+    "Should be a single restore complete event after we start restoring a profile"
+  );
+  Assert.deepEqual(
+    restoreCompleteEvents[0].extra,
+    { restore_id: restoreID },
+    "Restore complete event should have the right data"
+  );
+
   // Check that resources were recovered from highest to lowest backup priority.
   sinon.assert.callOrder(
     FakeBackupResource3.prototype.recover,
@@ -330,17 +379,15 @@ async function testCreateBackupHelper(sandbox, taskFn) {
     "Should have post-recovery data from fake backup 3"
   );
 
-  let newProfileTelemetryStateObject = await IOUtils.readJSON(
-    PathUtils.join(recoveredProfilePath, "datareporting", "state.json")
-  );
-  Assert.deepEqual(
-    testTelemetryStateObject,
-    newProfileTelemetryStateObject,
-    "Recovered profile inherited telemetry state from the profile that " +
-      "initiated recovery"
+  await Assert.rejects(
+    IOUtils.readJSON(
+      PathUtils.join(recoveredProfilePath, "datareporting", "state.json")
+    ),
+    /file does not exist/,
+    "The telemetry state was cleared."
   );
 
-  taskFn(bs, manifest);
+  await taskFn(bs, manifest);
 
   await maybeRemovePath(backupFilePath);
   await maybeRemovePath(fakeProfilePath);
@@ -409,7 +456,11 @@ async function testDeleteLastBackupHelper(taskFn) {
       await taskFn(LAST_BACKUP_FILE_PATH);
     }
 
-    await bs.deleteLastBackup();
+    // NB: On Windows, deletes of backups in tests run into an issue where
+    // the file is locked briefly by the system and deletes fail with
+    // NS_ERROR_FILE_IS_LOCKED.  See doFileRemovalOperation for details.
+    // We therefore retry this delete a few times before accepting failure.
+    await doFileRemovalOperation(async () => await bs.deleteLastBackup());
 
     Assert.equal(
       bs.state.lastBackupDate,
@@ -864,6 +915,108 @@ add_task(
 );
 
 /**
+ * Tests that the existence of selectable profiles prevent backups (see bug
+ * 1990980).
+ *
+ * @param {boolean} aSetCreatedSelectableProfilesBeforeSchedulingBackups
+ *    If true (respectively, false), set browser.profiles.created before
+ *    (respectively, after) attempting to setScheduledBackups.
+ */
+async function testSelectableProfilesPreventBackup(
+  aSetCreatedSelectableProfilesBeforeSchedulingBackups
+) {
+  let sandbox = sinon.createSandbox();
+  Services.fog.testResetFOG();
+  const TEST_UID = "ThisIsMyTestUID";
+  const TEST_EMAIL = "foxy@mozilla.org";
+  sandbox.stub(UIState, "get").returns({
+    status: UIState.STATUS_SIGNED_IN,
+    uid: TEST_UID,
+    email: TEST_EMAIL,
+  });
+
+  const SELECTABLE_PROFILES_CREATED_PREF = "browser.profiles.created";
+
+  Services.prefs.setBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME, true);
+  Services.prefs.setBoolPref(BACKUP_RESTORE_ENABLED_PREF_NAME, true);
+
+  // Make sure created profiles pref is not set until we want it to be.
+  Services.prefs.setBoolPref(SELECTABLE_PROFILES_CREATED_PREF, false);
+
+  const setHasSelectableProfiles = () => {
+    // "Enable" selectable profiles by pref.
+    Services.prefs.setBoolPref(SELECTABLE_PROFILES_CREATED_PREF, true);
+    Assert.ok(
+      Services.prefs.getBoolPref(SELECTABLE_PROFILES_CREATED_PREF),
+      "set has selectable profiles | browser.profiles.created = true"
+    );
+  };
+
+  if (aSetCreatedSelectableProfilesBeforeSchedulingBackups) {
+    setHasSelectableProfiles();
+  }
+
+  let bs = new BackupService({});
+  bs.initBackupScheduler();
+  bs.setScheduledBackups(true);
+
+  const SCHEDULED_BACKUP_ENABLED_PREF = "browser.backup.scheduled.enabled";
+  if (!aSetCreatedSelectableProfilesBeforeSchedulingBackups) {
+    Assert.ok(
+      Services.prefs.getBoolPref(SCHEDULED_BACKUP_ENABLED_PREF, true),
+      "enabled scheduled backups | browser.backup.scheduled.enabled = true"
+    );
+    registerCleanupFunction(() => {
+      // Just in case the test fails.
+      bs.setScheduledBackups(false);
+      info("cleared scheduled backups");
+    });
+
+    setHasSelectableProfiles();
+  }
+
+  // Backups attempts should be rejected because of selectable profiles.
+  let fakeProfilePath = await IOUtils.createUniqueDirectory(
+    PathUtils.tempDir,
+    "testSelectableProfilesPreventBackup"
+  );
+  registerCleanupFunction(async () => {
+    await maybeRemovePath(fakeProfilePath);
+  });
+  let failedBackup = await bs.createBackup({
+    profilePath: fakeProfilePath,
+  });
+  Assert.equal(failedBackup, null, "Backup returned null");
+
+  // Test cleanup
+  if (!aSetCreatedSelectableProfilesBeforeSchedulingBackups) {
+    bs.uninitBackupScheduler();
+  }
+
+  Services.prefs.clearUserPref(SELECTABLE_PROFILES_CREATED_PREF);
+  // These tests assume that backups and restores have been enabled.
+  Services.prefs.setBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME, true);
+  Services.prefs.setBoolPref(BACKUP_RESTORE_ENABLED_PREF_NAME, true);
+  sandbox.restore();
+}
+
+add_task(
+  async function test_managing_profiles_before_scheduling_prevents_backup() {
+    await testSelectableProfilesPreventBackup(
+      true /* aSetCreatedSelectableProfilesBeforeSchedulingBackups */
+    );
+  }
+);
+
+add_task(
+  async function test_managing_profiles_after_scheduling_prevents_backup() {
+    await testSelectableProfilesPreventBackup(
+      false /* aSetCreatedSelectableProfilesBeforeSchedulingBackups */
+    );
+  }
+);
+
+/**
  * Tests that if there's a post-recovery.json file in the profile directory
  * when checkForPostRecovery() is called, that it is processed, and the
  * postRecovery methods on the associated BackupResources are called with the
@@ -934,17 +1087,23 @@ add_task(async function test_checkForPostRecovery() {
 add_task(async function test_getBackupFileInfo() {
   let sandbox = sinon.createSandbox();
 
-  const DATE = "2024-06-25T21:59:11.777Z";
-  const IS_ENCRYPTED = true;
-  const DEVICE_NAME = "test-device";
-
   let fakeSampleArchiveResult = {
     isEncrypted: IS_ENCRYPTED,
     startByteOffset: 26985,
     contentType: "multipart/mixed",
     archiveJSON: {
       version: 1,
-      meta: { date: DATE, deviceName: DEVICE_NAME },
+      meta: {
+        date: DATE,
+        deviceName: DEVICE_NAME,
+        appName: APP_NAME,
+        appVersion: APP_VERSION,
+        buildID: BUILD_ID,
+        osName: OS_NAME,
+        osVersion: OS_VERSION,
+        healthTelemetryEnabled: TELEMETRY_ENABLED,
+        legacyClientID: LEGACY_CLIENT_ID,
+      },
       encConfig: {},
     },
   };
@@ -964,7 +1123,18 @@ add_task(async function test_getBackupFileInfo() {
 
   Assert.deepEqual(
     bs.state.backupFileInfo,
-    { isEncrypted: IS_ENCRYPTED, date: DATE, deviceName: DEVICE_NAME },
+    {
+      isEncrypted: IS_ENCRYPTED,
+      date: DATE,
+      deviceName: DEVICE_NAME,
+      appName: APP_NAME,
+      appVersion: APP_VERSION,
+      buildID: BUILD_ID,
+      osName: OS_NAME,
+      osVersion: OS_VERSION,
+      healthTelemetryEnabled: TELEMETRY_ENABLED,
+      legacyClientID: LEGACY_CLIENT_ID,
+    },
     "State should match a subset from the archive sample."
   );
 
@@ -1000,23 +1170,17 @@ add_task(async function test__deleteLastBackup_file_does_not_exist() {
 add_task(async function test_getBackupFileInfo_error_handling() {
   let sandbox = sinon.createSandbox();
 
-  const testCases = [
-    // Errors that should clear backupFileInfo
-    { error: ERRORS.FILE_SYSTEM_ERROR, shouldClear: true },
-    { error: ERRORS.CORRUPTED_ARCHIVE, shouldClear: true },
-    { error: ERRORS.UNSUPPORTED_BACKUP_VERSION, shouldClear: true },
-    // Errors that shouldn't clear backupFileInfo
-    { error: ERRORS.INTERNAL_ERROR, shouldClear: false },
-    { error: ERRORS.UNINITIALIZED, shouldClear: false },
-    { error: ERRORS.INVALID_PASSWORD, shouldClear: false },
+  const errorTypes = [
+    ERRORS.FILE_SYSTEM_ERROR,
+    ERRORS.CORRUPTED_ARCHIVE,
+    ERRORS.UNSUPPORTED_BACKUP_VERSION,
+    ERRORS.INTERNAL_ERROR,
+    ERRORS.UNINITIALIZED,
+    ERRORS.INVALID_PASSWORD,
   ];
 
-  for (const testCase of testCases) {
+  for (const testError of errorTypes) {
     let bs = new BackupService();
-
-    const DATE = "2024-06-25T21:59:11.777Z";
-    const IS_ENCRYPTED = true;
-    const DEVICE_NAME = "test-device";
 
     let fakeSampleArchiveResult = {
       isEncrypted: IS_ENCRYPTED,
@@ -1024,7 +1188,17 @@ add_task(async function test_getBackupFileInfo_error_handling() {
       contentType: "multipart/mixed",
       archiveJSON: {
         version: 1,
-        meta: { date: DATE, deviceName: DEVICE_NAME },
+        meta: {
+          date: DATE,
+          deviceName: DEVICE_NAME,
+          appName: APP_NAME,
+          appVersion: APP_VERSION,
+          buildID: BUILD_ID,
+          osName: OS_NAME,
+          osVersion: OS_VERSION,
+          healthTelemetryEnabled: TELEMETRY_ENABLED,
+          legacyClientID: LEGACY_CLIENT_ID,
+        },
         encConfig: {},
       },
     };
@@ -1041,6 +1215,13 @@ add_task(async function test_getBackupFileInfo_error_handling() {
         isEncrypted: IS_ENCRYPTED,
         date: DATE,
         deviceName: DEVICE_NAME,
+        appName: APP_NAME,
+        appVersion: APP_VERSION,
+        buildID: BUILD_ID,
+        osName: OS_NAME,
+        osVersion: OS_VERSION,
+        healthTelemetryEnabled: TELEMETRY_ENABLED,
+        legacyClientID: LEGACY_CLIENT_ID,
       },
       "Initial state should be set correctly"
     );
@@ -1054,7 +1235,7 @@ add_task(async function test_getBackupFileInfo_error_handling() {
     sandbox.restore();
     sandbox
       .stub(BackupService.prototype, "sampleArchive")
-      .rejects(new Error("Test error", { cause: testCase.error }));
+      .rejects(new Error("Test error", { cause: testError }));
     const setRecoveryErrorStub = sandbox.stub(bs, "setRecoveryError");
 
     try {
@@ -1062,44 +1243,88 @@ add_task(async function test_getBackupFileInfo_error_handling() {
     } catch (error) {
       Assert.ok(
         false,
-        `Expected getBackupFileInfo to throw for error ${testCase.error}`
+        `Expected getBackupFileInfo to throw for error ${testError}`
       );
     }
 
     Assert.ok(
-      setRecoveryErrorStub.calledOnceWith(testCase.error),
-      `setRecoveryError should be called with ${testCase.error}`
+      setRecoveryErrorStub.calledOnceWith(testError),
+      `setRecoveryError should be called with ${testError}`
     );
 
-    // backupFileInfo should be either cleared or preserved based on error type
-    if (testCase.shouldClear) {
-      Assert.strictEqual(
-        bs.state.backupFileInfo,
-        null,
-        `backupFileInfo should be cleared for error ${testCase.error}`
-      );
-      Assert.strictEqual(
-        bs.state.backupFileToRestore,
-        null,
-        `backupFileToRestore should be cleared for error ${testCase.error}`
-      );
-    } else {
-      Assert.deepEqual(
-        bs.state.backupFileInfo,
-        {
-          isEncrypted: IS_ENCRYPTED,
-          date: DATE,
-          deviceName: DEVICE_NAME,
-        },
-        `backupFileInfo should be preserved for error ${testCase.error}`
-      );
-      Assert.strictEqual(
-        bs.state.backupFileToRestore,
-        "test-backup.html",
-        `backupFileToRestore should be preserved for error ${testCase.error}`
-      );
-    }
+    Assert.strictEqual(
+      bs.state.backupFileInfo,
+      null,
+      `backupFileInfo should be cleared for error ${testError}`
+    );
+    Assert.strictEqual(
+      bs.state.backupFileToRestore,
+      null,
+      `backupFileToRestore should be cleared for error ${testError}`
+    );
 
     sandbox.restore();
   }
+});
+
+/**
+ * Tests changing the status prefs to ensure that backup is cleaned up if being disabled.
+ */
+add_task(async function test_changing_prefs_cleanup() {
+  let sandbox = sinon.createSandbox();
+  Services.prefs.setBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME, true);
+  let bs = new BackupService();
+  bs.initStatusObservers();
+  let cleanupStub = sandbox.stub(bs, "cleanupBackupFiles");
+  let statusUpdatePromise = TestUtils.topicObserved(
+    "backup-service-status-updated"
+  );
+  Services.prefs.setBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME, false);
+  await statusUpdatePromise;
+
+  Assert.equal(
+    cleanupStub.callCount,
+    1,
+    "Cleanup backup files was called on pref change"
+  );
+
+  Services.prefs.setBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME, true);
+
+  Assert.equal(
+    cleanupStub.callCount,
+    1,
+    "Cleanup backup files should not have been called when enabling backups"
+  );
+
+  Services.prefs.clearUserPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME);
+});
+
+add_task(function test_checkOsSupportsBackup_win10() {
+  const osParams = {
+    name: "Windows_NT",
+    version: "10.0",
+    build: "20000",
+  };
+  const result = BackupService.checkOsSupportsBackup(osParams);
+  Assert.ok(result);
+});
+
+add_task(function test_checkOsSupportsBackup_win11() {
+  const osParams = {
+    name: "Windows_NT",
+    version: "10.0",
+    build: "22000",
+  };
+  const result = BackupService.checkOsSupportsBackup(osParams);
+  Assert.ok(!result);
+});
+
+add_task(function test_checkOsSupportsBackup_linux() {
+  const osParams = {
+    name: "Linux",
+    version: "10.0",
+    build: "22000",
+  };
+  const result = BackupService.checkOsSupportsBackup(osParams);
+  Assert.ok(!result);
 });

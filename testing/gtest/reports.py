@@ -6,6 +6,7 @@ import functools
 import itertools
 import json
 import os
+import sys
 import tempfile
 from os import path
 
@@ -79,7 +80,10 @@ class AggregatedGTestReport(dict):
     __slots__ = ["result_dir"]
 
     def __init__(self):
-        self.result_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        tmpdir_kwargs = {}
+        if sys.version_info >= (3, 10):
+            tmpdir_kwargs["ignore_cleanup_errors"] = True
+        self.result_dir = tempfile.TemporaryDirectory(**tmpdir_kwargs)
         super().__init__()
         self.reset()
 

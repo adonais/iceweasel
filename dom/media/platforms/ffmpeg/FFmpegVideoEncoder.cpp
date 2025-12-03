@@ -118,11 +118,19 @@ struct H264LiteralSetting {
   H264Setting get() const { return {mValue, mString.AsString()}; }
 };
 
+#if LIBAVCODEC_VERSION_MAJOR < 62
 static constexpr H264LiteralSetting H264Profiles[]{
     {FF_PROFILE_H264_BASELINE, "baseline"_ns},
     {FF_PROFILE_H264_MAIN, "main"_ns},
     {FF_PROFILE_H264_EXTENDED, ""_ns},
     {FF_PROFILE_H264_HIGH, "high"_ns}};
+#else
+static constexpr H264LiteralSetting H264Profiles[]{
+    {AV_PROFILE_H264_BASELINE, "baseline"_ns},
+    {AV_PROFILE_H264_MAIN, "main"_ns},
+    {AV_PROFILE_H264_EXTENDED, ""_ns},
+    {AV_PROFILE_H264_HIGH, "high"_ns}};
+#endif
 
 static Maybe<H264Setting> GetH264Profile(const H264_PROFILE& aProfile) {
   switch (aProfile) {
@@ -753,18 +761,14 @@ FFmpegVideoEncoder<LIBAV_VER>::GetExtraData(AVPacket* aPacket) {
   BufferReader reader(buf);
 
   // The first part is sps.
-  uint32_t spsSize;
-  MOZ_TRY_VAR(spsSize, reader.ReadU32());
-  Span<const uint8_t> spsData;
-  MOZ_TRY_VAR(spsData,
-              reader.ReadSpan<const uint8_t>(static_cast<size_t>(spsSize)));
+  uint32_t spsSize = MOZ_TRY(reader.ReadU32());
+  Span<const uint8_t> spsData =
+      MOZ_TRY(reader.ReadSpan<const uint8_t>(static_cast<size_t>(spsSize)));
 
   // The second part is pps.
-  uint32_t ppsSize;
-  MOZ_TRY_VAR(ppsSize, reader.ReadU32());
-  Span<const uint8_t> ppsData;
-  MOZ_TRY_VAR(ppsData,
-              reader.ReadSpan<const uint8_t>(static_cast<size_t>(ppsSize)));
+  uint32_t ppsSize = MOZ_TRY(reader.ReadU32());
+  Span<const uint8_t> ppsData =
+      MOZ_TRY(reader.ReadSpan<const uint8_t>(static_cast<size_t>(ppsSize)));
 
   // Ensure we have profile, constraints and level needed to create the extra
   // data.

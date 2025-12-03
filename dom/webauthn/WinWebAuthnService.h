@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_WinWebAuthnService_h
 #define mozilla_dom_WinWebAuthnService_h
 
-#include "mozilla/Tainting.h"
 #include "mozilla/dom/PWebAuthnTransaction.h"
 #include "nsIWebAuthnService.h"
 

@@ -14,7 +14,6 @@
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsString.h"
 #include "nsIWeakReference.h"
-#include "mozilla/Attributes.h"
 #include "nsIStreamListener.h"
 #include "nsIThreadRetargetableStreamListener.h"
 #include "nsIExternalHelperAppService.h"

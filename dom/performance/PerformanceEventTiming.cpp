@@ -19,6 +19,7 @@
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PerformanceEventTimingBinding.h"
 #include "nsContentUtils.h"
+#include "nsGkAtoms.h"
 #include "nsIDocShell.h"
 
 namespace mozilla::dom {
@@ -37,7 +38,8 @@ PerformanceEventTiming::PerformanceEventTiming(Performance* aPerformance,
                                                const TimeStamp& aStartTime,
                                                bool aIsCancelable,
                                                EventMessage aMessage)
-    : PerformanceEntry(aPerformance->GetParentObject(), aName, u"event"_ns),
+    : PerformanceEntry(aPerformance->GetParentObject(), aName,
+                       nsGkAtoms::event),
       mPerformance(aPerformance),
       mProcessingStart(aPerformance->NowUnclamped()),
       mProcessingEnd(0),
@@ -51,7 +53,7 @@ PerformanceEventTiming::PerformanceEventTiming(
     const PerformanceEventTiming& aEventTimingEntry)
     : PerformanceEntry(aEventTimingEntry.mPerformance->GetParentObject(),
                        nsDependentAtomString(aEventTimingEntry.GetName()),
-                       nsDependentAtomString(aEventTimingEntry.GetEntryType())),
+                       aEventTimingEntry.GetEntryTypeAsStaticAtom()),
       mPerformance(aEventTimingEntry.mPerformance),
       mProcessingStart(aEventTimingEntry.mProcessingStart),
       mProcessingEnd(aEventTimingEntry.mProcessingEnd),

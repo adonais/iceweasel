@@ -158,6 +158,8 @@ class GeckoMediaPluginServiceParent final
       const nsACString& aAPI, const nsTArray<nsCString>& aTags) override;
 
  private:
+  already_AddRefed<GMPParent> CreateGMPParent();
+
   // Creates a copy of aOriginal. Note that the caller is responsible for
   // adding this to GeckoMediaPluginServiceParent::mPlugins.
   already_AddRefed<GMPParent> ClonePlugin(const GMPParent* aOriginal);

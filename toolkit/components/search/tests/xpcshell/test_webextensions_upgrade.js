@@ -95,20 +95,10 @@ add_task(async function test_upgrade_changes_name() {
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
 
-  // When we add engines currently, we normally force using the saved order.
-  // Reset that here, so we can check the order is reset in the case this
-  // is a application provided engine change.
-  Services.search.wrappedJSObject._settings.setMetaDataAttribute(
-    "useSavedOrder",
-    false
-  );
-  Services.search.getEngineByName("engine1").wrappedJSObject._orderHint = null;
-  Services.search.getEngineByName("engine2").wrappedJSObject._orderHint = null;
-
   Assert.deepEqual(
     (await Services.search.getVisibleEngines()).map(e => e.name),
     ["engine1", "engine2", "engine"],
-    "Should have the expected order initially"
+    "Should have the expected engines initially"
   );
 
   let promiseChanged = TestUtils.topicObserved(
@@ -141,9 +131,8 @@ add_task(async function test_upgrade_changes_name() {
 
   Assert.deepEqual(
     (await Services.search.getVisibleEngines()).map(e => e.name),
-    // Expected order: Default, then others in alphabetical.
-    ["engine1", "Bar", "engine2"],
-    "Should have updated the engine order"
+    ["engine1", "engine2", "Bar"],
+    "Should have the initial engines plus the upgraded one"
   );
 
   await extension.unload();

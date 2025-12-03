@@ -6,8 +6,6 @@
 
 #include "vm/Shape-inl.h"
 
-#include "mozilla/MathAlgorithms.h"
-
 #include "gc/HashUtil.h"
 #include "js/friend/WindowProxy.h"  // js::IsWindow
 #include "js/HashTable.h"

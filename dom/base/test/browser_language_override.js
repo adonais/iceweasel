@@ -16,6 +16,7 @@ add_task(async function test_set_language_override() {
 
   info("Get default language");
   const defaultLanguage = await getIntlLanguage(browser);
+  const defaultNavigatorLanguage = await getNavigatorLanguage(browser);
 
   const browsingContext = browser.browsingContext;
 
@@ -36,7 +37,11 @@ add_task(async function test_set_language_override() {
 
   info("Reset language override");
   browsingContext.languageOverride = "";
-  await assertLanguageIsNotOverridden(browser, defaultLanguage);
+  await assertLanguageIsNotOverridden(
+    browser,
+    defaultLanguage,
+    defaultNavigatorLanguage
+  );
 
   BrowserTestUtils.removeTab(tab);
 });
@@ -81,9 +86,11 @@ add_task(async function test_set_language_override_in_different_contexts() {
 
   info("Get default language in the first tab");
   const defaultLanguage1 = await getIntlLanguage(browser1);
+  const defaultNavigatorLanguage1 = await getNavigatorLanguage(browser1);
 
   info("Get default language in the second tab");
   const defaultLanguage2 = await getIntlLanguage(browser2);
+  const defaultNavigatorLanguage2 = await getNavigatorLanguage(browser2);
 
   const browsingContext1 = browser1.browsingContext;
 
@@ -94,11 +101,19 @@ add_task(async function test_set_language_override_in_different_contexts() {
   await assertLanguageOverridden(browser1, languageOverride);
 
   info("Make sure that in the second tab language is not overridden");
-  await assertLanguageIsNotOverridden(browser2, defaultLanguage2);
+  await assertLanguageIsNotOverridden(
+    browser2,
+    defaultLanguage2,
+    defaultNavigatorLanguage2
+  );
 
   info("Reset language override");
   browsingContext1.languageOverride = "";
-  await assertLanguageIsNotOverridden(browser1, defaultLanguage1);
+  await assertLanguageIsNotOverridden(
+    browser1,
+    defaultLanguage1,
+    defaultNavigatorLanguage1
+  );
 
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
@@ -120,18 +135,60 @@ async function getIntlLanguage(browser) {
   });
 }
 
+async function getNavigatorLanguage(browser) {
+  return SpecialPowers.spawn(browser, [], () => {
+    return content.eval(`window.navigator.language`);
+  });
+}
+
+async function getNavigatorLanguages(browser) {
+  return SpecialPowers.spawn(browser, [], () => {
+    return content.eval(`window.navigator.languages`);
+  });
+}
+
 async function assertLanguageOverridden(browser, languageOverride) {
   is(
     await getIntlLanguage(browser),
     languageOverride,
     "new Intl.DateTimeFormat().resolvedOptions().locale is overridden"
   );
+
+  is(
+    await getNavigatorLanguage(browser),
+    languageOverride,
+    "navigator.language is overridden"
+  );
+
+  const navigatorLanguages = await getNavigatorLanguages(browser);
+  is(
+    navigatorLanguages.includes(languageOverride),
+    true,
+    "navigator.languages is overridden"
+  );
 }
 
-async function assertLanguageIsNotOverridden(browser, defaultLanguage) {
+async function assertLanguageIsNotOverridden(
+  browser,
+  defaultLanguage,
+  defaultNavigatorLanguage
+) {
   is(
     await getIntlLanguage(browser),
     defaultLanguage,
     "new Intl.DateTimeFormat().resolvedOptions().locale is not overridden"
+  );
+
+  is(
+    await getNavigatorLanguage(browser),
+    defaultNavigatorLanguage,
+    "navigator.language is not overridden"
+  );
+
+  const navigatorLanguages = await getNavigatorLanguages(browser);
+  is(
+    navigatorLanguages.includes(defaultNavigatorLanguage),
+    true,
+    "navigator.languages is not overridden"
   );
 }

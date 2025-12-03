@@ -15,7 +15,6 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/MoveOnlyFunction.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_dom.h"

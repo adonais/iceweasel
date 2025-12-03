@@ -15,21 +15,24 @@
 #include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "nsDocShell.h"
+#include "nsFocusManager.h"
 #include "nsGlobalWindowInner.h"
 
 extern mozilla::LazyLogModule gNavigationAPILog;
+
+#define LOG_FMTI(format, ...) \
+  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Info, format, ##__VA_ARGS__);
 
 #define LOG_FMT(format, ...) \
   MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, format, ##__VA_ARGS__);
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED_WITH_JS_MEMBERS(NavigateEvent, Event,
-                                                   (mDestination, mSignal,
-                                                    mFormData, mSourceElement,
-                                                    mNavigationHandlerList,
-                                                    mAbortController),
-                                                   (mInfo))
+NS_IMPL_CYCLE_COLLECTION_INHERITED_WITH_JS_MEMBERS(
+    NavigateEvent, Event,
+    (mDestination, mSignal, mFormData, mSourceElement, mNavigationHandlerList,
+     mAbortController, mNavigationPrecommitHandlerList),
+    (mInfo))
 
 NS_IMPL_ADDREF_INHERITED(NavigateEvent, Event)
 NS_IMPL_RELEASE_INHERITED(NavigateEvent, Event)
@@ -85,6 +88,10 @@ already_AddRefed<NavigateEvent> NavigateEvent::Constructor(
 
 NavigationType NavigateEvent::NavigationType() const { return mNavigationType; }
 
+void NavigateEvent::SetNavigationType(enum NavigationType aNavigationType) {
+  mNavigationType = aNavigationType;
+}
+
 already_AddRefed<NavigationDestination> NavigateEvent::Destination() const {
   return do_AddRef(mDestination);
 }
@@ -136,6 +143,8 @@ static void MaybeReportWarningToConsole(Document* aDocument,
 // https://html.spec.whatwg.org/#dom-navigateevent-intercept
 void NavigateEvent::Intercept(const NavigationInterceptOptions& aOptions,
                               ErrorResult& aRv) {
+  LOG_FMTI("Called NavigateEvent.intercept()");
+
   // Step 1
   if (PerformSharedChecks(aRv); aRv.Failed()) {
     return;
@@ -154,49 +163,64 @@ void NavigateEvent::Intercept(const NavigationInterceptOptions& aOptions,
   }
 
   // Step 4
+  if (aOptions.mPrecommitHandler.WasPassed()) {
+    // Step 4.1
+    if (!Cancelable()) {
+      aRv.ThrowInvalidStateError("Event is not cancelable");
+      return;
+    }
+
+    // Step 4.2
+    mNavigationPrecommitHandlerList.AppendElement(
+        aOptions.mPrecommitHandler.InternalValue().get());
+  }
+
+  // Step 5
   MOZ_DIAGNOSTIC_ASSERT(mInterceptionState == InterceptionState::None ||
                         mInterceptionState == InterceptionState::Intercepted);
 
-  // Step 5
+  // Step 6
   mInterceptionState = InterceptionState::Intercepted;
 
-  // Step 6
+  // Step 7
   if (aOptions.mHandler.WasPassed()) {
     mNavigationHandlerList.AppendElement(
         aOptions.mHandler.InternalValue().get());
   }
 
-  // Step 7
+  // Step 8
   if (aOptions.mFocusReset.WasPassed()) {
-    // Step 7.1
+    // Step 8.1
     if (mFocusResetBehavior &&
         *mFocusResetBehavior != aOptions.mFocusReset.Value()) {
-      RefPtr<Document> document = GetDocument();
+      RefPtr<Document> document = GetAssociatedDocument();
       MaybeReportWarningToConsole(document, u"focusReset"_ns,
                                   *mFocusResetBehavior,
                                   aOptions.mFocusReset.Value());
     }
 
-    // Step 7.2
+    // Step 8.2
     mFocusResetBehavior = Some(aOptions.mFocusReset.Value());
   }
 
-  // Step 8
+  // Step 9
   if (aOptions.mScroll.WasPassed()) {
-    // Step 8.1
+    // Step 9.1
     if (mScrollBehavior && *mScrollBehavior != aOptions.mScroll.Value()) {
-      RefPtr<Document> document = GetDocument();
+      RefPtr<Document> document = GetAssociatedDocument();
       MaybeReportWarningToConsole(document, u"scroll"_ns, *mScrollBehavior,
                                   aOptions.mScroll.Value());
     }
 
-    // Step 8.2
+    // Step 9.2
     mScrollBehavior.emplace(aOptions.mScroll.Value());
   }
 }
 
 // https://html.spec.whatwg.org/#dom-navigateevent-scroll
 void NavigateEvent::Scroll(ErrorResult& aRv) {
+  LOG_FMTI("Called NavigateEvent.scroll()");
+
   // Step 1
   if (PerformSharedChecks(aRv); aRv.Failed()) {
     return;
@@ -231,7 +255,7 @@ void NavigateEvent::InitNavigateEvent(const NavigateEventInit& aEventInitDict) {
   mInfo = aEventInitDict.mInfo;
   mHasUAVisualTransition = aEventInitDict.mHasUAVisualTransition;
   mSourceElement = aEventInitDict.mSourceElement;
-  if (RefPtr document = GetDocument()) {
+  if (RefPtr document = GetAssociatedDocument()) {
     mLastScrollGeneration = document->LastScrollGeneration();
   }
 }
@@ -268,35 +292,45 @@ bool NavigateEvent::IsBeingDispatched() const {
 
 // https://html.spec.whatwg.org/#navigateevent-finish
 void NavigateEvent::Finish(bool aDidFulfill) {
-  switch (mInterceptionState) {
-    // Step 1
-    case InterceptionState::Intercepted:
-    case InterceptionState::Finished:
-      MOZ_DIAGNOSTIC_ASSERT(false);
-      break;
-      // Step 2
-    case InterceptionState::None:
-      return;
-    default:
-      break;
+  // Step 1
+  MOZ_DIAGNOSTIC_ASSERT(mInterceptionState != InterceptionState::Finished);
+
+  // Step 2
+  if (mInterceptionState == InterceptionState::Intercepted) {
+    // Step 2.1
+    MOZ_DIAGNOSTIC_ASSERT(!aDidFulfill);
+
+    // Step 2.2
+    MOZ_DIAGNOSTIC_ASSERT(!mNavigationPrecommitHandlerList.IsEmpty());
+
+    // Step 2.3
+    mInterceptionState = InterceptionState::Finished;
+
+    // Step 2.4
+    return;
   }
 
   // Step 3
-  PotentiallyResetFocus();
+  if (mInterceptionState == InterceptionState::None) {
+    return;
+  }
 
   // Step 4
+  PotentiallyResetFocus();
+
+  // Step 5
   if (aDidFulfill) {
     PotentiallyProcessScrollBehavior();
   }
 
-  // Step 5
+  // Step 6
   mInterceptionState = InterceptionState::Finished;
 }
 
 // https://html.spec.whatwg.org/#navigateevent-perform-shared-checks
 void NavigateEvent::PerformSharedChecks(ErrorResult& aRv) {
   // Step 1
-  if (RefPtr document = GetDocument();
+  if (RefPtr document = GetAssociatedDocument();
       !document || !document->IsFullyActive()) {
     aRv.ThrowInvalidStateError("Document isn't fully active");
     return;
@@ -376,8 +410,25 @@ void NavigateEvent::PotentiallyResetFocus() {
 
   // Step 11, step 12
   FocusOptions options;
-  LOG_FMT("Set focus for {}", *focusTarget->AsNode());
-  focusTarget->Focus(options, CallerType::NonSystem, IgnoredErrorResult());
+  options.mPreventScroll = true;
+  focusTarget = nsFocusManager::GetTheFocusableArea(
+      focusTarget, nsFocusManager::ProgrammaticFocusFlags(options));
+
+  if (focusTarget) {
+    LOG_FMT("Reset focus to {}", *focusTarget->AsNode());
+    focusTarget->Focus(options, CallerType::NonSystem, IgnoredErrorResult());
+  } else if (RefPtr<nsIFocusManager> focusManager =
+                 nsFocusManager::GetFocusManager()) {
+    if (nsPIDOMWindowOuter* window = document->GetWindow()) {
+      // Now focus the document itself if focus is on an element within it.
+      nsCOMPtr<mozIDOMWindowProxy> focusedWindow;
+      focusManager->GetFocusedWindow(getter_AddRefs(focusedWindow));
+      if (SameCOMIdentity(window, focusedWindow)) {
+        LOG_FMT("Reset focus to document viewport");
+        focusManager->ClearFocus(focusedWindow);
+      }
+    }
+  }
 }
 
 // https://html.spec.whatwg.org/#potentially-process-scroll-behavior
@@ -448,13 +499,13 @@ void NavigateEvent::ProcessScrollBehavior() {
   // Step 3
   if (mNavigationType == NavigationType::Traverse ||
       mNavigationType == NavigationType::Reload) {
-    RefPtr<Document> document = GetDocument();
+    RefPtr<Document> document = GetAssociatedDocument();
     RestoreScrollPositionData(document, mLastScrollGeneration);
     return;
   }
 
   // Step 4.1
-  RefPtr<Document> document = GetDocument();
+  RefPtr<Document> document = GetAssociatedDocument();
   // If there is no document there's not much to do.
   if (!document) {
     return;
@@ -472,6 +523,16 @@ void NavigateEvent::ProcessScrollBehavior() {
   // Step 4.3
   document->ScrollToRef();
 }
+
+Document* NavigateEvent::GetAssociatedDocument() const {
+  if (nsCOMPtr<nsPIDOMWindowInner> globalWindow =
+          do_QueryInterface(GetParentObject())) {
+    return globalWindow->GetExtantDoc();
+  }
+  return nullptr;
+}
+
 }  // namespace mozilla::dom
 
+#undef LOG_FMTI
 #undef LOG_FMT

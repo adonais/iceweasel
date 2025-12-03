@@ -113,7 +113,9 @@ impl Numerator for NumeratorMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<Rate> for NumeratorMetric {
+impl glean::TestGetValue for NumeratorMetric {
+    type Output = Rate;
+
     pub fn test_get_value(&self, ping_name: Option<String>) -> Option<Rate> {
         match self {
             NumeratorMetric::Parent { inner, .. } => inner.test_get_value(ping_name),

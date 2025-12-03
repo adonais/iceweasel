@@ -361,7 +361,9 @@
     <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
     <string name="mozac_feature_addons_admin_install_only">%1$s could not be installed because it can only be installed by an organization using enterprise policies, which isn‘t supported on this platform.</string>
     <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-    <string name="mozac_feature_addons_soft_blocked_1">%1$s violates Mozilla’s policies and can’t be installed on %2$s.</string>
+    <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s violates Mozilla’s policies and can’t be installed on %2$s.</string>
+    <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
+    <string name="mozac_feature_addons_soft_blocked_2">%1$s is restricted and can’t be installed on %2$s.</string>
     <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
     <string name="mozac_feature_addons_failed_to_enable">Failed to enable %1$s</string>
     <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -407,9 +409,13 @@
     <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
     <string name="mozac_feature_addons_status_blocklisted_1">This extension is blocked for violating Mozilla’s policies and has been disabled.</string>
     <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-    <string name="mozac_feature_addons_status_softblocked_1">This extension is restricted for violating Mozilla’s policies and has been disabled. You can enable it, but this may be risky.</string>
+    <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">This extension is restricted for violating Mozilla’s policies and has been disabled. You can enable it, but this may be risky.</string>
+    <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
+    <string name="mozac_feature_addons_status_softblocked_2">This extension is restricted and has been disabled. You can enable it, but this may be risky.</string>
     <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-    <string name="mozac_feature_addons_status_softblocked_re_enabled">This extension violates Mozilla’s policies. Using it may be risky.</string>
+    <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">This extension violates Mozilla’s policies. Using it may be risky.</string>
+    <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
+    <string name="mozac_feature_addons_status_softblocked_re_enabled_2">This extension is restricted. Using it may be risky.</string>
     <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
     <string name="mozac_feature_addons_status_unsigned">%1$s could not be verified as secure and has been disabled.</string>
     <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

@@ -17,6 +17,10 @@ const { IPPSignInWatcher } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs"
 );
 
+const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
+  "resource:///modules/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
+);
+
 const { HttpServer, HTTP_403 } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
@@ -219,7 +223,7 @@ let DEFAULT_EXPERIMENT = {
 
 let DEFAULT_SERVICE_STATUS = {
   isSignedIn: false,
-  isEnrolled: false,
+  isEnrolledAndEntitled: false,
   canEnroll: true,
   entitlement: {
     status: 200,
@@ -239,7 +243,7 @@ let DEFAULT_SERVICE_STATUS = {
 /* exported DEFAULT_SERVICE_STATUS */
 
 let STUBS = {
-  isLinkedToGuardian: undefined,
+  isEnrolledAndEntitled: undefined,
   enroll: undefined,
   fetchUserInfo: undefined,
   fetchProxyPass: undefined,
@@ -265,14 +269,19 @@ add_setup(async function setupVPN() {
     setupSandbox.restore();
     cleanupExperiment();
     CustomizableUI.reset();
+    Services.prefs.clearUserPref(IPProtectionWidget.ADDED_PREF);
+    Services.prefs.clearUserPref("browser.ipProtection.panelOpenCount");
+    Services.prefs.clearUserPref("browser.ipProtection.stateCache");
+    Services.prefs.clearUserPref("browser.ipProtection.entitlementCache");
+    Services.prefs.clearUserPref("browser.ipProtection.locationListCache");
   });
 });
 
 function setupStubs(stubs = STUBS) {
   stubs.isSignedIn = setupSandbox.stub(IPPSignInWatcher, "isSignedIn");
-  stubs.isLinkedToGuardian = setupSandbox.stub(
-    IPProtectionService.guardian,
-    "isLinkedToGuardian"
+  stubs.isEnrolledAndEntitled = setupSandbox.stub(
+    IPPEnrollAndEntitleManager,
+    "isEnrolledAndEntitled"
   );
   stubs.enroll = setupSandbox.stub(IPProtectionService.guardian, "enroll");
   stubs.fetchUserInfo = setupSandbox.stub(
@@ -289,7 +298,7 @@ function setupStubs(stubs = STUBS) {
 function setupService(
   {
     isSignedIn,
-    isEnrolled,
+    isEnrolledAndEntitled,
     canEnroll,
     entitlement,
     proxyPass,
@@ -300,8 +309,8 @@ function setupService(
     stubs.isSignedIn.get(() => isSignedIn);
   }
 
-  if (typeof isEnrolled != "undefined") {
-    stubs.isLinkedToGuardian.resolves(isEnrolled);
+  if (typeof isEnrolledAndEntitled != "undefined") {
+    stubs.isEnrolledAndEntitled.get(() => isEnrolledAndEntitled);
   }
 
   if (typeof canEnroll != "undefined") {

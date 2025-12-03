@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_PaintRequest_h_
 #define mozilla_dom_PaintRequest_h_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/Event.h"
 #include "nsPresContext.h"

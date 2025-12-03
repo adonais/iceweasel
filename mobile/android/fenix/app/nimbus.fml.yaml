@@ -501,17 +501,16 @@ features:
           set to true.
         type: Boolean
         default: true
-    defaults:
-      - channel: nightly
-        value:
-          disabled: false
-      - channel: developer
-        value:
-          disabled: false
 
   fission:
     description: The feature that controls whether fission is enabled or not in Gecko.
     variables:
+      shouldUseNimbus:
+        description: >
+            If true, the values for both SHIP and Fission set in this file apply.
+            Otherwise, the values from modules/libpref/init/StaticPrefList.yaml apply.
+        type: Boolean
+        default: false
       enabled:
         description: >
           Whether or not to enable fission. Fission is enabled when set to true. Fission is disabled when
@@ -607,6 +606,21 @@ features:
         type: Boolean
         default: true
 
+  safe-browsing-v5:
+    description: Control Safe Browsing V5.
+    variables:
+      feature-enabled:
+        description: >-
+          If true, this feature is enabled. Otherwise, we follow the
+          SafeBrowsing V5 enabled pref.
+        type: Boolean
+        default: false
+      enable-v5:
+        description: >-
+          Enables / disables the SafeBrowsing V5 protocol.
+        type: Boolean
+        default: false
+
   menu-redesign:
     description: Control the new menu redesign.
     variables:
@@ -673,6 +687,10 @@ features:
         description: The maximum number of times to show the prompt.
         type: Int
         default: 2
+      enable-drag-to-dismiss:
+        description: Whether to show a drag handle on the prompt and allows users to use it to dismiss the prompt.
+        type: Boolean
+        default: true
 
   tab-strip:
     description: Enables tab strip.
@@ -698,45 +716,6 @@ features:
       - channel: beta
         value:
           enabled: true
-
-  trending-searches:
-    description: Enables trending searches.
-    variables:
-      enabled:
-        description: >
-          Whether or not to enable trending searches.
-        type: Boolean
-        default: true
-      max-suggestions:
-        description: The number of maximum suggestions.
-        type: Int
-        default: 5
-
-  recent-searches:
-    description: Enables recent searches.
-    variables:
-      enabled:
-        description: >
-          Whether or not to enable recent searches.
-        type: Boolean
-        default: true
-      max-suggestions:
-        description: The number of maximum suggestions.
-        type: Int
-        default: 5
-
-  top-sites-suggestions:
-    description: Enables top sites suggestions.
-    variables:
-      enabled:
-        description: >
-          Whether or not to enable top sites suggestions.
-        type: Boolean
-        default: true
-      max-suggestions:
-        description: The number of maximum suggestions.
-        type: Int
-        default: 2
 
   search-suggestions-on-homepage:
     description: Enables search suggestions on homepage.
@@ -946,7 +925,7 @@ features:
         description: >
           Whether or not the toolbar redesign option is visible to the user.  This allows the user to switch between simple and expanded toolbar.
         type: Boolean
-        default: false
+        default: true
       show-simple-customization:
         description: >
           Whether or not the simple toolbar customization option is visible to the user.
@@ -977,32 +956,25 @@ features:
           Whether or not to enable the tab management enhancements.
         type: Boolean
         default: false
+      opening_animation_enabled:
+        description: Whether or not the Tab Manager opening animation is enabled. When enabled,
+          a shared element transition will initiate, taking the currently-opened tab's thumbnail
+          and shrinking it into its spot in the Tab Manager.
+        type: Boolean
+        default: false
     defaults:
       - channel: release
         value:
           enabled: false
+          opening_animation_enabled: false
       - channel: beta
         value:
           enabled: false
+          opening_animation_enabled: false
       - channel: nightly
-        value:
-          enabled: false
-
-  address-sync:
-    description: Turns on address sync.
-    variables:
-      enabled:
-        description: >
-          Whether or not to turn on address sync.
-        type: Boolean
-        default: false
-    defaults:
-      - channel: nightly
-        value:
-          enabled: false
-      - channel: developer
         value:
           enabled: true
+          opening_animation_enabled: true
 
   suppress-sponsored-top-sites:
     description: Suppress sponsored top sites for new users for 14 days.
@@ -1027,6 +999,11 @@ features:
       enabled:
         description: >
           Whether or not to enable isolated content processes.
+        type: Boolean
+        default: false
+      app-zygote-preloading:
+        description: >
+          Whether or not to enable app Zygote preloaded isolated content processes.
         type: Boolean
         default: false
 
@@ -1057,6 +1034,18 @@ features:
         description: The minimum number of cold starts between showing the prompt.
         type: Option<Int>
         default: 4
+
+  relay-email-masks:
+    description: Feature to enable Relay for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, Relay email masks feature is enabled.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: true
 
 types:
   objects:

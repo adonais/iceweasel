@@ -30,7 +30,6 @@
 #include "mozilla/PodOperations.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
 
 #include <stddef.h>

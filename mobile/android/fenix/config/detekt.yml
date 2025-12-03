@@ -806,7 +806,3 @@ mozilla-detekt-rules:
     active: true
   MozillaUseLazyMonitored:
     active: true
-
-mozilla-rules:
-  ForbiddenSuppression:
-    active: true

@@ -28,7 +28,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "ClipboardHelper",
   "@mozilla.org/widget/clipboardhelper;1",
-  "nsIClipboardHelper"
+  Ci.nsIClipboardHelper
 );
 
 const CONVERTERS = [
@@ -134,13 +134,11 @@ export class UrlbarProviderUnitConversion extends UrlbarProvider {
   }
 
   /**
-   * This method is called by the providers manager when a query starts to fetch
-   * each extension provider's results.  It fires the resultsRequested event.
+   * Starts querying.
    *
    * @param {UrlbarQueryContext} queryContext
-   *   The query context object.
-   * @param {Function} addCallback
-   *   The callback invoked by this method to add each result.
+   * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
+   *   Callback invoked by the provider to add a new result.
    */
   startQuery(queryContext, addCallback) {
     const result = new lazy.UrlbarResult({

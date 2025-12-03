@@ -8,7 +8,6 @@
 #define DOM_SVG_SVGTRANSFORMABLEELEMENT_H_
 
 #include "gfxMatrix.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/SVGAnimatedTransformList.h"
 #include "mozilla/dom/SVGElement.h"

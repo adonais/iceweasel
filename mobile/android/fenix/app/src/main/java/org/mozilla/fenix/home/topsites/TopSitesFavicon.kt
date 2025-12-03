@@ -5,6 +5,7 @@
 package org.mozilla.fenix.home.topsites
 
 import androidx.annotation.DrawableRes
+import mozilla.components.feature.top.sites.TopSite
 import org.mozilla.fenix.R
 
 /**
@@ -12,11 +13,12 @@ import org.mozilla.fenix.R
  */
 sealed class TopSitesFavicon {
     /**
-     * An image URL.
+     * An image URL. Image URL is only available with [TopSite.Provided].
      *
-     * @property url The URL of the image to use.
+     * @property imageUrl The URL of the image to use. If empty or null, the favicon will be
+     * fetched using the top site URL.
      */
-    data class ImageUrl(val url: String?) : TopSitesFavicon()
+    data class ImageUrl(val imageUrl: String?) : TopSitesFavicon()
 
     /**
      * A drawable background.
@@ -26,14 +28,21 @@ sealed class TopSitesFavicon {
     data class Drawable(@param:DrawableRes val drawableResId: Int) : TopSitesFavicon()
 }
 
-internal fun getTopSitesFavicon(url: String): TopSitesFavicon {
-    return when (url) {
-        "https://tenki.jp/" -> TopSitesFavicon.ImageUrl(url = "https://tenki.jp/favicon.ico")
-        "https://m.yahoo.co.jp/" -> TopSitesFavicon.ImageUrl(url = "https://s.yimg.jp/c/icon/s/bsc/2.0/favicon.ico")
-        "https://ameblo.jp/" -> TopSitesFavicon.ImageUrl(url = "https://stat100.ameba.jp/common_style/img/favicon.ico")
+internal fun getTopSitesFavicon(topSite: TopSite): TopSitesFavicon {
+    if (topSite is TopSite.Provided) {
+        return TopSitesFavicon.ImageUrl(imageUrl = topSite.imageUrl)
+    }
+
+    return when (topSite.url) {
+        "https://tenki.jp/" ->
+            TopSitesFavicon.ImageUrl(imageUrl = "https://tenki.jp/favicon.ico")
+        "https://m.yahoo.co.jp/" ->
+            TopSitesFavicon.ImageUrl(imageUrl = "https://s.yimg.jp/c/icon/s/bsc/2.0/favicon.ico")
+        "https://ameblo.jp/" ->
+            TopSitesFavicon.ImageUrl(imageUrl = "https://stat100.ameba.jp/common_style/img/favicon.ico")
         "https://blog.mozilla.org/ja/firefox-ja/android-guide/" ->
             TopSitesFavicon.Drawable(R.drawable.ic_japan_onboarding_favicon)
 
-        else -> TopSitesFavicon.ImageUrl(url = null)
+        else -> TopSitesFavicon.ImageUrl(imageUrl = null)
     }
 }

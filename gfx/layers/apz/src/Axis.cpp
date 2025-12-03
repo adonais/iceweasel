@@ -13,7 +13,6 @@
 #include "AsyncPanZoomController.h"         // for AsyncPanZoomController
 #include "FrameMetrics.h"                   // for FrameMetrics
 #include "SimpleVelocityTracker.h"          // for FrameMetrics
-#include "mozilla/Attributes.h"             // for final
 #include "mozilla/Preferences.h"            // for Preferences
 #include "mozilla/gfx/Rect.h"               // for RoundedIn
 #include "mozilla/layers/APZThreadUtils.h"  // for AssertOnControllerThread

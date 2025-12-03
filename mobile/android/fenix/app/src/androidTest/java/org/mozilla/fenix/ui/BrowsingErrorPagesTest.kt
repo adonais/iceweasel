@@ -100,7 +100,7 @@ class BrowsingErrorPagesTest : TestSetup() {
     // This tests the server ERROR_CONNECTION_REFUSED
     @Test
     fun verifyConnectionInterruptedErrorMessageTest() {
-        val testUrl = getGenericAsset(mockWebServer, 1)
+        val testUrl = mockWebServer.getGenericAsset(1)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(testUrl.url) {

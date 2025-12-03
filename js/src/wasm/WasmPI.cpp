@@ -41,16 +41,14 @@
 #include "wasm/WasmGcObject-inl.h"
 #include "wasm/WasmInstance-inl.h"
 
-#ifdef JS_CODEGEN_ARM
+#if defined(JS_CODEGEN_ARM)
 #  include "jit/arm/Simulator-arm.h"
-#endif
-
-#ifdef JS_CODEGEN_ARM64
+#elif defined(JS_CODEGEN_ARM64)
 #  include "jit/arm64/vixl/Simulator-vixl.h"
-#endif
-
-#ifdef JS_CODEGEN_RISCV64
+#elif defined(JS_CODEGEN_RISCV64)
 #  include "jit/riscv64/Simulator-riscv64.h"
+#elif defined(JS_CODEGEN_LOONG64)
+#  include "jit/loong64/Simulator-loong64.h"
 #endif
 
 #ifdef XP_WIN
@@ -96,7 +94,7 @@ void SuspenderObjectData::restoreTIBStackFields() {
 }
 #  endif
 
-#  ifdef JS_SIMULATOR_ARM64
+#  if defined(JS_SIMULATOR_ARM64)
 void SuspenderObjectData::switchSimulatorToMain() {
   auto* sim = Simulator::Current();
   suspendableSP_ = (void*)sim->xreg(Registers::sp, vixl::Reg31IsStackPointer);
@@ -114,9 +112,8 @@ void SuspenderObjectData::switchSimulatorToSuspendable() {
                 vixl::Debugger::LogRegWrites, vixl::Reg31IsStackPointer);
   sim->set_xreg(Registers::fp, (int64_t)suspendableFP_);
 }
-#  endif
 
-#  ifdef JS_SIMULATOR_ARM
+#  elif defined(JS_SIMULATOR_ARM)
 void SuspenderObjectData::switchSimulatorToMain() {
   suspendableSP_ = (void*)Simulator::Current()->get_register(Simulator::sp);
   suspendableFP_ = (void*)Simulator::Current()->get_register(Simulator::fp);
@@ -130,9 +127,8 @@ void SuspenderObjectData::switchSimulatorToSuspendable() {
   Simulator::Current()->set_register(Simulator::sp, (int)suspendableSP_);
   Simulator::Current()->set_register(Simulator::fp, (int)suspendableFP_);
 }
-#  endif
 
-#  ifdef JS_SIMULATOR_RISCV64
+#  elif defined(JS_SIMULATOR_RISCV64) || defined(JS_SIMULATOR_LOONG64)
 void SuspenderObjectData::switchSimulatorToMain() {
   suspendableSP_ = (void*)Simulator::Current()->getRegister(Simulator::sp);
   suspendableFP_ = (void*)Simulator::Current()->getRegister(Simulator::fp);
@@ -573,7 +569,7 @@ bool CallOnMainStack(JSContext* cx, CallOnMainStackFn fn, void* data) {
 
 #  ifdef JS_SIMULATOR
 #    if defined(JS_SIMULATOR_ARM64) || defined(JS_SIMULATOR_ARM) || \
-        defined(JS_SIMULATOR_RISCV64)
+        defined(JS_SIMULATOR_RISCV64) || defined(JS_SIMULATOR_LOONG64)
   // The simulator is using its own stack, however switching is needed for
   // virtual registers.
   stacks->switchSimulatorToMain();
@@ -1718,7 +1714,11 @@ static bool WasmPIPromisingFunction(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // During an exception the stack was unwound -- time to release resources.
-  CleanupActiveSuspender(cx);
+  // At this point, the suspender might be null, if that's the case
+  // don't try to clean up.
+  if (cx->wasm().promiseIntegration.activeSuspender() != nullptr) {
+    CleanupActiveSuspender(cx);
+  }
 
   if (cx->isThrowingOutOfMemory()) {
     return false;

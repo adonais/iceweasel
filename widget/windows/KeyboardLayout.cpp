@@ -1601,7 +1601,7 @@ void NativeKey::InitWithKeyOrChar() {
                this, ToString(charMsg).get()));
       NS_WARNING_ASSERTION(
           charMsg.hwnd == mMsg.hwnd,
-          "The retrieved char message was targeted to differnet window");
+          "The retrieved char message was targeted to different window");
       mFollowingCharMsgs.AppendElement(charMsg);
     }
     if (mFollowingCharMsgs.Length() == 1) {
@@ -3482,8 +3482,8 @@ void NativeKey::ComputeInputtingStringWithKeyboardLayout() {
   mUnshiftedString.Clear();
   mShiftedLatinChar = mUnshiftedLatinChar = 0;
 
-  // XXX How about when Win key is pressed?
-  if (!mModKeyState.IsControl() && !mModKeyState.IsAlt()) {
+  if (!mModKeyState.IsControl() && !mModKeyState.IsAlt() &&
+      !mModKeyState.IsWin()) {
     return;
   }
 
@@ -3592,8 +3592,8 @@ bool NativeKey::DispatchKeyPressEventsWithRetrievedCharMessages() const {
   ModifierKeyState modKeyState(mModKeyState);
   if (mCanIgnoreModifierStateAtKeyPress && IsFollowedByPrintableCharMessage()) {
     // If eKeyPress event should cause inputting text in focused editor,
-    // we need to remove Alt and Ctrl state.
-    modKeyState.Unset(MODIFIER_ALT | MODIFIER_CONTROL);
+    // we need to remove Alt and Ctrl and Meta state.
+    modKeyState.Unset(MODIFIER_ALT | MODIFIER_CONTROL | MODIFIER_META);
   }
   // We don't need to send char message here if there are two or more retrieved
   // messages because we need to set each message to each eKeyPress event.

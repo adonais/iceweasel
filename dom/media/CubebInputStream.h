@@ -8,7 +8,6 @@
 #define DOM_MEDIA_CUBEBINPUTSTREAM_H_
 
 #include "CubebUtils.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsISupportsImpl.h"

@@ -34,7 +34,7 @@ template <typename K, typename V>
 struct Utils {
   using KeyType = K;
   using ValueType = V;
-  using Type = WeakMap<KeyType, ValueType>;
+  using Type = WeakMap<KeyType, ValueType, ZoneAllocPolicy>;
   using PtrType = Type*;
   static PtrType cast(void* ptr) { return static_cast<PtrType>(ptr); }
 };

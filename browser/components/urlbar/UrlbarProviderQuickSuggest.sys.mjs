@@ -87,13 +87,11 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
   }
 
   /**
-   * Starts querying. Extended classes should return a Promise resolved when the
-   * provider is done searching AND returning results.
+   * Starts querying.
    *
-   * @param {UrlbarQueryContext} queryContext The query context object
-   * @param {Function} addCallback Callback invoked by the provider to add a new
-   *        result. A UrlbarResult should be passed to it.
-   * @returns {Promise}
+   * @param {UrlbarQueryContext} queryContext
+   * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
+   *   Callback invoked by the provider to add a new result.
    */
   async startQuery(queryContext, addCallback) {
     let instance = this.queryInstance;
@@ -424,11 +422,9 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
    * Returns a new result for an unmanaged suggestion. An "unmanaged" suggestion
    * is a suggestion without a feature.
    *
-   * Merino is the only backend allowed to serve unmanaged suggestions, for a
-   * couple of reasons: (1) Some suggestion types aren't that complicated and
-   * can be handled in a default manner, for example "top_picks". (2) It allows
-   * us to experiment with new suggestion types without requiring any changes to
-   * Firefox.
+   * Merino is the only backend allowed to serve unmanaged suggestions, and its
+   * "top_picks" provider is the only Merino provider recognized by this method.
+   * For everything else, the method returns null.
    *
    * @param {UrlbarQueryContext} queryContext
    *   The query context.
@@ -436,10 +432,10 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
    *   The suggestion.
    * @returns {UrlbarResult|null}
    *   A new result for the suggestion or null if the suggestion is not from
-   *   Merino.
+   *   the Merino "top_picks" provider.
    */
   #makeUnmanagedResult(queryContext, suggestion) {
-    if (suggestion.source != "merino") {
+    if (suggestion.source != "merino" || suggestion.provider != "top_picks") {
       return null;
     }
 
@@ -569,10 +565,9 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
     let feature = lazy.QuickSuggest.getFeatureByResult(result);
     if (
       !feature &&
-      ((result.payload.isSponsored &&
-        !lazy.UrlbarPrefs.get("suggest.quicksuggest.sponsored")) ||
-        (!result.payload.isSponsored &&
-          !lazy.UrlbarPrefs.get("suggest.quicksuggest.nonsponsored")))
+      (!lazy.UrlbarPrefs.get("suggest.quicksuggest.all") ||
+        (result.payload.isSponsored &&
+          !lazy.UrlbarPrefs.get("suggest.quicksuggest.sponsored")))
     ) {
       return false;
     }

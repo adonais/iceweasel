@@ -227,7 +227,7 @@ mozilla::ipc::IPCResult UtilityProcessChild::RecvRequestMemoryReport(
   mozilla::dom::MemoryReportRequestClient::Start(
       aGeneration, aAnonymize, aMinimizeMemoryUsage, aDMDFile, processName,
       [&](const MemoryReport& aReport) {
-        Unused << GetSingleton()->SendAddMemoryReport(aReport);
+        (void)GetSingleton()->SendAddMemoryReport(aReport);
       },
       aResolver);
   return IPC_OK();

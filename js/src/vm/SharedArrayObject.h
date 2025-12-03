@@ -283,10 +283,6 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   static bool slice(JSContext* cx, unsigned argc, Value* vp);
 
-  static bool isOriginalByteLengthGetter(Native native) {
-    return native == byteLengthGetter;
-  }
-
  private:
   template <class SharedArrayBufferType>
   static SharedArrayBufferType* NewWith(JSContext* cx,

@@ -108,7 +108,7 @@ class BridgedRecord extends RawCryptoWrapper {
     return cleartext;
   }
 
-  /*
+  /**
    * Converts this incoming record into an envelope to pass to a bridged engine.
    * This object must be kept in sync with `sync15::IncomingBso`.
    *

@@ -692,10 +692,10 @@ class PlacesHistoryStorageTest {
         storage.sync(SyncAuthInfo("kid", "token", 123L, "key", "serverUrl"))
 
         assertEquals("kid", passedAuthInfo!!.kid)
-        assertEquals("serverUrl", passedAuthInfo!!.tokenServerUrl)
-        assertEquals("token", passedAuthInfo!!.fxaAccessToken)
-        assertEquals(123L, passedAuthInfo!!.fxaAccessTokenExpiresAt)
-        assertEquals("key", passedAuthInfo!!.syncKey)
+        assertEquals("serverUrl", passedAuthInfo.tokenServerUrl)
+        assertEquals("token", passedAuthInfo.fxaAccessToken)
+        assertEquals(123L, passedAuthInfo.fxaAccessTokenExpiresAt)
+        assertEquals("key", passedAuthInfo.syncKey)
     }
 
     @Test

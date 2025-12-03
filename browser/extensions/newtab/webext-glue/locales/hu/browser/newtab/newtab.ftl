@@ -407,7 +407,7 @@ newtab-wallpaper-abstract-purple-green = Lila és zöld fényátmenet
 newtab-wallpaper-abstract-blue-purple-waves = Kék és lila hullámos alakzatok
 newtab-wallpaper-abstract-black-waves = Fekete hullámos alakzatok
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fényképek
 newtab-wallpaper-beach-at-sunrise = Strand napkeltekor
@@ -436,6 +436,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -676,10 +680,6 @@ newtab-widget-timer-mode-focus =
     .label = Fókusz
 newtab-widget-timer-mode-break =
     .label = Szünet
-newtab-widget-timer-play =
-    .title = Lejátszás
-newtab-widget-timer-pause =
-    .title = Szünet
 newtab-widget-timer-label-play =
     .label = Lejátszás
 newtab-widget-timer-label-pause =
@@ -692,6 +692,9 @@ newtab-widget-timer-menu-hide = Időzítő elrejtése
 newtab-widget-timer-menu-learn-more = További tudnivalók
 # Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
 newtab-widget-keep-scrolling = Görgessen a továbbiakért
+newtab-widget-message-title = Maradjon fókuszált a listákkal és a beépített időzítővel
+# to-dos stands for "things to do".
+newtab-widget-message-copy = A gyors emlékeztetőktől a napi tennivalókig, fókuszált munkaszakaszoktól a nyújtó szünetekig — maradjon a feladatnál és időben.
 newtab-promo-card-title = Támogassa a { -brand-product-name }ot
 newtab-promo-card-body = Szponzoraink támogatják a küldetésünket, hogy jobb webet építsünk
 newtab-promo-card-cta = További tudnivalók

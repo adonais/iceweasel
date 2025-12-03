@@ -5,7 +5,6 @@
 
 #include "nsView.h"
 
-#include "mozilla/Attributes.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerPrintfMacros.h"
@@ -172,83 +171,76 @@ void nsView::SetPosition(nscoord aX, nscoord aY) {
 
   NS_ASSERTION(GetParent() || (aX == 0 && aY == 0),
                "Don't try to move the root widget to something non-zero");
-
-  ResetWidgetBounds(true, false);
-}
-
-void nsView::ResetWidgetBounds(bool aRecurse, bool aForceSync) {
-  if (mWindow) {
-    if (!aForceSync) {
-      // Don't change widget geometry synchronously, since that can
-      // cause synchronous painting.
-      mViewManager->PostPendingUpdate();
-    } else {
-      DoResetWidgetBounds(false, true);
-    }
-    return;
-  }
-
-  if (aRecurse) {
-    // reposition any widgets under this view
-    for (nsView* v = GetFirstChild(); v; v = v->GetNextSibling()) {
-      v->ResetWidgetBounds(true, aForceSync);
-    }
-  }
 }
 
 bool nsView::IsEffectivelyVisible() {
   for (nsView* v = this; v; v = v->mParent) {
-    if (v->GetVisibility() == ViewVisibility::Hide) return false;
+    if (v->GetVisibility() == ViewVisibility::Hide) {
+      return false;
+    }
   }
   return true;
+}
+
+struct WidgetViewBounds {
+  nsRect mBounds;
+  int32_t mRoundTo = 1;
+};
+
+static WidgetViewBounds CalcWidgetViewBounds(
+    const nsRect& aBounds, int32_t aAppUnitsPerDevPixel, nsView* aParentView,
+    nsIWidget* aThisWidget, WindowType aType, TransparencyMode aTransparency) {
+  nsRect viewBounds(aBounds);
+  nsIWidget* parentWidget = nullptr;
+  if (aParentView) {
+    nsPoint offset;
+    parentWidget = aParentView->GetNearestWidget(&offset, aAppUnitsPerDevPixel);
+    // make viewBounds be relative to the parent widget, in appunits
+    viewBounds += offset;
+
+    if (parentWidget && aType == WindowType::Popup) {
+      // put offset into screen coordinates. (based on client area origin)
+      LayoutDeviceIntPoint screenPoint = parentWidget->WidgetToScreenOffset();
+      viewBounds +=
+          nsPoint(NSIntPixelsToAppUnits(screenPoint.x, aAppUnitsPerDevPixel),
+                  NSIntPixelsToAppUnits(screenPoint.y, aAppUnitsPerDevPixel));
+    }
+  }
+
+  nsIWidget* widget = parentWidget ? parentWidget : aThisWidget;
+  int32_t roundTo = widget ? widget->RoundsWidgetCoordinatesTo() : 1;
+  return {viewBounds, roundTo};
+}
+
+static LayoutDeviceIntRect WidgetViewBoundsToDevicePixels(
+    const WidgetViewBounds& aViewBounds, int32_t aAppUnitsPerDevPixel,
+    WindowType aType, TransparencyMode aTransparency) {
+  // Compute widget bounds in device pixels
+  // TODO(emilio): We should probably use outside pixels for transparent
+  // windows (not just popups) as well.
+  if (aType != WindowType::Popup) {
+    return LayoutDeviceIntRect::FromUnknownRect(
+        aViewBounds.mBounds.ToNearestPixels(aAppUnitsPerDevPixel));
+  }
+  // We use outside pixels for transparent windows if possible, so that we
+  // don't truncate the contents. For opaque popups, we use nearest pixels
+  // which prevents having pixels not drawn by the frame.
+  const bool opaque = aTransparency == TransparencyMode::Opaque;
+  const auto idealBounds = LayoutDeviceIntRect::FromUnknownRect(
+      opaque ? aViewBounds.mBounds.ToNearestPixels(aAppUnitsPerDevPixel)
+             : aViewBounds.mBounds.ToOutsidePixels(aAppUnitsPerDevPixel));
+
+  return nsIWidget::MaybeRoundToDisplayPixels(idealBounds, aTransparency,
+                                              aViewBounds.mRoundTo);
 }
 
 LayoutDeviceIntRect nsView::CalcWidgetBounds(WindowType aType,
                                              TransparencyMode aTransparency) {
   int32_t p2a = mViewManager->AppUnitsPerDevPixel();
-
-  nsRect viewBounds(mDimBounds);
-
-  nsView* parent = GetParent();
-  nsIWidget* parentWidget = nullptr;
-  if (parent) {
-    nsPoint offset;
-    parentWidget = parent->GetNearestWidget(&offset, p2a);
-    // make viewBounds be relative to the parent widget, in appunits
-    viewBounds += offset;
-
-    if (parentWidget && aType == WindowType::Popup && IsEffectivelyVisible()) {
-      // put offset into screen coordinates. (based on client area origin)
-      LayoutDeviceIntPoint screenPoint = parentWidget->WidgetToScreenOffset();
-      viewBounds += nsPoint(NSIntPixelsToAppUnits(screenPoint.x, p2a),
-                            NSIntPixelsToAppUnits(screenPoint.y, p2a));
-    }
-  }
-
-  // Compute widget bounds in device pixels
-  const LayoutDeviceIntRect newBounds = [&] {
-    // TODO(emilio): We should probably use outside pixels for transparent
-    // windows (not just popups) as well.
-    if (aType != WindowType::Popup) {
-      return LayoutDeviceIntRect::FromUnknownRect(
-          viewBounds.ToNearestPixels(p2a));
-    }
-    // We use outside pixels for transparent windows if possible, so that we
-    // don't truncate the contents. For opaque popups, we use nearest pixels
-    // which prevents having pixels not drawn by the frame.
-    const bool opaque = aTransparency == TransparencyMode::Opaque;
-    const auto idealBounds = LayoutDeviceIntRect::FromUnknownRect(
-        opaque ? viewBounds.ToNearestPixels(p2a)
-               : viewBounds.ToOutsidePixels(p2a));
-
-    nsIWidget* widget = parentWidget ? parentWidget : mWindow.get();
-    if (!widget) {
-      return idealBounds;
-    }
-    const int32_t round = widget->RoundsWidgetCoordinatesTo();
-    return nsIWidget::MaybeRoundToDisplayPixels(idealBounds, aTransparency,
-                                                round);
-  }();
+  auto viewBounds = CalcWidgetViewBounds(mDimBounds, p2a, GetParent(),
+                                         mWindow.get(), aType, aTransparency);
+  auto newBounds =
+      WidgetViewBoundsToDevicePixels(viewBounds, p2a, aType, aTransparency);
 
   // Compute where the top-left of our widget ended up relative to the parent
   // widget, in appunits.
@@ -261,9 +253,18 @@ LayoutDeviceIntRect nsView::CalcWidgetBounds(WindowType aType,
   // (mPosX,mPosY) - mDimBounds.TopLeft() + viewBounds.TopLeft().
   // Our widget, relative to the parent widget, is roundedOffset.
   mViewToWidgetOffset = nsPoint(mPosX, mPosY) - mDimBounds.TopLeft() +
-                        viewBounds.TopLeft() - roundedOffset;
-
+                        viewBounds.mBounds.TopLeft() - roundedOffset;
   return newBounds;
+}
+
+LayoutDeviceIntRect nsView::CalcWidgetBounds(
+    const nsRect& aBounds, int32_t aAppUnitsPerDevPixel, nsView* aParentView,
+    nsIWidget* aThisWidget, WindowType aType, TransparencyMode aTransparency) {
+  auto viewBounds =
+      CalcWidgetViewBounds(aBounds, aAppUnitsPerDevPixel, aParentView,
+                           aThisWidget, aType, aTransparency);
+  return WidgetViewBoundsToDevicePixels(viewBounds, aAppUnitsPerDevPixel, aType,
+                                        aTransparency);
 }
 
 LayoutDeviceIntRect nsView::RecalcWidgetBounds() {
@@ -272,87 +273,7 @@ LayoutDeviceIntRect nsView::RecalcWidgetBounds() {
                           mWindow->GetTransparencyMode());
 }
 
-void nsView::DoResetWidgetBounds(bool aMoveOnly, bool aInvalidateChangedSize) {
-  // The geometry of a root view's widget is controlled externally,
-  // NOT by sizing or positioning the view
-  if (mViewManager->GetRootView() == this) {
-    return;
-  }
-
-  MOZ_ASSERT(mWindow, "Why was this called??");
-
-  // Hold this ref to make sure it stays alive.
-  nsCOMPtr<nsIWidget> widget = mWindow;
-
-  // Stash a copy of these and use them so we can handle this being deleted (say
-  // from sync painting/flushing from Show/Move/Resize on the widget).
-  LayoutDeviceIntRect newBounds;
-
-  WindowType type = widget->GetWindowType();
-
-  LayoutDeviceIntRect curBounds = widget->GetClientBounds();
-  bool invisiblePopup = type == WindowType::Popup &&
-                        ((curBounds.IsEmpty() && mDimBounds.IsEmpty()) ||
-                         mVis == ViewVisibility::Hide);
-
-  if (invisiblePopup) {
-    // We're going to hit the early exit below, avoid calling CalcWidgetBounds.
-  } else {
-    newBounds = CalcWidgetBounds(type, widget->GetTransparencyMode());
-    invisiblePopup = newBounds.IsEmpty();
-  }
-
-  bool curVisibility = widget->IsVisible();
-  bool newVisibility = !invisiblePopup && IsEffectivelyVisible();
-  if (curVisibility && !newVisibility) {
-    widget->Show(false);
-  }
-
-  if (invisiblePopup) {
-    // Don't manipulate empty or hidden popup widgets. For example there's no
-    // point moving hidden comboboxes around, or doing X server roundtrips
-    // to compute their true screen position. This could mean that
-    // WidgetToScreen operations on these widgets don't return up-to-date
-    // values, but popup positions aren't reliable anyway because of correction
-    // to be on or off-screen.
-    return;
-  }
-
-  // Apply the widget size constraints to newBounds.
-  widget->ConstrainSize(&newBounds.width, &newBounds.height);
-
-  bool changedPos = curBounds.TopLeft() != newBounds.TopLeft();
-  bool changedSize = curBounds.Size() != newBounds.Size();
-
-  // Child views are never attached to top level widgets, this is safe.
-
-  // Coordinates are converted to desktop pixels for window Move/Resize APIs,
-  // because of the potential for device-pixel coordinate spaces for mixed
-  // hidpi/lodpi screens to overlap each other and result in bad placement
-  // (bug 814434).
-
-  DesktopToLayoutDeviceScale scale = widget->GetDesktopToDeviceScaleByScreen();
-
-  DesktopRect deskRect = newBounds / scale;
-  if (changedPos) {
-    if (changedSize && !aMoveOnly) {
-      widget->ResizeClient(deskRect, aInvalidateChangedSize);
-    } else {
-      widget->MoveClient(deskRect.TopLeft());
-    }
-  } else {
-    if (changedSize && !aMoveOnly) {
-      widget->ResizeClient(deskRect.Size(), aInvalidateChangedSize);
-    }  // else do nothing!
-  }
-
-  if (!curVisibility && newVisibility) {
-    widget->Show(true);
-  }
-}
-
-void nsView::SetDimensions(const nsRect& aRect, bool aPaint,
-                           bool aResizeWidget) {
+void nsView::SetDimensions(const nsRect& aRect) {
   nsRect dims = aRect;
   dims.MoveBy(mPosX, mPosY);
 
@@ -365,10 +286,6 @@ void nsView::SetDimensions(const nsRect& aRect, bool aPaint,
   }
 
   mDimBounds = dims;
-
-  if (aResizeWidget) {
-    ResetWidgetBounds(false, false);
-  }
 }
 
 void nsView::NotifyEffectiveVisibilityChanged(bool aEffectivelyVisible) {
@@ -377,10 +294,6 @@ void nsView::NotifyEffectiveVisibilityChanged(bool aEffectivelyVisible) {
   }
 
   SetForcedRepaint(true);
-
-  if (mWindow) {
-    ResetWidgetBounds(false, false);
-  }
 
   for (nsView* child = mFirstChild; child; child = child->mNextSibling) {
     if (child->mVis == ViewVisibility::Hide) {
@@ -398,10 +311,13 @@ void nsView::SetVisibility(ViewVisibility aVisibility) {
 }
 
 void nsView::InvalidateHierarchy() {
-  if (mViewManager->GetRootView() == this) mViewManager->InvalidateHierarchy();
+  if (mViewManager->GetRootView() == this) {
+    mViewManager->InvalidateHierarchy();
+  }
 
-  for (nsView* child = mFirstChild; child; child = child->GetNextSibling())
+  for (nsView* child = mFirstChild; child; child = child->GetNextSibling()) {
     child->InvalidateHierarchy();
+  }
 }
 
 void nsView::InsertChild(nsView* aChild, nsView* aSibling) {
@@ -465,73 +381,6 @@ void nsView::RemoveChild(nsView* child) {
   }
 }
 
-struct DefaultWidgetInitData : public widget::InitData {
-  DefaultWidgetInitData() : widget::InitData() {
-    mClipChildren = true;
-    mClipSiblings = true;
-  }
-};
-
-nsresult nsView::CreateWidget(nsIWidget* aParent, bool aEnableDragDrop,
-                              bool aResetVisibility) {
-  AssertNoWindow();
-
-  DefaultWidgetInitData initData;
-  LayoutDeviceIntRect trect =
-      CalcWidgetBounds(initData.mWindowType, initData.mTransparencyMode);
-
-  if (!aParent && GetParent()) {
-    aParent = GetParent()->GetNearestWidget(nullptr);
-  }
-  if (!aParent) {
-    NS_ERROR("nsView::CreateWidget without suitable parent widget??");
-    return NS_ERROR_FAILURE;
-  }
-
-  mWindow = aParent->CreateChild(trect, initData);
-  if (!mWindow) {
-    return NS_ERROR_FAILURE;
-  }
-
-  InitializeWindow(aEnableDragDrop, aResetVisibility);
-
-  return NS_OK;
-}
-
-nsresult nsView::CreateWidgetForPopup(widget::InitData* aWidgetInitData,
-                                      nsIWidget* aParent) {
-  AssertNoWindow();
-  MOZ_ASSERT(aWidgetInitData, "Widget init data required");
-  MOZ_ASSERT(aWidgetInitData->mWindowType == WindowType::Popup,
-             "Use one of the other CreateWidget methods");
-  MOZ_ASSERT(aParent);
-
-  LayoutDeviceIntRect trect = CalcWidgetBounds(
-      aWidgetInitData->mWindowType, aWidgetInitData->mTransparencyMode);
-  mWindow = aParent->CreateChild(trect, *aWidgetInitData);
-  if (!mWindow) {
-    return NS_ERROR_FAILURE;
-  }
-  InitializeWindow(/* aEnableDragDrop = */ true, /* aResetVisibility = */ true);
-  return NS_OK;
-}
-
-void nsView::InitializeWindow(bool aEnableDragDrop, bool aResetVisibility) {
-  MOZ_ASSERT(mWindow, "Must have a window to initialize");
-
-  mWindow->SetWidgetListener(this);
-
-  if (aEnableDragDrop) {
-    mWindow->EnableDragDrop(true);
-  }
-
-  // make sure visibility state is accurate
-
-  if (aResetVisibility) {
-    SetVisibility(GetVisibility());
-  }
-}
-
 void nsView::SetNeedsWindowPropertiesSync() {
   mNeedsWindowPropertiesSync = true;
   if (mViewManager) {
@@ -540,15 +389,20 @@ void nsView::SetNeedsWindowPropertiesSync() {
 }
 
 // Attach to a top level widget and start receiving mirrored events.
-nsresult nsView::AttachToTopLevelWidget(nsIWidget* aWidget) {
+void nsView::AttachToTopLevelWidget(nsIWidget* aWidget) {
   MOZ_ASSERT(aWidget, "null widget ptr");
+#ifdef DEBUG
+  nsIWidgetListener* parentListener = aWidget->GetWidgetListener();
+  MOZ_ASSERT(!parentListener || !parentListener->GetView(),
+             "Expect a top level widget");
+  MOZ_ASSERT(!parentListener || !parentListener->GetAsMenuPopupFrame(),
+             "Expect a top level widget");
+#endif
 
   /// XXXjimm This is a temporary workaround to an issue w/document
   // viewer (bug 513162).
-  nsIWidgetListener* listener = aWidget->GetAttachedWidgetListener();
-  if (listener) {
-    nsView* oldView = listener->GetView();
-    if (oldView) {
+  if (nsIWidgetListener* listener = aWidget->GetAttachedWidgetListener()) {
+    if (nsView* oldView = listener->GetView()) {
       oldView->DetachFromTopLevelWidget();
     }
   }
@@ -561,27 +415,26 @@ nsresult nsView::AttachToTopLevelWidget(nsIWidget* aWidget) {
 
   mWindow->SetAttachedWidgetListener(this);
   if (mWindow->GetWindowType() != WindowType::Invisible) {
-    nsresult rv = mWindow->AsyncEnableDragDrop(true);
-    NS_ENSURE_SUCCESS(rv, rv);
+    mWindow->AsyncEnableDragDrop(true);
   }
   mWidgetIsTopLevel = true;
 
   // Refresh the view bounds
   RecalcWidgetBounds();
-  return NS_OK;
 }
 
 // Detach this view from an attached widget.
-nsresult nsView::DetachFromTopLevelWidget() {
+void nsView::DetachFromTopLevelWidget() {
   MOZ_ASSERT(mWidgetIsTopLevel, "Not attached currently!");
   MOZ_ASSERT(mWindow, "null mWindow for DetachFromTopLevelWidget!");
 
   mWindow->SetAttachedWidgetListener(nullptr);
-  nsIWidgetListener* listener = mWindow->GetPreviouslyAttachedWidgetListener();
-
-  if (listener && listener->GetView()) {
-    // Ensure the listener doesn't think it's being used anymore
-    listener->GetView()->SetPreviousWidget(nullptr);
+  if (nsIWidgetListener* listener =
+          mWindow->GetPreviouslyAttachedWidgetListener()) {
+    if (nsView* view = listener->GetView()) {
+      // Ensure the listener doesn't think it's being used anymore
+      view->SetPreviousWidget(nullptr);
+    }
   }
 
   // If the new view's frame is paint suppressed then the window
@@ -592,8 +445,6 @@ nsresult nsView::DetachFromTopLevelWidget() {
   mWindow = nullptr;
 
   mWidgetIsTopLevel = false;
-
-  return NS_OK;
 }
 
 void nsView::AssertNoWindow() {
@@ -774,63 +625,40 @@ bool nsView::IsRoot() const {
   return mViewManager->GetRootView() == this;
 }
 
-static bool IsPopupWidget(nsIWidget* aWidget) {
-  return aWidget->GetWindowType() == WindowType::Popup;
-}
-
 PresShell* nsView::GetPresShell() { return GetViewManager()->GetPresShell(); }
-
-bool nsView::WindowMoved(nsIWidget* aWidget, int32_t x, int32_t y,
-                         ByMoveToRect aByMoveToRect) {
-  nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-  if (pm && IsPopupWidget(aWidget)) {
-    pm->PopupMoved(mFrame, LayoutDeviceIntPoint(x, y),
-                   aByMoveToRect == ByMoveToRect::Yes);
-    return true;
-  }
-
-  return false;
-}
 
 bool nsView::WindowResized(nsIWidget* aWidget, int32_t aWidth,
                            int32_t aHeight) {
   // The root view may not be set if this is the resize associated with
   // window creation
   SetForcedRepaint(true);
-  if (this == mViewManager->GetRootView()) {
-    RefPtr<nsDeviceContext> devContext = mViewManager->GetDeviceContext();
-    // ensure DPI is up-to-date, in case of window being opened and sized
-    // on a non-default-dpi display (bug 829963)
-    devContext->CheckDPIChange();
-    int32_t p2a = devContext->AppUnitsPerDevPixel();
-    if (auto* frame = GetFrame()) {
-      // Usually the resize would deal with this, but there are some cases (like
-      // web-extension popups) where frames might already be correctly sized etc
-      // due to a call to e.g. nsDocumentViewer::GetContentSize or so.
-      frame->InvalidateFrame();
-    }
-
-    mViewManager->SetWindowDimensions(NSIntPixelsToAppUnits(aWidth, p2a),
-                                      NSIntPixelsToAppUnits(aHeight, p2a));
-
-    if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
-      PresShell* presShell = mViewManager->GetPresShell();
-      if (presShell && presShell->GetDocument()) {
-        pm->AdjustPopupsOnWindowChange(presShell);
-      }
-    }
-
-    return true;
+  if (this != mViewManager->GetRootView()) {
+    return false;
   }
-  if (IsPopupWidget(aWidget)) {
-    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    if (pm) {
-      pm->PopupResized(mFrame, LayoutDeviceIntSize(aWidth, aHeight));
-      return true;
+
+  RefPtr<nsDeviceContext> devContext = mViewManager->GetDeviceContext();
+  // ensure DPI is up-to-date, in case of window being opened and sized
+  // on a non-default-dpi display (bug 829963)
+  devContext->CheckDPIChange();
+  int32_t p2a = devContext->AppUnitsPerDevPixel();
+  if (auto* frame = GetFrame()) {
+    // Usually the resize would deal with this, but there are some cases (like
+    // web-extension popups) where frames might already be correctly sized etc
+    // due to a call to e.g. nsDocumentViewer::GetContentSize or so.
+    frame->InvalidateFrame();
+  }
+
+  mViewManager->SetWindowDimensions(NSIntPixelsToAppUnits(aWidth, p2a),
+                                    NSIntPixelsToAppUnits(aHeight, p2a));
+
+  if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
+    PresShell* presShell = mViewManager->GetPresShell();
+    if (presShell && presShell->GetDocument()) {
+      pm->AdjustPopupsOnWindowChange(presShell);
     }
   }
 
-  return false;
+  return true;
 }
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -894,18 +722,6 @@ void nsView::AndroidPipModeChanged(bool aPipMode) {
 }
 #endif
 
-bool nsView::RequestWindowClose(nsIWidget* aWidget) {
-  if (mFrame && IsPopupWidget(aWidget) && mFrame->IsMenuPopupFrame()) {
-    if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
-      pm->HidePopup(mFrame->GetContent()->AsElement(),
-                    {HidePopupOption::DeselectMenu});
-      return true;
-    }
-  }
-
-  return false;
-}
-
 void nsView::WillPaintWindow(nsIWidget* aWidget) {
   RefPtr<nsViewManager> vm = mViewManager;
   vm->WillPaintWindow(aWidget);
@@ -942,12 +758,6 @@ void nsView::DidCompositeWindow(mozilla::layers::TransactionId aTransactionId,
 
   mozilla::StartupTimeline::RecordOnce(mozilla::StartupTimeline::FIRST_PAINT2,
                                        aCompositeEnd);
-
-  // If the two timestamps are identical, this was likely a fake composite
-  // event which wouldn't be terribly useful to display.
-  if (aCompositeStart == aCompositeEnd) {
-    return;
-  }
 }
 
 void nsView::RequestRepaint() {
@@ -1009,11 +819,11 @@ void nsView::SafeAreaInsetsChanged(
   // https://github.com/w3c/csswg-drafts/issues/4670
   // Actually we don't set this value on sub document. This behaviour is
   // same as Blink.
-  CallOnAllRemoteChildren([windowSafeAreaInsets](
-                              dom::BrowserParent* aBrowserParent) -> CallState {
-    Unused << aBrowserParent->SendSafeAreaInsetsChanged(windowSafeAreaInsets);
-    return CallState::Continue;
-  });
+  CallOnAllRemoteChildren(
+      [windowSafeAreaInsets](dom::BrowserParent* aBrowserParent) -> CallState {
+        (void)aBrowserParent->SendSafeAreaInsetsChanged(windowSafeAreaInsets);
+        return CallState::Continue;
+      });
 }
 
 bool nsView::IsPrimaryFramePaintSuppressed() {

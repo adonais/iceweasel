@@ -78,13 +78,13 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "IDNService",
   "@mozilla.org/network/idn-service;1",
-  "nsIIDNService"
+  Ci.nsIIDNService
 );
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "ContentPrefService2",
   "@mozilla.org/content-pref/service;1",
-  "nsIContentPrefService2"
+  Ci.nsIContentPrefService2
 );
 
 ChromeUtils.defineLazyGetter(lazy, "gBrandBundle", function () {
@@ -1069,9 +1069,10 @@ class LocalHostPermissionPrompt extends PermissionPromptForRequest {
   }
 
   get message() {
-    return lazy.gBrowserBundle.formatStringFromName("localhost.allowWithSite", [
-      "<>",
-    ]);
+    return lazy.gBrowserBundle.formatStringFromName(
+      "localhost.allowWithSite2",
+      ["<>"]
+    );
   }
 
   get promptActions() {
@@ -1294,7 +1295,7 @@ class LocalNetworkPermissionPrompt extends PermissionPromptForRequest {
 
   get message() {
     return lazy.gBrowserBundle.formatStringFromName(
-      "localNetwork.allowWithSite",
+      "localNetwork.allowWithSite2",
       ["<>"]
     );
   }

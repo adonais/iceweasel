@@ -18,7 +18,6 @@
 #include "js/StructuredClone.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/BufferList.h"
-#include "mozilla/Vector.h"
 #include "mozilla/mozalloc.h"
 class PickleIterator;
 

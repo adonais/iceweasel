@@ -68,6 +68,9 @@ MediaCapabilitiesKeySystemConfigurationToMediaKeySystemConfiguration(
       }
     }
   }
+  aOutConfig.mDistinctiveIdentifier = keySystemConfig.mDistinctiveIdentifier;
+  aOutConfig.mPersistentState = keySystemConfig.mPersistentState;
+
   if (aInConfig.mAudio.WasPassed()) {
     auto* capabilitiy = aOutConfig.mAudioCapabilities.AppendElement(fallible);
     if (NS_WARN_IF(!capabilitiy)) {

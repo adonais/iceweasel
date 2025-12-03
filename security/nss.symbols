@@ -205,6 +205,7 @@ NSS_CMSSignedData_Destroy
 NSS_CMSSignedData_GetSignerInfo
 NSS_CMSSignedData_SignerInfoCount
 NSS_CMSSignerInfo_GetSigningCertificate
+NSS_CMSSignerInfo_GetSigningTime
 NSS_CMSSignerInfo_Verify
 NSS_FindCertKEAType
 NSS_GetAlgorithmPolicy

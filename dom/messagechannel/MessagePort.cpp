@@ -9,7 +9,6 @@
 #include "MessageEvent.h"
 #include "MessagePortChild.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/File.h"
@@ -825,9 +824,9 @@ void MessagePort::ForceClose(const MessagePortIdentifier& aIdentifier) {
     return;
   }
 
-  Unused << actorChild->SendMessagePortForceClose(aIdentifier.uuid(),
-                                                  aIdentifier.destinationUuid(),
-                                                  aIdentifier.sequenceId());
+  (void)actorChild->SendMessagePortForceClose(aIdentifier.uuid(),
+                                              aIdentifier.destinationUuid(),
+                                              aIdentifier.sequenceId());
 }
 
 void MessagePort::DispatchError() {

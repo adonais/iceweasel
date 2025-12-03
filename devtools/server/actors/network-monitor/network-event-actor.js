@@ -446,8 +446,23 @@ class NetworkEventActor extends Actor {
    *         The response packet - network response content.
    */
   getResponseContent() {
+    const content = { ...this._response.content };
+    if (this._response.contentLongStringActor) {
+      // Remove the old actor from the pool as new actor will be created
+      // with updated content.
+      this.unmanage(this._response.contentLongStringActor);
+    }
+    this._response.contentLongStringActor = new LongStringActor(
+      this.conn,
+      content.text
+    );
+    // bug 1462561 - Use "json" type and manually manage/marshall actors to workaround
+    // protocol.js performance issue
+    this.manage(this._response.contentLongStringActor);
+    content.text = this._response.contentLongStringActor.form();
+
     return {
-      content: this._response.content,
+      content,
       contentDiscarded: this._discardResponseBody,
     };
   }
@@ -468,9 +483,9 @@ class NetworkEventActor extends Actor {
     };
   }
 
-  /** ****************************************************************
+  /******************************************************************
    * Listeners for new network event data coming from NetworkMonitor.
-   ******************************************************************/
+   *****************************************************************/
 
   addCacheDetails({ fromCache, fromServiceWorker }) {
     this._resource.fromCache = fromCache;
@@ -671,12 +686,6 @@ class NetworkEventActor extends Actor {
     }
 
     this._response.content = content;
-    content.text = new LongStringActor(this.conn, content.text);
-    // bug 1462561 - Use "json" type and manually manage/marshall actors to workaround
-    // protocol.js performance issue
-    this.manage(content.text);
-    content.text = content.text.form();
-
     this._onEventUpdate(
       lazy.NetworkUtils.NETWORK_EVENT_TYPES.RESPONSE_CONTENT,
       {

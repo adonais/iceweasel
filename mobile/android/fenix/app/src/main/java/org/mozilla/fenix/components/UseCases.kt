@@ -94,7 +94,7 @@ class UseCases(
         WebAppUseCases(context, store.value, shortcutManager.value)
     }
 
-    val downloadUseCases by lazyMonitored { DownloadsUseCases(store.value) }
+    val downloadUseCases by lazyMonitored { DownloadsUseCases(store.value, context.applicationContext) }
 
     val contextMenuUseCases by lazyMonitored { ContextMenuUseCases(store.value) }
 
@@ -137,6 +137,7 @@ class UseCases(
             searchUseCases = searchUseCases,
             homepageTitle = context.getString(R.string.tab_tray_homepage_tab),
             profiler = engine.value.profiler,
+            appStore = appStore.value,
         )
     }
 

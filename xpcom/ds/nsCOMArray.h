@@ -7,7 +7,6 @@
 #ifndef nsCOMArray_h__
 #define nsCOMArray_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/MemoryReporting.h"
 

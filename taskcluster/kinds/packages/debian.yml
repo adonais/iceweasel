@@ -193,7 +193,7 @@ deb8-32-gcc-10:
 
 deb10-arm64-gcc-10:
     description: "gcc 10 for Debian buster"
-    worker-type: b-linux-gcp-aarch64
+    worker-type: b-linux-aarch64
     treeherder:
         symbol: Deb10a64(gcc-10)
     worker:

@@ -15,6 +15,7 @@ prefs = [
 ["browser_test_APZ.js"]
 
 ["browser_test_browser.js"]
+skip-if = ["os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt && verify-standalone"]
 
 ["browser_test_general.js"]
 skip-if = [
@@ -30,5 +31,6 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && d
 ["browser_test_text.js"]
 
 ["browser_test_zoom.js"]
+skip-if = ["os == 'linux' && os_version == '24.04' && arch == 'x86_64' && opt && verify-standalone"]
 
 ["browser_test_zoom_text.js"]

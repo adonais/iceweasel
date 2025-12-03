@@ -214,6 +214,11 @@ tags = "bleedover"
 
 ["browser_ext_devtools_network.js"]
 https_first_disabled = true
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && opt", # Bug 1697626
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && asan", # Bug 1697626
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1697626
+]
 
 ["browser_ext_devtools_network_targetSwitch.js"]
 https_first_disabled = true

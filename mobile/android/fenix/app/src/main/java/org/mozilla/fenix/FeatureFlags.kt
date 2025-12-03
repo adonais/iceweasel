@@ -51,7 +51,7 @@ object FeatureFlags {
     /**
      * Enables the "Discover more" stories screen.
      */
-    const val DISCOVER_MORE_STORIES = false
+    const val DISCOVER_MORE_STORIES = true
 
     /**
      * Enables the private browsing mode redesign on the homepage.

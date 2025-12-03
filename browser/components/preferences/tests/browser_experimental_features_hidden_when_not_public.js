@@ -6,10 +6,6 @@
 add_task(async function testNonPublicFeaturesShouldntGetDisplayed() {
   const cleanup = await setupLabsTest();
 
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.preferences.experimental", true]],
-  });
-
   await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "about:preferences#paneExperimental"
@@ -42,7 +38,6 @@ add_task(async function testNonPublicFeaturesShouldntGetDisplayed() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
   await cleanup();
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function testNonPublicFeaturesShouldntGetDisplayed() {
@@ -50,10 +45,7 @@ add_task(async function testNonPublicFeaturesShouldntGetDisplayed() {
   const cleanup = await setupLabsTest(DEFAULT_LABS_RECIPES.slice(2));
 
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.preferences.experimental", true],
-      ["browser.preferences.experimental.hidden", false],
-    ],
+    set: [["browser.preferences.experimental.hidden", false]],
   });
 
   await BrowserTestUtils.openNewForegroundTab(

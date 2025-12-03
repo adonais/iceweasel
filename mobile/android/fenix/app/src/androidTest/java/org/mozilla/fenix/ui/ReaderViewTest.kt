@@ -7,12 +7,12 @@ package org.mozilla.fenix.ui
 import android.view.View
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.R
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.registerAndCleanupIdlingResources
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.RetryTestRule
-import org.mozilla.fenix.helpers.TestAssetHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.loremIpsumAsset
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.ViewVisibilityIdlingResource
@@ -52,10 +52,8 @@ class ReaderViewTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/250592
     @Test
     fun verifyReaderModePageDetectionTest() {
-        val readerViewPage =
-            TestAssetHelper.getLoremIpsumAsset(mockWebServer)
-        val genericPage =
-            TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val readerViewPage = mockWebServer.loremIpsumAsset
+        val genericPage = mockWebServer.getGenericAsset(1)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(readerViewPage.url) {
@@ -82,8 +80,7 @@ class ReaderViewTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyReaderModeControlsTest() {
-        val readerViewPage =
-            TestAssetHelper.getLoremIpsumAsset(mockWebServer)
+        val readerViewPage = mockWebServer.loremIpsumAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(readerViewPage.url) {

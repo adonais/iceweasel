@@ -11,7 +11,6 @@
 
 #include "MainThreadUtils.h"
 #include "mozilla/Likely.h"
-#include "mozilla/Unused.h"
 #include "nsCOMPtr.h"
 #include "nsIEventTarget.h"
 #include "nsISerialEventTarget.h"
@@ -180,7 +179,7 @@ inline NS_HIDDEN_(void)
 
     if (!target) {
       MOZ_ASSERT_UNREACHABLE("Could not get main thread; leaking an object!");
-      mozilla::Unused << doomed.forget().take();
+      doomed.forget().leak();
       return;
     }
   }

@@ -56,7 +56,7 @@ function verifyAttributeCachedNoRetry(accessible, attribute) {
   }
 }
 
-/*
+/**
  * @callback QueryCallback A function taking no arguments that queries an
  *                         attribute that may be cached, e.g., bounds, state
  */

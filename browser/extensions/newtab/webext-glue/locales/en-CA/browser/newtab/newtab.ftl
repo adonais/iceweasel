@@ -321,6 +321,7 @@ newtab-custom-stories-toggle =
     .description = Exceptional content curated by the { -brand-product-name } family
 newtab-custom-stories-personalized-toggle =
     .label = Stories
+newtab-custom-stories-personalized-checkbox-label = Personalized stories based on your activity
 newtab-custom-pocket-sponsored = Sponsored stories
 newtab-custom-pocket-show-recent-saves = Show recent saves
 newtab-custom-recent-title = Recent activity
@@ -331,6 +332,12 @@ newtab-custom-weather-toggle =
 newtab-custom-trending-search-toggle =
     .label = Trending searches
     .description = Popular and frequently searched topics
+newtab-custom-widget-weather-toggle =
+    .label = Weather
+newtab-custom-widget-trending-search-toggle =
+    .label = Trending searches
+newtab-custom-widget-lists-toggle =
+    .label = Lists
 newtab-custom-close-button = Close
 newtab-custom-settings = Manage more settings
 
@@ -392,7 +399,7 @@ newtab-wallpaper-abstract-purple-green = Purple and green light gradient
 newtab-wallpaper-abstract-blue-purple-waves = Blue and purple wavy shapes
 newtab-wallpaper-abstract-black-waves = Black wavy shapes
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Photographs
 newtab-wallpaper-beach-at-sunrise = Beach at sunrise
@@ -606,8 +613,6 @@ newtab-trending-searches-title = Trending searches
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
 
-newtab-widget-timer-pause =
-    .title = Pause
 newtab-widget-timer-label-play =
     .label = Play
 newtab-widget-timer-label-pause =

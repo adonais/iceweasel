@@ -11,6 +11,7 @@ LINUX_WORKER_TYPES = {
     "large-noscratch": "t-linux-docker-noscratch-amd",
     "xlarge": "t-linux-docker-amd",
     "xlarge-noscratch": "t-linux-docker-noscratch-amd",
+    "highcpu": "t-linux-docker-16c32gb-amd",
     "default": "t-linux-docker-noscratch-amd",
 }
 
@@ -89,6 +90,9 @@ WINDOWS_WORKER_TYPES = {
     "windows11-64-24h2-mingwclang": {
         "virtual": "win11-64-24h2",
         "virtual-with-gpu": "win11-64-24h2-gpu",
+    },
+    "windows11-aarch64-24h2": {
+        "virtual": "win11-a64-24h2",
     },
 }
 

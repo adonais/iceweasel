@@ -72,7 +72,6 @@
 #include "mozilla/GeckoTrace.h"
 #include "mozilla/InitializedOnce.h"
 #include "mozilla/Logging.h"
-#include "mozilla/MacroForEach.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
@@ -91,7 +90,6 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/Variant.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/ContentParent.h"
@@ -1510,7 +1508,7 @@ class ConnectionPool final {
   void Finish(uint64_t aTransactionId, FinishCallback* aCallback);
 
   void CloseDatabaseWhenIdle(const nsACString& aDatabaseId) {
-    Unused << CloseDatabaseWhenIdleInternal(aDatabaseId);
+    (void)CloseDatabaseWhenIdleInternal(aDatabaseId);
   }
 
   void WaitForDatabaseToComplete(const nsCString& aDatabaseId,
@@ -5156,7 +5154,7 @@ class Maintenance final : public Runnable {
   void RunImmediately() {
     MOZ_ASSERT(mState == State::Initial);
 
-    Unused << this->Run();
+    (void)this->Run();
   }
 
   RefPtr<BoolPromise> OnResults() {
@@ -5721,7 +5719,7 @@ nsresult DeleteFilesNoQuota(nsIFile& aFile) {
                      // Fallback.
                      ErrToDefaultOk<Maybe<Ok>>));
 
-  Unused << didExist;
+  (void)didExist;
 
   return NS_OK;
 }
@@ -6992,7 +6990,7 @@ void DatabaseConnection::RollbackWriteTransaction() {
             // failed to execute successfully so SQLite rolled back the
             // transaction already. However, if it failed because of some other
             // reason, we could try to close the connection.
-            Unused << stmt->Execute();
+            (void)stmt->Execute();
 
             self.mInWriteTransaction = false;
             return Ok{};
@@ -7078,7 +7076,7 @@ nsresult DatabaseConnection::RollbackSavepoint() {
 
   // This may fail if SQLite already rolled back the savepoint so ignore any
   // errors.
-  Unused << stmt->Execute();
+  (void)stmt->Execute();
 
   return NS_OK;
 }
@@ -7143,7 +7141,7 @@ void DatabaseConnection::DoIdleProcessing(bool aNeedsCheckpoint,
 
     // Release the connection's normal transaction. It's possible that it could
     // fail, but that isn't a problem here.
-    Unused << rollbackStmt.Borrow()->Execute();
+    (void)rollbackStmt.Borrow()->Execute();
 
     mInReadTransaction = false;
   }
@@ -7240,7 +7238,7 @@ Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
     MOZ_ASSERT(mInWriteTransaction);
 
     // Something failed, make sure we roll everything back.
-    Unused << aRollbackStatement.Borrow()->Execute();
+    (void)aRollbackStatement.Borrow()->Execute();
 
     // XXX Is rollback infallible? Shouldn't we check the result?
 
@@ -7984,8 +7982,8 @@ uint64_t ConnectionPool::Start(
   }
 
   if (!transactionInfo.mBlockedOn.Count()) {
-    Unused << ScheduleTransaction(transactionInfo,
-                                  /* aFromQueuedTransactions */ false);
+    (void)ScheduleTransaction(transactionInfo,
+                              /* aFromQueuedTransactions */ false);
   }
 
   if (!databaseInfoIsNew &&
@@ -8051,7 +8049,7 @@ void ConnectionPool::WaitForDatabaseToComplete(const nsCString& aDatabaseId,
   AUTO_PROFILER_LABEL("ConnectionPool::WaitForDatabaseToComplete", DOM);
 
   if (!CloseDatabaseWhenIdleInternal(aDatabaseId)) {
-    Unused << aCallback->Run();
+    (void)aCallback->Run();
     return;
   }
 
@@ -8111,7 +8109,7 @@ void ConnectionPool::Cleanup() {
         MOZ_ASSERT(completeCallback);
         MOZ_ASSERT(completeCallback->mCallback);
 
-        Unused << completeCallback->mCallback->Run();
+        (void)completeCallback->mCallback->Run();
       }
 
       // We expect no new callbacks being completed by running the existing
@@ -8414,8 +8412,8 @@ void ConnectionPool::NoteClosedDatabase(DatabaseInfo& aDatabaseInfo) {
     MOZ_ASSERT(!scheduledTransactions.IsEmpty());
 
     for (const auto& scheduledTransaction : scheduledTransactions) {
-      Unused << ScheduleTransaction(*scheduledTransaction,
-                                    /* aFromQueuedTransactions */ false);
+      (void)ScheduleTransaction(*scheduledTransaction,
+                                /* aFromQueuedTransactions */ false);
     }
 
     scheduledTransactions.Clear();
@@ -8462,7 +8460,7 @@ bool ConnectionPool::MaybeFireCallback(DatabaseCompleteCallback* aCallback) {
     return false;
   }
 
-  Unused << aCallback->mCallback->Run();
+  (void)aCallback->mCallback->Run();
   return true;
 }
 
@@ -8709,7 +8707,7 @@ nsresult ConnectionPool::FinishCallbackWrapper::Run() {
 
     mHasRunOnce = true;
 
-    Unused << mCallback->Run();
+    (void)mCallback->Run();
 
     MOZ_ALWAYS_SUCCEEDS(mOwningEventTarget->Dispatch(this, NS_DISPATCH_NORMAL));
 
@@ -8935,7 +8933,7 @@ void ConnectionPool::TransactionInfo::MaybeUnblock(
     MOZ_ASSERT(connectionPool);
     connectionPool->AssertIsOnOwningThread();
 
-    Unused << connectionPool->ScheduleTransaction(
+    (void)connectionPool->ScheduleTransaction(
         *this,
         /* aFromQueuedTransactions */ false);
   }
@@ -9283,7 +9281,7 @@ Maybe<ContentParentId> Factory::GetContentParentId() const {
 void WaitForTransactionsHelper::WaitForTransactions() {
   MOZ_ASSERT(mState == State::Initial);
 
-  Unused << this->Run();
+  (void)this->Run();
 }
 
 void WaitForTransactionsHelper::MaybeWaitForTransactions() {
@@ -9414,7 +9412,7 @@ void Database::Invalidate() {
   mInvalidated.Flip();
 
   if (mActorWasAlive && !mActorDestroyed) {
-    Unused << SendInvalidate();
+    (void)SendInvalidate();
   }
 
   QM_WARNONLY_TRY(OkIf(InvalidateAll(mTransactions)));
@@ -9646,7 +9644,7 @@ void Database::ConnectionClosedCallback() {
     // 1. Wait for all transactions to complete.
     // 2. Fire a close event if forced flag is set, i.e., IsInvalidated() in our
     //    implementation.
-    Unused << SendCloseAfterInvalidationComplete();
+    (void)SendCloseAfterInvalidationComplete();
   }
 }
 
@@ -10733,7 +10731,7 @@ void NormalTransaction::SendCompleteNotification(nsresult aResult) {
   AssertIsOnBackgroundThread();
 
   if (!IsActorDestroyed()) {
-    Unused << SendComplete(aResult);
+    (void)SendComplete(aResult);
   }
 }
 
@@ -10968,7 +10966,7 @@ void VersionChangeTransaction::SendCompleteNotification(nsresult aResult) {
   openDatabaseOp->mCompleteCallback =
       [self = SafeRefPtr{this, AcquireStrongRefFromRawPtr{}}, aResult]() {
         if (!self->IsActorDestroyed()) {
-          Unused << self->SendComplete(aResult);
+          (void)self->SendComplete(aResult);
         }
       };
 
@@ -11850,7 +11848,7 @@ nsresult DatabaseFileManager::Init(nsIFile* aDirectory,
   // it's a directory.
   QM_TRY_INSPECT(const bool& existsAsDirectory,
                  ExistsAsDirectory(*journalDirectory));
-  Unused << existsAsDirectory;
+  (void)existsAsDirectory;
 
   {
     QM_TRY_UNWRAP(auto path, MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
@@ -12964,7 +12962,7 @@ void DeleteFilesRunnable::RunImmediately() {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(mState == State_Initial);
 
-  Unused << this->Run();
+  (void)this->Run();
 }
 
 void DeleteFilesRunnable::Open() {
@@ -16023,7 +16021,7 @@ void OpenDatabaseOp::SendBlockedNotification() {
   MOZ_ASSERT(mState == State::WaitingForOtherDatabasesToClose);
 
   if (!IsActorDestroyed()) {
-    Unused << SendBlocked(mMetadata->mCommonMetadata.version());
+    (void)SendBlocked(mMetadata->mCommonMetadata.version());
   }
 }
 
@@ -16191,8 +16189,7 @@ void OpenDatabaseOp::SendResults() {
       response = ClampResultCode(ResultCode());
     }
 
-    Unused << PBackgroundIDBFactoryRequestParent::Send__delete__(this,
-                                                                 response);
+    (void)PBackgroundIDBFactoryRequestParent::Send__delete__(this, response);
   }
 
   if (mDatabase) {
@@ -16323,7 +16320,7 @@ nsresult OpenDatabaseOp::EnsureDatabaseActorIsAlive() {
   }
 
   if (mDatabase->IsInvalidated()) {
-    Unused << mDatabase->SendInvalidate();
+    (void)mDatabase->SendInvalidate();
   }
 
   return NS_OK;
@@ -16794,7 +16791,7 @@ void DeleteDatabaseOp::SendBlockedNotification() {
   MOZ_ASSERT(mState == State::WaitingForOtherDatabasesToClose);
 
   if (!IsActorDestroyed()) {
-    Unused << SendBlocked(mPreviousVersion);
+    (void)SendBlocked(mPreviousVersion);
   }
 }
 
@@ -16821,8 +16818,7 @@ void DeleteDatabaseOp::SendResults() {
       response = ClampResultCode(ResultCode());
     }
 
-    Unused << PBackgroundIDBFactoryRequestParent::Send__delete__(this,
-                                                                 response);
+    (void)PBackgroundIDBFactoryRequestParent::Send__delete__(this, response);
   }
 
   {
@@ -17252,7 +17248,7 @@ void TransactionDatabaseOperationBase::DispatchToConnectionPool() {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mInternalState == InternalState::Initial);
 
-  Unused << this->Run();
+  (void)this->Run();
 }
 
 void TransactionDatabaseOperationBase::RunOnConnectionThread() {
@@ -17348,7 +17344,7 @@ void TransactionDatabaseOperationBase::NoteContinueReceived() {
   // a self reference here.
   RefPtr<TransactionDatabaseOperationBase> kungFuDeathGrip = this;
 
-  Unused << this->Run();
+  (void)this->Run();
 }
 
 void TransactionDatabaseOperationBase::SendToConnectionPool() {
@@ -18715,7 +18711,7 @@ nsresult RenameIndexOp::DoDatabaseWork(DatabaseConnection* aConnection) {
     MOZ_ASSERT(!hasResult);
   }
 #else
-  Unused << mObjectStoreId;
+  (void)mObjectStoreId;
 #endif
 
   DatabaseConnection::AutoSavepoint autoSave;

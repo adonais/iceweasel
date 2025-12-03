@@ -437,6 +437,9 @@ class JujutsuRepository(Repository):
                 p = self.path / Path(path)
                 p.parent.mkdir(parents=True, exist_ok=True)
                 p.write_text(content)
+                # Manually track the file in case it is not automatically,
+                # e.g. because `snapshot.auto-track` has been configured.
+                self.add_remove_files(p)
             # Update the jj commit with the changes we just made.
             self._snapshot()
             yield self._resolve_to_change("@")

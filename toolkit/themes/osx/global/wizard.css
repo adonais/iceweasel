@@ -12,12 +12,12 @@
 .wizard-header-box-text {
   padding: 6px 10px;
   font: menu;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .wizard-header-label {
   margin-inline-start: 23px;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .wizard-header-box-icon {

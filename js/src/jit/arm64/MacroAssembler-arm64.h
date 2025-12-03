@@ -977,18 +977,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     Ldr(scratch32, toMemOperand(lhs));
     Cmp(scratch32, Operand(ARMRegister(rhs, 32)));
   }
-  void cmp32(const vixl::Operand& lhs, Imm32 rhs) {
-    vixl::UseScratchRegisterScope temps(this);
-    const ARMRegister scratch32 = temps.AcquireW();
-    Mov(scratch32, lhs);
-    Cmp(scratch32, Operand(rhs.value));
-  }
-  void cmp32(const vixl::Operand& lhs, Register rhs) {
-    vixl::UseScratchRegisterScope temps(this);
-    const ARMRegister scratch32 = temps.AcquireW();
-    Mov(scratch32, lhs);
-    Cmp(scratch32, Operand(ARMRegister(rhs, 32)));
-  }
 
   void cmn32(Register lhs, Imm32 rhs) {
     Cmn(ARMRegister(lhs, 32), Operand(rhs.value));

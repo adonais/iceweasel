@@ -4,6 +4,8 @@
 
 package org.mozilla.fenix.home
 
+import android.content.Intent
+import androidx.lifecycle.Lifecycle
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -13,24 +15,37 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.feature.top.sites.TopSitesProvider
+import mozilla.components.support.test.rule.MainCoroutineRule
+import mozilla.components.support.utils.RunWhenReadyQueue
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.helpers.lifecycle.TestLifecycleOwner
+import org.mozilla.fenix.perf.StartupPathProvider
 import org.mozilla.fenix.utils.Settings
 
 /**
  * Class to test the [TopSitesRefresher]
  */
+@OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
 class TopSitesRefresherTest {
+
+    private val testScheduler = TestCoroutineScheduler()
+    val testDispatcher = StandardTestDispatcher(testScheduler)
+
+    @get:Rule
+    val coroutinesRule = MainCoroutineRule(testDispatcher = testDispatcher)
 
     private val lifecycleOwner = TestLifecycleOwner()
 
     private val topSitesProvider = FakeTopSitesProvider()
     private val settings: Settings = mockk(relaxed = true)
 
-    private val testScheduler = TestCoroutineScheduler()
+    private val visualCompletenessQueue = RunWhenReadyQueue()
+    private val startupPathProvider =
+        FakeStartupPathProvider(expectedPath = StartupPathProvider.StartupPath.NOT_SET)
     private lateinit var topSitesRefresher: TopSitesRefresher
 
     @Before
@@ -38,7 +53,9 @@ class TopSitesRefresherTest {
         topSitesRefresher = TopSitesRefresher(
             settings = settings,
             topSitesProvider = topSitesProvider,
-            dispatcher = StandardTestDispatcher(testScheduler),
+            visualCompletenessQueue = visualCompletenessQueue,
+            startupPathProvider = startupPathProvider,
+            dispatcher = testDispatcher,
         )
 
         lifecycleOwner.registerObserver(
@@ -70,6 +87,79 @@ class TopSitesRefresherTest {
             assertFalse(topSitesProvider.cacheRefreshed)
         }
 
+    @Test
+    fun `GIVEN app link startup WHEN lifecycle resumes AND visual completeness is ready THEN top sites are refreshed`() =
+        runTest(context = testScheduler) {
+            // given we want to show top sites
+            every { settings.showContileFeature } returns true
+
+            // given that this is an app link startup
+            startupPathProvider.expectedPath = StartupPathProvider.StartupPath.VIEW
+
+            // given that the visual completeness queue is read
+            visualCompletenessQueue.ready()
+
+            // When we resume
+            lifecycleOwner.onResume()
+            advanceUntilIdle()
+
+            // Then validate that cache is refreshed
+            assertTrue(
+                "App link startup with visual completeness should refresh cache",
+                topSitesProvider.cacheRefreshed,
+            )
+        }
+
+    @Test
+    fun `GIVEN app link startup WHEN lifecycle resumes AND visual completeness is NOT ready THEN top sites are NOT refreshed`() =
+        runTest(context = testScheduler) {
+            // given we want to show top sites
+            every { settings.showContileFeature } returns true
+
+            // given that this is an app link startup
+            startupPathProvider.expectedPath = StartupPathProvider.StartupPath.VIEW
+
+            // When we resume
+            lifecycleOwner.onResume()
+            advanceUntilIdle()
+
+            // Then validate that cache is not refreshed
+            assertFalse(
+                "App link startup should not refresh cache before visual completeness",
+                topSitesProvider.cacheRefreshed,
+            )
+        }
+
+    @Test
+    fun `GIVEN app link startup WHEN lifecycle resumes THEN top sites are NOT refreshed only after visual completeness is ready`() =
+        runTest(context = testScheduler) {
+            // given we want to show top sites
+            every { settings.showContileFeature } returns true
+
+            // given that this is an app link startup
+            startupPathProvider.expectedPath = StartupPathProvider.StartupPath.VIEW
+
+            // When we resume
+            lifecycleOwner.onResume()
+            advanceUntilIdle()
+
+            // Then validate that cache is not refreshed
+            assertFalse(
+                "App link startup should not refresh cache BEFORE visual completeness",
+                topSitesProvider.cacheRefreshed,
+            )
+
+            // When visual completeness queue is ready
+            visualCompletenessQueue.ready()
+            advanceUntilIdle()
+
+            // Then cache should be refreshed
+            assertTrue(
+                "App link startup should refresh cache AFTER visual completeness",
+                topSitesProvider.cacheRefreshed,
+            )
+        }
+
     private class FakeTopSitesProvider : TopSitesProvider {
 
         var expectedTopSites: List<TopSite> = emptyList()
@@ -80,5 +170,15 @@ class TopSitesRefresherTest {
         override suspend fun refreshTopSitesIfCacheExpired() {
             cacheRefreshed = true
         }
+    }
+
+    private class FakeStartupPathProvider(
+        var expectedPath: StartupPathProvider.StartupPath,
+    ) : StartupPathProvider {
+        override val startupPathForActivity: StartupPathProvider.StartupPath
+            get() = expectedPath
+
+        override fun attachOnActivityOnCreate(lifecycle: Lifecycle, intent: Intent?) = Unit
+        override fun onIntentReceived(intent: Intent?) = Unit
     }
 }

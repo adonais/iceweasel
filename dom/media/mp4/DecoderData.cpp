@@ -9,7 +9,6 @@
 #include "BufferReader.h"
 #include "MP4Metadata.h"
 #include "VideoUtils.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/glean/DomMediaMp4Metrics.h"

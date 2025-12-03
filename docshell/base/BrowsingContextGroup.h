@@ -9,7 +9,6 @@
 
 #include "mozilla/PrincipalHashKey.h"
 #include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/FunctionRef.h"
 #include "nsRefPtrHashtable.h"
 #include "nsHashKeys.h"
 #include "nsTArray.h"

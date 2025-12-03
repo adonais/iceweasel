@@ -2,8 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { DownloadPaths } from "resource://gre/modules/DownloadPaths.sys.mjs";
+import { FileUtils } from "resource://gre/modules/FileUtils.sys.mjs";
 import { ProfilesDatastoreService } from "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs";
 import { SelectableProfileService } from "resource:///modules/profiles/SelectableProfileService.sys.mjs";
+import { BackupService } from "resource:///modules/backup/BackupService.sys.mjs";
+
+const lazy = {};
+
+ChromeUtils.defineLazyGetter(lazy, "localization", () => {
+  return new Localization(["branding/brand.ftl", "browser/profiles.ftl"]);
+});
 
 const STANDARD_AVATARS = new Set([
   "barbell",
@@ -461,5 +471,259 @@ export class SelectableProfile {
     }
 
     return profileObj;
+  }
+
+  async copyProfile() {
+    // This pref is used to control targeting for the backup welcome messaging.
+    // If this pref is set, the backup welcome messaging will not show.
+    // We set the pref here so the copied profile will inherit this pref and
+    // the copied profile will not show the backup welcome messaging.
+    Services.prefs.setBoolPref("browser.profiles.profile-copied", true);
+    const backupServiceInstance = new BackupService();
+
+    let encState = await backupServiceInstance.loadEncryptionState(this.path);
+    let createdEncState = false;
+    if (!encState) {
+      // If we don't have encryption enabled, temporarily create encryption so
+      // we can copy resources that require encryption
+      await backupServiceInstance.enableEncryption(
+        Services.uuid.generateUUID().toString().slice(1, -1),
+        this.path
+      );
+      encState = await backupServiceInstance.loadEncryptionState(this.path);
+      createdEncState = true;
+    }
+    let result = await backupServiceInstance.createAndPopulateStagingFolder(
+      this.path
+    );
+
+    // Clear the pref now that the copied profile has inherited it.
+    Services.prefs.clearUserPref("browser.profiles.profile-copied");
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    let copiedProfile =
+      await backupServiceInstance.recoverFromSnapshotFolderIntoSelectableProfile(
+        result.stagingPath,
+        true, // shouldLaunch
+        encState, // encState
+        this // copiedProfile
+      );
+
+    if (createdEncState) {
+      await backupServiceInstance.disableEncryption(this.path);
+    }
+
+    copiedProfile.theme = this.theme;
+    await copiedProfile.setAvatar(this.avatar);
+
+    return copiedProfile;
+  }
+
+  // Desktop shortcut-related methods, currently Windows-only.
+
+  /**
+   * Getter that returns the nsIWindowsShellService, created to simplify
+   * mocking for tests.
+   *
+   * @returns {nsIWindowsShellService|null} shell service on Windows, null on other platforms
+   */
+  getWindowsShellService() {
+    if (AppConstants.platform !== "win") {
+      return null;
+    }
+    return Cc["@mozilla.org/browser/shell-service;1"].getService(
+      Ci.nsIWindowsShellService
+    );
+  }
+
+  /**
+   * Returns a promise that resolves to the desktop shortcut as an nsIFile,
+   * or null on platforms other than Windows.
+   *
+   * @returns {Promise<nsIFile|null>}
+   *   A promise that resolves to the desktop shortcut or null.
+   */
+  async ensureDesktopShortcut() {
+    if (AppConstants.platform !== "win") {
+      return null;
+    }
+
+    if (!this.hasDesktopShortcut()) {
+      let shortcutFileName = await this.getSafeDesktopShortcutFileName();
+      if (!shortcutFileName) {
+        return null;
+      }
+
+      let exeFile = Services.dirsvc.get("XREExeF", Ci.nsIFile);
+      let shellService = this.getWindowsShellService();
+      try {
+        await shellService.createShortcut(
+          exeFile,
+          ["--profile", this.path],
+          this.name,
+          exeFile,
+          0,
+          "",
+          "Desktop",
+          shortcutFileName
+        );
+
+        // The shortcut name is not necessarily the sanitized profile name.
+        // In certain circumstances we use a default shortcut name, or might
+        // have duplicate shortcuts on the desktop that require appending a
+        // counter like "(1)" or "(2)", etc., to the filename to deduplicate.
+        // Save the shortcut name in a pref to keep track of it.
+        Services.prefs.setCharPref(
+          "browser.profiles.shortcutFileName",
+          shortcutFileName
+        );
+      } catch (e) {
+        console.error("Failed to create shortcut: ", e);
+      }
+    }
+
+    return this.getDesktopShortcut();
+  }
+
+  /**
+   * Returns a promise that resolves to the desktop shortcut, either null
+   * if it was deleted, or the shortcut as an nsIFile if deletion failed.
+   *
+   * @returns {boolean} true if deletion succeeded, false otherwise
+   */
+  async removeDesktopShortcut() {
+    if (!this.hasDesktopShortcut()) {
+      return false;
+    }
+
+    let fileName = Services.prefs.getCharPref(
+      "browser.profiles.shortcutFileName",
+      ""
+    );
+    try {
+      let shellService = this.getWindowsShellService();
+      await shellService.deleteShortcut("Desktop", fileName);
+
+      // Wait to clear the pref until deletion succeeds.
+      Services.prefs.clearUserPref("browser.profiles.shortcutFileName");
+    } catch (e) {
+      console.error("Failed to remove shortcut: ", e);
+    }
+    return this.hasDesktopShortcut();
+  }
+
+  /**
+   * Returns the desktop shortcut as an nsIFile, or null if not found.
+   *
+   * Note the shortcut will not be found if the profile name has changed since
+   * the shortcut was created (we plan to handle name updates in bug 1992897).
+   *
+   * @returns {nsIFile|null} The desktop shortcut or null.
+   */
+  getDesktopShortcut() {
+    if (AppConstants.platform !== "win") {
+      return null;
+    }
+
+    let shortcutName = Services.prefs.getCharPref(
+      "browser.profiles.shortcutFileName",
+      ""
+    );
+    if (!shortcutName) {
+      return null;
+    }
+
+    let file;
+    try {
+      file = new FileUtils.File(
+        PathUtils.join(
+          Services.dirsvc.get("Desk", Ci.nsIFile).path,
+          shortcutName
+        )
+      );
+    } catch (e) {
+      console.error("Failed to get shortcut: ", e);
+    }
+    return file?.exists() ? file : null;
+  }
+
+  /**
+   * Checks the filesystem to determine if the desktop shortcut exists with the
+   * expected name from the pref.
+   *
+   * @returns {boolean} - true if the shortcut exists on the Desktop
+   */
+  hasDesktopShortcut() {
+    let shortcut = this.getDesktopShortcut();
+    return shortcut !== null;
+  }
+
+  /**
+   * Returns the profile name with illegal characters sanitized, length
+   * truncated, and with ".lnk" appended, suitable for use as the name of
+   * a Windows desktop shortcut. If the sanitized profile name is empty,
+   * uses a reasonable default. Appends "(1)", "(2)", etc. as needed to ensure
+   * the desktop shortcut file name is unique.
+   *
+   * @returns {string} Safe desktop shortcut file name for the current profile,
+   *                   or empty string if something went wrong.
+   */
+  async getSafeDesktopShortcutFileName() {
+    let existingShortcutName = Services.prefs.getCharPref(
+      "browser.profiles.shortcutFileName",
+      ""
+    );
+    if (existingShortcutName) {
+      return existingShortcutName;
+    }
+
+    let desktopFile = Services.dirsvc.get("Desk", Ci.nsIFile);
+
+    // Strip out any illegal chars and whitespace. Most illegal chars are
+    // converted to '_' but others are just removed (".", "\\") so we may
+    // wind up with an empty string.
+    let fileName = DownloadPaths.sanitize(this.name);
+
+    // To avoid exceeding the Windows default `MAX_PATH` of 260 chars, subtract
+    // the length of the Desktop path, 4 chars for the ".lnk" file extension,
+    // one more char for the path separator between "Desktop" and the shortcut
+    // file name, and 6 chars for the largest possible deduplicating counter
+    // "(9999)" added by `DownloadPaths.createNiceUniqueFile()` below,
+    // giving us a working max path of 260 - 4 - 1 - 6 = 249.
+    let maxLength = 249 - desktopFile.path.length;
+    fileName = fileName.substring(0, maxLength);
+
+    // Use the brand name as default if the sanitized `fileName` is empty.
+    if (!fileName) {
+      let strings = await lazy.localization.formatMessages([
+        "default-desktop-shortcut-name",
+      ]);
+      fileName = strings[0].value;
+    }
+
+    fileName = fileName + ".lnk";
+
+    // At this point, it's possible the fileName would not be a unique file
+    // because of other shortcuts on the desktop. To ensure uniqueness, we use
+    // `DownloadPaths.createNiceUniqueFile()` to append a "(1)", "(2)", etc.,
+    // up to a max of (9999). See `DownloadPaths` docs for other things we try
+    // if incrementing a counter in the name fails.
+    try {
+      let shortcutFile = new FileUtils.File(
+        PathUtils.join(desktopFile.path, fileName)
+      );
+      let uniqueShortcutFile = DownloadPaths.createNiceUniqueFile(shortcutFile);
+      fileName = uniqueShortcutFile.leafName;
+      // `createNiceUniqueFile` actually creates the file, which we don't want.
+      await IOUtils.remove(uniqueShortcutFile.path);
+    } catch (e) {
+      console.error("Unable to create a shortcut name: ", e);
+      fileName = "";
+    }
+
+    return fileName;
   }
 }

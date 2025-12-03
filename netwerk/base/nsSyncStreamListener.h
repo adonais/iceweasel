@@ -9,7 +9,6 @@
 #include "nsIInputStream.h"
 #include "nsIOutputStream.h"
 #include "nsCOMPtr.h"
-#include "mozilla/Attributes.h"
 
 //-----------------------------------------------------------------------------
 

@@ -59,7 +59,7 @@ class EditToolbarTest {
         latch.await()
 
         assertEquals("Hello", invokedWithParams!![0])
-        assertTrue(invokedWithParams!![1] is AutocompleteDelegate)
+        assertTrue(invokedWithParams[1] is AutocompleteDelegate)
     }
 
     @Test
@@ -82,7 +82,7 @@ class EditToolbarTest {
         // Serialize here for the sake of tests.
         latch.await()
         assertEquals("Test", invokedWithParams!![0])
-        assertTrue(invokedWithParams!![1] is AutocompleteDelegate)
+        assertTrue(invokedWithParams[1] is AutocompleteDelegate)
     }
 
     @Test

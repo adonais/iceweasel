@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { normalizeToKebabCase } from "./components/utils.mjs";
+import { normalizeToKebabCase, getLogName } from "./components/utils.mjs";
 import {
   parse,
   pemToDER,
@@ -393,15 +393,19 @@ export const adjustCertInformation = cert => {
           for (let key of Object.keys(entry)) {
             if (key.includes("timestamp")) {
               timestamps[key.includes("UTC") ? "utc" : "local"] = entry[key];
-            } else {
-              let isHex = false;
-              if (key == "logId") {
-                isHex = true;
-              }
-              items.push(
-                createEntryItem(normalizeToKebabCase(key), entry[key], isHex)
-              );
+              continue;
             }
+            let isHex = false;
+            if (key == "logId") {
+              isHex = true;
+              let logName = getLogName(entry[key]);
+              if (logName) {
+                items.push(createEntryItem("log-name", logName, false));
+              }
+            }
+            items.push(
+              createEntryItem(normalizeToKebabCase(key), entry[key], isHex)
+            );
           }
           items.push(createEntryItem("timestamp", timestamps));
         });
@@ -412,6 +416,20 @@ export const adjustCertInformation = cert => {
     "embedded-scts",
     getElementByPathOrFalse(cert, "ext.scts.critical")
   );
+
+  // Uncomment the following to generate the expected test results in
+  // toolkit/components/certviewer/tests/browser/adjustedCerts.js
+  //
+  // function download(filename, text) {
+  //   var element = document.createElement('a');
+  //   element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+  //   element.setAttribute('download', filename);
+  //   element.style.display = 'none';
+  //   document.body.appendChild(element);
+  //   element.click();
+  //   document.body.removeChild(element);
+  // }
+  // download("out.txt",JSON.stringify({certItems, tabName}));
 
   return {
     certItems,

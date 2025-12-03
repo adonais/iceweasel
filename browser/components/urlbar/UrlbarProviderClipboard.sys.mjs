@@ -12,8 +12,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarTokenizer:
-    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
+  UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
 });
 
 const RESULT_MENU_COMMANDS = {
@@ -63,7 +62,7 @@ export class UrlbarProviderClipboard extends UrlbarProvider {
     if (
       !textFromClipboard ||
       textFromClipboard.length > 2048 ||
-      lazy.UrlbarTokenizer.REGEXP_SPACES.test(textFromClipboard)
+      lazy.UrlUtils.REGEXP_SPACES.test(textFromClipboard)
     ) {
       return false;
     }
@@ -107,6 +106,13 @@ export class UrlbarProviderClipboard extends UrlbarProvider {
     return 1;
   }
 
+  /**
+   * Starts querying.
+   *
+   * @param {UrlbarQueryContext} queryContext
+   * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
+   *   Callback invoked by the provider to add a new result.
+   */
   async startQuery(queryContext, addCallback) {
     // If the query was started, isActive should have cached a url already.
     let result = new lazy.UrlbarResult({

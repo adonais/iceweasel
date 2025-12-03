@@ -242,8 +242,8 @@ fn prepare_prim_for_render(
 
     if !is_passthrough {
         fn may_need_repetition(stretch_size: LayoutSize, prim_rect: LayoutRect) -> bool {
-            stretch_size.width < prim_rect.width() ||
-                stretch_size.height < prim_rect.height()
+             stretch_size.width < prim_rect.width() ||
+                 stretch_size.height < prim_rect.height()
         }
         // Bug 1887841: At the moment the quad shader does not support repetitions.
         // Bug 1888349: Some primitives have brush segments that aren't handled by
@@ -252,20 +252,20 @@ fn prepare_prim_for_render(
             PrimitiveInstanceKind::Rectangle { .. } => false,
             PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
                 let prim_data = &data_stores.linear_grad[*data_handle];
-                !prim_data.brush_segments.is_empty() ||
-                    may_need_repetition(prim_data.stretch_size, prim_data.common.prim_rect)
+                !prim_data.brush_segments.is_empty()
+                    || may_need_repetition(prim_data.stretch_size, prim_data.common.prim_rect)
                     || !frame_context.fb_config.precise_linear_gradients
             }
             PrimitiveInstanceKind::RadialGradient { data_handle, .. } => {
                 let prim_data = &data_stores.radial_grad[*data_handle];
-                !prim_data.brush_segments.is_empty() ||
-                    may_need_repetition(prim_data.stretch_size, prim_data.common.prim_rect)
+                !prim_data.brush_segments.is_empty()
+                    || may_need_repetition(prim_data.stretch_size, prim_data.common.prim_rect)
             }
             // TODO(bug 1899546) Enable quad conic gradients with SWGL.
             PrimitiveInstanceKind::ConicGradient { data_handle, .. } if !frame_context.fb_config.is_software => {
                 let prim_data = &data_stores.conic_grad[*data_handle];
-                !prim_data.brush_segments.is_empty() ||
-                    may_need_repetition(prim_data.stretch_size, prim_data.common.prim_rect)
+                !prim_data.brush_segments.is_empty()
+                    || may_need_repetition(prim_data.stretch_size, prim_data.common.prim_rect)
             }
             _ => true,
         };
@@ -765,11 +765,12 @@ fn prepare_interned_prim_for_render(
         PrimitiveInstanceKind::LinearGradient { data_handle, ref mut visible_tiles_range, use_legacy_path: cached, .. } => {
             profile_scope!("LinearGradient");
             let prim_data = &mut data_stores.linear_grad[*data_handle];
-
             if !*cached {
-                quad::prepare_quad(
+                quad::prepare_repeatable_quad(
                     prim_data,
                     &prim_data.common.prim_rect,
+                    prim_data.stretch_size,
+                    prim_data.tile_spacing,
                     prim_instance_index,
                     prim_spatial_node_index,
                     &prim_instance.vis.clip_chain,
@@ -876,14 +877,16 @@ fn prepare_interned_prim_for_render(
                 }
             }
         }
-        PrimitiveInstanceKind::RadialGradient { data_handle, ref mut visible_tiles_range, use_legacy_path: cached, .. } => {
+        PrimitiveInstanceKind::RadialGradient { data_handle, ref mut visible_tiles_range, use_legacy_path, .. } => {
             profile_scope!("RadialGradient");
             let prim_data = &mut data_stores.radial_grad[*data_handle];
 
-            if !*cached {
-                quad::prepare_quad(
+            if !*use_legacy_path {
+                quad::prepare_repeatable_quad(
                     prim_data,
                     &prim_data.common.prim_rect,
+                    prim_data.stretch_size,
+                    prim_data.tile_spacing,
                     prim_instance_index,
                     prim_spatial_node_index,
                     &prim_instance.vis.clip_chain,
@@ -927,14 +930,16 @@ fn prepare_interned_prim_for_render(
                 }
             }
         }
-        PrimitiveInstanceKind::ConicGradient { data_handle, ref mut visible_tiles_range, use_legacy_path: cached, .. } => {
+        PrimitiveInstanceKind::ConicGradient { data_handle, ref mut visible_tiles_range, use_legacy_path, .. } => {
             profile_scope!("ConicGradient");
             let prim_data = &mut data_stores.conic_grad[*data_handle];
 
-            if !*cached {
-                quad::prepare_quad(
+            if !*use_legacy_path {
+                quad::prepare_repeatable_quad(
                     prim_data,
                     &prim_data.common.prim_rect,
+                    prim_data.stretch_size,
+                    prim_data.tile_spacing,
                     prim_instance_index,
                     prim_spatial_node_index,
                     &prim_instance.vis.clip_chain,

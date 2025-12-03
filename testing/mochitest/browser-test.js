@@ -143,7 +143,7 @@ function testInit() {
 
     let processCount = Services.prefs.getIntPref("dom.ipc.processCount", 1);
     if (processCount > 1) {
-      // Currently starting a content process is slow, to aviod timeouts, let's
+      // Currently starting a content process is slow, to avoid timeouts, let's
       // keep alive content processes.
       Services.prefs.setIntPref("dom.ipc.keepProcessesAlive.web", processCount);
     }
@@ -342,6 +342,10 @@ Tester.prototype = {
         "resource://testing-common/CoverageUtils.sys.mjs"
       );
       this._coverageCollector = new CoverageCollector(coveragePath);
+    }
+
+    if (gConfig.debugger || gConfig.debuggerInteractive || gConfig.jsdebugger) {
+      gTimeoutSeconds = 24 * 60 * 60 * 1000; // 24 hours
     }
 
     this.structuredLogger.info("*** Start BrowserChrome Test Results ***");
@@ -784,6 +788,41 @@ Tester.prototype = {
     }
   },
 
+  /**
+   * In the event that a test module left any traces in Session Restore state,
+   * clean those up so that each test module starts execution with the same
+   * fresh Session Restore state.
+   */
+  resetSessionState() {
+    // Forget all closed windows.
+    while (window.SessionStore.getClosedWindowCount() > 0) {
+      window.SessionStore.forgetClosedWindow(0);
+    }
+
+    // Forget all closed tabs for the test window.
+    const closedTabCount =
+      window.SessionStore.getClosedTabCountForWindow(window);
+    for (let i = 0; i < closedTabCount; i++) {
+      try {
+        window.SessionStore.forgetClosedTab(window, 0);
+      } catch (err) {
+        // This will fail if there are tab groups in here
+      }
+    }
+
+    // Forget saved tab groups.
+    const savedTabGroups = window.SessionStore.getSavedTabGroups();
+    savedTabGroups.forEach(tabGroup =>
+      window.SessionStore.forgetSavedTabGroup(tabGroup.id)
+    );
+
+    // Forget closed tab groups in the test window.
+    const closedTabGroups = window.SessionStore.getClosedTabGroups(window);
+    closedTabGroups.forEach(tabGroup =>
+      window.SessionStore.forgetClosedTabGroup(window, tabGroup.id)
+    );
+  },
+
   async notifyProfilerOfTestEnd() {
     // Note the test run time
     let name = this.currentTest.path;
@@ -945,6 +984,10 @@ Tester.prototype = {
       await this.checkPreferencesAfterTest();
 
       window.SpecialPowers.cleanupAllClipboard();
+
+      if (AppConstants.MOZ_APP_NAME != "thunderbird") {
+        this.resetSessionState();
+      }
 
       if (gConfig.cleanupCrashes) {
         let gdir = Services.dirsvc.get("UAppData", Ci.nsIFile);
@@ -1237,9 +1280,7 @@ Tester.prototype = {
     let currentScope = currentTest.scope;
     let desc = isSetup ? "setup" : "test";
     currentScope.SimpleTest.info(`Entering ${desc} ${task.name}`);
-    // This newtab train-hop compatibility shim can be removed once Firefox 144
-    // makes it to the release channel.
-    let startTimestamp = ChromeUtils.now?.() || performance.now();
+    let startTimestamp = ChromeUtils.now();
     let controller = new AbortController();
     currentScope.__signal = controller.signal;
     if (isSetup) {
@@ -1468,9 +1509,7 @@ Tester.prototype = {
 
     // Import the test script.
     try {
-      // This newtab train-hop compatibility shim can be removed once Firefox 144
-      // makes it to the release channel.
-      this.lastStartTimestamp = ChromeUtils.now?.() || performance.now();
+      this.lastStartTimestamp = ChromeUtils.now();
       this.TestUtils.promiseTestFinished = new Promise(resolve => {
         this.resolveFinishTestPromise = resolve;
       });

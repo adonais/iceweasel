@@ -6,7 +6,6 @@
 #ifndef HTMLDivElement_h___
 #define HTMLDivElement_h___
 
-#include "mozilla/Attributes.h"
 #include "nsGenericHTMLElement.h"
 
 namespace mozilla::dom {

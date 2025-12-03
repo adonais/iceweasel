@@ -310,8 +310,8 @@ bool GetContextAttributes(CookieStore* aCookieStore, bool* aThirdPartyContext,
 
     ThirdPartyUtil* thirdPartyUtil = ThirdPartyUtil::GetInstance();
     if (thirdPartyUtil) {
-      Unused << thirdPartyUtil->IsThirdPartyWindow(window->GetOuterWindow(),
-                                                   nullptr, aThirdPartyContext);
+      (void)thirdPartyUtil->IsThirdPartyWindow(window->GetOuterWindow(),
+                                               nullptr, aThirdPartyContext);
     }
 
     nsCOMPtr<Document> document = window->GetExtantDoc();
@@ -910,7 +910,7 @@ void CookieStore::CookieStructToItem(const CookieStruct& aData,
   }
 
   if (!aData.isSession()) {
-    aItem->mExpires.Construct(aData.expiry());
+    aItem->mExpires.Construct(aData.expiryInMSec());
   } else {
     aItem->mExpires.Construct(nullptr);
   }

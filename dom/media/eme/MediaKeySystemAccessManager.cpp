@@ -12,13 +12,9 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/KeySystemNames.h"
-#ifdef XP_WIN
-#  include "mozilla/WindowsVersion.h"
-#endif
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
 #include "nsIObserverService.h"

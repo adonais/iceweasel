@@ -78,7 +78,6 @@ enum MinidumpOrigin {
 
 pub(crate) enum MessageResult {
     None,
-    Reply(Box<dyn Message>),
     Connection(IPCConnector),
 }
 
@@ -111,6 +110,7 @@ impl CrashGenerator {
     // reply that will be sent back to the parent.
     pub(crate) fn parent_message(
         &mut self,
+        client: &IPCConnector,
         kind: messages::Kind,
         data: &[u8],
         ancillary_data: Option<AncillaryData>,
@@ -123,9 +123,8 @@ impl CrashGenerator {
             }
             messages::Kind::TransferMinidump => {
                 let message = messages::TransferMinidump::decode(data, ancillary_data)?;
-                Ok(MessageResult::Reply(Box::new(
-                    self.transfer_minidump(message.pid),
-                )))
+                client.send_message(self.transfer_minidump(message.pid))?;
+                Ok(MessageResult::None)
             }
             messages::Kind::GenerateMinidump => {
                 todo!("Implement all messages");
@@ -150,7 +149,7 @@ impl CrashGenerator {
                 let message = messages::RegisterChildProcess::decode(data, ancillary_data)?;
                 let connector = IPCConnector::from_ancillary(message.ipc_endpoint)?;
                 connector
-                    .send_message(&messages::ChildProcessRegistered::new(process::id() as Pid))?;
+                    .send_message(messages::ChildProcessRegistered::new(process::id() as Pid))?;
                 Ok(MessageResult::Connection(connector))
             }
             kind => {
@@ -174,6 +173,7 @@ impl CrashGenerator {
     // reply that will be sent back.
     pub(crate) fn external_message(
         &mut self,
+        #[allow(unused_variables)] runtime: &IPCConnector,
         kind: messages::Kind,
         #[allow(unused_variables)] data: &[u8],
         #[allow(unused_variables)] ancillary_data: Option<AncillaryData>,
@@ -184,9 +184,8 @@ impl CrashGenerator {
                 let message =
                     messages::WindowsErrorReportingMinidump::decode(data, ancillary_data)?;
                 let _ = self.generate_wer_minidump(message);
-                Ok(MessageResult::Reply(Box::new(
-                    messages::WindowsErrorReportingMinidumpReply::new(),
-                )))
+                runtime.send_message(messages::WindowsErrorReportingMinidumpReply::new())?;
+                Ok(MessageResult::None)
             }
             kind => {
                 bail!("Unexpected message {kind:?} from external process");

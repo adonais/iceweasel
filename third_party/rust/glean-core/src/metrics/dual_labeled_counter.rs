@@ -231,7 +231,9 @@ impl DualLabeledCounterMetric {
     }
 }
 
-impl TestGetValue<HashMap<String, HashMap<String, i32>>> for DualLabeledCounterMetric {
+impl TestGetValue for DualLabeledCounterMetric {
+    type Output = HashMap<String, HashMap<String, i32>>;
+
     fn test_get_value(
         &self,
         ping_name: Option<String>,
@@ -273,7 +275,7 @@ pub fn separate_label_into_key_and_category(label: &str) -> Option<(&str, &str)>
 }
 
 /// Construct and return a label from a given key and category with the RECORD_SEPARATOR
-/// characters in the format: <RS><key><RS><category>
+/// characters in the format: `<RS><key><RS><category>`
 pub fn make_label_from_key_and_category(key: &str, category: &str) -> String {
     format!(
         "{}{}{}{}",

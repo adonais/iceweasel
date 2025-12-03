@@ -17,7 +17,6 @@
 #include "js/StructuredClone.h"
 #include "js/TypeDecls.h"
 #include "keyhi.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/KeyAlgorithmBinding.h"
 #include "mozilla/dom/RootedDictionary.h"
@@ -1267,6 +1266,34 @@ nsresult CryptoKey::PublicKeyToJwk(SECKEYPublicKey* aPubKey,
   }
 }
 
+bool PublicKeyHasCorrectLengthAndEncoding(const nsString& aNamedCurve,
+                                          const SECItem* key) {
+  uint32_t flen;
+  if (aNamedCurve.EqualsLiteral(WEBCRYPTO_NAMED_CURVE_P256)) {
+    flen = 32;  // bytes
+  } else if (aNamedCurve.EqualsLiteral(WEBCRYPTO_NAMED_CURVE_P384)) {
+    flen = 48;  // bytes
+  } else if (aNamedCurve.EqualsLiteral(WEBCRYPTO_NAMED_CURVE_P521)) {
+    flen = 66;  // bytes
+  } else {
+    return false;
+  }
+
+  // Here we have 2 possible inputs, either we've received an uncompressed point
+  // then the length is 1 + flen (x) + flen (y) and the 0th byte is
+  // EC_POINT_FORM_UNCOMPRESSED or we work with the compressed point then the
+  // length is 1 + flen (x) and the 0th byte is either
+  // EC_POINT_FORM_COMPRESSED_Y0 or EC_POINT_FORM_COMPRESSED_Y1
+
+  bool correctUncompressed = (key->len == 2 * flen + 1) &&
+                             (key->data[0] == EC_POINT_FORM_UNCOMPRESSED);
+  bool correctCompressed = (key->len == flen + 1) &&
+                           ((key->data[0] == EC_POINT_FORM_COMPRESSED_Y0) ||
+                            (key->data[0] == EC_POINT_FORM_COMPRESSED_Y1));
+
+  return correctCompressed || correctUncompressed;
+}
+
 UniqueSECKEYPublicKey CryptoKey::PublicECKeyFromRaw(
     CryptoBuffer& aKeyData, const nsString& aNamedCurve) {
   UniquePLArenaPool arena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
@@ -1279,25 +1306,7 @@ UniqueSECKEYPublicKey CryptoKey::PublicECKeyFromRaw(
     return nullptr;
   }
 
-  uint32_t flen;
-  if (aNamedCurve.EqualsLiteral(WEBCRYPTO_NAMED_CURVE_P256)) {
-    flen = 32;  // bytes
-  } else if (aNamedCurve.EqualsLiteral(WEBCRYPTO_NAMED_CURVE_P384)) {
-    flen = 48;  // bytes
-  } else if (aNamedCurve.EqualsLiteral(WEBCRYPTO_NAMED_CURVE_P521)) {
-    flen = 66;  // bytes
-  } else {
-    return nullptr;
-  }
-
-  // Check length of uncompressed point coordinates. There are 2 field elements
-  // and a leading point form octet (which must EC_POINT_FORM_UNCOMPRESSED).
-  if (rawItem.len != (2 * flen + 1)) {
-    return nullptr;
-  }
-
-  // No support for compressed points.
-  if (rawItem.data[0] != EC_POINT_FORM_UNCOMPRESSED) {
+  if (!PublicKeyHasCorrectLengthAndEncoding(aNamedCurve, &rawItem)) {
     return nullptr;
   }
 
@@ -1340,6 +1349,24 @@ UniqueSECKEYPublicKey CryptoKey::PublicOKPKeyFromRaw(
   return CreateECPublicKey(&rawItem, aNamedCurve);
 }
 
+bool PublicECKeyEncoded(SECKEYPublicKey* aPubKey) {
+  if (!aPubKey) {
+    return false;
+  }
+
+  SECItem* publicValue = &aPubKey->u.ec.publicValue;
+  if (!publicValue || !publicValue->data || publicValue->len == 0) {
+    return false;
+  }
+
+  if (publicValue->data[0] == EC_POINT_FORM_COMPRESSED_Y0 ||
+      publicValue->data[0] == EC_POINT_FORM_COMPRESSED_Y1) {
+    return true;
+  }
+
+  return false;
+}
+
 bool CryptoKey::PublicKeyValid(SECKEYPublicKey* aPubKey) {
   UniquePK11SlotInfo slot(PK11_GetInternalSlot());
   if (!slot.get()) {
@@ -1350,7 +1377,38 @@ bool CryptoKey::PublicKeyValid(SECKEYPublicKey* aPubKey) {
   // it is imported into a PKCS#11 module, and returns CK_INVALID_HANDLE
   // if it is invalid.
   CK_OBJECT_HANDLE id = PK11_ImportPublicKey(slot.get(), aPubKey, PR_FALSE);
-  return id != CK_INVALID_HANDLE;
+  if (id == CK_INVALID_HANDLE) {
+    return false;
+  }
+
+  // It is possible that the public key was in the decompressed form
+  // Thus we need to read the attribute to retrieve the key
+  if (aPubKey->keyType == ecKey && PublicECKeyEncoded(aPubKey)) {
+    ScopedAutoSECItem encodedPublicKey;
+    // Independently from whether the key was decompressed or not,
+    // the raw attribute is stored encoded.
+    SECStatus rv = PK11_ReadRawAttribute(PK11_TypePubKey, aPubKey, CKA_EC_POINT,
+                                         &encodedPublicKey);
+    if (NS_WARN_IF(rv != SECSuccess)) {
+      return false;
+    }
+
+    SECItem decoded;
+    rv = SEC_QuickDERDecodeItem(aPubKey->arena, &decoded,
+                                SEC_ASN1_GET(SEC_OctetStringTemplate),
+                                &encodedPublicKey);
+    if (NS_WARN_IF(rv != SECSuccess)) {
+      return false;
+    }
+
+    // Updating the public key
+    rv = SECITEM_CopyItem(aPubKey->arena, &aPubKey->u.ec.publicValue, &decoded);
+    if (NS_WARN_IF(rv != SECSuccess)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 bool CryptoKey::WriteStructuredClone(JSContext* aCX,

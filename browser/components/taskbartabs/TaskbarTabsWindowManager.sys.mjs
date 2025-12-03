@@ -16,8 +16,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
-  WindowsUIUtils: ["@mozilla.org/windows-ui-utils;1", "nsIWindowsUIUtils"],
-  WinTaskbar: ["@mozilla.org/windows-taskbar;1", "nsIWinTaskbar"],
+  WindowsUIUtils: ["@mozilla.org/windows-ui-utils;1", Ci.nsIWindowsUIUtils],
+  WinTaskbar: ["@mozilla.org/windows-taskbar;1", Ci.nsIWinTaskbar],
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logConsole", () => {

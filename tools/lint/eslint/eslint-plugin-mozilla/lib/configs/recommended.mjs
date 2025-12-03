@@ -359,6 +359,11 @@ export default [
       // If this changes, ensure the version in `legacyConfig` is updated, as well
       // as the return value of `helpers.getECMAVersion()`.
       ecmaVersion: "latest",
+      globals: {
+        // Temporal is currently a stage 3 ECMA proposal, and won't be in the
+        // "latest" ecmaVersion in ESLint until it reaches stage 4.
+        Temporal: "readonly",
+      },
     },
     name: "mozilla/recommended/main-rules",
     rules: {

@@ -18,7 +18,6 @@
  * enums for the prop names instead of using strings.
  */
 
-#include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/CSSValue.h"
 #include "nsCOMPtr.h"

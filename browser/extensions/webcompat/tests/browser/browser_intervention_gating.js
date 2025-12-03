@@ -157,3 +157,371 @@ add_task(async function test_min_max_versions() {
   await WebCompatExtension.disableInterventions(["test2"]);
   await WebCompatExtension.overrideFirefoxVersion();
 });
+
+add_task(async function test_disabling_by_default() {
+  // platforms=[] means disabled by default
+  const config3 = getConfig("test3", [
+    {
+      platforms: [],
+      js: ["lib/run.js"],
+    },
+  ]);
+  // also check that other criteria not matching still disables completely
+  const config4 = getConfig("test4", [
+    {
+      platforms: [],
+      not_platforms: ["android", "desktop"],
+      js: ["lib/shims.js"],
+    },
+  ]);
+  const configs = await WebCompatExtension.updateInterventions([
+    config3,
+    config4,
+  ]);
+  Assert.deepEqual(
+    configs.map(c => c.active),
+    [false, false],
+    "The correct interventions were activated on startup"
+  );
+  Assert.deepEqual(
+    configs.map(c => c.interventions.map(i => i.enabled)),
+    [[false], [false]],
+    "The interventions were not enabled by default"
+  );
+  const reg = await WebCompatExtension.getRegisteredContentScriptsFor(["test"]);
+  Assert.deepEqual(
+    reg.map(r => r.js).flat(),
+    [],
+    "Content scripts were not registered"
+  );
+
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: "about:compat",
+    waitForLoad: true,
+  });
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    is(
+      content.origin,
+      "moz-extension://9a310967-e580-48bf-b3e8-4eafebbc122d",
+      "Expected origin of about:compat"
+    );
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        content.document.querySelector(
+          "#interventions tr[data-id=test3] [data-l10n-id=label-enable]"
+        ),
+      "test3 is correctly shown"
+    );
+    ok(
+      !content.document.querySelector("#interventions tr[data-id=test4]"),
+      "test4 is correctly hidden"
+    );
+
+    // click enable, confirm it is enabled
+    content.document
+      .querySelector(
+        "#interventions tr[data-id=test3] [data-l10n-id=label-enable]"
+      )
+      .click();
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        content.document.querySelector(
+          "#interventions tr[data-id=test3] [data-l10n-id=label-disable]"
+        ),
+      "test3 is correctly enabled on click"
+    );
+
+    // now click disable, confirm it is disabled
+    content.document
+      .querySelector(
+        "#interventions tr[data-id=test3] [data-l10n-id=label-disable]"
+      )
+      .click();
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        content.document.querySelector(
+          "#interventions tr[data-id=test3] [data-l10n-id=label-enable]"
+        ),
+      "test3 is correctly disabled again on second click"
+    );
+  });
+  await BrowserTestUtils.removeTab(tab);
+
+  await WebCompatExtension.disableInterventions(["test3", "test4"]);
+});
+
+add_task(async function test_individual_interventions_prefs() {
+  const config5 = getConfig("test5", [
+    {
+      js: ["lib/run.js"],
+    },
+  ]);
+  // the pref for this one is set to true before app-startup
+  const config6 = getConfig("test6", [
+    {
+      js: ["lib/shims.js"],
+    },
+  ]);
+  // the pref for this one is set to false before app-startup
+  const config7 = getConfig("test7", [
+    {
+      js: ["lib/custom_functions.js"],
+    },
+  ]);
+  let configs = await WebCompatExtension.updateInterventions([
+    config5,
+    config6,
+    config7,
+  ]);
+  Assert.deepEqual(
+    configs.map(c => c.active),
+    [true, false, true],
+    "The correct interventions were activated on startup"
+  );
+  Assert.deepEqual(
+    configs.map(c => c.interventions.map(i => i.enabled)),
+    [[true], [true], [true]],
+    "The correct interventions were made available on startup"
+  );
+  let reg = await WebCompatExtension.getRegisteredContentScriptsFor(["test"]);
+  Assert.deepEqual(
+    reg.map(r => r.js).flat(),
+    ["lib/run.js", "lib/custom_functions.js"],
+    "The correct content scripts were registered on startup"
+  );
+
+  Services.prefs.setBoolPref(
+    "extensions.webcompat.disabled_interventions.test5",
+    true
+  );
+  Services.prefs.setBoolPref(
+    "extensions.webcompat.disabled_interventions.test6",
+    false
+  );
+  Services.prefs.setBoolPref(
+    "extensions.webcompat.disabled_interventions.test7",
+    true
+  );
+  await WebCompatExtension.noOngoingInterventionChanges();
+  configs = await WebCompatExtension.updateInterventions([
+    config5,
+    config6,
+    config7,
+  ]);
+  Assert.deepEqual(
+    configs.map(c => c.active),
+    [false, true, false],
+    "The correct interventions were activated by pref changes"
+  );
+  Assert.deepEqual(
+    configs.map(c => c.interventions.map(i => i.enabled)),
+    [[true], [true], [true]],
+    "The correct interventions were made available by pref changes"
+  );
+  reg = await WebCompatExtension.getRegisteredContentScriptsFor(["test"]);
+  Assert.deepEqual(
+    reg.map(r => r.js).flat(),
+    ["lib/shims.js"],
+    "The correct content scripts are registered after pref changes"
+  );
+
+  Services.prefs.setBoolPref(
+    "extensions.webcompat.disabled_interventions.test5",
+    false
+  );
+  Services.prefs.setBoolPref(
+    "extensions.webcompat.disabled_interventions.test6",
+    true
+  );
+  Services.prefs.setBoolPref(
+    "extensions.webcompat.disabled_interventions.test7",
+    false
+  );
+  await WebCompatExtension.noOngoingInterventionChanges();
+  configs = await WebCompatExtension.updateInterventions([
+    config5,
+    config6,
+    config7,
+  ]);
+  Assert.deepEqual(
+    configs.map(c => c.active),
+    [true, false, true],
+    "The correct interventions were activated by pref changes"
+  );
+  Assert.deepEqual(
+    configs.map(c => c.interventions.map(i => i.enabled)),
+    [[true], [true], [true]],
+    "The correct interventions were made available by pref changes"
+  );
+  reg = await WebCompatExtension.getRegisteredContentScriptsFor(["test"]);
+  Assert.deepEqual(
+    reg.map(r => r.js).flat(),
+    ["lib/run.js", "lib/custom_functions.js"],
+    "The correct content scripts are registered after pref changes"
+  );
+
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: "about:compat",
+    waitForLoad: true,
+  });
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    is(
+      content.origin,
+      "moz-extension://9a310967-e580-48bf-b3e8-4eafebbc122d",
+      "Expected origin of about:compat"
+    );
+
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        content.document.querySelector(
+          "#interventions tr[data-id=test5] [data-l10n-id=label-disable]"
+        ),
+      "test5 is correctly shown as disabled"
+    );
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        content.document.querySelector(
+          "#interventions tr[data-id=test6] [data-l10n-id=label-enable]"
+        ),
+      "test6 is correctly shown as enabled"
+    );
+
+    // click to disable test5 and confirm
+    content.document
+      .querySelector(
+        "#interventions tr[data-id=test5] [data-l10n-id=label-disable]"
+      )
+      .click();
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        content.document.querySelector(
+          "#interventions tr[data-id=test5] [data-l10n-id=label-enable]"
+        ),
+      "test5 is correctly disabled"
+    );
+
+    // click to enable test6 and confirm
+    content.document
+      .querySelector(
+        "#interventions tr[data-id=test6] [data-l10n-id=label-enable]"
+      )
+      .click();
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        content.document.querySelector(
+          "#interventions tr[data-id=test6] [data-l10n-id=label-disable]"
+        ),
+      "test6 is correctly enabled"
+    );
+
+    // click to disable test7 and confirm
+    content.document
+      .querySelector(
+        "#interventions tr[data-id=test7] [data-l10n-id=label-disable]"
+      )
+      .click();
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        content.document.querySelector(
+          "#interventions tr[data-id=test5] [data-l10n-id=label-enable]"
+        ),
+      "test7 is correctly disabled"
+    );
+  });
+
+  configs = [
+    await WebCompatExtension.getInterventionById("test5"),
+    await WebCompatExtension.getInterventionById("test6"),
+    await WebCompatExtension.getInterventionById("test7"),
+  ];
+  Assert.deepEqual(
+    configs.map(c => c.active),
+    [false, true, false],
+    "The correct interventions were activated by about:compat changes"
+  );
+  Assert.deepEqual(
+    configs.map(c => c.interventions.map(i => i.enabled)),
+    [[true], [true], [true]],
+    "The correct interventions were made available by about:compat changes"
+  );
+  reg = await WebCompatExtension.getRegisteredContentScriptsFor(["test"]);
+  Assert.deepEqual(
+    reg.map(r => r.js).flat(),
+    ["lib/shims.js"],
+    "The correct content scripts are registered after about:compat changes"
+  );
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    // click to re-enable test5 and confirm
+    content.document
+      .querySelector(
+        "#interventions tr[data-id=test5] [data-l10n-id=label-enable]"
+      )
+      .click();
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        content.document.querySelector(
+          "#interventions tr[data-id=test5] [data-l10n-id=label-disable]"
+        ),
+      "test5 is correctly disabled"
+    );
+
+    // click to re-disable test6 and confirm
+    content.document
+      .querySelector(
+        "#interventions tr[data-id=test6] [data-l10n-id=label-disable]"
+      )
+      .click();
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        content.document.querySelector(
+          "#interventions tr[data-id=test6] [data-l10n-id=label-enable]"
+        ),
+      "test6 is correctly disabled"
+    );
+
+    // click to re-enable test7 and confirm
+    content.document
+      .querySelector(
+        "#interventions tr[data-id=test7] [data-l10n-id=label-enable]"
+      )
+      .click();
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        content.document.querySelector(
+          "#interventions tr[data-id=test7] [data-l10n-id=label-disable]"
+        ),
+      "test7 is correctly disabled"
+    );
+  });
+  await BrowserTestUtils.removeTab(tab);
+
+  configs = [
+    await WebCompatExtension.getInterventionById("test5"),
+    await WebCompatExtension.getInterventionById("test6"),
+    await WebCompatExtension.getInterventionById("test7"),
+  ];
+  Assert.deepEqual(
+    configs.map(c => c.active),
+    [true, false, true],
+    "The correct interventions were activated by about:compat changes"
+  );
+  Assert.deepEqual(
+    configs.map(c => c.interventions.map(i => i.enabled)),
+    [[true], [true], [true]],
+    "The correct interventions were made available by about:compat changes"
+  );
+  reg = await WebCompatExtension.getRegisteredContentScriptsFor(["test"]);
+  Assert.deepEqual(
+    reg.map(r => r.js).flat(),
+    ["lib/run.js", "lib/custom_functions.js"],
+    "The correct content scripts are registered after about:compat changes"
+  );
+
+  await WebCompatExtension.disableInterventions(["test5", "test6", "test7"]);
+  Services.prefs.clearUserPref(
+    "extensions.webcompat.disabled_interventions.test5"
+  );
+});

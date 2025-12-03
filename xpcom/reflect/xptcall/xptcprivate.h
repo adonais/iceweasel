@@ -9,7 +9,6 @@
 #define xptcprivate_h___
 
 #include "xptcall.h"
-#include "mozilla/Attributes.h"
 
 #if !defined(__ia64) || \
     (!defined(__hpux) && !defined(__linux__) && !defined(__FreeBSD__))

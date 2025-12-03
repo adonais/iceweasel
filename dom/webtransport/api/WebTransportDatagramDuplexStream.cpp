@@ -280,7 +280,7 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
   // (mDatagrams is transport.[[Datagrams]])
 
   nsTArray<uint8_t> data;
-  Unused << AppendTypedArrayDataTo(arrayBuffer, data);
+  (void)AppendTypedArrayDataTo(arrayBuffer, data);
 
   // Step 4: If datagrams.[[OutgoingMaxDatagramSize]] is less than data’s
   // [[ByteLength]], return a promise resolved with undefined.

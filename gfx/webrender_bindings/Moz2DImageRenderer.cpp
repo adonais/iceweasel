@@ -351,7 +351,7 @@ static bool Moz2DRenderCallback(const Range<const uint8_t> aBlob,
                                 const mozilla::wr::LayoutIntRect* aDirtyRect,
                                 Range<uint8_t> aOutput) {
   IntSize size(aRenderRect->width(), aRenderRect->height());
-  AUTO_PROFILER_TRACING_MARKER("WebRender", "RasterizeSingleBlob", GRAPHICS);
+  AUTO_PROFILER_MARKER("RasterizeSingleBlob", GRAPHICS);
 #ifndef FUZZING
   MOZ_RELEASE_ASSERT(size.width > 0 && size.height > 0);
 #endif

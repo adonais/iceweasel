@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -107,7 +108,7 @@ fun WallpaperOnboarding(
             ) {
                 Text(
                     text = stringResource(R.string.wallpapers_onboarding_dialog_explore_more_button_text),
-                    color = FirefoxTheme.colors.textAccent,
+                    color = MaterialTheme.colorScheme.tertiary,
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1,
                     style = FirefoxTheme.typography.button,

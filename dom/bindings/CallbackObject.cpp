@@ -301,29 +301,36 @@ void CallSetup::SetupForExecution(nsIGlobalObject* aGlobalObject,
 // Private delegating constructor for common initialization
 CallSetup::CallSetup(ErrorResult& aRv,
                      CallbackObjectBase::ExceptionHandling aExceptionHandling,
-                     JS::Realm* aRealm, bool aIsMainThread)
+                     JS::Realm* aRealm, bool aIsMainThread,
+                     CycleCollectedJSContext* aCCJS)
     : mCx(nullptr),
       mRealm(aRealm),
       mErrorResult(aRv),
       mExceptionHandling(aExceptionHandling),
       mIsMainThread(aIsMainThread) {
-  CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
-  MOZ_ASSERT(ccjs);
-  ccjs->EnterMicroTask();
+  MOZ_ASSERT(aCCJS);
+  aCCJS->EnterMicroTask();
 }
 
 CallSetup::CallSetup(CallbackObjectBase* aCallback, ErrorResult& aRv,
                      const char* aExecutionReason,
                      CallbackObjectBase::ExceptionHandling aExceptionHandling,
                      JS::Realm* aRealm, bool aIsJSImplementedWebIDL)
-    : CallSetup(aRv, aExceptionHandling, aRealm, NS_IsMainThread()) {
+    : CallSetup(aCallback, aRv, aExecutionReason, aExceptionHandling, aRealm,
+                aIsJSImplementedWebIDL, CycleCollectedJSContext::Get()) {}
+
+CallSetup::CallSetup(CallbackObjectBase* aCallback, ErrorResult& aRv,
+                     const char* aExecutionReason,
+                     CallbackObjectBase::ExceptionHandling aExceptionHandling,
+                     JS::Realm* aRealm, bool aIsJSImplementedWebIDL,
+                     CycleCollectedJSContext* aCCJS)
+    : CallSetup(aRv, aExceptionHandling, aRealm, NS_IsMainThread(), aCCJS) {
   MOZ_ASSERT_IF(
       aExceptionHandling == CallbackObjectBase::eReportExceptions ||
           aExceptionHandling == CallbackObjectBase::eRethrowExceptions,
       !aRealm);
 
-  CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
-  JS::RootedTuple<JSObject*, JSObject*, JSObject*> roots(ccjs->RootingCx());
+  JS::RootedTuple<JSObject*, JSObject*, JSObject*> roots(aCCJS->RootingCx());
 
   // Compute the caller's subject principal (if necessary) early, before we
   // do anything that might perturb the relevant state.
@@ -382,7 +389,8 @@ CallSetup::CallSetup(JS::Handle<JSObject*> aCallbackGlobal,
                      const char* aExecutionReason,
                      CallbackObjectBase::ExceptionHandling aExceptionHandling,
                      JS::Realm* aRealm)
-    : CallSetup(aRv, aExceptionHandling, aRealm, NS_IsMainThread()) {
+    : CallSetup(aRv, aExceptionHandling, aRealm, NS_IsMainThread(),
+                CycleCollectedJSContext::Get()) {
   MOZ_ASSERT_IF(aExceptionHandling == CallbackFunction::eReportExceptions ||
                     aExceptionHandling == CallbackFunction::eRethrowExceptions,
                 !aRealm);

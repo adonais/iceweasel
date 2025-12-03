@@ -7,7 +7,6 @@
 #ifndef WebSocket_h__
 #define WebSocket_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Mutex.h"

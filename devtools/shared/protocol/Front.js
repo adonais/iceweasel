@@ -171,7 +171,7 @@ class Front extends Pool {
     }
   }
 
-  /*
+  /**
    * Listen for the creation and/or destruction of fronts matching one of the provided types.
    *
    * @param {String} typeName

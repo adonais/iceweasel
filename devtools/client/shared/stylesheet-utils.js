@@ -11,7 +11,7 @@ function stylesheetLoadPromise(styleSheet) {
   });
 }
 
-/*
+/**
  * Put the DevTools theme stylesheet into the provided chrome document.
  *
  * @param  {Document} doc

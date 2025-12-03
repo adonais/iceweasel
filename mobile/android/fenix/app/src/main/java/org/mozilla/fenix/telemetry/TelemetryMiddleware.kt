@@ -34,7 +34,6 @@ import org.mozilla.fenix.GleanMetrics.Urlbar
 import org.mozilla.fenix.components.metrics.Event
 import org.mozilla.fenix.components.metrics.MetricController
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.GleanMetrics.EngineTab as EngineMetrics
 
@@ -131,13 +130,6 @@ class TelemetryMiddleware(
                     Urlbar.engagement.record()
                 }
             }
-            is TranslationsAction.TranslateOfferAction -> {
-                Translations.offerEvent.record(Translations.OfferEventExtra("offer"))
-            }
-            is TranslationsAction.TranslateExpectedAction -> {
-                FxNimbus.features.translations.recordExposure()
-                Translations.offerEvent.record(Translations.OfferEventExtra("expected"))
-            }
             is TranslationsAction.TranslateAction -> {
                 Translations.translateRequested.record(
                     Translations.TranslateRequestedExtra(
@@ -159,9 +151,9 @@ class TelemetryMiddleware(
                 }
             }
             is TranslationsAction.SetEngineSupportedAction -> {
-                Translations.engineSupported.record(
-                    Translations.EngineSupportedExtra(if (action.isEngineSupported) "supported" else "unsupported"),
-                )
+                if (!action.isEngineSupported) {
+                    Translations.engineUnsupported.record()
+                }
             }
             else -> {
                 // no-op

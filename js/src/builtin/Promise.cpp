@@ -35,6 +35,7 @@
 #include "vm/Warnings.h"  // js::WarnNumberASCII
 
 #include "debugger/DebugAPI-inl.h"
+#include "gc/StableCellHasher-inl.h"
 #include "vm/Compartment-inl.h"
 #include "vm/ErrorObject-inl.h"
 #include "vm/JSContext-inl.h"  // JSContext::check
@@ -1679,6 +1680,15 @@ static bool ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
 
 static bool EnqueueJob(JSContext* cx, JS::MicroTask&& job) {
   MOZ_ASSERT(cx->realm());
+  GeckoProfilerRuntime& profiler = cx->runtime()->geckoProfiler();
+  if (profiler.enabled()) {
+    // Emit a flow start marker here.
+    uint64_t uid = 0;
+    if (JS::GetFlowIdFromJSMicroTask(job, &uid)) {
+      profiler.markFlow("JS::EnqueueJob", uid,
+                        JS::ProfilingCategoryPair::OTHER);
+    }
+  }
 
   // Only check if we need to use the debug queue when we're not on main thread.
   if (MOZ_UNLIKELY(!cx->runtime()->isMainRuntime() &&
@@ -7794,7 +7804,24 @@ JS_PUBLIC_API JSObject* JS::MaybeGetPromiseFromJSMicroTask(
   return nullptr;
 }
 
-JS_PUBLIC_API bool JS::IsJSMicroTask(Handle<JS::Value> hv) {
+JS_PUBLIC_API bool JS::GetFlowIdFromJSMicroTask(const MicroTask& entry,
+                                                uint64_t* uid) {
+  MOZ_RELEASE_ASSERT(entry.isObject(), "Only use on JSMicroTasks");
+
+  // We want to make sure we get the flow id from the target object
+  // not the wrapper.
+  JSObject* unwrapped = UncheckedUnwrap(&entry.toObject());
+  if (JS_IsDeadWrapper(unwrapped)) {
+    return false;
+  }
+
+  MOZ_ASSERT(unwrapped->is<MicroTaskEntry>(), "Only use on JSMicroTasks");
+
+  *uid = js::gc::GetUniqueIdInfallible(unwrapped);
+  return true;
+}
+
+JS_PUBLIC_API bool JS::IsJSMicroTask(const JS::Value& hv) {
   if (!hv.isObject()) {
     return false;
   }

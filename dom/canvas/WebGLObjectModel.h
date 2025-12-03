@@ -7,7 +7,6 @@
 #define WEBGLOBJECTMODEL_H_
 
 #include "WebGLTypes.h"
-#include "mozilla/RefCounted.h"
 #include "mozilla/WeakPtr.h"
 
 namespace mozilla {

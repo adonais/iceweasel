@@ -87,8 +87,7 @@ std::optional<std::wstring> get_object_name() {
   static_assert(false);
 #endif
 
-  return L"https://download.mozilla.org/?os=" + arch.value() + L"&lang=" +
-         lang + L"&product=" + product;
+  return L"?os=" + arch.value() + L"&lang=" + lang + L"&product=" + product;
 }
 
 /**

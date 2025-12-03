@@ -184,7 +184,7 @@ main-context-menu-copy-phone =
 
 main-context-menu-preview-link =
     .label = Preview Link
-    .accesskey = r
+    .accesskey = J
 
 # "Copy Clean Link" means that Firefox will remove things from the link you
 # copied, like items that identify you for advertising purposes, and other items
@@ -365,10 +365,6 @@ main-context-menu-suggest-strong-password =
 main-context-menu-manage-passwords =
     .label = Manage Passwords
     .accesskey = M
-
-main-context-menu-keyword =
-    .label = Add a Keyword for this Search…
-    .accesskey = K
 
 main-context-menu-add-engine =
     .label = Add Search Engine

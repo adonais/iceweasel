@@ -133,7 +133,7 @@ nsDOMCSSAttributeDeclaration::GetParsingEnvironment(
   return {
       mElement->GetURLDataForStyleAttr(aSubjectPrincipal),
       mElement->OwnerDoc()->GetCompatibilityMode(),
-      mElement->OwnerDoc()->CSSLoader(),
+      mElement->OwnerDoc()->GetExistingCSSLoader(),  // For error reporting only
   };
 }
 

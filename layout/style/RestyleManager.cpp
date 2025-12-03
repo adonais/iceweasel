@@ -33,7 +33,6 @@
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSetInlines.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/Unused.h"
 #include "mozilla/ViewportFrame.h"
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/DocumentInlines.h"
@@ -989,9 +988,10 @@ static bool RecomputePosition(nsIFrame* aFrame) {
 
   ViewportFrame* viewport = do_QueryFrame(parentFrame);
   nsSize cbSize =
-      viewport ? viewport->AdjustReflowInputAsContainingBlock(parentReflowInput)
-                     .Size()
-               : aFrame->GetContainingBlock()->GetSize();
+      viewport
+          ? viewport->GetContainingBlockAdjustedForScrollbars(parentReflowInput)
+                .Size()
+          : aFrame->GetContainingBlock()->GetSize();
   const nsMargin& parentBorder =
       parentReflowInput.mStyleBorder->GetComputedBorder();
   cbSize -= nsSize(parentBorder.LeftRight(), parentBorder.TopBottom());
@@ -2534,7 +2534,7 @@ void RestyleManager::ClearRestyleStateFromSubtree(Element* aElement) {
   }
 
   bool wasRestyled = false;
-  Unused << Servo_TakeChangeHint(aElement, &wasRestyled);
+  (void)Servo_TakeChangeHint(aElement, &wasRestyled);
   aElement->UnsetFlags(Element::kAllServoDescendantBits);
 }
 

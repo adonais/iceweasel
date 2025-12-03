@@ -16,6 +16,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/nsVideoFrame.h"
 #include "nsContentUtils.h"
+#include "nsGkAtoms.h"
 #include "nsLayoutUtils.h"
 #include "nsRFPService.h"
 
@@ -59,7 +60,7 @@ LargestContentfulPaint::LargestContentfulPaint(
     const Maybe<TimeStamp>& aLoadTime, const unsigned long aSize, nsIURI* aURI,
     Element* aElement, bool aShouldExposeRenderTime)
     : PerformanceEntry(aPerformance->GetParentObject(), u""_ns,
-                       kLargestContentfulPaintName),
+                       nsGkAtoms::largestContentfulPaint),
       mPerformance(aPerformance),
       mRenderTime(aRenderTime),
       mLoadTime(aLoadTime),

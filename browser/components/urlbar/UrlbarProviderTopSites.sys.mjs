@@ -94,13 +94,11 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
   }
 
   /**
-   * Starts querying. Extended classes should return a Promise resolved when the
-   * provider is done searching AND returning results.
+   * Starts querying.
    *
-   * @param {UrlbarQueryContext} queryContext The query context object
-   * @param {Function} addCallback Callback invoked by the provider to add a new
-   *        result. A UrlbarResult should be passed to it.
-   * @returns {Promise}
+   * @param {UrlbarQueryContext} queryContext
+   * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
+   *   Callback invoked by the provider to add a new result.
    */
   async startQuery(queryContext, addCallback) {
     // Bail if Top Sites are not enabled. We check this condition here instead

@@ -432,7 +432,7 @@
         }
       },
       "weight": {
-        "value": "{font.weight.bold}"
+        "value": "{font.weight.semibold}"
       }
     },
     "icon": {
@@ -1036,6 +1036,18 @@
               "default": "color-mix(in srgb, black 20%, var(--color-accent-primary))"
             }
           }
+        },
+        "selected": {
+          "value": {
+            "forcedColors": "SelectedItem",
+            "brand": {
+              "light": "{color.blue.60}",
+              "dark": "{color.cyan.30}"
+            },
+            "platform": {
+              "default": "SelectedItem"
+            }
+          }
         }
       }
     }
@@ -1145,8 +1157,11 @@
       "@base": {
         "value": "normal"
       },
-      "bold": {
+      "semibold": {
         "value": 600
+      },
+      "bold": {
+        "value": 700
       }
     }
   },
@@ -1164,7 +1179,7 @@
         }
       },
       "weight": {
-        "value": "{font.weight.bold}"
+        "value": "{font.weight.semibold}"
       }
     }
   },
@@ -1488,6 +1503,22 @@
           "light": "{color.red.70}",
           "dark": "{color.red.20}",
           "prefersContrast": "inherit"
+        }
+      },
+      "accent": {
+        "primary": {
+          "selected": {
+            "value": {
+              "forcedColors": "SelectedItemText",
+              "brand": {
+                "light": "{color.white}",
+                "dark": "{color.gray.100}"
+              },
+              "platform": {
+                "default": "SelectedItemText"
+              }
+            }
+          }
         }
       }
     }

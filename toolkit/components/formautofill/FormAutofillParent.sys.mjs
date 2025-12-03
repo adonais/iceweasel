@@ -2,12 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
+/**
  * Implements a service used to access storage and communicate with content.
  *
  * A "fields" array is used to communicate with FormAutofillChild. Each item
  * represents a single input field in the content page as well as its
- * @autocomplete properties. The schema is as below. Please refer to
+ * `@autocomplete` properties. The schema is as below. Please refer to
  * FormAutofillChild.js for more details.
  *
  * [

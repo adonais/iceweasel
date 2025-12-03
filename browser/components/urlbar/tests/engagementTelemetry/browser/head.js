@@ -31,6 +31,14 @@ ChromeUtils.defineLazyGetter(this, "MerinoTestUtils", () => {
   return module;
 });
 
+ChromeUtils.defineLazyGetter(this, "GeolocationTestUtils", () => {
+  const { GeolocationTestUtils: module } = ChromeUtils.importESModule(
+    "resource://testing-common/GeolocationTestUtils.sys.mjs"
+  );
+  module.init(this);
+  return module;
+});
+
 ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",

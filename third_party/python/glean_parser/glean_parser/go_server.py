@@ -147,8 +147,6 @@ def output_go(
     with filepath.open("w", encoding="utf-8") as fd:
         fd.write(
             template.render(
-                parser_version=__version__,
-                pings=ping_to_metrics,
-                events=event_metrics
+                parser_version=__version__, pings=ping_to_metrics, events=event_metrics
             )
         )

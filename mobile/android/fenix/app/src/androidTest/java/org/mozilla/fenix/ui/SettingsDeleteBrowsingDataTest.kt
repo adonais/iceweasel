@@ -16,8 +16,9 @@ import org.mozilla.fenix.helpers.AppAndSystemHelper.setNetworkEnabled
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
-import org.mozilla.fenix.helpers.TestAssetHelper
-import org.mozilla.fenix.helpers.TestAssetHelper.getStorageTestAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.storageCheckPageAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.storageWritePageAsset
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.restartApp
@@ -127,7 +128,7 @@ class SettingsDeleteBrowsingDataTest : TestSetup() {
     @SmokeTest
     @Test
     fun deleteOpenTabsBrowsingDataTest() {
-        val defaultWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
@@ -160,7 +161,7 @@ class SettingsDeleteBrowsingDataTest : TestSetup() {
     @SmokeTest
     @Test
     fun deleteBrowsingHistoryTest() {
-        val genericPage = getStorageTestAsset(mockWebServer, "generic1.html").url
+        val genericPage = mockWebServer.getGenericAsset(1).url
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(genericPage) {
@@ -192,9 +193,9 @@ class SettingsDeleteBrowsingDataTest : TestSetup() {
     @Test
     @SkipLeaks
     fun deleteCookiesAndSiteDataTest() {
-        val genericPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
-        val storageWritePage = getStorageTestAsset(mockWebServer, "storage_write.html").url
-        val storageCheckPage = getStorageTestAsset(mockWebServer, "storage_check.html").url
+        val genericPage = mockWebServer.getGenericAsset(1)
+        val storageWritePage = mockWebServer.storageWritePageAsset.url
+        val storageCheckPage = mockWebServer.storageCheckPageAsset.url
 
         // Browsing a generic page to allow GV to load on a fresh run
         navigationToolbar {

@@ -19,9 +19,10 @@ use crate::render_task_graph::{RenderTaskGraph, RenderTaskGraphBuilder, RenderTa
 use crate::renderer::{BlendMode, GpuBufferAddress, GpuBufferBuilder, GpuBufferBuilderF};
 use crate::segment::EdgeAaSegmentMask;
 use crate::space::SpaceMapper;
-use crate::spatial_tree::{SpatialNodeIndex, SpatialTree};
+use crate::spatial_tree::{CoordinateSpaceMapping, SpatialNodeIndex, SpatialTree};
 use crate::surface::SurfaceBuilder;
 use crate::util::{extract_inner_rect_k, MaxRect, ScaleOffset};
+use crate::visibility::compute_conservative_visible_rect;
 
 const MIN_AA_SEGMENTS_SIZE: f32 = 4.0;
 const MIN_QUAD_SPLIT_SIZE: f32 = 256.0;
@@ -76,49 +77,219 @@ pub fn prepare_quad(
     pic_state: &mut PictureState,
     scratch: &mut PrimitiveScratchBuffer,
 ) {
-    let map_prim_to_raster = frame_context.spatial_tree.get_relative_transform(
-        prim_spatial_node_index,
-        pic_context.raster_spatial_node_index,
-    );
-
-    let ctx = PatternBuilderContext {
+    let pattern_ctx = PatternBuilderContext {
         scene_properties: frame_context.scene_properties,
         spatial_tree: frame_context.spatial_tree,
         fb_config: frame_context.fb_config,
     };
 
+    let shared_pattern = if pattern_builder.use_shared_pattern() {
+        Some(pattern_builder.build(
+            None,
+            &pattern_ctx,
+            &mut PatternBuilderState {
+                frame_gpu_data: frame_state.frame_gpu_data,
+                rg_builder: frame_state.rg_builder,
+                clip_store: frame_state.clip_store,
+            },
+        ))
+    } else {
+        None
+    };
+
+    // TODO: It would be worth hoisting this out of prepare_quad and
+    // prepare_repeatable_quad.
+    let map_prim_to_raster = pattern_ctx.spatial_tree.get_relative_transform(
+        prim_spatial_node_index,
+        pic_context.raster_spatial_node_index,
+    );
+
+    let can_use_nine_patch = map_prim_to_raster.is_2d_scale_translation()
+        && pattern_builder.can_use_nine_patch();
+
+    let strategy = get_prim_render_strategy(
+        prim_spatial_node_index,
+        clip_chain,
+        frame_state.clip_store,
+        interned_clips,
+        can_use_nine_patch,
+        pattern_ctx.spatial_tree,
+    );
+
+    prepare_quad_impl(
+        strategy,
+        pattern_builder,
+        shared_pattern.as_ref(),
+        local_rect,
+        prim_instance_index,
+        prim_spatial_node_index,
+        clip_chain,
+        device_pixel_scale,
+
+        &map_prim_to_raster,
+        &pattern_ctx,
+        pic_context,
+        targets,
+        interned_clips,
+
+        frame_state,
+        pic_state,
+        scratch,
+    )
+}
+
+pub fn prepare_repeatable_quad(
+    pattern_builder: &dyn PatternBuilder,
+    local_rect: &LayoutRect,
+    stretch_size: LayoutSize,
+    tile_spacing: LayoutSize,
+    prim_instance_index: PrimitiveInstanceIndex,
+    prim_spatial_node_index: SpatialNodeIndex,
+    clip_chain: &ClipChainInstance,
+    device_pixel_scale: DevicePixelScale,
+
+    frame_context: &FrameBuildingContext,
+    pic_context: &PictureContext,
+    targets: &[CommandBufferIndex],
+    interned_clips: &DataStore<ClipIntern>,
+
+    frame_state: &mut FrameBuildingState,
+    pic_state: &mut PictureState,
+    scratch: &mut PrimitiveScratchBuffer,
+) {
+    let pattern_ctx = PatternBuilderContext {
+        scene_properties: frame_context.scene_properties,
+        spatial_tree: frame_context.spatial_tree,
+        fb_config: frame_context.fb_config,
+    };
+
+    let shared_pattern = if pattern_builder.use_shared_pattern() {
+        Some(pattern_builder.build(
+            None,
+            &pattern_ctx,
+            &mut PatternBuilderState {
+                frame_gpu_data: frame_state.frame_gpu_data,
+                rg_builder: frame_state.rg_builder,
+                clip_store: frame_state.clip_store,
+            },
+        ))
+    } else {
+        None
+    };
+
+    let map_prim_to_raster = pattern_ctx.spatial_tree.get_relative_transform(
+        prim_spatial_node_index,
+        pic_context.raster_spatial_node_index,
+    );
+
+    let can_use_nine_patch = map_prim_to_raster.is_2d_scale_translation()
+        && pattern_builder.can_use_nine_patch();
+
+    // This could move back into preapre_quad_impl if it took the tile's
+    // coverage rect into account rather than the whole primitive's, but
+    // for now it does the latter so we might as well not do the work
+    // multiple times.
+    let strategy = get_prim_render_strategy(
+        prim_spatial_node_index,
+        clip_chain,
+        frame_state.clip_store,
+        interned_clips,
+        can_use_nine_patch,
+        pattern_ctx.spatial_tree,
+    );
+
+    let needs_repetition = stretch_size.width < local_rect.width()
+        || stretch_size.height < local_rect.height();
+
+    if !needs_repetition {
+        // Most common path.
+        prepare_quad_impl(
+            strategy,
+            pattern_builder,
+            shared_pattern.as_ref(),
+            local_rect,
+            prim_instance_index,
+            prim_spatial_node_index,
+            clip_chain,
+            device_pixel_scale,
+            &map_prim_to_raster,
+            &pattern_ctx,
+            pic_context,
+            targets,
+            interned_clips,
+            frame_state,
+            pic_state,
+            scratch,
+        );
+
+        return;
+    }
+
+    // TODO: In some cases it would be a lot more efficient to bake the repeated
+    // pattern into a texture and use a repeating image shader instead of duplicating
+    // the primitive, especially with a high number of repetitions.
+
+    let visible_rect = compute_conservative_visible_rect(
+        clip_chain,
+        frame_state.current_dirty_region().combined,
+        frame_state.current_dirty_region().visibility_spatial_node,
+        prim_spatial_node_index,
+        frame_context.spatial_tree,
+    );
+
+    let stride = stretch_size + tile_spacing;
+    let repetitions = crate::image_tiling::repetitions(&local_rect, &visible_rect, stride);
+    for tile in repetitions {
+        let tile_rect = LayoutRect::from_origin_and_size(tile.origin, stretch_size);
+        prepare_quad_impl(
+            strategy,
+            pattern_builder,
+            shared_pattern.as_ref(),
+            &tile_rect,
+            prim_instance_index,
+            prim_spatial_node_index,
+            clip_chain,
+            device_pixel_scale,
+            &map_prim_to_raster,
+            &pattern_ctx,
+            pic_context,
+            targets,
+            interned_clips,
+            frame_state,
+            pic_state,
+            scratch,
+        );
+    }
+}
+
+fn prepare_quad_impl(
+    strategy: QuadRenderStrategy,
+    pattern_builder: &dyn PatternBuilder,
+    shared_pattern: Option<&Pattern>,
+    local_rect: &LayoutRect,
+    prim_instance_index: PrimitiveInstanceIndex,
+    prim_spatial_node_index: SpatialNodeIndex,
+    clip_chain: &ClipChainInstance,
+    device_pixel_scale: DevicePixelScale,
+
+    map_prim_to_raster: &CoordinateSpaceMapping<LayoutPixel, LayoutPixel>,
+    ctx: &PatternBuilderContext,
+    pic_context: &PictureContext,
+    targets: &[CommandBufferIndex],
+    interned_clips: &DataStore<ClipIntern>,
+
+    frame_state: &mut FrameBuildingState,
+    pic_state: &mut PictureState,
+    scratch: &mut PrimitiveScratchBuffer,
+) {
     let mut state = PatternBuilderState {
         frame_gpu_data: frame_state.frame_gpu_data,
         rg_builder: frame_state.rg_builder,
         clip_store: frame_state.clip_store,
     };
 
-    let shared_pattern = if pattern_builder.use_shared_pattern() {
-        Some(pattern_builder.build(
-            None,
-            &ctx,
-            &mut state,
-        ))
-    } else {
-        None
-    };
-
     let prim_is_2d_scale_translation = map_prim_to_raster.is_2d_scale_translation();
     let prim_is_2d_axis_aligned = map_prim_to_raster.is_2d_axis_aligned();
-
-    // TODO(gw): Can't support 9-patch for box-shadows for now as should_create_task
-    //           assumes pattern is solid. This is a temporary hack until as once that's
-    //           fixed we can select 9-patch for box-shadows
-    let can_use_nine_patch = prim_is_2d_scale_translation && pattern_builder.can_use_nine_patch();
-
-    let strategy = get_prim_render_strategy(
-        prim_spatial_node_index,
-        clip_chain,
-        state.clip_store,
-        interned_clips,
-        can_use_nine_patch,
-        frame_context.spatial_tree,
-    );
 
     let mut quad_flags = QuadFlags::empty();
 
@@ -146,11 +317,11 @@ pub fn prepare_quad(
     let transform_id = frame_state.transforms.get_id(
         prim_spatial_node_index,
         pic_context.raster_spatial_node_index,
-        frame_context.spatial_tree,
+        ctx.spatial_tree,
     );
 
     if let QuadRenderStrategy::Direct = strategy {
-        let pattern = shared_pattern.unwrap_or_else(|| {
+        let pattern = shared_pattern.cloned().unwrap_or_else(|| {
             pattern_builder.build(
                 None,
                 &ctx,
@@ -202,7 +373,7 @@ pub fn prepare_quad(
 
     let surface = &mut frame_state.surfaces[pic_context.surface_index.0];
     let Some(clipped_surface_rect) = surface.get_surface_rect(
-        &clip_chain.pic_coverage_rect, frame_context.spatial_tree
+        &clip_chain.pic_coverage_rect, ctx.spatial_tree
     ) else {
         return;
     };
@@ -210,7 +381,7 @@ pub fn prepare_quad(
     match strategy {
         QuadRenderStrategy::Direct => {}
         QuadRenderStrategy::Indirect => {
-            let pattern = shared_pattern.unwrap_or_else(|| {
+            let pattern = shared_pattern.cloned().unwrap_or_else(|| {
                 pattern_builder.build(
                     None,
                     &ctx,
@@ -272,18 +443,18 @@ pub fn prepare_quad(
             //  - in layout space for the render task,
             //  - in device space for the instances that draw into the destination picture.
             let clip_coverage_rect = surface
-                .map_to_device_rect(&clip_chain.pic_coverage_rect, frame_context.spatial_tree);
+                .map_to_device_rect(&clip_chain.pic_coverage_rect, ctx.spatial_tree);
             let clipped_surface_rect = clipped_surface_rect.to_f32();
 
             surface.map_local_to_picture.set_target_spatial_node(
                 prim_spatial_node_index,
-                frame_context.spatial_tree,
+                ctx.spatial_tree,
             );
 
             let Some(pic_rect) = surface.map_local_to_picture.map(local_rect) else { return };
 
             let unclipped_surface_rect = surface.map_to_device_rect(
-                &pic_rect, frame_context.spatial_tree
+                &pic_rect, ctx.spatial_tree
             ).round_out();
 
             // Set up the tile classifier for the params of this quad
@@ -303,7 +474,7 @@ pub fn prepare_quad(
                     prim_spatial_node_index,
                     clip_node.item.spatial_node_index,
                     pic_context.visibility_spatial_node_index,
-                    frame_context.spatial_tree,
+                    ctx.spatial_tree,
                 );
 
                 // For now, we only handle axis-aligned mappings
@@ -464,7 +635,7 @@ pub fn prepare_quad(
                     if is_direct {
                         scratch.quad_direct_segments.push(QuadSegment { rect: rect.cast_unit(), task_id: RenderTaskId::INVALID });
                     } else {
-                        let pattern = match shared_pattern {
+                        let pattern = match shared_pattern.cloned() {
                             Some(ref shared_pattern) => shared_pattern.clone(),
                             None => {
                                 pattern_builder.build(
@@ -519,7 +690,7 @@ pub fn prepare_quad(
                 let device_prim_rect: DeviceRect = local_to_device.map_rect(&local_rect);
 
                 let pattern = match shared_pattern {
-                    Some(ref shared_pattern) => shared_pattern.clone(),
+                    Some(shared_pattern) => shared_pattern.clone(),
                     None => {
                         pattern_builder.build(
                             Some(device_prim_rect),
@@ -561,7 +732,7 @@ pub fn prepare_quad(
             //  - in layout space for the render task,
             //  - in device space for the instances that draw into the destination picture.
             let clip_coverage_rect = surface
-                .map_to_device_rect(&clip_chain.pic_coverage_rect, frame_context.spatial_tree);
+                .map_to_device_rect(&clip_chain.pic_coverage_rect, ctx.spatial_tree);
 
             let local_to_device = map_prim_to_raster.as_2d_scale_offset()
                 .expect("bug: nine-patch segments should be axis-aligned only")
@@ -584,12 +755,12 @@ pub fn prepare_quad(
 
             let surface_rect_0 = surface.map_to_device_rect(
                 &pic_corner_0,
-                frame_context.spatial_tree,
+                ctx.spatial_tree,
             ).round_out().to_i32();
 
             let surface_rect_1 = surface.map_to_device_rect(
                 &pic_corner_1,
-                frame_context.spatial_tree,
+                ctx.spatial_tree,
             ).round_out().to_i32();
 
             let p0 = surface_rect_0.min;
@@ -650,7 +821,6 @@ pub fn prepare_quad(
 
                     if should_create_task(mode, x, y) {
                         let pattern = shared_pattern
-                            .as_ref()
                             .expect("bug: nine-patch expects shared pattern, for now");
 
                         if pattern.is_opaque {
@@ -668,7 +838,7 @@ pub fn prepare_quad(
                         );
 
                         let task_id = add_render_task_with_mask(
-                            &pattern,
+                            pattern,
                             device_rect.size(),
                             device_rect.min.to_f32(),
                             clip_chain.clips_range,

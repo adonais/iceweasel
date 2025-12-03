@@ -6,7 +6,6 @@
 #ifndef mozilla_contentanalysis_h
 #define mozilla_contentanalysis_h
 
-#include "mozilla/MoveOnlyFunction.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/MaybeDiscarded.h"

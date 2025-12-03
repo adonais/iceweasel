@@ -794,8 +794,16 @@ struct JSRuntime {
   /* Reset the default locale to OS defaults. */
   void resetDefaultLocale();
 
-  /* Gets current default locale. String remains owned by context. */
+  /* Gets current default locale. String remains owned by runtime. */
   const char* getDefaultLocale();
+
+  /*
+   * Gets current default locale or nullptr if not initialized.
+   * String remains owned by runtime.
+   */
+  const char* getDefaultLocaleIfInitialized() const {
+    return defaultLocale.ref().get();
+  }
 
   /* Garbage collector state. */
   js::gc::GCRuntime gc;
@@ -1066,14 +1074,17 @@ struct JSRuntime {
   // threads for purposes of wasm::InterruptRunningCode().
   js::ExclusiveData<js::wasm::InstanceVector> wasmInstances;
 
-  // A counter used when recording the order in which modules had their
-  // AsyncEvaluation field set to true. This is used to order queued
-  // evaluations. This is reset when the last module that was async evaluating
-  // is finished.
+  // The [[ModuleAsyncEvaluationCount]] field of agent records
   //
-  // See https://tc39.es/ecma262/#sec-async-module-execution-fulfilled step 10
-  // for use.
+  // See https://tc39.es/ecma262/#sec-agents.
   js::MainThreadData<uint32_t> moduleAsyncEvaluatingPostOrder;
+
+  // A counter used to detect when there are no pending async modules, so
+  // that we can reset [[ModuleAsyncEvaluationCount]] to 0.
+  //
+  // See the note in
+  // https://tc39.es/ecma262/#sec-IncrementModuleAsyncEvaluationCount for use.
+  js::MainThreadData<uint32_t> pendingAsyncModuleEvaluations;
 
   // The implementation-defined abstract operation HostLoadImportedModule.
   js::MainThreadData<JS::ModuleLoadHook> moduleLoadHook;

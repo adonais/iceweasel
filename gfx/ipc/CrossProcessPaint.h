@@ -83,7 +83,7 @@ class PaintFragment final {
   PaintFragment& operator=(PaintFragment&&) = default;
 
  protected:
-  friend struct mozilla::ipc::IPDLParamTraits<PaintFragment>;
+  friend struct IPC::ParamTraits<PaintFragment>;
   friend CrossProcessPaint;
 
   typedef mozilla::ipc::ByteBuf ByteBuf;

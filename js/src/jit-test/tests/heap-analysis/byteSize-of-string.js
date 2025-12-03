@@ -332,19 +332,11 @@ checkEq(byteSize(ext16),                                               s(RN, RN)
 // allocated in the nursery. If this ever changes, please add tests for the new
 // cases. Also note that on Windows mozmalloc's smallest allocation size is
 // two words compared to one word on other platforms.
-if (getBuildConfiguration("windows")) {
-  checkEq(byteSize(newString("", {external: true})),                        s(EN+8, EN+16));
-  checkEq(byteSize(newString("1", {external: true})),                       s(EN+8, EN+16));
-  checkEq(byteSize(newString("12", {external: true})),                      s(EN+8, EN+16));
-  checkEq(byteSize(newString("123", {external: true})),                     s(EN+8, EN+16));
-  checkEq(byteSize(newString("1234", {external: true})),                    s(EN+8, EN+16));
-} else {
-  checkEq(byteSize(newString("", {external: true})),                        s(EN+4, EN+8));
-  checkEq(byteSize(newString("1", {external: true})),                       s(EN+4, EN+8));
-  checkEq(byteSize(newString("12", {external: true})),                      s(EN+4, EN+8));
-  checkEq(byteSize(newString("123", {external: true})),                     s(EN+8, EN+8));
-  checkEq(byteSize(newString("1234", {external: true})),                    s(EN+8, EN+8));
-}
+checkEq(byteSize(newString("", {external: true})),                          s(EN+16, EN+16));
+checkEq(byteSize(newString("1", {external: true})),                         s(EN+16, EN+16));
+checkEq(byteSize(newString("12", {external: true})),                        s(EN+16, EN+16));
+checkEq(byteSize(newString("123", {external: true})),                       s(EN+16, EN+16));
+checkEq(byteSize(newString("1234", {external: true})),                      s(EN+16, EN+16));
 checkEq(byteSize(newString("12345", {external: true})),                     s(EN+16, EN+16));
 checkEq(byteSize(newString("123456789.123456789.1234", {external: true})),  s(EN+48, EN+48));
 checkEq(byteSize(newString("123456789.123456789.12345", {external: true})), s(EN+64, EN+64));

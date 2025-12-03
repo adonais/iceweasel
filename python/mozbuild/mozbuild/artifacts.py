@@ -60,6 +60,7 @@ from mozpack import executables
 from mozpack.files import FileFinder, JarFinder, TarFinder
 from mozpack.mozjar import JarReader, JarWriter
 from mozpack.packager.unpack import UnpackFinder
+from taskcluster.exceptions import TaskclusterRestFailure
 from taskgraph.util.taskcluster import find_task_id, get_artifact_url, list_artifacts
 
 from mozbuild.artifact_builds import JOB_CHOICES
@@ -1178,7 +1179,10 @@ class TaskCache(CacheManager):
         )
         try:
             taskId = find_task_id(namespace)
-        except KeyError:
+        except (KeyError, TaskclusterRestFailure) as e:
+            if isinstance(e, TaskclusterRestFailure) and e.status_code != 404:
+                raise
+
             # Not all revisions correspond to pushes that produce the job we
             # care about; and even those that do may not have completed yet.
             raise ValueError(f"Task for {namespace} does not exist (yet)!")

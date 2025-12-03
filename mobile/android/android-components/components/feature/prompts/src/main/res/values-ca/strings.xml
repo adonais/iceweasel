@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Text for confirmation for a positive action in dialog -->
   <string name="mozac_feature_prompts_ok">D’acord</string>
@@ -52,6 +59,8 @@
   <string name="mozac_feature_prompts_deny">Denega</string>
   <!-- Text of the title of a dialog when a page is requesting to open a new window. -->
   <string name="mozac_feature_prompts_popup_dialog_title">Voleu permetre que s’obri aquest lloc?</string>
+  <!-- Text of the title of a dialog when a third-party redirect is blocked. -->
+  <string name="mozac_feature_prompts_redirect_dialog_title">Voleu permetre que es redirigeixi a aquest lloc?</string>
   <!-- Title of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
   <string name="mozac_feature_prompt_before_unload_dialog_title">Segur?</string>
   <!-- Body text of the dialog shown when a user is leaving a website and there is still data not saved yet. -->

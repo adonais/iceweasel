@@ -40,13 +40,22 @@ const FPP_PBM_PREF = "privacy.fingerprintingProtection.pbmode";
 const THIRD_PARTY_COOKIE_DEPRECATION_PREF =
   "network.cookie.cookieBehavior.optInPartitioning";
 const BTP_PREF = "privacy.bounceTrackingProtection.mode";
+const LNA_PREF = "network.lna.blocking";
+const LNA_ETP_PREF = "network.lna.etp.enabled";
 
 const { EnterprisePolicyTesting, PoliciesPrefTracker } =
   ChromeUtils.importESModule(
     "resource://testing-common/EnterprisePolicyTesting.sys.mjs"
   );
 
-requestLongerTimeout(2);
+requestLongerTimeout(3);
+
+// Enable LNA ETP integration for all tests so lna rules are processed
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [[LNA_ETP_PREF, true]],
+  });
+});
 
 add_task(async function testListUpdate() {
   SpecialPowers.pushPrefEnv({ set: [[PREF_TEST_NOTIFICATIONS, true]] });
@@ -350,6 +359,7 @@ add_task(async function testContentBlockingStandardCategory() {
     [FPP_PBM_PREF]: null,
     [THIRD_PARTY_COOKIE_DEPRECATION_PREF]: null,
     [BTP_PREF]: null,
+    [LNA_PREF]: null,
   };
 
   for (let pref in prefs) {
@@ -520,6 +530,7 @@ add_task(async function testContentBlockingStrictCategory() {
     BTP_PREF,
     Ci.nsIBounceTrackingProtection.MODE_ENABLED_DRY_RUN
   );
+  Services.prefs.setBoolPref(LNA_PREF, false);
   let strict_pref = Services.prefs.getStringPref(STRICT_PREF).split(",");
 
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
@@ -884,6 +895,20 @@ add_task(async function testContentBlockingStrictCategory() {
           Services.prefs.getIntPref(BTP_PREF),
           Ci.nsIBounceTrackingProtection.MODE_ENABLED_DRY_RUN,
           `${BTP_PREF} has been set to MODE_ENABLED_DRY_RUN`
+        );
+        break;
+      case "lna":
+        is(
+          Services.prefs.getBoolPref(LNA_PREF),
+          true,
+          `${LNA_PREF} has been set to true`
+        );
+        break;
+      case "-lna":
+        is(
+          Services.prefs.getBoolPref(LNA_PREF),
+          false,
+          `${LNA_PREF} has been set to false`
         );
         break;
       default:

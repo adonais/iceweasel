@@ -266,7 +266,8 @@ function DatePicker(context) {
       document.addEventListener("mouseup", this, { passive: true });
       document.addEventListener("pointerdown", this, { passive: true });
       document.addEventListener("mousedown", this);
-      document.addEventListener("keydown", this);
+      // Only listen to events in #date-picker (not in a timepicker)
+      this.context.root.addEventListener("keydown", this);
     },
 
     /**
@@ -582,19 +583,19 @@ function DatePicker(context) {
         "date-spinner-year"
       );
       document.l10n.setAttributes(
-        this.components.month.elements.up,
+        this.components.month.elements.prev,
         "date-spinner-month-previous"
       );
       document.l10n.setAttributes(
-        this.components.month.elements.down,
+        this.components.month.elements.next,
         "date-spinner-month-next"
       );
       document.l10n.setAttributes(
-        this.components.year.elements.up,
+        this.components.year.elements.prev,
         "date-spinner-year-previous"
       );
       document.l10n.setAttributes(
-        this.components.year.elements.down,
+        this.components.year.elements.next,
         "date-spinner-year-next"
       );
       document.l10n.translateRoots();

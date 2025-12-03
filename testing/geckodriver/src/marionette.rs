@@ -20,6 +20,7 @@ use marionette_rs::webdriver::{
     AuthenticatorParameters as MarionetteAuthenticatorParameters,
     AuthenticatorTransport as MarionetteAuthenticatorTransport,
     Command as MarionetteWebDriverCommand, CredentialParameters as MarionetteCredentialParameters,
+    GlobalPrivacyControlParameters as MarionetteGlobalPrivacyControlParameters,
     Keys as MarionetteKeys, Locator as MarionetteLocator, NewWindow as MarionetteNewWindow,
     PrintMargins as MarionettePrintMargins, PrintOrientation as MarionettePrintOrientation,
     PrintPage as MarionettePrintPage, PrintPageRange as MarionettePrintPageRange,
@@ -55,23 +56,24 @@ use webdriver::command::WebDriverCommand::{
     FindElement, FindElementElement, FindElementElements, FindElements, FindShadowRootElement,
     FindShadowRootElements, FullscreenWindow, Get, GetActiveElement, GetAlertText, GetCSSValue,
     GetComputedLabel, GetComputedRole, GetCookies, GetCurrentUrl, GetElementAttribute,
-    GetElementProperty, GetElementRect, GetElementTagName, GetElementText, GetNamedCookie,
-    GetPageSource, GetShadowRoot, GetTimeouts, GetTitle, GetWindowHandle, GetWindowHandles,
-    GetWindowRect, GoBack, GoForward, IsDisplayed, IsEnabled, IsSelected, MaximizeWindow,
-    MinimizeWindow, NewSession, NewWindow, PerformActions, Print, Refresh, ReleaseActions,
-    SendAlertText, SetPermission, SetTimeouts, SetWindowRect, Status, SwitchToFrame,
-    SwitchToParentFrame, SwitchToWindow, TakeElementScreenshot, TakeScreenshot,
-    WebAuthnAddCredential, WebAuthnAddVirtualAuthenticator, WebAuthnGetCredentials,
-    WebAuthnRemoveAllCredentials, WebAuthnRemoveCredential, WebAuthnRemoveVirtualAuthenticator,
-    WebAuthnSetUserVerified,
+    GetElementProperty, GetElementRect, GetElementTagName, GetElementText, GetGlobalPrivacyControl,
+    GetNamedCookie, GetPageSource, GetShadowRoot, GetTimeouts, GetTitle, GetWindowHandle,
+    GetWindowHandles, GetWindowRect, GoBack, GoForward, IsDisplayed, IsEnabled, IsSelected,
+    MaximizeWindow, MinimizeWindow, NewSession, NewWindow, PerformActions, Print, Refresh,
+    ReleaseActions, SendAlertText, SetGlobalPrivacyControl, SetPermission, SetTimeouts,
+    SetWindowRect, Status, SwitchToFrame, SwitchToParentFrame, SwitchToWindow,
+    TakeElementScreenshot, TakeScreenshot, WebAuthnAddCredential, WebAuthnAddVirtualAuthenticator,
+    WebAuthnGetCredentials, WebAuthnRemoveAllCredentials, WebAuthnRemoveCredential,
+    WebAuthnRemoveVirtualAuthenticator, WebAuthnSetUserVerified,
 };
 use webdriver::command::{
     ActionsParameters, AddCookieParameters, AuthenticatorParameters, AuthenticatorTransport,
-    GetNamedCookieParameters, GetParameters, JavascriptCommandParameters, LocatorParameters,
-    NewSessionParameters, NewWindowParameters, PrintMargins, PrintOrientation, PrintPage,
-    PrintPageRange, PrintParameters, SendKeysParameters, SetPermissionDescriptor,
-    SetPermissionParameters, SetPermissionState, SwitchToFrameParameters, SwitchToWindowParameters,
-    TimeoutsParameters, UserVerificationParameters, WebAuthnProtocol, WindowRectParameters,
+    GetNamedCookieParameters, GetParameters, GlobalPrivacyControlParameters,
+    JavascriptCommandParameters, LocatorParameters, NewSessionParameters, NewWindowParameters,
+    PrintMargins, PrintOrientation, PrintPage, PrintPageRange, PrintParameters, SendKeysParameters,
+    SetPermissionDescriptor, SetPermissionParameters, SetPermissionState, SwitchToFrameParameters,
+    SwitchToWindowParameters, TimeoutsParameters, UserVerificationParameters, WebAuthnProtocol,
+    WindowRectParameters,
 };
 use webdriver::command::{WebDriverCommand, WebDriverMessage};
 use webdriver::common::{
@@ -474,7 +476,9 @@ impl MarionetteSession {
             | WebAuthnGetCredentials
             | WebAuthnRemoveCredential
             | WebAuthnRemoveAllCredentials
-            | WebAuthnSetUserVerified(_) => {
+            | WebAuthnSetUserVerified(_)
+            | GetGlobalPrivacyControl
+            | SetGlobalPrivacyControl(_) => {
                 WebDriverResponse::Generic(resp.into_value_response(true)?)
             }
             GetTimeouts => {
@@ -996,6 +1000,12 @@ fn try_convert_to_marionette_message(
         )),
         WebAuthnSetUserVerified(ref x) => Some(Command::WebDriver(
             MarionetteWebDriverCommand::WebAuthnSetUserVerified(x.to_marionette()?),
+        )),
+        GetGlobalPrivacyControl => Some(Command::WebDriver(
+            MarionetteWebDriverCommand::GetGlobalPrivacyControl,
+        )),
+        SetGlobalPrivacyControl(ref x) => Some(Command::WebDriver(
+            MarionetteWebDriverCommand::SetGlobalPrivacyControl(x.to_marionette()?),
         )),
         Refresh => Some(Command::WebDriver(MarionetteWebDriverCommand::Refresh)),
         ReleaseActions => Some(Command::WebDriver(
@@ -1877,6 +1887,12 @@ impl ToMarionette<MarionetteWindowRect> for WindowRectParameters {
             width: self.width,
             height: self.height,
         })
+    }
+}
+
+impl ToMarionette<MarionetteGlobalPrivacyControlParameters> for GlobalPrivacyControlParameters {
+    fn to_marionette(&self) -> WebDriverResult<MarionetteGlobalPrivacyControlParameters> {
+        Ok(MarionetteGlobalPrivacyControlParameters { gpc: self.gpc })
     }
 }
 

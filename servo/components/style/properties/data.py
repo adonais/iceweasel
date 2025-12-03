@@ -551,7 +551,7 @@ class Longhand(Property):
             "SVGStrokeDashArray",
             "SVGWidth",
             "TextDecorationLength",
-            "TextDecorationTrim",
+            "TextDecorationInset",
             "TextIndent",
             "WordSpacing",
         }
@@ -568,9 +568,6 @@ class Longhand(Property):
             return False
         if self.predefined_type:
             return self.predefined_type in {
-                "AlignContent",
-                "AlignItems",
-                "AlignSelf",
                 "Appearance",
                 "AnimationComposition",
                 "AnimationDirection",
@@ -611,9 +608,10 @@ class Longhand(Property):
                 "PositionArea",
                 "PositionAreaKeyword",
                 "PositionProperty",
-                "JustifyContent",
+                "ContentDistribution",
+                "ItemPlacement",
+                "SelfAlignment",
                 "JustifyItems",
-                "JustifySelf",
                 "LineBreak",
                 "LineClamp",
                 "MasonryAutoFlow",

@@ -21,7 +21,6 @@
 #include "ScriptErrorHelper.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/EventDispatcher.h"
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/Services.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/DOMStringListBinding.h"

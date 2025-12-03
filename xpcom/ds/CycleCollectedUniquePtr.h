@@ -7,7 +7,6 @@
 #ifndef mozilla_CycleCollectedUniquePtr_h__
 #define mozilla_CycleCollectedUniquePtr_h__
 
-#include "mozilla/UniquePtr.h"
 #include "nsCycleCollectionContainerParticipant.h"
 
 namespace mozilla {

@@ -9,7 +9,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "mozilla/Maybe.h"
 #include "nsError.h"
 
 struct BandwidthVec;

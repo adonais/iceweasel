@@ -123,7 +123,7 @@ Preferences.addAll([
   { id: "browser.display.document_color_use", type: "int" },
 
   // Fonts
-  { id: "font.language.group", type: "wstring" },
+  { id: "font.language.group", type: "string" },
 
   // Languages
   { id: "intl.regional_prefs.use_os_locales", type: "bool" },
@@ -1123,16 +1123,24 @@ let SETTINGS_CONFIG = {
       },
       {
         id: "windowsLaunchOnLoginDisabledBox",
-        control: "moz-box-item",
-        l10nId: "windows-launch-on-login-disabled",
+        control: "moz-message-bar",
         options: [
           {
-            control: "a",
+            control: "span",
+            l10nId: "windows-launch-on-login-disabled",
             controlAttrs: {
-              "data-l10n-name": "startup-link",
-              href: "ms-settings:startupapps",
-              _target: "self",
+              slot: "message",
             },
+            options: [
+              {
+                control: "a",
+                controlAttrs: {
+                  "data-l10n-name": "startup-link",
+                  href: "ms-settings:startupapps",
+                  target: "_self",
+                },
+              },
+            ],
           },
         ],
       },
@@ -1476,6 +1484,87 @@ let SETTINGS_CONFIG = {
       {
         id: "allowHWAccel",
         l10nId: "performance-allow-hw-accel",
+      },
+    ],
+  },
+  ipprotection: {
+    l10nId: "ip-protection-description",
+    headingLevel: 2,
+    // TODO: Replace support url with finalized link (Bug 1993266)
+    supportPage: "ip-protection",
+    items: [
+      {
+        id: "ipProtectionExceptionsMode",
+        l10nId: "ip-protection-site-exceptions",
+        control: "moz-radio-group",
+        controlAttrs: {
+          ".headingLevel": 3,
+        },
+        options: [
+          {
+            id: "ipProtectionExceptionRadioAll",
+            value: "all",
+            l10nId: "ip-protection-site-exceptions-all-sites-radio",
+            items: [
+              {
+                id: "ipProtectionExceptionAllListButton",
+                l10nId: "ip-protection-site-exceptions-all-sites-button",
+                control: "moz-box-button",
+              },
+            ],
+          },
+          {
+            id: "ipProtectionExceptionRadioSelect",
+            value: "select",
+            l10nId: "ip-protection-site-exceptions-select-sites-radio",
+            items: [
+              {
+                id: "ipProtectionExceptionSelectListButton",
+                l10nId: "ip-protection-site-exceptions-select-sites-button",
+                control: "moz-box-button",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "ipProtectionAutoStart",
+        l10nId: "ip-protection-autostart",
+        control: "moz-fieldset",
+        items: [
+          {
+            id: "ipProtectionAutoStartCheckbox",
+            l10nId: "ip-protection-autostart-checkbox",
+            control: "moz-checkbox",
+          },
+          {
+            id: "ipProtectionAutoStartPrivateCheckbox",
+            l10nId: "ip-protection-autostart-private-checkbox",
+            control: "moz-checkbox",
+          },
+        ],
+      },
+      {
+        id: "ipProtectionAdditionalLinks",
+        control: "moz-box-group",
+        options: [
+          {
+            id: "ipProtectionSupportLink",
+            l10nId: "ip-protection-contact-support-link",
+            control: "moz-box-link",
+            controlAttrs: {
+              href: "https://support.mozilla.org/questions/new/mozilla-vpn/form",
+            },
+          },
+          {
+            id: "ipProtectionUpgradeLink",
+            l10nId: "ip-protection-upgrade-link",
+            control: "moz-box-link",
+            controlAttrs: {
+              href: "https://www.mozilla.org/products/vpn/",
+            },
+          },
+        ],
       },
     ],
   },
@@ -3297,10 +3386,9 @@ var gMainPane = {
    * Populates the default font list in UI.
    */
   _rebuildFonts() {
-    var langGroupPref = Preferences.get("font.language.group");
-    var isSerif =
-      this._readDefaultFontTypeForLanguage(langGroupPref.value) == "serif";
-    this._selectDefaultLanguageGroup(langGroupPref.value, isSerif);
+    var langGroup = Services.locale.fontLanguageGroup;
+    var isSerif = this._readDefaultFontTypeForLanguage(langGroup) == "serif";
+    this._selectDefaultLanguageGroup(langGroup, isSerif);
   },
 
   /**

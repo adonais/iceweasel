@@ -13,6 +13,7 @@
 
 #include <algorithm>
 
+#include "AnchorPositioningUtils.h"
 #include "mozilla/AbsoluteContainingBlock.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/ComputedStyle.h"
@@ -219,7 +220,7 @@ void nsContainerFrame::SafelyDestroyFrameListProp(
     if (MOZ_LIKELY(frame)) {
       frame->Destroy(aContext);
     } else {
-      Unused << TakeProperty(aProp);
+      (void)TakeProperty(aProp);
       frameList->Delete(aPresShell);
       return;
     }
@@ -347,13 +348,13 @@ void nsContainerFrame::GetChildLists(nsTArray<ChildList>* aLists) const {
     } else if (aProp == OverflowContainersProperty()) {
       MOZ_ASSERT(CanContainOverflowContainers(),
                  "found unexpected OverflowContainersProperty");
-      Unused << this;  // silence clang -Wunused-lambda-capture in opt builds
+      (void)this;  // silence clang -Wunused-lambda-capture in opt builds
       reinterpret_cast<L>(aValue)->AppendIfNonempty(
           aLists, FrameChildListID::OverflowContainers);
     } else if (aProp == ExcessOverflowContainersProperty()) {
       MOZ_ASSERT(CanContainOverflowContainers(),
                  "found unexpected ExcessOverflowContainersProperty");
-      Unused << this;  // silence clang -Wunused-lambda-capture in opt builds
+      (void)this;  // silence clang -Wunused-lambda-capture in opt builds
       reinterpret_cast<L>(aValue)->AppendIfNonempty(
           aLists, FrameChildListID::ExcessOverflowContainers);
     } else if (aProp == BackdropProperty()) {
@@ -970,6 +971,35 @@ void nsContainerFrame::FinishReflowChild(nsIFrame* aKidFrame,
   aKidFrame->DidReflow(aPresContext, aReflowInput);
 }
 
+void nsContainerFrame::FinishReflowWithAbsoluteFrames(
+    nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
+    const ReflowInput& aReflowInput, nsReflowStatus& aStatus) {
+  ReflowAbsoluteFrames(aPresContext, aDesiredSize, aReflowInput, aStatus);
+  FinishAndStoreOverflow(&aDesiredSize, aReflowInput.mStyleDisplay);
+}
+
+void nsContainerFrame::ReflowAbsoluteFrames(nsPresContext* aPresContext,
+                                            ReflowOutput& aDesiredSize,
+                                            const ReflowInput& aReflowInput,
+                                            nsReflowStatus& aStatus) {
+  if (HasAbsolutelyPositionedChildren()) {
+    AbsoluteContainingBlock* absoluteContainer = GetAbsoluteContainingBlock();
+
+    // The containing block for the abs pos kids is formed by our padding edge.
+    nsMargin usedBorder = GetUsedBorder();
+    nsRect containingBlock(nsPoint{}, aDesiredSize.PhysicalSize());
+    containingBlock.Deflate(usedBorder);
+    // XXX: To optimize the performance, set the flags only when the CB width or
+    // height actually changes.
+    AbsPosReflowFlags flags{AbsPosReflowFlag::AllowFragmentation,
+                            AbsPosReflowFlag::CBWidthChanged,
+                            AbsPosReflowFlag::CBHeightChanged};
+    absoluteContainer->Reflow(this, aPresContext, aReflowInput, aStatus,
+                              containingBlock, flags,
+                              &aDesiredSize.mOverflowAreas);
+  }
+}
+
 void nsContainerFrame::ReflowOverflowContainerChildren(
     nsPresContext* aPresContext, const ReflowInput& aReflowInput,
     OverflowAreas& aOverflowRects, ReflowChildFlags aFlags,
@@ -1131,7 +1161,7 @@ bool nsContainerFrame::TryRemoveFrame(FrameListPropertyDescriptor aProp,
   if (list && list->StartRemoveFrame(aChildToRemove)) {
     // aChildToRemove *may* have been removed from this list.
     if (list->IsEmpty()) {
-      Unused << TakeProperty(aProp);
+      (void)TakeProperty(aProp);
       list->Delete(PresShell());
     }
     return true;
@@ -2073,12 +2103,24 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
           ? AnchorResolvedSizeHelper::Overridden(*aSizeOverrides.mStyleISize)
           : stylePos->ISize(aWM, anchorResolutionParams);
 
-  // TODO(dholbert): if styleBSize is 'stretch' here, we should probably
-  // resolve it like we do in nsIFrame::ComputeSize. See bug 1937275.
-  const auto styleBSize =
-      aSizeOverrides.mStyleBSize
-          ? AnchorResolvedSizeHelper::Overridden(*aSizeOverrides.mStyleBSize)
-          : stylePos->BSize(aWM, anchorResolutionParams);
+  const auto styleBSize = [&] {
+    auto styleBSizeConsideringOverrides =
+        aSizeOverrides.mStyleBSize
+            ? AnchorResolvedSizeHelper::Overridden(*aSizeOverrides.mStyleBSize)
+            : stylePos->BSize(aWM, anchorResolutionParams);
+    if (styleBSizeConsideringOverrides->BehavesLikeStretchOnBlockAxis() &&
+        aCBSize.BSize(aWM) != NS_UNCONSTRAINEDSIZE) {
+      // We've got a 'stretch' BSize; resolve it to a length:
+      nscoord stretchBSize = nsLayoutUtils::ComputeStretchBSize(
+          aCBSize.BSize(aWM), aMargin.BSize(aWM), aBorderPadding.BSize(aWM),
+          stylePos->mBoxSizing);
+      // Note(dshin): This allocates.
+      return AnchorResolvedSizeHelper::LengthPercentage(
+          LengthPercentage::FromAppUnits(stretchBSize));
+    }
+    return styleBSizeConsideringOverrides;
+  }();
+
   const auto& aspectRatio =
       aSizeOverrides.mAspectRatio ? *aSizeOverrides.mAspectRatio : aAspectRatio;
 
@@ -2601,7 +2643,9 @@ StyleAlignFlags nsContainerFrame::CSSAlignmentForAbsPosChild(
 
 StyleAlignFlags
 nsContainerFrame::CSSAlignmentForAbsPosChildWithinContainingBlock(
-    const ReflowInput& aChildRI, LogicalAxis aLogicalAxis) const {
+    const ReflowInput& aChildRI, LogicalAxis aLogicalAxis,
+    const StylePositionArea& aResolvedPositionArea,
+    const LogicalSize& aCBSize) const {
   MOZ_ASSERT(aChildRI.mFrame->IsAbsolutelyPositioned(),
              "This method should only be called for abspos children");
   // When determining the position of absolutely-positioned boxes,
@@ -2610,6 +2654,45 @@ nsContainerFrame::CSSAlignmentForAbsPosChildWithinContainingBlock(
       (aLogicalAxis == LogicalAxis::Inline)
           ? aChildRI.mStylePosition->UsedJustifySelf(nullptr)._0
           : aChildRI.mStylePosition->UsedAlignSelf(nullptr)._0;
+
+  // Check if position-area is set - if so, it determines the default alignment
+  // https://drafts.csswg.org/css-anchor-position/#position-area-alignment
+  if (!aResolvedPositionArea.IsNone() && alignment == StyleAlignFlags::NORMAL) {
+    const WritingMode cbWM = GetWritingMode();
+    const auto anchorResolutionParams = AnchorPosResolutionParams::From(
+        &aChildRI, /* aIgnorePositionArea = */ true);
+    const auto anchorOffsetResolutionParams =
+        AnchorPosOffsetResolutionParams::ExplicitCBFrameSize(
+            anchorResolutionParams, &aCBSize);
+
+    // Check if we have exactly one auto inset in this axis (IMCB situation)
+    const auto singleAutoInset =
+        aChildRI.mStylePosition->GetSingleAutoInsetInAxis(
+            aLogicalAxis, cbWM, anchorOffsetResolutionParams);
+
+    // Check if exactly one inset in the axis is auto
+    // https://drafts.csswg.org/css-anchor-position/#position-area-alignment
+    // "However, if only one inset property in the relevant axis is auto, the
+    // default alignment is instead towards the edge with the non-auto inset;
+    // and this is an unsafe alignment."
+    if (singleAutoInset.isSome()) {
+      const LogicalSide startSide = aLogicalAxis == LogicalAxis::Inline
+                                        ? LogicalSide::IStart
+                                        : LogicalSide::BStart;
+      const mozilla::Side autoSide = *singleAutoInset;
+      const mozilla::Side startPhysicalSide = cbWM.PhysicalSide(startSide);
+      // Exactly one inset is auto - align toward the non-auto edge, unsafely
+      alignment = (autoSide == startPhysicalSide) ? StyleAlignFlags::END
+                                                  : StyleAlignFlags::START;
+      alignment |= StyleAlignFlags::UNSAFE;
+    } else {
+      auto keyword = aLogicalAxis == LogicalAxis::Inline
+                         ? aResolvedPositionArea.first
+                         : aResolvedPositionArea.second;
+      // Use normal position-area alignment
+      Servo_ResolvePositionAreaSelfAlignment(&keyword, &alignment);
+    }
+  }
 
   return MapCSSAlignment(alignment, aChildRI, aLogicalAxis, GetWritingMode());
 }

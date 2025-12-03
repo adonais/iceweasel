@@ -354,6 +354,7 @@ support-files = [
 
 ["browser_urlQueryStringStripping.js"]
 support-files = ["file_stripping.html"]
+skip-if = ["opt && verify-standalone"]
 
 ["browser_urlQueryStringStrippingWithEncoding.js"]
 support-files = ["file_stripping.html"]

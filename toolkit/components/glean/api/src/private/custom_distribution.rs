@@ -199,7 +199,9 @@ impl CustomDistribution for CustomDistributionMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<DistributionData> for CustomDistributionMetric {
+impl glean::TestGetValue for CustomDistributionMetric {
+    type Output = DistributionData;
+
     pub fn test_get_value(&self, ping_name: Option<String>) -> Option<DistributionData> {
         match self {
             CustomDistributionMetric::Parent { inner, .. } => inner.test_get_value(ping_name),

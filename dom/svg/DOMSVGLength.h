@@ -9,7 +9,6 @@
 
 #include "DOMSVGLengthList.h"
 #include "SVGLength.h"
-#include "mozilla/Attributes.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
 #include "nsTArray.h"

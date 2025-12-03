@@ -136,7 +136,7 @@ void BaseMediaResource::SetLoadInBackground(bool aLoadInBackground) {
     } else {
       loadFlags &= ~nsIRequest::LOAD_BACKGROUND;
     }
-    Unused << NS_WARN_IF(NS_FAILED(ModifyLoadFlags(loadFlags)));
+    (void)NS_WARN_IF(NS_FAILED(ModifyLoadFlags(loadFlags)));
   }
 }
 

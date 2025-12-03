@@ -18,7 +18,6 @@
 #include "nsStructuredCloneContainer.h"
 #include "nsStubMutationObserver.h"
 
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 
 class nsSHEntry;
@@ -84,8 +83,6 @@ struct SHEntrySharedState {
   uint32_t mCacheKey = 0;
   bool mIsFrameNavigation = false;
   bool mSaveLayoutState = true;
-
-  RefPtr<nsStructuredCloneContainer> mNavigationState;
 
  protected:
   static uint64_t GenerateId();

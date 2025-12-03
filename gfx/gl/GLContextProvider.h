@@ -6,7 +6,7 @@
 #ifndef GLCONTEXTPROVIDER_H_
 #define GLCONTEXTPROVIDER_H_
 
-#include "mozilla/AlreadyAddRefed.h"  // Used in GLContextProviderImpl.h
+#include "mozilla/AlreadyAddRefed.h"
 
 #include "GLContextTypes.h"
 #include "SurfaceTypes.h"
@@ -26,6 +26,8 @@ namespace gl {
 
 // Null is always there
 #define GL_CONTEXT_PROVIDER_NAME GLContextProviderNull
+
+// This header uses `already_AddRefed`.
 #include "GLContextProviderImpl.h"
 #undef GL_CONTEXT_PROVIDER_NAME
 

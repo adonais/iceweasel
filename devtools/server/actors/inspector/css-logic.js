@@ -939,7 +939,7 @@ class CssSheet {
    * DOMException (Bug 625013). This wrapper will return an empty array instead.
    *
    * @return {Array} array of css rules.
-   **/
+   */
   getCssRules() {
     try {
       return this.domSheet.cssRules;

@@ -37,9 +37,9 @@
  * This macro can also be used outside of conditions just to issue a warning,
  * like so:
  *
- *   Unused << NS_WARN_IF(NS_FAILED(FnWithSideEffects());
+ *   (void)NS_WARN_IF(NS_FAILED(FnWithSideEffects());
  *
- * (The |Unused <<| is necessary because of the [[nodiscard]] annotation.)
+ * (The |(void)| is necessary because of the [[nodiscard]] annotation.)
  *
  * However, note that the argument to this macro is evaluated in all builds. If
  * you just want a warning assertion, it is better to use NS_WARNING_ASSERTION

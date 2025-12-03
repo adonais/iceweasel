@@ -31,6 +31,7 @@ use crate::logical_geometry::{PhysicalAxis, PhysicalSide};
 use crate::values::animated::{
     Animate, Context as AnimatedContext, Procedure, ToAnimatedValue, ToAnimatedZero,
 };
+use crate::values::computed::position::TryTacticAdjustment;
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::calc::{CalcUnits, PositivePercentageBasis};
 #[cfg(feature = "gecko")]
@@ -449,16 +450,6 @@ impl LengthPercentage {
         }
     }
 
-    /// Returns true if the computed value is absolute 0 or 0%.
-    #[inline]
-    pub fn is_definitely_zero(&self) -> bool {
-        match self.unpack() {
-            Unpacked::Length(l) => l.px() == 0.0,
-            Unpacked::Percentage(p) => p.0 == 0.0,
-            Unpacked::Calc(..) => false,
-        }
-    }
-
     /// Resolves the percentage.
     #[inline]
     pub fn resolve(&self, basis: Length) -> Length {
@@ -657,16 +648,21 @@ impl Zero for LengthPercentage {
         LengthPercentage::new_length(Length::zero())
     }
 
+    /// Returns true if the computed value is absolute 0 or 0%.
     #[inline]
     fn is_zero(&self) -> bool {
-        self.is_definitely_zero()
+        match self.unpack() {
+            Unpacked::Length(l) => l.px() == 0.0,
+            Unpacked::Percentage(p) => p.0 == 0.0,
+            Unpacked::Calc(..) => false,
+        }
     }
 }
 
 impl ZeroNoPercent for LengthPercentage {
     #[inline]
     fn is_zero_no_percent(&self) -> bool {
-        self.is_definitely_zero() && !self.has_percentage()
+        self.to_length().is_some_and(|l| l.px() == 0.0)
     }
 }
 
@@ -1322,12 +1318,6 @@ impl ToAnimatedValue for NonNegativeLengthPercentage {
 }
 
 impl NonNegativeLengthPercentage {
-    /// Returns true if the computed value is absolute 0 or 0%.
-    #[inline]
-    pub fn is_definitely_zero(&self) -> bool {
-        self.0.is_definitely_zero()
-    }
-
     /// Returns the used value.
     #[inline]
     pub fn to_used_value(&self, containing_length: Au) -> Au {
@@ -1340,5 +1330,31 @@ impl NonNegativeLengthPercentage {
     pub fn maybe_to_used_value(&self, containing_length: Option<Au>) -> Option<Au> {
         let resolved = self.0.maybe_to_used_value(containing_length)?;
         Some(std::cmp::max(resolved, Au(0)))
+    }
+}
+
+impl TryTacticAdjustment for LengthPercentage {
+    fn try_tactic_adjustment(&mut self, old_side: PhysicalSide, new_side: PhysicalSide) {
+        match self.unpack_mut() {
+            UnpackedMut::Calc(calc) => calc.node.try_tactic_adjustment(old_side, new_side),
+            UnpackedMut::Percentage(mut p) => {
+                p.try_tactic_adjustment(old_side, new_side);
+                *self = Self::new_percent(p);
+            },
+            UnpackedMut::Length(..) => {},
+        }
+    }
+}
+
+impl TryTacticAdjustment for CalcNode {
+    fn try_tactic_adjustment(&mut self, old_side: PhysicalSide, new_side: PhysicalSide) {
+        self.visit_depth_first(|node| match node {
+            Self::Leaf(CalcLengthPercentageLeaf::Percentage(p)) => {
+                p.try_tactic_adjustment(old_side, new_side)
+            },
+            Self::Anchor(a) => a.try_tactic_adjustment(old_side, new_side),
+            Self::AnchorSize(a) => a.try_tactic_adjustment(old_side, new_side),
+            _ => {},
+        });
     }
 }

@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_HTMLStyleElement_h
 #define mozilla_dom_HTMLStyleElement_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/LinkStyle.h"
 #include "nsGenericHTMLElement.h"
 #include "nsStubMutationObserver.h"

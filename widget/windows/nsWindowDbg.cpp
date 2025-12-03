@@ -263,7 +263,7 @@ void AppendEnumValueInfo(
 }
 
 bool AppendFlagsInfo(nsCString& str, uint64_t flags,
-                     const nsTArray<EnumValueAndName>& flagsAndNames,
+                     Span<const EnumValueAndName> flagsAndNames,
                      const char* name) {
   if (name != nullptr) {
     str.AppendPrintf("%s=", name);
@@ -483,24 +483,24 @@ void CreateStructParamInfo(nsCString& str, uint64_t value, const char* name,
       GetNameFromAtom(createStruct->lpszClass).getW(), createStruct->x,
       createStruct->y, createStruct->cx, createStruct->cy);
   str.AppendASCII(" ");
-  const static nsTArray<EnumValueAndName> windowStyles = {
-      // these combinations of other flags need to come first
-      VALANDNAME_ENTRY(WS_OVERLAPPEDWINDOW), VALANDNAME_ENTRY(WS_POPUPWINDOW),
-      VALANDNAME_ENTRY(WS_CAPTION),
-      // regular flags
-      VALANDNAME_ENTRY(WS_POPUP), VALANDNAME_ENTRY(WS_CHILD),
-      VALANDNAME_ENTRY(WS_MINIMIZE), VALANDNAME_ENTRY(WS_VISIBLE),
-      VALANDNAME_ENTRY(WS_DISABLED), VALANDNAME_ENTRY(WS_CLIPSIBLINGS),
-      VALANDNAME_ENTRY(WS_CLIPCHILDREN), VALANDNAME_ENTRY(WS_MAXIMIZE),
-      VALANDNAME_ENTRY(WS_BORDER), VALANDNAME_ENTRY(WS_DLGFRAME),
-      VALANDNAME_ENTRY(WS_VSCROLL), VALANDNAME_ENTRY(WS_HSCROLL),
-      VALANDNAME_ENTRY(WS_SYSMENU), VALANDNAME_ENTRY(WS_THICKFRAME),
-      VALANDNAME_ENTRY(WS_GROUP), VALANDNAME_ENTRY(WS_TABSTOP),
-      // zero value needs to come last
-      VALANDNAME_ENTRY(WS_OVERLAPPED)};
+  const static std::array<EnumValueAndName, 20> windowStyles{
+      {// these combinations of other flags need to come first
+       VALANDNAME_ENTRY(WS_OVERLAPPEDWINDOW), VALANDNAME_ENTRY(WS_POPUPWINDOW),
+       VALANDNAME_ENTRY(WS_CAPTION),
+       // regular flags
+       VALANDNAME_ENTRY(WS_POPUP), VALANDNAME_ENTRY(WS_CHILD),
+       VALANDNAME_ENTRY(WS_MINIMIZE), VALANDNAME_ENTRY(WS_VISIBLE),
+       VALANDNAME_ENTRY(WS_DISABLED), VALANDNAME_ENTRY(WS_CLIPSIBLINGS),
+       VALANDNAME_ENTRY(WS_CLIPCHILDREN), VALANDNAME_ENTRY(WS_MAXIMIZE),
+       VALANDNAME_ENTRY(WS_BORDER), VALANDNAME_ENTRY(WS_DLGFRAME),
+       VALANDNAME_ENTRY(WS_VSCROLL), VALANDNAME_ENTRY(WS_HSCROLL),
+       VALANDNAME_ENTRY(WS_SYSMENU), VALANDNAME_ENTRY(WS_THICKFRAME),
+       VALANDNAME_ENTRY(WS_GROUP), VALANDNAME_ENTRY(WS_TABSTOP),
+       // zero value needs to come last
+       VALANDNAME_ENTRY(WS_OVERLAPPED)}};
   AppendFlagsInfo(str, createStruct->style, windowStyles, "style");
   str.AppendASCII(" ");
-  const nsTArray<EnumValueAndName> extendedWindowStyles = {
+  const std::array<EnumValueAndName, 27> extendedWindowStyles{{
       // these combinations of other flags need to come first
       VALANDNAME_ENTRY(WS_EX_OVERLAPPEDWINDOW),
       VALANDNAME_ENTRY(WS_EX_PALETTEWINDOW),
@@ -530,7 +530,7 @@ void CreateStructParamInfo(nsCString& str, uint64_t value, const char* name,
       VALANDNAME_ENTRY(WS_EX_NOACTIVATE),
       VALANDNAME_ENTRY(WS_EX_COMPOSITED),
       VALANDNAME_ENTRY(WS_EX_NOREDIRECTIONBITMAP),
-  };
+  }};
   AppendFlagsInfo(str, createStruct->dwExStyle, extendedWindowStyles,
                   "dwExStyle");
 }
@@ -751,11 +751,15 @@ void VirtualKeyParamInfo(nsCString& result, uint64_t param, const char* name,
 
 void VirtualModifierKeysParamInfo(nsCString& result, uint64_t param,
                                   const char* name, bool /* isPreCall */) {
-  const static nsTArray<EnumValueAndName> virtualKeys{
-      VALANDNAME_ENTRY(MK_CONTROL),  VALANDNAME_ENTRY(MK_LBUTTON),
-      VALANDNAME_ENTRY(MK_MBUTTON),  VALANDNAME_ENTRY(MK_RBUTTON),
-      VALANDNAME_ENTRY(MK_SHIFT),    VALANDNAME_ENTRY(MK_XBUTTON1),
-      VALANDNAME_ENTRY(MK_XBUTTON2), {0, "(none)"}};
+  const static std::array<EnumValueAndName, 8> virtualKeys{
+      {VALANDNAME_ENTRY(MK_CONTROL),
+       VALANDNAME_ENTRY(MK_LBUTTON),
+       VALANDNAME_ENTRY(MK_MBUTTON),
+       VALANDNAME_ENTRY(MK_RBUTTON),
+       VALANDNAME_ENTRY(MK_SHIFT),
+       VALANDNAME_ENTRY(MK_XBUTTON1),
+       VALANDNAME_ENTRY(MK_XBUTTON2),
+       {0, "(none)"}}};
   AppendFlagsInfo(result, param, virtualKeys, name);
 }
 
@@ -1054,17 +1058,22 @@ nsAutoCString WmSizeParamInfo(uint64_t wParam, uint64_t lParam,
   return result;
 }
 
-MOZ_RUNINIT const nsTArray<EnumValueAndName> windowPositionFlags = {
-    VALANDNAME_ENTRY(SWP_DRAWFRAME),  VALANDNAME_ENTRY(SWP_HIDEWINDOW),
-    VALANDNAME_ENTRY(SWP_NOACTIVATE), VALANDNAME_ENTRY(SWP_NOCOPYBITS),
-    VALANDNAME_ENTRY(SWP_NOMOVE),     VALANDNAME_ENTRY(SWP_NOOWNERZORDER),
-    VALANDNAME_ENTRY(SWP_NOREDRAW),   VALANDNAME_ENTRY(SWP_NOSENDCHANGING),
-    VALANDNAME_ENTRY(SWP_NOSIZE),     VALANDNAME_ENTRY(SWP_NOZORDER),
+constexpr std::array<EnumValueAndName, 11> windowPositionFlags{{
+    VALANDNAME_ENTRY(SWP_DRAWFRAME),
+    VALANDNAME_ENTRY(SWP_HIDEWINDOW),
+    VALANDNAME_ENTRY(SWP_NOACTIVATE),
+    VALANDNAME_ENTRY(SWP_NOCOPYBITS),
+    VALANDNAME_ENTRY(SWP_NOMOVE),
+    VALANDNAME_ENTRY(SWP_NOOWNERZORDER),
+    VALANDNAME_ENTRY(SWP_NOREDRAW),
+    VALANDNAME_ENTRY(SWP_NOSENDCHANGING),
+    VALANDNAME_ENTRY(SWP_NOSIZE),
+    VALANDNAME_ENTRY(SWP_NOZORDER),
     VALANDNAME_ENTRY(SWP_SHOWWINDOW),
-};
+}};
 
 static std::unordered_map<uint64_t, const char*> const& HitTestResults() {
-  static const std::unordered_map<uint64_t, const char*> data{
+  static const std::unordered_map<uint64_t, const char*> data{{
       VALANDNAME_ENTRY(HTBORDER),     VALANDNAME_ENTRY(HTBOTTOM),
       VALANDNAME_ENTRY(HTBOTTOMLEFT), VALANDNAME_ENTRY(HTBOTTOMRIGHT),
       VALANDNAME_ENTRY(HTCAPTION),    VALANDNAME_ENTRY(HTCLIENT),
@@ -1078,7 +1087,7 @@ static std::unordered_map<uint64_t, const char*> const& HitTestResults() {
       VALANDNAME_ENTRY(HTTOP),        VALANDNAME_ENTRY(HTTOPLEFT),
       VALANDNAME_ENTRY(HTTOPRIGHT),   VALANDNAME_ENTRY(HTTRANSPARENT),
       VALANDNAME_ENTRY(HTVSCROLL),    VALANDNAME_ENTRY(HTZOOM),
-  };
+  }};
   return data;
 }
 

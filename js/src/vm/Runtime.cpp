@@ -20,6 +20,7 @@
 #include "jsfriendapi.h"
 #include "jsmath.h"
 
+#include "builtin/String.h"
 #include "frontend/CompilationStencil.h"
 #include "frontend/ParserAtom.h"  // frontend::WellKnownParserAtoms
 #include "gc/GC.h"
@@ -149,7 +150,8 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
       stackFormat_(parentRuntime ? js::StackFormat::Default
                                  : js::StackFormat::SpiderMonkey),
       wasmInstances(mutexid::WasmRuntimeInstances),
-      moduleAsyncEvaluatingPostOrder(ASYNC_EVALUATING_POST_ORDER_INIT) {
+      moduleAsyncEvaluatingPostOrder(0),
+      pendingAsyncModuleEvaluations(0) {
   JS_COUNT_CTOR(JSRuntime);
   liveRuntimesCount++;
 
@@ -514,6 +516,13 @@ bool JSRuntime::setDefaultLocale(const char* locale) {
     return false;
   }
 
+#if JS_HAS_INTL_API
+  if (!LocaleHasDefaultCaseMapping(newLocale.get())) {
+    runtimeFuses.ref().defaultLocaleHasDefaultCaseMappingFuse.popFuse(
+        mainContextFromOwnThread());
+  }
+#endif
+
   defaultLocale.ref() = std::move(newLocale);
   return true;
 }
@@ -550,6 +559,13 @@ const char* JSRuntime::getDefaultLocale() {
   while ((p = strchr(lang.get(), '_'))) {
     *p = '-';
   }
+
+#if JS_HAS_INTL_API
+  if (!LocaleHasDefaultCaseMapping(lang.get())) {
+    runtimeFuses.ref().defaultLocaleHasDefaultCaseMappingFuse.popFuse(
+        mainContextFromOwnThread());
+  }
+#endif
 
   defaultLocale.ref() = std::move(lang);
   return defaultLocale.ref().get();

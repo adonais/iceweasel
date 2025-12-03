@@ -3,9 +3,9 @@
 
 "use strict";
 
-/* const { AppConstants } = ChromeUtils.importESModule(
+const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
-); */
+);
 
 const { RemoteSettingsCrashPull } = ChromeUtils.importESModule(
   "resource://gre/modules/RemoteSettingsCrashPull.sys.mjs"
@@ -19,12 +19,11 @@ add_task(function test_pref_value() {
   const prefValue = Services.prefs.getBoolPref(
     "browser.crashReports.crashPull"
   );
-  // Disabled by default until further notice
-  /* if (AppConstants.NIGHTLY_BUILD) {
+  if (AppConstants.NIGHTLY_BUILD) {
     Assert.ok(prefValue, "RemoteSettingsCrashPull pref enabled on nightly");
-  } else { */
-  Assert.ok(!prefValue, "RemoteSettingsCrashPull pref disabled on nightly");
-  /* } */
+  } else {
+    Assert.ok(!prefValue, "RemoteSettingsCrashPull pref disabled on nightly");
+  }
 });
 
 add_task(function test_pref_disabled() {

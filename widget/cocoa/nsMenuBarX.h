@@ -8,7 +8,6 @@
 
 #import <Cocoa/Cocoa.h>
 
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 
 #include "nsISupports.h"

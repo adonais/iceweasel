@@ -329,6 +329,9 @@ newtab-custom-recent-subtitle = Úrval af nýlegum síðum og efni
 newtab-custom-weather-toggle =
     .label = Veður
     .description = Veðurspá dagsins í skyndi
+newtab-custom-trending-search-toggle =
+    .label = Vinsælar leitir
+    .description = Vinsæl og algeng leitarefni
 newtab-custom-widget-weather-toggle =
     .label = Veður
 newtab-custom-widget-trending-search-toggle =
@@ -354,6 +357,7 @@ newtab-wallpaper-custom-color = Veldu lit
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Myndin er stærri en takmörkin á stærð skráa { $file_size }MB. Reyndu að senda inn minni skrá.
+newtab-wallpaper-error-upload-file-type = Ekki var hægt að senda inn skrána þína. Reyndu aftur með annarri myndskrá.
 newtab-wallpaper-error-file-type = Ekki var hægt að senda inn skrána þína. Reyndu aftur með annarri skráartegund.
 newtab-wallpaper-light-red-panda = Rauð panda
 newtab-wallpaper-light-mountain = Hvítt fjall
@@ -403,7 +407,7 @@ newtab-wallpaper-abstract-purple-green = Fjólublár og grænn ljósleitur litst
 newtab-wallpaper-abstract-blue-purple-waves = Blá og fjólublá bylgjuform
 newtab-wallpaper-abstract-black-waves = Svört bylgjuform
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Ljósmyndir
 newtab-wallpaper-beach-at-sunrise = Strönd við sólarupprás
@@ -432,6 +436,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -474,8 +482,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Skipta yfir í Fahrenh
 newtab-weather-menu-change-temperature-units-celsius = Skipta yfir í Selsíus
 newtab-weather-menu-hide-weather = Fela veður á nýjum flipa
 newtab-weather-menu-learn-more = Kanna nánar
+newtab-weather-menu-detect-my-location = Greina staðsetningu mína
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Veðurgögn eru ekki tiltæk í augnablikinu.
+newtab-weather-opt-in-see-weather = Viltu sjá veðrið á staðnum þínum?
+newtab-weather-opt-in-not-now =
+    .label = Ekki núna
+newtab-weather-opt-in-yes =
+    .label = Já
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York borg
 
 ## Topic Labels
 
@@ -526,6 +542,7 @@ newtab-section-following-button = Fylgist með
 newtab-section-unfollow-button = Hætta að fylgjast með
 # A modal may appear next to the Follow button, directing users to try out the feature
 newtab-section-follow-highlight-title = Fínstilltu streymið þitt
+newtab-section-follow-highlight-subtitle = Fylgstu með áhugaefnum þínum til að sjá meira af því sem þér líkar.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -554,15 +571,21 @@ newtab-section-mangage-topics-followed-topics-empty-state = Þú hefur ekki fylg
 newtab-section-mangage-topics-blocked-topics = Lokað á
 newtab-section-mangage-topics-blocked-topics-empty-state = Þú hefur ekki lokað á neitt umfjöllunarefni ennþá.
 newtab-custom-wallpaper-title = Sérsniðnir bakgrunnar eru hér
+# 'Make firefox yours" means to customize or personalize
+newtab-custom-wallpaper-subtitle = Sendu inn þinn eigin bakgrunn eða veldu sérsniðinn lit til að gera { -brand-product-name } að þínu.
 newtab-custom-wallpaper-cta = Prófaðu það
 
 ## Strings for new user activation custom wallpaper highlight
 
+newtab-new-user-custom-wallpaper-title = Veldu bakgrunn til að gera { -brand-product-name } að þínu
+newtab-new-user-custom-wallpaper-subtitle = Láttu nýja flipa verða heimilislegri með sérsniðnum bakgrunnum og litum.
 newtab-new-user-custom-wallpaper-cta = Prófa það núna
 
 ## Strings for download mobile highlight
 
 newtab-download-mobile-highlight-title = Sækja { -brand-product-name } fyrir farsíma
+# "Scan the code" refers to scanning the QR code that appears above the body text that leads to Firefox for mobile download.
+newtab-download-mobile-highlight-body-variant-a = Skannaðu kóðann til að vafra á öruggan hátt.
 newtab-download-mobile-highlight-body-variant-b = Taktu upp þráðinn þar sem frá var horfið þegar þú samstillir flipa, lykilorð og fleira.
 newtab-download-mobile-highlight-body-variant-c = Vissir þú að þú getur tekið { -brand-product-name } með þér hvert sem er? Sami vafrinn, í vasanum þínum.
 newtab-download-mobile-highlight-image =
@@ -571,6 +594,7 @@ newtab-download-mobile-highlight-image =
 ## Strings for shortcuts highlight
 
 newtab-shortcuts-highlight-title = Eftirlætin þín innan seilingar
+newtab-shortcuts-highlight-subtitle = Bættu við flýtileið til að hafa uppáhaldsvefina þína í eins-smells fjarlægð.
 
 ## Strings for reporting ads and content
 
@@ -608,11 +632,17 @@ newtab-trending-searches-title = Vinsælar leitir
 
 ## Strings for task / to-do list productivity widget
 
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Möguleikarnir eru endalausir. Bættu við einum í viðbót.
 # A simple label next to the default list name letting users know this is a new / beta feature
 newtab-widget-lists-label-new =
     .label = Nýtt
 newtab-widget-lists-label-beta =
     .label = Beta-prófunarútgáfa
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Lokið ({ $number })
 newtab-widget-task-list-menu-copy = Afrita
 newtab-widget-lists-menu-edit = Breyta heiti á lista
 newtab-widget-lists-menu-create = Búa til nýjan lista
@@ -622,11 +652,17 @@ newtab-widget-lists-menu-hide = Fela alla lista
 newtab-widget-lists-menu-learn-more = Frekari upplýsingar
 newtab-widget-lists-input-add-an-item =
     .placeholder = Bæta við atriði
+newtab-widget-lists-input-error = Settu inn texta til að bæta við atriði.
 newtab-widget-lists-input-menu-open-link = Opna tengil
 newtab-widget-lists-input-menu-move-up = Færa upp
 newtab-widget-lists-input-menu-move-down = Færa niður
 newtab-widget-lists-input-menu-delete = Eyða
 newtab-widget-lists-input-menu-edit = Breyta
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Búa til nýjan lista
+newtab-widget-lists-name-label-default =
+    .label = Verkefnalisti
 newtab-widget-lists-name-placeholder-default =
     .placeholder = Verkefnalisti
 # The placeholder value of the name field for a newly created list
@@ -644,10 +680,6 @@ newtab-widget-timer-mode-focus =
     .label = Einbeiting
 newtab-widget-timer-mode-break =
     .label = Hlé
-newtab-widget-timer-play =
-    .title = Spila
-newtab-widget-timer-pause =
-    .title = Í bið
 newtab-widget-timer-label-play =
     .label = Spila
 newtab-widget-timer-label-pause =

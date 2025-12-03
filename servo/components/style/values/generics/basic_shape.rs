@@ -8,12 +8,16 @@
 use crate::values::animated::{lists, Animate, Procedure, ToAnimatedZero};
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::border::GenericBorderRadius;
-use crate::values::generics::position::GenericPositionOrAuto;
+use crate::values::generics::position::{GenericPosition, GenericPositionOrAuto};
 use crate::values::generics::rect::Rect;
 use crate::values::specified::svg_path::{PathCommand, SVGPathData};
 use crate::Zero;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
+
+/// TODO(bug 1982941): Replace with GenericPosition directly if ShapePosition is under utilized.
+/// A generic value for `<position>` in basic_shape.
+pub type ShapePosition<LengthPercentage> = GenericPosition<LengthPercentage, LengthPercentage>;
 
 /// <https://drafts.fxtf.org/css-masking-1/#typedef-geometry-box>
 #[allow(missing_docs)]
@@ -32,8 +36,10 @@ use style_traits::{CssWriter, ToCss};
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(u8)]
+#[typed_value(derive_fields)]
 pub enum ShapeGeometryBox {
     /// Depending on which kind of element this style value applied on, the
     /// default value of the reference-box can be different.  For an HTML
@@ -83,6 +89,7 @@ fn is_default_box_for_clip_path(b: &ShapeGeometryBox) -> bool {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(u8)]
 pub enum ShapeBox {
@@ -117,11 +124,17 @@ impl Default for ShapeBox {
 )]
 #[animation(no_bound(U))]
 #[repr(u8)]
+#[typed_value(derive_fields)]
 pub enum GenericClipPath<BasicShape, U> {
     #[animation(error)]
     None,
     #[animation(error)]
+    // XXX This will likely change to skip since it seems Typed OM Level 1
+    // won't be updated to cover this case even though there's some preparation
+    // in WPT tests for this.
+    #[typed_value(todo)]
     Url(U),
+    #[typed_value(skip)]
     Shape(
         Box<BasicShape>,
         #[css(skip_if = "is_default_box_for_clip_path")] ShapeGeometryBox,
@@ -677,6 +690,7 @@ impl<Angle, LengthPercentage> ToCss for Shape<Angle, LengthPercentage>
 where
     Angle: ToCss + Zero,
     LengthPercentage: PartialEq + ToCss,
+    ShapePosition<LengthPercentage>: ToCss,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -693,11 +707,17 @@ where
             dest.write_char(' ')?;
         }
         dest.write_str("from ")?;
-        match self.commands[0] {
+        match &self.commands[0] {
             ShapeCommand::Move {
-                by_to: _,
-                ref point,
-            } => point.to_css(dest)?,
+                point: CommandEndPoint::ToPosition(pos),
+            } => {
+                pos.horizontal.to_css(dest)?;
+                dest.write_char(' ')?;
+                pos.vertical.to_css(dest)?
+            },
+            ShapeCommand::Move {
+                point: CommandEndPoint::ByCoordinate(coord),
+            } => coord.to_css(dest)?,
             _ => unreachable!("The first command must be move"),
         }
         dest.write_str(", ")?;
@@ -737,13 +757,11 @@ where
 pub enum GenericShapeCommand<Angle, LengthPercentage> {
     /// The move command.
     Move {
-        by_to: ByTo,
-        point: CoordinatePair<LengthPercentage>,
+        point: CommandEndPoint<LengthPercentage>,
     },
     /// The line command.
     Line {
-        by_to: ByTo,
-        point: CoordinatePair<LengthPercentage>,
+        point: CommandEndPoint<LengthPercentage>,
     },
     /// The hline command.
     HLine { by_to: ByTo, x: LengthPercentage },
@@ -751,32 +769,27 @@ pub enum GenericShapeCommand<Angle, LengthPercentage> {
     VLine { by_to: ByTo, y: LengthPercentage },
     /// The cubic Bézier curve command.
     CubicCurve {
-        by_to: ByTo,
-        point: CoordinatePair<LengthPercentage>,
-        control1: CoordinatePair<LengthPercentage>,
-        control2: CoordinatePair<LengthPercentage>,
+        point: CommandEndPoint<LengthPercentage>,
+        control1: ControlPoint<LengthPercentage>,
+        control2: ControlPoint<LengthPercentage>,
     },
     /// The quadratic Bézier curve command.
     QuadCurve {
-        by_to: ByTo,
-        point: CoordinatePair<LengthPercentage>,
-        control1: CoordinatePair<LengthPercentage>,
+        point: CommandEndPoint<LengthPercentage>,
+        control1: ControlPoint<LengthPercentage>,
     },
     /// The smooth command.
     SmoothCubic {
-        by_to: ByTo,
-        point: CoordinatePair<LengthPercentage>,
-        control2: CoordinatePair<LengthPercentage>,
+        point: CommandEndPoint<LengthPercentage>,
+        control2: ControlPoint<LengthPercentage>,
     },
     /// The smooth quadratic Bézier curve command.
     SmoothQuad {
-        by_to: ByTo,
-        point: CoordinatePair<LengthPercentage>,
+        point: CommandEndPoint<LengthPercentage>,
     },
     /// The arc command.
     Arc {
-        by_to: ByTo,
-        point: CoordinatePair<LengthPercentage>,
+        point: CommandEndPoint<LengthPercentage>,
         radii: CoordinatePair<LengthPercentage>,
         arc_sweep: ArcSweep,
         arc_size: ArcSize,
@@ -792,6 +805,7 @@ impl<Angle, LengthPercentage> ToCss for ShapeCommand<Angle, LengthPercentage>
 where
     Angle: ToCss + Zero,
     LengthPercentage: PartialEq + ToCss,
+    ShapePosition<LengthPercentage>: ToCss,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -799,16 +813,12 @@ where
     {
         use self::ShapeCommand::*;
         match *self {
-            Move { by_to, ref point } => {
+            Move { ref point } => {
                 dest.write_str("move ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 point.to_css(dest)
             },
-            Line { by_to, ref point } => {
+            Line { ref point } => {
                 dest.write_str("line ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 point.to_css(dest)
             },
             HLine { by_to, ref x } => {
@@ -824,52 +834,42 @@ where
                 y.to_css(dest)
             },
             CubicCurve {
-                by_to,
                 ref point,
                 ref control1,
                 ref control2,
             } => {
                 dest.write_str("curve ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 point.to_css(dest)?;
-                dest.write_str(" via ")?;
-                control1.to_css(dest)?;
+                dest.write_str(" with ")?;
+                control1.to_css(dest, point.is_abs())?;
                 dest.write_char(' ')?;
-                control2.to_css(dest)
+                dest.write_char('/')?;
+                dest.write_char(' ')?;
+                control2.to_css(dest, point.is_abs())
             },
             QuadCurve {
-                by_to,
                 ref point,
                 ref control1,
             } => {
                 dest.write_str("curve ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 point.to_css(dest)?;
-                dest.write_str(" via ")?;
-                control1.to_css(dest)
+                dest.write_str(" with ")?;
+                control1.to_css(dest, point.is_abs())
             },
             SmoothCubic {
-                by_to,
                 ref point,
                 ref control2,
             } => {
                 dest.write_str("smooth ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 point.to_css(dest)?;
-                dest.write_str(" via ")?;
-                control2.to_css(dest)
+                dest.write_str(" with ")?;
+                control2.to_css(dest, point.is_abs())
             },
-            SmoothQuad { by_to, ref point } => {
+            SmoothQuad { ref point } => {
                 dest.write_str("smooth ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 point.to_css(dest)
             },
             Arc {
-                by_to,
                 ref point,
                 ref radii,
                 arc_sweep,
@@ -877,8 +877,6 @@ where
                 ref rotate,
             } => {
                 dest.write_str("arc ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 point.to_css(dest)?;
                 dest.write_str(" of ")?;
                 radii.x.to_css(dest)?;
@@ -953,6 +951,62 @@ impl ByTo {
     }
 }
 
+/// Defines the end point of the command, which can be specified in absolute or relative coordinates,
+/// determined by their "to" or "by" components respectively.
+/// https://drafts.csswg.org/css-shapes/#typedef-shape-command-end-point
+#[allow(missing_docs)]
+#[derive(
+    Animate,
+    Clone,
+    Copy,
+    ComputeSquaredDistance,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C, u8)]
+pub enum CommandEndPoint<LengthPercentage> {
+    ToPosition(ShapePosition<LengthPercentage>),
+    ByCoordinate(CoordinatePair<LengthPercentage>),
+}
+
+impl<LengthPercentage> CommandEndPoint<LengthPercentage> {
+    /// Return true if it is absolute, i.e. it is To.
+    #[inline]
+    pub fn is_abs(&self) -> bool {
+        matches!(self, CommandEndPoint::ToPosition(_))
+    }
+}
+
+impl<LengthPercentage: ToCss> ToCss for CommandEndPoint<LengthPercentage> {
+    /// TODO(bug 1993308): Should print position keywords as keywords. I.e. like the to_css in specified/position.rs.
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        match self {
+            CommandEndPoint::ToPosition(pos) => {
+                dest.write_str("to ")?;
+                pos.horizontal.to_css(dest)?;
+                dest.write_char(' ')?;
+                pos.vertical.to_css(dest)
+            },
+            CommandEndPoint::ByCoordinate(coord) => {
+                dest.write_str("by ")?;
+                coord.to_css(dest)
+            },
+        }
+    }
+}
+
 /// Defines a pair of coordinates, representing a rightward and downward offset, respectively, from
 /// a specified reference point. Percentages are resolved against the width or height,
 /// respectively, of the reference box.
@@ -989,6 +1043,137 @@ impl<LengthPercentage> CoordinatePair<LengthPercentage> {
     pub fn new(x: LengthPercentage, y: LengthPercentage) -> Self {
         Self { x, y }
     }
+}
+
+/// Defines a control point for a quadratic or cubic Bézier curve, which can be specified
+/// in absolute or relative coordinates.
+/// https://drafts.csswg.org/css-shapes/#typedef-shape-control-point
+#[allow(missing_docs)]
+#[derive(
+    Animate,
+    Clone,
+    Copy,
+    ComputeSquaredDistance,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C, u8)]
+pub enum ControlPoint<LengthPercentage> {
+    Position(ShapePosition<LengthPercentage>),
+    Relative(RelativeControlPoint<LengthPercentage>),
+}
+
+impl<LengthPercentage> ControlPoint<LengthPercentage> {
+    /// Serialize <control-point>
+    pub fn to_css<W>(&self, dest: &mut CssWriter<W>, is_endpoint_abs: bool) -> fmt::Result
+    where
+        W: Write,
+        LengthPercentage: ToCss,
+        ShapePosition<LengthPercentage>: ToCss,
+    {
+        match self {
+            ControlPoint::Position(pos) => pos.to_css(dest),
+            ControlPoint::Relative(point) => point.to_css(dest, is_endpoint_abs),
+        }
+    }
+}
+
+/// Defines a relative control point to a quadratic or cubic Bézier curve, dependent on the
+/// reference value. The default "none" is to be relative to the command’s starting point.
+/// https://drafts.csswg.org/css-shapes/#typedef-shape-relative-control-point
+#[allow(missing_docs)]
+#[derive(
+    Animate,
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C)]
+pub struct RelativeControlPoint<LengthPercentage> {
+    pub coord: CoordinatePair<LengthPercentage>,
+    pub reference: ControlReference,
+}
+
+impl<LengthPercentage: ToCss> RelativeControlPoint<LengthPercentage> {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>, is_endpoint_abs: bool) -> fmt::Result
+    where
+        W: Write,
+    {
+        self.coord.to_css(dest)?;
+        let should_omit_reference = match self.reference {
+            ControlReference::None => true,
+            ControlReference::Start => !is_endpoint_abs,
+            ControlReference::Origin => is_endpoint_abs,
+            ControlReference::End => false,
+        };
+        if !should_omit_reference {
+            dest.write_str(" from ")?;
+            self.reference.to_css(dest)?;
+        }
+        Ok(())
+    }
+}
+
+impl<LengthPercentage: ComputeSquaredDistance> ComputeSquaredDistance
+    for RelativeControlPoint<LengthPercentage>
+{
+    fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
+        self.coord.compute_squared_distance(&other.coord)
+    }
+}
+
+/// Defines the point of reference for a <relative-control-point>.
+///
+/// The default `None` is equivalent to `Origin` or `Start`, depending on
+/// whether the associated <command-end-point> is absolutely or relatively
+/// positioned, respectively.
+/// https://drafts.csswg.org/css-shapes/#typedef-shape-relative-control-point
+#[allow(missing_docs)]
+#[derive(
+    Animate,
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    Parse,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C)]
+pub enum ControlReference {
+    #[css(skip)]
+    None,
+    Start,
+    End,
+    Origin,
 }
 
 /// This indicates that the arc that is traced around the ellipse clockwise or counter-clockwise

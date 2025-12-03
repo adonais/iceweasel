@@ -331,13 +331,6 @@ ObliviousHttpChannel::IsNoCacheResponse(bool* _retval) {
 }
 
 NS_IMETHODIMP
-ObliviousHttpChannel::IsPrivateResponse(bool* _retval) {
-  LOG(("ObliviousHttpChannel::IsPrivateResponse NOT IMPLEMENTED [this=%p]",
-       this));
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
 ObliviousHttpChannel::RedirectTo(nsIURI* aNewURI) {
   LOG(("ObliviousHttpChannel::RedirectTo NOT IMPLEMENTED [this=%p]", this));
   return NS_ERROR_NOT_IMPLEMENTED;
@@ -760,7 +753,7 @@ void ObliviousHttpChannel::EmitOnDataAvailable() {
     return;
   }
   rv = mStreamListener->OnDataAvailable(this, contentStream, 0, contentLength);
-  Unused << rv;
+  (void)rv;
 }
 
 NS_IMETHODIMP
@@ -779,11 +772,11 @@ ObliviousHttpChannel::OnStopRequest(nsIRequest* aRequest,
       aStatusCode = ProcessOnStopRequest();
     }
   }
-  Unused << mStreamListener->OnStartRequest(this);
+  (void)mStreamListener->OnStartRequest(this);
   if (NS_SUCCEEDED(aStatusCode)) {
     EmitOnDataAvailable();
   }
-  Unused << mStreamListener->OnStopRequest(this, aStatusCode);
+  (void)mStreamListener->OnStopRequest(this, aStatusCode);
 
   return NS_OK;
 }

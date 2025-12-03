@@ -27,6 +27,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FaviconFeed: "resource://newtab/lib/FaviconFeed.sys.mjs",
   HighlightsFeed: "resource://newtab/lib/HighlightsFeed.sys.mjs",
   ListsFeed: "resource://newtab/lib/Widgets/ListsFeed.sys.mjs",
+  NewTabAttributionFeed: "resource://newtab/lib/NewTabAttributionFeed.sys.mjs",
   NewTabInit: "resource://newtab/lib/NewTabInit.sys.mjs",
   NewTabMessaging: "resource://newtab/lib/NewTabMessaging.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
@@ -82,11 +83,6 @@ const REGION_THUMBS_CONFIG =
 const LOCALE_THUMBS_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.locale-thumbs-config";
 
-const REGION_CONTEXTUAL_CONTENT_CONFIG =
-  "browser.newtabpage.activity-stream.discoverystream.contextualContent.region-content-config";
-const LOCALE_CONTEXTUAL_CONTENT_CONFIG =
-  "browser.newtabpage.activity-stream.discoverystream.contextualContent.locale-content-config";
-
 const REGION_CONTEXTUAL_AD_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.sections.contextualAds.region-config";
 const LOCALE_CONTEXTUAL_AD_CONFIG =
@@ -100,26 +96,38 @@ const LOCALE_SECTIONS_CONFIG =
 const BROWSER_URLBAR_PLACEHOLDERNAME = "browser.urlbar.placeholderName";
 
 export const WEATHER_OPTIN_REGIONS = [
-  "DE",
-  "GB",
-  "FR",
-  "ES",
-  "IT",
-  "CH",
-  "AT",
-  "BE",
-  "IE",
-  "NL",
-  "PL",
-  "CZ",
-  "SE",
-  "SG",
-  "HU",
-  "SK",
-  "FI",
-  "DK",
-  "NO",
-  "PT",
+  "AT", // Austria
+  "BE", // Belgium
+  "BG", // Bulgaria
+  "HR", // Croatia
+  "CY", // Cyprus
+  "CZ", // Czechia
+  "DK", // Denmark
+  "EE", // Estonia
+  "FI", // Finland
+  "FR", // France
+  "DE", // Germany
+  "GB", // United Kingdom
+  "GR", // Greece
+  "HU", // Hungary
+  "IS", // Iceland
+  "IE", // Ireland
+  "IT", // Italy
+  "LV", // Latvia
+  "LI", // Liechtenstein
+  "LT", // Lithuania
+  "MT", // Malta
+  "NL", // Netherlands
+  "NO", // Norway
+  "PL", // Poland
+  "PT", // Portugal
+  "RO", // Romania
+  "SG", // Singapore
+  "SK", // Slovakia
+  "SI", // Slovenia
+  "ES", // Spain
+  "SE", // Sweden
+  "CH", // Switzerland
 ];
 
 export function csvPrefHasValue(stringPrefName, value) {
@@ -187,13 +195,6 @@ function showThumbsUpDown({ geo, locale }) {
   return (
     csvPrefHasValue(REGION_THUMBS_CONFIG, geo) &&
     csvPrefHasValue(LOCALE_THUMBS_CONFIG, locale)
-  );
-}
-
-function showContextualContent({ geo, locale }) {
-  return (
-    csvPrefHasValue(REGION_CONTEXTUAL_CONTENT_CONFIG, geo) &&
-    csvPrefHasValue(LOCALE_CONTEXTUAL_CONTENT_CONFIG, locale)
   );
 }
 
@@ -380,7 +381,7 @@ export const PREFS_CONFIG = new Map([
     {
       title:
         "Enable opt-in dialog to display for weather widget in GDPR regions.",
-      value: false,
+      value: true,
     },
   ],
   [
@@ -396,7 +397,7 @@ export const PREFS_CONFIG = new Map([
     {
       title:
         "Static weather data shown when user has not set/enabled location from opt-in.",
-      value: false,
+      value: true,
     },
   ],
   [
@@ -760,6 +761,13 @@ export const PREFS_CONFIG = new Map([
     {
       title:
         "Boolean flag to enable logging shortcuts interactions even if enabled is off",
+      value: false,
+    },
+  ],
+  [
+    "discoverystream.attribution.enabled",
+    {
+      title: "Boolean flag to enable newtab attribution",
       value: false,
     },
   ],
@@ -1289,70 +1297,6 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "discoverystream.contextualContent.enabled",
-    {
-      title: "Controls if contextual content (List feed) is displayed",
-      getValue: showContextualContent,
-    },
-  ],
-  [
-    "discoverystream.contextualContent.feeds",
-    {
-      title: "CSV list of possible topics for the contextual content feed",
-      value: "need_to_know, fakespot",
-    },
-  ],
-  [
-    "discoverystream.contextualContent.selectedFeed",
-    {
-      title:
-        "currently selected feed (one of discoverystream.contextualContent.feeds) to display in listfeed",
-      value: "need_to_know",
-    },
-  ],
-  [
-    "discoverystream.contextualContent.listFeedTitle",
-    {
-      title: "Title for currently selected feed",
-      value: "",
-    },
-  ],
-  [
-    "discoverystream.contextualContent.fakespot.defaultCategoryTitle",
-    {
-      title: "Title default category from fakespot endpoint",
-      value: "",
-    },
-  ],
-  [
-    "discoverystream.contextualContent.fakespot.footerCopy",
-    {
-      title: "footer copy for fakespot feed",
-      value: "",
-    },
-  ],
-  [
-    "discoverystream.contextualContent.fakespot.enabled",
-    {
-      title: "User controlled pref that displays fakespot feed",
-      value: true,
-    },
-  ],
-  [
-    "discoverystream.contextualContent.fakespot.ctaCopy",
-    {
-      title: "cta copy for fakespot feed",
-      value: "",
-    },
-  ],
-  [
-    "discoverystream.contextualContent.fakespot.ctaUrl",
-    {
-      title: "cta link for fakespot feed",
-      value: "",
-    },
-  ],
-  [
     "discoverystream.publisherFavicon.enabled",
     {
       title: "Enables publisher favicons on recommended stories",
@@ -1391,15 +1335,6 @@ export const PREFS_CONFIG = new Map([
       getValue: () => {
         return Services.appinfo.caretBlinkTime;
       },
-    },
-  ],
-  // Sponsored checkboxes placement experiment
-  [
-    "system.showSponsoredCheckboxes",
-    {
-      title:
-        "Switches on grouping of sponsored checkboxes on 'about:settings#home' page",
-      value: true,
     },
   ],
   [
@@ -1580,6 +1515,12 @@ const FEEDS_DATA = [
     value: true,
   },
   {
+    name: "newtabattributionfeed",
+    factory: () => new lazy.NewTabAttributionFeed(),
+    title: "Handles a local DB for story and shortcuts clicks and impressions",
+    value: true,
+  },
+  {
     name: "newtabmessaging",
     factory: () => new lazy.NewTabMessaging(),
     title: "Handles fetching and triggering ASRouter messages in newtab",
@@ -1691,8 +1632,10 @@ export class ActivityStream {
     if (this.geo === "") {
       Services.obs.removeObserver(this, lazy.Region.REGION_TOPIC);
     }
+    delete this.geo;
 
     Services.obs.removeObserver(this, "intl:app-locales-changed");
+    Services.obs.removeObserver(this, "browser-search-engine-modified");
 
     Services.prefs.removeObserver(BROWSER_URLBAR_PLACEHOLDERNAME, this);
 
@@ -1703,6 +1646,10 @@ export class ActivityStream {
   _updateDynamicPrefs() {
     // Save the geo pref if we have it
     if (lazy.Region.home) {
+      if (this.geo === "") {
+        // The observer has become obsolete.
+        Services.obs.removeObserver(this, lazy.Region.REGION_TOPIC);
+      }
       this.geo = lazy.Region.home;
     } else if (this.geo !== "") {
       // Watch for geo changes and use a dummy value for now

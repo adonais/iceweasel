@@ -11,7 +11,6 @@
 #include "GMPMessageUtils.h"
 #include "GMPVideoEncodedFrameImpl.h"
 #include "GMPVideoi420FrameImpl.h"
-#include "mozilla/Unused.h"
 #include "mozilla/gmp/GMPTypes.h"
 #include "nsAutoRef.h"
 #include "nsThread.h"
@@ -124,7 +123,7 @@ GMPErr GMPVideoEncoderParent::Encode(
       ipc::Shmem outputShmem;
       if (memMgr->MgrTakeShmem(GMPSharedMemClass::Encoded, mEncodedShmemSize,
                                &outputShmem)) {
-        Unused << SendGiveShmem(std::move(outputShmem));
+        (void)SendGiveShmem(std::move(outputShmem));
       }
     }
   }
@@ -207,7 +206,7 @@ void GMPVideoEncoderParent::Shutdown() {
 
   mIsOpen = false;
   if (!mActorDestroyed) {
-    Unused << Send__delete__(this);
+    (void)Send__delete__(this);
   }
 }
 

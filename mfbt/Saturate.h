@@ -226,6 +226,8 @@ typedef detail::Saturate<int32_t> SaturateInt32;
 typedef detail::Saturate<uint8_t> SaturateUint8;
 typedef detail::Saturate<uint16_t> SaturateUint16;
 typedef detail::Saturate<uint32_t> SaturateUint32;
+typedef detail::Saturate<intptr_t> SaturateIntPtr;
+typedef detail::Saturate<uintptr_t> SaturateUintPtr;
 
 }  // namespace mozilla
 

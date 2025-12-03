@@ -16,13 +16,13 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "HandlerService",
   "@mozilla.org/uriloader/handler-service;1",
-  "nsIHandlerService"
+  Ci.nsIHandlerService
 );
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "MIMEService",
   "@mozilla.org/mime;1",
-  "nsIMIMEService"
+  Ci.nsIMIMEService
 );
 
 ChromeUtils.defineESModuleGetters(lazy, {

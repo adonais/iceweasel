@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_HTMLSourceElement_h
 #define mozilla_dom_HTMLSourceElement_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "nsGenericHTMLElement.h"
 

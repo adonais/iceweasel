@@ -38,7 +38,6 @@
 #include "imgRequest.h"
 #include "jsapi.h"
 #include "mozilla/AnimationEventDispatcher.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BasePrincipal.h"
@@ -46,7 +45,6 @@
 #include "mozilla/DisplayPortUtils.h"
 #include "mozilla/Hal.h"
 #include "mozilla/InputTaskManager.h"
-#include "mozilla/IntegerRange.h"
 #include "mozilla/Logging.h"
 #include "mozilla/PendingFullscreenEvent.h"
 #include "mozilla/Preferences.h"
@@ -60,7 +58,6 @@
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_page_load.h"
 #include "mozilla/TaskController.h"
-#include "mozilla/Unused.h"
 #include "mozilla/VsyncDispatcher.h"
 #include "mozilla/VsyncTaskManager.h"
 #include "mozilla/dom/BrowserChild.h"
@@ -849,7 +846,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     // On Wayland, vsync timestamp might not precisely match system time; see
     // bug 1958043.
 #  if defined(_WIN32) || defined(MOZ_WAYLAND)
-    Unused << NS_WARN_IF(aVsyncTimestamp > tickStart);
+    (void)NS_WARN_IF(aVsyncTimestamp > tickStart);
 #  else
     MOZ_ASSERT(aVsyncTimestamp <= tickStart);
 #  endif
@@ -1558,7 +1555,7 @@ void nsRefreshDriver::RemovePostRefreshObserver(
     nsAPostRefreshObserver* aObserver) {
   bool removed = mPostRefreshObservers.RemoveElement(aObserver);
   MOZ_DIAGNOSTIC_ASSERT(removed);
-  Unused << removed;
+  (void)removed;
 }
 
 void nsRefreshDriver::StartTimerForAnimatedImagesIfNeeded() {
@@ -2087,8 +2084,8 @@ void nsRefreshDriver::RunVideoFrameCallbacks(
       // else window is partially torn down already
     }
 
-    AUTO_PROFILER_TRACING_MARKER_INNERWINDOWID(
-        "Paint", "requestVideoFrame callbacks", GRAPHICS, doc->InnerWindowID());
+    AUTO_PROFILER_MARKER_INNERWINDOWID("requestVideoFrame callbacks", GRAPHICS,
+                                       doc->InnerWindowID());
     for (const auto& videoElm : videoElms) {
       VideoFrameCallbackMetadata metadata;
 
@@ -2148,9 +2145,8 @@ void nsRefreshDriver::RunFrameRequestCallbacks(
       // else window is partially torn down already
     }
 
-    AUTO_PROFILER_TRACING_MARKER_INNERWINDOWID(
-        "Paint", "requestAnimationFrame callbacks", GRAPHICS,
-        doc->InnerWindowID());
+    AUTO_PROFILER_MARKER_INNERWINDOWID("requestAnimationFrame callbacks",
+                                       GRAPHICS, doc->InnerWindowID());
     for (auto& callback : callbacks.mList) {
       if (callback.mCancelled) {
         continue;
@@ -2638,6 +2634,10 @@ bool nsRefreshDriver::PaintIfNeeded() {
   {
     PaintTelemetry::AutoRecordPaint record;
     vm->ProcessPendingUpdates();
+    // Paint our popups.
+    if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
+      pm->PaintPopups(this);
+    }
   }
   return true;
 }
@@ -2996,19 +2996,21 @@ TimeStamp nsRefreshDriver::GetIdleDeadlineHint(TimeStamp aDefault,
 /* static */
 Maybe<TimeStamp> nsRefreshDriver::GetNextTickHint() {
   MOZ_ASSERT(NS_IsMainThread());
-
+  Maybe<TimeStamp> hint;
+  auto UpdateHint = [&hint](const Maybe<TimeStamp>& aNewHint) {
+    if (!aNewHint) {
+      return;
+    }
+    if (!hint || *aNewHint < *hint) {
+      hint = aNewHint;
+    }
+  };
   if (sRegularRateTimer) {
-    return sRegularRateTimer->GetNextTickHint();
+    UpdateHint(sRegularRateTimer->GetNextTickHint());
   }
-
-  Maybe<TimeStamp> hint = Nothing();
   if (sRegularRateTimerList) {
     for (RefreshDriverTimer* timer : *sRegularRateTimerList) {
-      if (Maybe<TimeStamp> newHint = timer->GetNextTickHint()) {
-        if (!hint || newHint.value() < hint.value()) {
-          hint = newHint;
-        }
-      }
+      UpdateHint(timer->GetNextTickHint());
     }
   }
   return hint;

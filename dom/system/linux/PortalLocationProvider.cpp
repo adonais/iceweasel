@@ -14,7 +14,6 @@
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/Logging.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/XREAppData.h"
 #include "mozilla/dom/GeolocationPositionErrorBinding.h"
 #include "prtime.h"

@@ -143,6 +143,7 @@ export let RemotePageAccessManager = {
         "Profiles:GetEditProfileContent",
         "Profiles:UpdateProfileTheme",
         "Profiles:UpdateProfileAvatar",
+        "Profiles:SetDesktopShortcut",
       ],
       RPMSendAsyncMessage: [
         "Profiles:UpdateProfileName",
@@ -234,6 +235,10 @@ export let RemotePageAccessManager = {
         "browser.contentblocking.report.cryptominer.url",
       ],
       RPMRecordGleanEvent: ["securityUiProtections"],
+    },
+    "about:restricted": {
+      RPMSendAsyncMessage: ["goBack"],
+      RPMGetBoolPref: ["security.restrict_to_adults.always"],
     },
     "about:tabcrashed": {
       RPMSendAsyncMessage: ["Load", "closeTab", "restoreTab", "restoreAll"],

@@ -8,7 +8,6 @@
 #include <cstdint>
 
 #include "js/TypeDecls.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"

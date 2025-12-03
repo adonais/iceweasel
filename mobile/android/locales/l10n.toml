@@ -154,10 +154,6 @@ exclude-multi-locale = [
     l10n = "{l}toolkit/chrome/global/commonDialogs.properties"
 
 [[paths]]
-    reference = "toolkit/locales/en-US/chrome/global/intl.properties"
-    l10n = "{l}toolkit/chrome/global/intl.properties"
-
-[[paths]]
     reference = "toolkit/locales/en-US/chrome/global/intl.css"
     l10n = "{l}toolkit/chrome/global/intl.css"
 

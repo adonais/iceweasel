@@ -120,7 +120,10 @@ void ClosePlatformFile(cdm::PlatformFile aFile) {
 
 static uint32_t NumExpectedHostFiles(const cdm::HostFile* aHostFiles,
                                      uint32_t aNumFiles) {
-#if !defined(XP_WIN)
+#if defined(ANDROID)
+  // We expect 1 binary: clearkey
+  return 1;
+#elif !defined(XP_WIN)
   // We expect 4 binaries: clearkey, libxul, plugin-container, and Firefox.
   return 4;
 #else

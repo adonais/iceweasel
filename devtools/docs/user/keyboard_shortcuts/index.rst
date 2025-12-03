@@ -401,7 +401,7 @@ These shortcuts work while you're in the :doc:`Inspector's HTML pane <../page_in
     - :kbd:`F2`
 
   * - Stop editing HTML
-    - :kbd:`F2` / :kbd:`Ctrl` +:kbd:`Enter`
+    - :kbd:`F2` / :kbd:`Ctrl` + :kbd:`Enter`
     - :kbd:`F2` / :kbd:`Cmd` + :kbd:`Return`
     - :kbd:`F2` / :kbd:`Ctrl` + :kbd:`Enter`
 

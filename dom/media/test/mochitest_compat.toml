@@ -886,6 +886,7 @@ skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug"]
 ["test_metadata.html"]
 
 ["test_mozHasAudio.html"]
+skip-if = ["os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && wmfme && verify-standalone"]
 
 ["test_mp3_with_multiple_ID3v2.html"]
 

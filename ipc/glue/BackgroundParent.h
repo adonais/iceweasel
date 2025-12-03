@@ -8,7 +8,6 @@
 #define mozilla_ipc_backgroundparent_h__
 
 #include "base/process.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/ContentParent.h"
 #include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"

@@ -23,7 +23,7 @@ void ParamTraits<nsIContentSecurityPolicy*>::Write(
   }
 
   CSPInfo csp;
-  mozilla::Unused << NS_WARN_IF(NS_FAILED(CSPToCSPInfo(aParam, &csp)));
+  (void)NS_WARN_IF(NS_FAILED(CSPToCSPInfo(aParam, &csp)));
   WriteParam(aWriter, csp);
 }
 

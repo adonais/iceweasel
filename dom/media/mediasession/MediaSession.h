@@ -8,7 +8,6 @@
 #define mozilla_dom_MediaSession_h
 
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/MediaSessionBinding.h"

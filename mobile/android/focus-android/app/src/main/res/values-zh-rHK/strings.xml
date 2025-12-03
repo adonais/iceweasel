@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -766,7 +773,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[呢個可能係伺服器嘅設定問題，或者有人試圖冒充伺服器。<br/><br/> 如果你曾經成功連接到，就好可能只係暫時性嘅問題。]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>有人可能企圖冒充呢個網站，繼續嘅話會有風險。</label> <br><br> <label>%1$s 唔信任 <b>%2$s</b> 因為佢用咗未知嘅證書頒發者、自我簽發嘅證書，或者未發送正確嘅中介證書。</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>有人可能企圖冒充呢個網站，繼續嘅話會有風險。</label> <br><br>\n<label>%1$s 唔信任 <b>%2$s</b> 因為佢用咗未知嘅證書頒發者、自我簽發嘅證書，或者未發送正確嘅中介證書。</label>]]></string>
   <!--
     Sessions List
 

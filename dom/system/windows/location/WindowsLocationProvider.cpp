@@ -9,7 +9,6 @@
 #include "GeolocationPosition.h"
 #include "MLSFallback.h"
 #include "WindowsLocationParent.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Logging.h"
 #include "mozilla/dom/GeolocationPositionErrorBinding.h"
 #include "mozilla/dom/WindowsUtilsParent.h"
@@ -141,7 +140,7 @@ bool WindowsLocationProvider::WhenActorIsReady(Fn&& fn) {
     mActorPromise->Then(
         GetCurrentSerialEventTarget(), __func__,
         [fn](const RefPtr<WindowsLocationParent>& actor) {
-          Unused << fn(actor.get());
+          (void)fn(actor.get());
           return actor;
         },
         [](bool) { return false; });

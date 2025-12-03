@@ -11,7 +11,6 @@
 #include "nsIObserver.h"
 #include "mozIStorageVacuumParticipant.h"
 #include "nsCategoryCache.h"
-#include "mozilla/Attributes.h"
 
 namespace mozilla {
 namespace storage {

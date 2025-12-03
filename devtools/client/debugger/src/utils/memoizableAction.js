@@ -5,7 +5,7 @@
 import { asSettled } from "./async-value";
 import { validateContext } from "./context";
 
-/*
+/**
  * memoizableActon is a utility for actions that should only be performed
  * once per key. It is useful for loading sources
  *

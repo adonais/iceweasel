@@ -168,11 +168,18 @@ bool FrameMetrics::ScrollLayoutViewportTo(const CSSPoint& aDestination) {
 }
 
 CSSPoint FrameMetrics::ApplyRelativeScrollUpdateFrom(
-    const ScrollPositionUpdate& aUpdate) {
+    const ScrollPositionUpdate& aUpdate, IsDefaultApzc aIsDefaultApzc) {
   MOZ_ASSERT(aUpdate.GetType() == ScrollUpdateType::Relative);
   MOZ_ASSERT(aUpdate.GetMode() != ScrollMode::Smooth &&
              aUpdate.GetMode() != ScrollMode::SmoothMsd);
-  CSSPoint origin = GetVisualScrollOffset();
+
+  // If the APZC is default, i.e. newly created one, any relative instant
+  // scroll position update has been already reflected as the visual scroll
+  // offset, so we use the mSource in this ScrollPositionUpdate, which is the
+  // original scroll offset when this relative scroll update operation happened
+  // on the content.
+  CSSPoint origin =
+      bool(aIsDefaultApzc) ? aUpdate.GetSource() : GetVisualScrollOffset();
   CSSPoint delta = (aUpdate.GetDestination() - aUpdate.GetSource());
   SetVisualScrollOffset(origin + delta);
   return GetVisualScrollOffset() - origin;

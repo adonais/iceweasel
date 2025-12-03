@@ -22,7 +22,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "finalizationService",
   "@mozilla.org/toolkit/finalizationwitness;1",
-  "nsIFinalizationWitnessService"
+  Ci.nsIFinalizationWitnessService
 );
 
 /**

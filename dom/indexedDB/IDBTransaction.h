@@ -9,7 +9,6 @@
 
 #include "FlippedOnce.h"
 #include "SafeRefPtr.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/SourceLocation.h"
 #include "mozilla/dom/IDBTransactionBinding.h"

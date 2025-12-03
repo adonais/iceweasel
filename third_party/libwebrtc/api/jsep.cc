@@ -13,16 +13,8 @@
 #include <cstddef>
 #include <optional>
 #include <string>
-#include <vector>
-
-#include "api/candidate.h"
 
 namespace webrtc {
-
-size_t SessionDescriptionInterface::RemoveCandidates(
-    const std::vector<Candidate>& /* candidates */) {
-  return 0;
-}
 
 const char SessionDescriptionInterface::kOffer[] = "offer";
 const char SessionDescriptionInterface::kPrAnswer[] = "pranswer";

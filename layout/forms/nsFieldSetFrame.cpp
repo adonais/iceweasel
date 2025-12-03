@@ -125,7 +125,7 @@ class nsDisplayFieldSetBorder final : public nsPaintedDisplayItem {
 
 void nsDisplayFieldSetBorder::Paint(nsDisplayListBuilder* aBuilder,
                                     gfxContext* aCtx) {
-  Unused << static_cast<nsFieldSetFrame*>(mFrame)->PaintBorder(
+  (void)static_cast<nsFieldSetFrame*>(mFrame)->PaintBorder(
       aBuilder, *aCtx, ToReferenceFrame(), GetPaintRect(aBuilder, aCtx));
 }
 

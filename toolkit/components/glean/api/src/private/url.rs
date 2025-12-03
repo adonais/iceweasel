@@ -144,7 +144,9 @@ impl glean::traits::Url for UrlMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<std::string::String> for UrlMetric {
+impl glean::TestGetValue for UrlMetric {
+    type Output = std::string::String;
+
     pub fn test_get_value(&self, ping_name: Option<String>) -> Option<std::string::String> {
         match self {
             UrlMetric::Parent { inner, .. } => inner.test_get_value(ping_name),

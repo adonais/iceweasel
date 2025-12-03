@@ -8,9 +8,7 @@
 #define mozilla_dom_VideoFrame_h
 
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/NotNull.h"
 #include "mozilla/Span.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"

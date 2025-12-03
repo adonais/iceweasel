@@ -270,9 +270,6 @@ with Files("tests/css/css-env/**"):
 with Files("tests/css/css-exclusions/**"):
     BUG_COMPONENT = ("Core", "Layout")
 
-with Files("tests/css/css-fill-stroke/**"):
-    BUG_COMPONENT = ("Core", "SVG")
-
 with Files("tests/css/css-flexbox/**"):
     BUG_COMPONENT = ("Core", "Layout: Flexbox")
 

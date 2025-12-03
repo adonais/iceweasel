@@ -25,7 +25,7 @@ using namespace mozilla::net;
 static const char* kProxyHost = "proxy.org";
 static const char* kHost = "example.com";
 static const int32_t kPort = 4433;
-static const char* kPathTemplate =
+static const char* kMasqueTemplate =
     "/.well-known/masque/udp/{target_host}/{target_port}/";
 static const char* kPathHeader = "/.well-known/masque/udp/example.com/4433/";
 
@@ -102,7 +102,7 @@ class Http3SessionStub final : public Http3SessionBase {
 
   void ProcessOutput() {
     for (const auto& stream : mReadyForWrite) {
-      Unused << stream->ReadSegments();
+      (void)stream->ReadSegments();
     }
     mReadyForWrite.Clear();
   }
@@ -142,8 +142,8 @@ class DummyHttpTransaction : public nsAHttpTransaction {
     if (pps) {
       nsCOMPtr<nsIProxyInfo> info;
       nsresult rv = pps->NewMASQUEProxyInfo(
-          nsCString(kProxyHost), -1, nsCString(kPathTemplate), ""_ns, ""_ns, 0,
-          0, nullptr, getter_AddRefs(info));
+          nsCString(kProxyHost), -1, nsCString(kMasqueTemplate), ""_ns, ""_ns,
+          0, 0, nullptr, getter_AddRefs(info));
       if (NS_FAILED(rv)) {
         return;
       }
@@ -172,8 +172,8 @@ class DummyHttpTransaction : public nsAHttpTransaction {
                                       uint32_t count,
                                       uint32_t* countRead) override {
     mReader = reader;
-    Unused << mRequestStream->ReadSegments(ReadRequestSegment, this, count,
-                                           countRead);
+    (void)mRequestStream->ReadSegments(ReadRequestSegment, this, count,
+                                       countRead);
     mReader = nullptr;
     return NS_OK;
   }
@@ -181,7 +181,7 @@ class DummyHttpTransaction : public nsAHttpTransaction {
                                        uint32_t count,
                                        uint32_t* countWritten) override {
     char buf[1024];
-    Unused << writer->OnWriteSegment(buf, 1024, countWritten);
+    (void)writer->OnWriteSegment(buf, 1024, countWritten);
     mIsDone = true;
     return NS_OK;
   }
@@ -195,7 +195,7 @@ class DummyHttpTransaction : public nsAHttpTransaction {
 
     mRequestHead = MakeUnique<nsHttpRequestHead>();
 
-    Unused << mRequestHead->SetHeader(nsHttp::Host, "example.com"_ns);
+    (void)mRequestHead->SetHeader(nsHttp::Host, "example.com"_ns);
     return mRequestHead.get();
   }
   uint32_t Http1xTransactionCount() override { return 0; }
@@ -225,7 +225,7 @@ class UDPListener final : public nsIUDPSocketSyncListener {
   NS_IMETHOD OnPacketReceived(nsIUDPSocket* aSocket) override {
     nsTArray<uint8_t> data;
     NetAddr addr{};
-    Unused << aSocket->RecvWithAddr(&addr, data);
+    (void)aSocket->RecvWithAddr(&addr, data);
     mReceivedData.AppendElements(data);
     return NS_OK;
   }
@@ -287,7 +287,7 @@ static already_AddRefed<Http3ConnectUDPStream> CreateUDPStream(
   response.AppendElements(kResponse, kResponseLen);
 
   stream->SetResponseHeaders(response, false, false);
-  Unused << stream->WriteSegments();
+  (void)stream->WriteSegments();
 
   return stream.forget();
 }

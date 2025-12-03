@@ -14,8 +14,6 @@ extern crate cstr;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
-extern crate rsclientcerts;
-#[macro_use]
 extern crate xpcom;
 
 use log::{debug, error, trace, warn};

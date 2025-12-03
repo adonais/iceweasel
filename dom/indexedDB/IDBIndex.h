@@ -8,7 +8,6 @@
 #define mozilla_dom_idbindex_h__
 
 #include "js/RootingAPI.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/IDBCursorBinding.h"
 #include "nsCycleCollectionParticipant.h"

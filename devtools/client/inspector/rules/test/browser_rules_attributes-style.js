@@ -61,6 +61,7 @@ add_task(async function () {
     },
     {
       selector: "element attributes style",
+      inherited: true,
       declarations: [{ name: "text-align", value: "-moz-center" }],
     },
   ]);
@@ -82,6 +83,7 @@ add_task(async function () {
     },
     {
       selector: "element attributes style",
+      inherited: true,
       declarations: [
         { name: "text-align", value: "-moz-center", overridden: true },
       ],
@@ -105,6 +107,7 @@ add_task(async function () {
     },
     {
       selector: "element attributes style",
+      inherited: true,
       declarations: [
         { name: "text-align", value: "-moz-center", overridden: true },
       ],

@@ -21,12 +21,11 @@ skip-if = [
   "debug",
   "os == 'win' && ccov",
 ]
-# These tests do take a little longer on Linux ccov, so allow that here.
-requesttimeoutfactor = 2
 
 ["test_distributions.js"]
 
 ["test_searchconfig.js"]
+requesttimeoutfactor = 5  # Slow and high CPU use on Linux and Windows
 
 ["test_searchconfig_google_additional.js"]
 

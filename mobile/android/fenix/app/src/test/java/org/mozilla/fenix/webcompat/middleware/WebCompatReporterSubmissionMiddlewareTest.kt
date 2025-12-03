@@ -8,6 +8,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonArray
@@ -24,6 +25,7 @@ import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.telemetry.glean.private.NoReasonCodes
 import mozilla.telemetry.glean.private.PingType
 import mozilla.telemetry.glean.testing.GleanTestRule
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
@@ -622,6 +624,47 @@ class WebCompatReporterSubmissionMiddlewareTest {
 
         assertTrue(moreWebCompatInfoSent)
         captureActionsMiddleware.assertFirstAction(WebCompatReporterAction.SendMoreInfoSubmitted::class)
+    }
+
+    @Test
+    fun `WHEN open preview is clicked AND enteredUrl matches tab url THEN preview contains full raw JSON plus form fields`() = runTest {
+        val capture = CaptureActionsMiddleware<WebCompatReporterState, WebCompatReporterAction>()
+
+        val store = WebCompatReporterStore(
+            initialState = WebCompatReporterState(
+                tabUrl = "https://www.mozilla.org",
+                enteredUrl = "https://www.mozilla.org",
+                reason = WebCompatReporterState.BrokenSiteReason.Slow,
+                problemDescription = "",
+            ),
+            middleware = listOf(
+                capture,
+                createMiddleware(
+                    browserStore = BrowserStore(
+                        BrowserState(
+                        tabs = listOf(createTab("https://www.mozilla.org", id = "t1")), selectedTabId = "t1",
+                        ),
+                    ),
+                    service = FakeWebCompatReporterRetrievalService(),
+                    webCompatReporterMoreInfoSender = FakeWebCompatReporterMoreInfoSender(),
+                ),
+            ),
+        )
+
+        store.dispatch(WebCompatReporterAction.OpenPreviewClicked)
+
+        val actual = store.state.previewJSON
+        val expected = JSONObject(
+            Json.encodeToString(
+                (FakeWebCompatReporterRetrievalService()).retrieveInfo(),
+            ),
+        ).apply {
+            put("enteredUrl", "https://www.mozilla.org")
+            put("reason", WebCompatReporterState.BrokenSiteReason.Slow)
+            put("problemDescription", "")
+        }
+
+        assertEquals(expected.toString(), actual)
     }
 
     private fun createStore(

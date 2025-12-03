@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
@@ -22,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -63,6 +65,7 @@ import org.mozilla.fenix.home.recentvisits.view.RecentlyVisited
 import org.mozilla.fenix.home.sessioncontrol.CollectionInteractor
 import org.mozilla.fenix.home.sessioncontrol.MessageCardInteractor
 import org.mozilla.fenix.home.setup.ui.SetupChecklist
+import org.mozilla.fenix.home.store.HeaderState
 import org.mozilla.fenix.home.store.HomepageState
 import org.mozilla.fenix.home.store.NimbusMessageState
 import org.mozilla.fenix.home.topsites.TopSiteColors
@@ -73,6 +76,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.utils.isLargeScreenSize
 import org.mozilla.fenix.wallpapers.WallpaperState
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Top level composable for the homepage.
@@ -80,6 +84,7 @@ import org.mozilla.fenix.wallpapers.WallpaperState
  * @param state State representing the homepage.
  * @param interactor [HomepageInteractor] for interactions with the homepage UI.
  * @param onTopSitesItemBound Invoked during the composition of a top site item.
+ * @param modifier [Modifier] to be applied to the layout.
  */
 @Suppress("LongMethod", "CyclomaticComplexMethod")
 @Composable
@@ -87,11 +92,12 @@ internal fun Homepage(
     state: HomepageState,
     interactor: HomepageInteractor,
     onTopSitesItemBound: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
 
     BoxWithConstraints(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize(),
     ) {
         Column(
@@ -111,8 +117,10 @@ internal fun Homepage(
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            if (state.showHeader) {
+            if (state.headerState.showHeader) {
                 HomepageHeader(
+                    wordmarkTextColor = state.headerState.wordmarkTextColor,
+                    privateBrowsingButtonColor = state.headerState.privateBrowsingButtonColor,
                     browsingMode = state.browsingMode,
                     browsingModeChanged = interactor::onPrivateModeButtonClicked,
                 )
@@ -476,7 +484,15 @@ private fun HomepagePreview() {
                 showRecentlyVisited = true,
                 showPocketStories = true,
                 showCollections = true,
-                showHeader = false,
+                headerState = HeaderState(
+                    showHeader = false,
+                    wordmarkTextColor = null,
+                    privateBrowsingButtonColor = colorResource(
+                        getAttr(
+                            iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color,
+                        ),
+                    ),
+                ),
                 searchBarVisible = true,
                 searchBarEnabled = false,
                 firstFrameDrawn = true,
@@ -490,6 +506,9 @@ private fun HomepagePreview() {
             ),
             interactor = FakeHomepagePreview.homepageInteractor,
             onTopSitesItemBound = {},
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = MaterialTheme.colorScheme.surface),
         )
     }
 }
@@ -499,7 +518,7 @@ private fun HomepagePreview() {
 private fun HomepagePreviewCollections() {
     FirefoxTheme {
         Homepage(
-            HomepageState.Normal(
+            state = HomepageState.Normal(
                 nimbusMessage = null,
                 topSites = FakeHomepagePreview.topSites(),
                 recentTabs = FakeHomepagePreview.recentTabs(),
@@ -515,7 +534,15 @@ private fun HomepagePreviewCollections() {
                 showRecentlyVisited = true,
                 showPocketStories = true,
                 showCollections = true,
-                showHeader = false,
+                headerState = HeaderState(
+                    showHeader = false,
+                    wordmarkTextColor = null,
+                    privateBrowsingButtonColor = colorResource(
+                        getAttr(
+                            iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color,
+                        ),
+                    ),
+                ),
                 searchBarVisible = true,
                 searchBarEnabled = false,
                 firstFrameDrawn = true,
@@ -529,6 +556,9 @@ private fun HomepagePreviewCollections() {
             ),
             interactor = FakeHomepagePreview.homepageInteractor,
             onTopSitesItemBound = {},
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = MaterialTheme.colorScheme.surface),
         )
     }
 }
@@ -554,7 +584,15 @@ private fun MinimalHomepagePreview() {
                 showRecentlyVisited = false,
                 showPocketStories = true,
                 showCollections = false,
-                showHeader = false,
+                HeaderState(
+                    showHeader = false,
+                    wordmarkTextColor = null,
+                    privateBrowsingButtonColor = colorResource(
+                        getAttr(
+                            iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color,
+                        ),
+                    ),
+                ),
                 searchBarVisible = false,
                 searchBarEnabled = false,
                 firstFrameDrawn = true,
@@ -568,6 +606,9 @@ private fun MinimalHomepagePreview() {
             ),
             interactor = FakeHomepagePreview.homepageInteractor,
             onTopSitesItemBound = {},
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = MaterialTheme.colorScheme.surface),
         )
     }
 }
@@ -576,22 +617,27 @@ private fun MinimalHomepagePreview() {
 @Preview
 private fun PrivateHomepagePreview() {
     FirefoxTheme(theme = Theme.Private) {
-        Box(
+        Homepage(
+            state = HomepageState.Private(
+                headerState = HeaderState(
+                    showHeader = false,
+                    wordmarkTextColor = null,
+                    privateBrowsingButtonColor = colorResource(
+                        getAttr(
+                            iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color,
+                        ),
+                    ),
+                ),
+                firstFrameDrawn = true,
+                isSearchInProgress = false,
+                privateModeRedesignEnabled = false,
+            ),
+            interactor = FakeHomepagePreview.homepageInteractor,
+            onTopSitesItemBound = {},
             modifier = Modifier
                 .fillMaxSize()
-                .background(color = FirefoxTheme.colors.layer1),
-        ) {
-            Homepage(
-                HomepageState.Private(
-                    showHeader = false,
-                    firstFrameDrawn = true,
-                    isSearchInProgress = false,
-                    privateModeRedesignEnabled = false,
-                ),
-                interactor = FakeHomepagePreview.homepageInteractor,
-                onTopSitesItemBound = {},
-            )
-        }
+                .background(color = MaterialTheme.colorScheme.surface),
+        )
     }
 }
 

@@ -744,10 +744,6 @@ static bool RemoveExactEntry(CacheEntryTable* aEntries, nsACString const& aKey,
     return false;  // Already replaced...
   }
 
-  // Remove from DictionaryCache immediately, to ensure the removal is
-  // synchronous
-  DictionaryCache::RemoveDictionaryFor(aEntry->GetURI());
-
   LOG(("RemoveExactEntry [entry=%p removed]", aEntry));
   aEntries->Remove(aKey);
   return true;
@@ -1382,6 +1378,9 @@ void CacheStorageService::PurgeExpiredOrOverMemoryLimit() {
 }
 
 void CacheStorageService::MemoryPool::PurgeExpiredOrOverMemoryLimit() {
+  if (StaticPrefs::network_cache_purge_disable()) {
+    return;
+  }
   TimeStamp start(TimeStamp::Now());
 
   uint32_t const memoryLimit = Limit();
@@ -1497,11 +1496,24 @@ Result<size_t, nsresult> CacheStorageService::MemoryPool::PurgeByFrecency(
     StaticMutexAutoLock lock(CacheStorageService::Self()->Lock());
 
     for (const auto& entry : mManagedEntries) {
-      // Referenced items cannot be purged and we deliberately want to not look
-      // at '0' frecency entries, these are new entries and can be ignored.
-      if (!entry->IsReferenced() && entry->GetFrecency() > 0.0) {
+      // Referenced items cannot be purged and we deliberately want to not
+      // look at '0' frecency entries, these are new entries and can be
+      // ignored.  Also, any dict: (CompressionDictionary) entries for an
+      // origin should not be purged unless empty - they will empty out as
+      // the cache entries referenced by them are purged until they are empty.
+      if (!entry->IsReferenced() && entry->GetFrecency() > 0.0 &&
+          (!entry->GetEnhanceID().EqualsLiteral("dict:") ||
+           entry->GetMetadataMemoryConsumption() == 0)) {
         mayPurgeEntry copy(entry);
         mayPurgeSorted.AppendElement(std::move(copy));
+      } else {
+        if (entry->GetEnhanceID().EqualsLiteral("dict:")) {
+          LOG(
+              ("*** Ignored Entry is a dictionary origin, metadata size %d, "
+               "referenced %d, Frecency %f",
+               entry->GetMetadataMemoryConsumption(), entry->IsReferenced(),
+               entry->GetFrecency()));
+        }
       }
     }
   }
@@ -1517,7 +1529,9 @@ Result<size_t, nsresult> CacheStorageService::MemoryPool::PurgeByFrecency(
       break;
     }
 
-    RefPtr<CacheEntry> entry = checkPurge.mEntry;
+    // Ensure it's deleted immediately if purged so we can record the
+    // mMemorySize savings
+    RefPtr<CacheEntry> entry = std::move(checkPurge.mEntry);
 
     if (entry->Purge(CacheEntry::PURGE_WHOLE)) {
       numPurged++;
@@ -1531,7 +1545,10 @@ Result<size_t, nsresult> CacheStorageService::MemoryPool::PurgeByFrecency(
     }
   }
 
-  LOG(("MemoryPool::PurgeByFrecency done"));
+  LOG(
+      ("MemoryPool::PurgeByFrecency done, purged %zu - mMemorySize %u, "
+       "memoryLimit %u",
+       numPurged, (uint32_t)mMemorySize, memoryLimit));
 
   return numPurged;
 }

@@ -8,7 +8,6 @@
 #define nsXMLContentSink_h__
 
 #include "js/ColumnNumber.h"  // JS::ColumnNumberOneOrigin
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/FromParser.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"

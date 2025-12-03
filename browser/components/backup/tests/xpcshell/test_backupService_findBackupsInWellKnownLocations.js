@@ -21,13 +21,11 @@ add_task(
       });
       return p;
     }
+    Services.prefs.setStringPref("browser.backup.location", BACKUP_DIR);
 
     // Create the service and force it to search our temp folder instead of the real default
     let bs = new BackupService();
     let sandbox = sinon.createSandbox();
-    sandbox
-      .stub(bs, "resolveExistingArchiveDestFolderPath")
-      .callsFake(async _configured => BACKUP_DIR);
 
     // getBackupFileInfo should return without throwing to simulate
     // what happens when a valid backup file's validity is checked

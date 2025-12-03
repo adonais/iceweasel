@@ -23,7 +23,7 @@ import org.mozilla.fenix.helpers.Constants.PackageName.GOOGLE_DOCS
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
-import org.mozilla.fenix.helpers.TestAssetHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestHelper.clickSnackbarButton
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
@@ -351,8 +351,7 @@ class DownloadTest : TestSetup() {
     @SmokeTest
     @Test
     fun saveAsPdfFunctionalityTest() {
-        val genericURL =
-            TestAssetHelper.getGenericAsset(mockWebServer, 3)
+        val genericURL = mockWebServer.getGenericAsset(3)
         downloadFile = "pdfForm.pdf"
 
         navigationToolbar {

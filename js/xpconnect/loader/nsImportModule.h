@@ -12,7 +12,6 @@
 #include "mozilla/fallible.h"
 
 #include "nsCOMPtr.h"
-#include "mozilla/RefPtr.h"
 
 namespace mozilla {
 namespace loader {

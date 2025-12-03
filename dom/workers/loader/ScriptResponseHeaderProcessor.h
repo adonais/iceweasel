@@ -47,8 +47,7 @@ class ScriptResponseHeaderProcessor final : public nsIRequestObserver {
 
   NS_IMETHOD OnStartRequest(nsIRequest* aRequest) override {
     nsresult rv = NS_OK;
-    if (mRequiresStrictMimeCheck &&
-        StaticPrefs::dom_workers_importScripts_enforceStrictMimeType()) {
+    if (mRequiresStrictMimeCheck) {
       rv = EnsureExpectedModuleType(aRequest);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         aRequest->Cancel(rv);

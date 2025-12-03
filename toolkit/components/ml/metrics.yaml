@@ -38,6 +38,7 @@ firefox.ai.runtime:
       - default-engine
       - smart-tab-embedding-engine
       - smart-tab-topic-engine
+      - smart-intent
 
   engine_creation_failure:
     type: event
@@ -119,6 +120,7 @@ firefox.ai.runtime:
       - default-engine
       - smart-tab-embedding-engine
       - smart-tab-topic-engine
+      - smart-intent
 
   model_download:
     type: event

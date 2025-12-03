@@ -14,7 +14,6 @@
 
 #include "nsRemoteServer.h"
 #include "nsXRemoteServer.h"
-#include "mozilla/Attributes.h"
 
 class nsGTKRemoteServer final : public nsXRemoteServer {
  public:

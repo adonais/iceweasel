@@ -13,6 +13,7 @@ import org.mozilla.focus.R
 import org.mozilla.focus.databinding.ItemSessionBinding
 import org.mozilla.focus.ext.beautifyUrl
 import java.lang.ref.WeakReference
+import mozilla.components.ui.icons.R as iconsR
 
 class TabViewHolder(
     private val binding: ItemSessionBinding,
@@ -70,7 +71,7 @@ class TabViewHolder(
 
         binding.sessionItem.setBackgroundResource(drawable)
         binding.sessionTitle.apply {
-            setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_link, 0, 0, 0)
+            setCompoundDrawablesWithIntrinsicBounds(iconsR.drawable.mozac_ic_link_24, 0, 0, 0)
             text = title
             setOnClickListener {
                 val clickedTab = tabReference.get() ?: return@setOnClickListener
@@ -97,7 +98,7 @@ class TabViewHolder(
         binding.sessionItem.setBackgroundResource(drawable)
 
         val drawableWidth =
-            AppCompatResources.getDrawable(binding.root.context, R.drawable.ic_link)?.intrinsicWidth ?: 0
+            AppCompatResources.getDrawable(binding.root.context, iconsR.drawable.mozac_ic_link_24)?.intrinsicWidth ?: 0
 
         binding.sessionTitle.apply {
             text = binding.root.context.getString(R.string.tabs_tray_action_erase_other)

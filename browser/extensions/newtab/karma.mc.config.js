@@ -227,7 +227,7 @@ module.exports = function (config) {
                 statements: 94.94,
                 lines: 94.84,
                 functions: 9.91,
-                branches: 71.69,
+                branches: 70.72,
               },
             "content-src/components/DiscoveryStreamComponents/CardSections/CardSections.jsx":
               {
@@ -305,8 +305,8 @@ module.exports = function (config) {
               branches: 0,
             },
             "content-src/components/Weather/Weather.jsx": {
-              statements: 51.1,
-              lines: 52.38,
+              statements: 50,
+              lines: 50.94,
               functions: 31.2,
               branches: 31.2,
             },

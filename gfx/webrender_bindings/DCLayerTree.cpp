@@ -750,6 +750,9 @@ void DCLayerTree::PresentSwapChain(wr::NativeSurfaceId aId,
                                    size_t aNumDirtyRects) {
   auto surface = GetSurface(aId);
   surface->AsDCLayerSurface()->Present(aDirtyRects, aNumDirtyRects);
+  if (surface->AsDCLayerDCompositionTexture()) {
+    mPendingCommit = true;
+  }
 }
 
 void DCLayerTree::Bind(wr::NativeTileId aId, wr::DeviceIntPoint* aOffset,
@@ -845,7 +848,15 @@ void DCLayerTree::CreateSwapChainSurface(wr::NativeSurfaceId aId,
   MOZ_RELEASE_ASSERT(it == mDCSurfaces.end());
 
   UniquePtr<DCSurface> surface;
-  if (!mEnableAsyncScreenshot &&
+  if (SupportsDCompositionTexture()) {
+    surface = MakeUnique<DCLayerDCompositionTexture>(aSize, aIsOpaque, this);
+    if (!surface->Initialize()) {
+      gfxCriticalNote << "Failed to initialize DCLayerDCompositionTexture: "
+                      << wr::AsUint64(aId);
+      RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
+    }
+  } else if (
+      !mEnableAsyncScreenshot &&
       (aNeedsSyncDcompCommit ||
        StaticPrefs::
            gfx_webrender_layer_compositor_force_composition_surface_AtStartup())) {
@@ -1309,6 +1320,36 @@ bool DCLayerTree::SupportsSwapChainTearing() {
   return supported;
 }
 
+bool DCLayerTree::SupportsDCompositionTexture() {
+  RefPtr<ID3D11Device> device = mDevice;
+  RefPtr<IDCompositionDevice2> compositionDevice = mCompositionDevice;
+  static const bool supported = [device, compositionDevice] {
+    const auto dcomp4 = QI<IDCompositionDevice4>::From(compositionDevice.get());
+    if (!dcomp4) {
+      return false;
+    }
+
+    BOOL supportCompositionTexture = FALSE;
+    HRESULT hr = dcomp4->CheckCompositionTextureSupport(
+        device, &supportCompositionTexture);
+    if (FAILED(hr)) {
+      return false;
+    }
+
+    if (supportCompositionTexture == FALSE) {
+      return false;
+    }
+
+    return true;
+  }();
+
+  if (!gfx::gfxVars::WebRenderLayerCompositorDCompTexture()) {
+    return false;
+  }
+
+  return supported;
+}
+
 DXGI_FORMAT DCLayerTree::GetOverlayFormatForSDR() {
   return sGpuOverlayInfo->mOverlayFormatUsed;
 }
@@ -1523,6 +1564,203 @@ DCTile* DCSurface::GetTile(int32_t aX, int32_t aY) const {
   auto tile_it = mDCTiles.find(key);
   MOZ_RELEASE_ASSERT(tile_it != mDCTiles.end());
   return tile_it->second.get();
+}
+
+DCLayerDCompositionTexture::TextureHolder::TextureHolder(
+    ID3D11Texture2D* aTexture, IDCompositionTexture* aDCompositionTexture,
+    EGLSurface aEGLSurface)
+    : mTexture(aTexture),
+      mDCompositionTexture(aDCompositionTexture),
+      mEGLSurface(aEGLSurface) {}
+
+DCLayerDCompositionTexture::DCLayerDCompositionTexture(
+    wr::DeviceIntSize aSize, bool aIsOpaque, DCLayerTree* aDCLayerTree)
+    : DCLayerSurface(aIsOpaque, aDCLayerTree),
+      mSwapChainBufferCount(gfx::gfxVars::UseWebRenderTripleBufferingWin() ? 3
+                                                                           : 2),
+      mSize(aSize) {}
+
+DCLayerDCompositionTexture::~DCLayerDCompositionTexture() { DestroyTextures(); }
+
+bool DCLayerDCompositionTexture::Initialize() {
+  DCSurface::Initialize();
+
+  if (!AllocateTextures()) {
+    return false;
+  }
+  return true;
+}
+
+bool DCLayerDCompositionTexture::AllocateTextures() {
+  MOZ_ASSERT(mAvailableTextureHolders.empty());
+
+  HRESULT hr;
+  const auto device = mDCLayerTree->GetDevice();
+  const auto dcomp = mDCLayerTree->GetCompositionDevice();
+  const auto dcomp4 = QI<IDCompositionDevice4>::From(dcomp);
+  if (!dcomp4) {
+    return false;
+  }
+
+  const auto gl = mDCLayerTree->GetGLContext();
+  const auto& gle = gl::GLContextEGL::Cast(gl);
+  const auto& egl = gle->mEgl;
+  const EGLConfig eglConfig = mDCLayerTree->GetEGLConfig();
+
+  CD3D11_TEXTURE2D_DESC desc(
+      DXGI_FORMAT_B8G8R8A8_UNORM, mSize.width, mSize.height, 1, 1,
+      D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
+
+  desc.MiscFlags =
+      D3D11_RESOURCE_MISC_SHARED_NTHANDLE | D3D11_RESOURCE_MISC_SHARED;
+
+  for (size_t i = 0; i < mSwapChainBufferCount; i++) {
+    // Allocate ID3D11Texture2D
+    RefPtr<ID3D11Texture2D> texture;
+    hr = device->CreateTexture2D(&desc, nullptr, getter_AddRefs(texture));
+    if (FAILED(hr)) {
+      gfxCriticalNoteOnce << "CreateTexture2D failed:  " << gfx::hexa(hr);
+      return false;
+    }
+
+    // Allocate IDCompositionTexture
+    RefPtr<IDCompositionTexture> dcompTexture;
+    hr =
+        dcomp4->CreateCompositionTexture(texture, getter_AddRefs(dcompTexture));
+    if (FAILED(hr)) {
+      gfxCriticalNoteOnce << "CreateCompositionTexture failed:  "
+                          << gfx::hexa(hr);
+      return false;
+    }
+
+    const auto alphaMode =
+        mIsOpaque ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
+    dcompTexture->SetAlphaMode(alphaMode);
+    // XXX
+    // dcompTexture->SetColorSpace();
+
+    // Allocate mEGLSurface
+    EGLSurface surface = EGL_NO_SURFACE;
+    const EGLint pbuffer_attribs[]{LOCAL_EGL_WIDTH, mSize.width,
+                                   LOCAL_EGL_HEIGHT, mSize.height,
+                                   LOCAL_EGL_NONE};
+    const auto buffer = reinterpret_cast<EGLClientBuffer>(texture.get());
+
+    surface = egl->fCreatePbufferFromClientBuffer(
+        LOCAL_EGL_D3D_TEXTURE_ANGLE, buffer, eglConfig, pbuffer_attribs);
+    if (!surface) {
+      EGLint err = egl->mLib->fGetError();
+      gfxCriticalNote << "Failed to create Pbuffer error: " << gfx::hexa(err)
+                      << " Size : "
+                      << LayoutDeviceIntSize(mSize.width, mSize.height);
+      return false;
+    }
+
+    auto textureHolder =
+        MakeUnique<TextureHolder>(texture, dcompTexture, surface);
+    mAvailableTextureHolders.push_back(std::move(textureHolder));
+  }
+
+  MOZ_ASSERT(mAvailableTextureHolders.size() == mSwapChainBufferCount);
+
+  return true;
+}
+
+void DCLayerDCompositionTexture::DestroyTextures() {
+  const auto gl = mDCLayerTree->GetGLContext();
+  const auto& gle = gl::GLContextEGL::Cast(gl);
+  const auto& egl = gle->mEgl;
+
+  if (mCurrentTextureHolder) {
+    mAvailableTextureHolders.push_back(std::move(mCurrentTextureHolder));
+  }
+
+  if (mPresentingTextureHolder) {
+    mAvailableTextureHolders.push_back(std::move(mPresentingTextureHolder));
+  }
+
+  while (!mAvailableTextureHolders.empty()) {
+    auto& front = mAvailableTextureHolders.front();
+
+    if (front->mEGLSurface) {
+      if (gle->GetEGLSurfaceOverride() == front->mEGLSurface) {
+        gle->SetEGLSurfaceOverride(EGL_NO_SURFACE);
+      }
+      egl->fDestroySurface(front->mEGLSurface);
+      front->mEGLSurface = EGL_NO_SURFACE;
+    }
+
+    mAvailableTextureHolders.pop_front();
+  }
+
+  MOZ_ASSERT(!mCurrentTextureHolder);
+  MOZ_ASSERT(!mPresentingTextureHolder);
+  MOZ_ASSERT(mAvailableTextureHolders.empty());
+}
+
+UniquePtr<DCLayerDCompositionTexture::TextureHolder>
+DCLayerDCompositionTexture::GetNextTexture() {
+  MOZ_ASSERT(!mAvailableTextureHolders.empty());
+
+  if (mAvailableTextureHolders.empty()) {
+    return nullptr;
+  }
+
+  UniquePtr<TextureHolder> textureHolder =
+      std::move(mAvailableTextureHolders.front());
+  mAvailableTextureHolders.pop_front();
+
+  return textureHolder;
+}
+
+void DCLayerDCompositionTexture::UpdateCurrentTexture() {
+  if (mCurrentTextureHolder) {
+    mAvailableTextureHolders.push_back(std::move(mCurrentTextureHolder));
+  }
+
+  MOZ_ASSERT(!mCurrentTextureHolder);
+
+  mCurrentTextureHolder = GetNextTexture();
+}
+
+void DCLayerDCompositionTexture::Bind(const wr::DeviceIntRect* aDirtyRects,
+                                      size_t aNumDirtyRects) {
+  UpdateCurrentTexture();
+
+  if (!mCurrentTextureHolder ||
+      (mCurrentTextureHolder->mEGLSurface == EGL_NO_SURFACE)) {
+    return;
+  }
+
+  const auto gl = mDCLayerTree->GetGLContext();
+  const auto& gle = gl::GLContextEGL::Cast(gl);
+
+  gle->SetEGLSurfaceOverride(mCurrentTextureHolder->mEGLSurface);
+}
+
+bool DCLayerDCompositionTexture::Resize(wr::DeviceIntSize aSize) {
+  DestroyTextures();
+  mSize = aSize;
+  bool ret = AllocateTextures();
+  return ret;
+}
+
+void DCLayerDCompositionTexture::Present(const wr::DeviceIntRect* aDirtyRects,
+                                         size_t aNumDirtyRects) {
+  if (!mCurrentTextureHolder) {
+    return;
+  }
+
+  if (mPresentingTextureHolder) {
+    mAvailableTextureHolders.push_back(std::move(mPresentingTextureHolder));
+  }
+  MOZ_ASSERT(!mPresentingTextureHolder);
+
+  mPresentingTextureHolder = std::move(mCurrentTextureHolder);
+  MOZ_ASSERT(!mCurrentTextureHolder);
+  MOZ_ASSERT(mPresentingTextureHolder);
+
+  mContentVisual->SetContent(mPresentingTextureHolder->mDCompositionTexture);
 }
 
 DCSwapChain::DCSwapChain(wr::DeviceIntSize aSize, bool aIsOpaque,
@@ -1963,7 +2201,12 @@ bool IsYUVSwapChainFormat(DXGI_FORMAT aFormat) {
 void DCSurfaceVideo::AttachExternalImage(wr::ExternalImageId aExternalImage) {
   auto [texture, usageInfo] =
       RenderThread::Get()->GetRenderTextureAndUsageInfo(aExternalImage);
-  MOZ_RELEASE_ASSERT(texture);
+  if (!texture) {
+    gfxCriticalNoteOnce << "Failed to attach ExternalImage for extId:"
+                        << AsUint64(aExternalImage);
+    mRenderTextureHost = nullptr;
+    return;
+  }
 
   if (usageInfo) {
     mRenderTextureHostUsageInfo = usageInfo;

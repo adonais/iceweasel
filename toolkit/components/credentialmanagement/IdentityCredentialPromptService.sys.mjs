@@ -13,7 +13,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "IDNService",
   "@mozilla.org/network/idn-service;1",
-  "nsIIDNService"
+  Ci.nsIIDNService
 );
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -65,7 +65,7 @@ async function fetchToDataUrl(url) {
 
 /**
  * Class implementing the nsIIdentityCredentialPromptService
- * */
+ */
 export class IdentityCredentialPromptService {
   classID = Components.ID("{936007db-a957-4f1d-a23d-f7d9403223e6}");
   QueryInterface = ChromeUtils.generateQI([

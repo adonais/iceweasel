@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="chrome://global/skin/global.css" />
     <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
     <script src="../../../../../toolkit/content/tests/widgets/lit-test-helpers.js"></script>
+    <script src="./head.js"></script>
     <script
       type="module"
       src="chrome://browser/content/preferences/widgets/setting-group.mjs"
@@ -193,6 +194,23 @@
           () => group.hidden,
           "Group should be hidden now that the controls are hidden"
         );
+      });
+
+      add_task(async function testCommonControlProperties() {
+        const SETTING = "setting-control-support-link";
+        Preferences.addSetting({
+          id: SETTING,
+          get: () => true,
+        });
+
+        await testCommonSettingControlProperties(async commonConfig => {
+          const control = await renderTemplate({
+            ...commonConfig,
+            id: SETTING,
+            items: [],
+          });
+          return control.querySelector("moz-fieldset");
+        });
       });
 
       add_task(async function testSettingGroupCallbacks() {

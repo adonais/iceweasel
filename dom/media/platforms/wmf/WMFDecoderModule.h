@@ -10,7 +10,6 @@
 #include "PlatformDecoderModule.h"
 #include "WMF.h"
 #include "WMFUtils.h"
-#include "mozilla/Atomics.h"
 
 namespace mozilla {
 

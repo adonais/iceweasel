@@ -7,7 +7,6 @@
 #include "KeyEventHandler.h"
 
 #include "ErrorList.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/JSEventHandler.h"
 #include "mozilla/LookAndFeel.h"

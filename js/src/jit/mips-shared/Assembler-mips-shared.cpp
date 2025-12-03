@@ -7,7 +7,6 @@
 #include "jit/mips-shared/Assembler-mips-shared.h"
 
 #include "mozilla/DebugOnly.h"
-#include "mozilla/MathAlgorithms.h"
 
 #include "gc/Marking.h"
 #include "jit/ExecutableAllocator.h"
@@ -1350,6 +1349,13 @@ BufferOffset AssemblerMIPSShared::as_ceilws(FloatRegister fd,
       InstReg(op_cop1, rs_s, zero, fs, fd, ff_ceil_w_fmt).encode());
 }
 
+BufferOffset AssemblerMIPSShared::as_ceills(FloatRegister fd,
+                                            FloatRegister fs) {
+  spew("ceil.l.s%3s,%3s", fd.name(), fs.name());
+  return writeInst(
+      InstReg(op_cop1, rs_s, zero, fs, fd, ff_ceil_l_fmt).encode());
+}
+
 BufferOffset AssemblerMIPSShared::as_floorws(FloatRegister fd,
                                              FloatRegister fs) {
   spew("floor.w.s%3s,%3s", fd.name(), fs.name());
@@ -1357,11 +1363,25 @@ BufferOffset AssemblerMIPSShared::as_floorws(FloatRegister fd,
       InstReg(op_cop1, rs_s, zero, fs, fd, ff_floor_w_fmt).encode());
 }
 
+BufferOffset AssemblerMIPSShared::as_floorls(FloatRegister fd,
+                                             FloatRegister fs) {
+  spew("floor.l.s%3s,%3s", fd.name(), fs.name());
+  return writeInst(
+      InstReg(op_cop1, rs_s, zero, fs, fd, ff_floor_l_fmt).encode());
+}
+
 BufferOffset AssemblerMIPSShared::as_roundws(FloatRegister fd,
                                              FloatRegister fs) {
   spew("round.w.s%3s,%3s", fd.name(), fs.name());
   return writeInst(
       InstReg(op_cop1, rs_s, zero, fs, fd, ff_round_w_fmt).encode());
+}
+
+BufferOffset AssemblerMIPSShared::as_roundls(FloatRegister fd,
+                                             FloatRegister fs) {
+  spew("round.l.s%3s,%3s", fd.name(), fs.name());
+  return writeInst(
+      InstReg(op_cop1, rs_s, zero, fs, fd, ff_round_l_fmt).encode());
 }
 
 BufferOffset AssemblerMIPSShared::as_truncws(FloatRegister fd,
@@ -1386,6 +1406,13 @@ BufferOffset AssemblerMIPSShared::as_ceilwd(FloatRegister fd,
       InstReg(op_cop1, rs_d, zero, fs, fd, ff_ceil_w_fmt).encode());
 }
 
+BufferOffset AssemblerMIPSShared::as_ceilld(FloatRegister fd,
+                                            FloatRegister fs) {
+  spew("ceil.l.d%3s,%3s", fd.name(), fs.name());
+  return writeInst(
+      InstReg(op_cop1, rs_d, zero, fs, fd, ff_ceil_l_fmt).encode());
+}
+
 BufferOffset AssemblerMIPSShared::as_floorwd(FloatRegister fd,
                                              FloatRegister fs) {
   spew("floor.w.d%3s,%3s", fd.name(), fs.name());
@@ -1393,11 +1420,25 @@ BufferOffset AssemblerMIPSShared::as_floorwd(FloatRegister fd,
       InstReg(op_cop1, rs_d, zero, fs, fd, ff_floor_w_fmt).encode());
 }
 
+BufferOffset AssemblerMIPSShared::as_floorld(FloatRegister fd,
+                                             FloatRegister fs) {
+  spew("floor.l.d%3s,%3s", fd.name(), fs.name());
+  return writeInst(
+      InstReg(op_cop1, rs_d, zero, fs, fd, ff_floor_l_fmt).encode());
+}
+
 BufferOffset AssemblerMIPSShared::as_roundwd(FloatRegister fd,
                                              FloatRegister fs) {
   spew("round.w.d%3s,%3s", fd.name(), fs.name());
   return writeInst(
       InstReg(op_cop1, rs_d, zero, fs, fd, ff_round_w_fmt).encode());
+}
+
+BufferOffset AssemblerMIPSShared::as_roundld(FloatRegister fd,
+                                             FloatRegister fs) {
+  spew("round.l.d%3s,%3s", fd.name(), fs.name());
+  return writeInst(
+      InstReg(op_cop1, rs_d, zero, fs, fd, ff_round_l_fmt).encode());
 }
 
 BufferOffset AssemblerMIPSShared::as_truncwd(FloatRegister fd,

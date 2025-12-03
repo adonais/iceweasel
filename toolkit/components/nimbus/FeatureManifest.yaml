@@ -287,6 +287,12 @@ urlbar:
       description: >-
         Feature gate that controls whether all aspects of the Fakespot suggestion
         feature are exposed to the user.
+    flightStatusFeatureGate:
+      type: boolean
+      fallbackPref: browser.urlbar.flightStatus.featureGate
+      description: >-
+        Feature gate that controls whether all aspects of flight status suggestions
+        feature are exposed to the user.
     importantDatesFeatureGate:
       type: boolean
       fallbackPref: browser.urlbar.importantDates.featureGate
@@ -426,9 +432,6 @@ urlbar:
         branch: default
         pref: browser.urlbar.quicksuggest.contextualOptIn.impressionDaysLimit
       description: Days until dismiss the Firefox Suggest contextual opt-in result after first impression.
-    quickSuggestDataCollectionEnabled:
-      type: boolean
-      description: Whether data collection should be enabled by default. If this variable is specified, it will override the value implied by the scenario. It will never override the user's local preference to disable (or enable) data collection, if the user has already toggled that preference.
     quickSuggestDynamicSuggestionTypes:
       type: string
       setPref:
@@ -479,13 +482,20 @@ urlbar:
         Whether Suggest will use the ML backend in addition to Rust.
     quickSuggestNonSponsoredEnabled:
       type: boolean
-      description: Whether non-sponsored suggestions should be enabled by default. If this variable is specified, it will override the value implied by the scenario. It will never override the user's local preference to disable (or enable) non-sponsored suggestions, if the user has already toggled that preference.
+      description: >-
+        Deprecated: In 146 and later this variable no longer does anything. It
+        should be removed once all current experiments that use it finish.
     quickSuggestNonSponsoredIndex:
       type: int
       fallbackPref: browser.urlbar.quicksuggest.nonSponsoredIndex
       description: >-
         The index of non-sponsored QuickSuggest results within the general
         group. A negative index is relative to the end of the group
+    quickSuggestOnlineAvailable:
+      type: boolean
+      fallbackPref: browser.urlbar.quicksuggest.online.available
+      description: >-
+        Whether online Suggest should be made available to the user.
     quickSuggestRankingMode:
       type: string
       fallbackPref: browser.urlbar.quicksuggest.rankingMode
@@ -603,6 +613,12 @@ urlbar:
         pref: browser.urlbar.showDebuggingIcons
       description: >-
         Whether or not to show debugging badges on urlbar results favicons.
+    sportsFeatureGate:
+      type: boolean
+      fallbackPref: browser.urlbar.sports.featureGate
+      description: >-
+        Feature gate that controls whether all aspects of the sports suggestions
+        feature are exposed to the user.
     suggestSemanticHistoryMinLength:
       type: int
       setPref:
@@ -1132,21 +1148,6 @@ newtabCustomWallpaper:
         pref: browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.fileSize
       description: >-
         Maximum file size (in MB) a user can upload
-
-newtabGroupedSponsoredControls:
-  description: >-
-    Adjust sponsored content controls on newtab.
-  owner: mcrawford@mozilla.com
-  hasExposure: false
-  variables:
-    enabled:
-      type: boolean
-      setPref:
-        branch: user
-        pref: browser.newtabpage.activity-stream.system.showSponsoredCheckboxes
-      description: >-
-        When true, checkboxes for sponsored results in top sites and recommended stories are grouped separately
-        on about:preferences#home
 
 newtabInlineTopicSelection:
   description: >-
@@ -3103,6 +3104,12 @@ localNetworkAccess:
   owner: vgosu@mozilla.com
   hasExposure: false
   variables:
+    enableLNAWithETPStrict:
+      description: Whether to enable LNA restrictions in ETP Strict Mode
+      type: boolean
+      setPref:
+        branch: default
+        pref: "network.lna.etp.enabled"
     blockTrackers:
       description: Whether network requests triggered by third party scripts classified as trackers should be blocked when making a localhost request.
       type: boolean
@@ -4829,12 +4836,10 @@ backupService:
         pref: browser.backup.scheduled.minimum-time-between-backups-seconds
     archiveKillswitch:
       type: boolean
-      default: false
       description: >-
         Disables backup archiving, overrides all other configs when true.
     restoreKillswitch:
       type: boolean
-      default: false
       description: >-
         Disables backup restoration, overrides all other configs when true.
 

@@ -246,7 +246,7 @@ bool TableData::DoLookup(nsUrlClassifierDBServiceWorker* aWorkerClassifier) {
     const nsTArray<nsCString>& fragments = mURIData->Fragments();
     nsresult rv = aWorkerClassifier->DoSingleLocalLookupWithURIFragments(
         fragments, mTable, mResults);
-    Unused << NS_WARN_IF(NS_FAILED(rv));
+    (void)NS_WARN_IF(NS_FAILED(rv));
 
     mState = mResults.IsEmpty() ? TableData::eNoMatch : TableData::eMatch;
 
@@ -522,7 +522,7 @@ bool FeatureData::MaybeCompleteClassification(nsIChannel* aChannel) {
 
   bool shouldContinue = false;
   rv = mFeature->ProcessChannel(aChannel, list, hashes, &shouldContinue);
-  Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 
   return shouldContinue;
 }
@@ -875,8 +875,8 @@ nsresult AsyncUrlChannelClassifier::CheckChannel(
           std::min(chanSpec.Length(), UrlClassifierCommon::sMaxSpecLength));
 
       nsCOMPtr<nsIURI> topWinURI;
-      Unused << UrlClassifierCommon::GetTopWindowURI(aChannel,
-                                                     getter_AddRefs(topWinURI));
+      (void)UrlClassifierCommon::GetTopWindowURI(aChannel,
+                                                 getter_AddRefs(topWinURI));
       nsCString topWinSpec =
           topWinURI ? topWinURI->GetSpecOrDefault() : "(null)"_ns;
 

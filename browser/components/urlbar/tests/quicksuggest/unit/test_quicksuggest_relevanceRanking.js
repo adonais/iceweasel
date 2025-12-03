@@ -99,7 +99,7 @@ add_setup(async () => {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     merinoSuggestions: MERINO_SUGGESTIONS,
     prefs: [
-      ["suggest.quicksuggest.nonsponsored", true],
+      ["suggest.quicksuggest.all", true],
       ["suggest.quicksuggest.sponsored", true],
 
       // Turn off higher-placement sponsored so this test doesn't need to worry
@@ -321,7 +321,7 @@ add_task(async function offline_default_mode_end2end() {
 
 async function doOfflineTest({ mode, expectedResultArgs }) {
   // Turn off Merino.
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("quicksuggest.online.enabled", false);
 
   Services.prefs.setStringPref(PREF_RANKING_MODE, mode);
 
@@ -371,7 +371,7 @@ async function doOfflineTest({ mode, expectedResultArgs }) {
   });
 
   Services.prefs.clearUserPref(PREF_RANKING_MODE);
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
+  UrlbarPrefs.clear("quicksuggest.online.enabled");
   sandbox.restore();
 }
 

@@ -232,7 +232,7 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
                         const OriginAttributes& aOriginAttributes,
                         Cookie* aCookie);
 
-  static void FindStaleCookies(CookieEntry* aEntry, int64_t aCurrentTime,
+  static void FindStaleCookies(CookieEntry* aEntry, int64_t aCurrentTimeInMSec,
                                bool aIsSecure,
                                nsTArray<CookieListIter>& aOutput,
                                uint32_t aLimit);

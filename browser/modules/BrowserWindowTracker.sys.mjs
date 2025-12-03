@@ -15,7 +15,7 @@ const lazy = {};
 // Lazy getters
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
-  BrowserHandler: ["@mozilla.org/browser/clh;1", "nsIBrowserHandler"],
+  BrowserHandler: ["@mozilla.org/browser/clh;1", Ci.nsIBrowserHandler],
 });
 
 ChromeUtils.defineESModuleGetters(lazy, {

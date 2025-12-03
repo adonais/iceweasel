@@ -39,7 +39,6 @@
 
 #include "DOMSVGTransform.h"
 #include "gfxMatrix.h"
-#include "mozilla/Attributes.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
 

@@ -681,7 +681,7 @@ class BOffImm16 {
   bool isInvalid() { return data == INVALID; }
   Instruction* getDest(Instruction* src) const;
 
-  BOffImm16(InstImm inst);
+  explicit BOffImm16(InstImm inst);
 };
 
 // A JOffImm26 is a 26 bit immediate that is used for unconditional jumps.
@@ -723,7 +723,7 @@ class Imm16 {
 
  public:
   Imm16();
-  Imm16(uint32_t imm) : value(imm) {}
+  explicit Imm16(uint32_t imm) : value(imm) {}
   uint32_t encode() { return value; }
   int32_t decodeSigned() { return value; }
   uint32_t decodeUnsigned() { return value; }
@@ -740,7 +740,7 @@ class Imm8 {
 
  public:
   Imm8();
-  Imm8(uint32_t imm) : value(imm) {}
+  explicit Imm8(uint32_t imm) : value(imm) {}
   uint32_t encode(uint32_t shift) { return value << shift; }
   int32_t decodeSigned() { return value; }
   uint32_t decodeUnsigned() { return value; }
@@ -764,9 +764,9 @@ class Operand {
   int32_t offset;
 
  public:
-  Operand(Register reg_) : tag(REG), reg(reg_.code()) {}
+  MOZ_IMPLICIT Operand(Register reg_) : tag(REG), reg(reg_.code()) {}
 
-  Operand(FloatRegister freg) : tag(FREG), reg(freg.code()) {}
+  explicit Operand(FloatRegister freg) : tag(FREG), reg(freg.code()) {}
 
   Operand(Register base, Imm32 off)
       : tag(MEM), reg(base.code()), offset(off.value) {}
@@ -774,7 +774,7 @@ class Operand {
   Operand(Register base, int32_t off)
       : tag(MEM), reg(base.code()), offset(off) {}
 
-  Operand(const Address& addr)
+  explicit Operand(const Address& addr)
       : tag(MEM), reg(addr.base.code()), offset(addr.offset) {}
 
   Tag getTag() const { return tag; }
@@ -1526,7 +1526,7 @@ class Instruction {
 
  protected:
   // Standard constructor
-  Instruction(uint32_t data_) : data(data_) {}
+  explicit Instruction(uint32_t data_) : data(data_) {}
   // You should never create an instruction directly.  You should create a
   // more specific instruction which will eventually call one of these
   // constructors for you.

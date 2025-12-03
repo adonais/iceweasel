@@ -46,9 +46,6 @@ support-files = ["oversize.sjs"]
 ["browser_partitionedConsole.js"]
 support-files = ["partitioned.sjs"]
 
-["browser_partitioned_telemetry.js"]
-support-files = ["partitioned.sjs"]
-
 ["browser_sameSiteConsole.js"]
 support-files = ["sameSite.sjs"]
 

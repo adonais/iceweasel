@@ -9,7 +9,6 @@
 #include <iterator>
 
 #include "mozilla/Algorithm.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"

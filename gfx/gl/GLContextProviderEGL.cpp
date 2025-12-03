@@ -61,7 +61,6 @@
 #include "GLContextProvider.h"
 #include "GLLibraryEGL.h"
 #include "GLLibraryLoader.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_gfx.h"

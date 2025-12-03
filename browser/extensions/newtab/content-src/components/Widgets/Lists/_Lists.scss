@@ -3,9 +3,10 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 .lists {
+  @include newtab-card-style;
+
   grid-column: span 1;
   width: var(--newtab-card-width-medium);
-  background: var(--newtab-background-card);
   border-radius: var(--border-radius-large);
   padding-block-start: var(--space-medium);
   height: var(--newtab-card-height);

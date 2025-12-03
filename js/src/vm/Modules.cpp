@@ -268,35 +268,11 @@ JS_PUBLIC_API JSObject* JS::CompileJsonModule(
     return nullptr;
   }
 
-  Rooted<ExportNameVector> exportNames(cx);
-  if (!exportNames.append(cx->names().default_)) {
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-
-  Rooted<ModuleObject*> moduleObject(
-      cx, ModuleObject::createSynthetic(cx, &exportNames));
-  if (!moduleObject) {
-    return nullptr;
-  }
-
-  RootedVector<Value> exportValues(cx);
-  if (!exportValues.append(jsonValue)) {
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-
-  if (!ModuleObject::createSyntheticEnvironment(cx, moduleObject,
-                                                exportValues)) {
-    return nullptr;
-  }
-
-  return moduleObject;
+  return CreateDefaultExportSyntheticModule(cx, jsonValue);
 }
 
-JS_PUBLIC_API JSObject* JS::CreateCssModule(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    const Value& cssValue) {
+JS_PUBLIC_API JSObject* JS::CreateDefaultExportSyntheticModule(
+    JSContext* cx, const Value& defaultExport) {
   Rooted<ExportNameVector> exportNames(cx);
   if (!exportNames.append(cx->names().default_)) {
     ReportOutOfMemory(cx);
@@ -310,7 +286,7 @@ JS_PUBLIC_API JSObject* JS::CreateCssModule(
   }
 
   RootedVector<Value> exportValues(cx);
-  if (!exportValues.append(cssValue)) {
+  if (!exportValues.append(defaultExport)) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -401,57 +377,6 @@ JS_PUBLIC_API bool JS::ThrowOnModuleEvaluationFailure(
   cx->releaseCheck(evaluationPromise);
 
   return OnModuleEvaluationFailure(cx, evaluationPromise, errorBehaviour);
-}
-
-JS_PUBLIC_API uint32_t
-JS::GetRequestedModulesCount(JSContext* cx, Handle<JSObject*> moduleRecord) {
-  AssertHeapIsIdle();
-  CHECK_THREAD(cx);
-  cx->check(moduleRecord);
-
-  return moduleRecord->as<ModuleObject>().requestedModules().Length();
-}
-
-JS_PUBLIC_API JSString* JS::GetRequestedModuleSpecifier(
-    JSContext* cx, Handle<JSObject*> moduleRecord, uint32_t index) {
-  AssertHeapIsIdle();
-  CHECK_THREAD(cx);
-  cx->check(moduleRecord);
-
-  auto* moduleRequest = moduleRecord->as<ModuleObject>()
-                            .requestedModules()[index]
-                            .moduleRequest();
-
-  // This implements step 7.1.1 in HostLoadImportedModule.
-  // https://html.spec.whatwg.org/multipage/webappapis.html#hostloadimportedmodule
-  //
-  // If moduleRequest.[[Attributes]] contains a Record entry such that
-  // entry.[[Key]] is not "type",
-  if (moduleRequest->hasFirstUnsupportedAttributeKey()) {
-    UniqueChars printableKey = AtomToPrintableString(
-        cx, moduleRequest->getFirstUnsupportedAttributeKey());
-    JS_ReportErrorNumberASCII(
-        cx, GetErrorMessage, nullptr,
-        JSMSG_IMPORT_ATTRIBUTES_STATIC_IMPORT_UNSUPPORTED_ATTRIBUTE,
-        printableKey ? printableKey.get() : "");
-    return nullptr;
-  }
-
-  return moduleRequest->specifier();
-}
-
-JS_PUBLIC_API void JS::GetRequestedModuleSourcePos(
-    JSContext* cx, Handle<JSObject*> moduleRecord, uint32_t index,
-    uint32_t* lineNumber, JS::ColumnNumberOneOrigin* columnNumber) {
-  AssertHeapIsIdle();
-  CHECK_THREAD(cx);
-  cx->check(moduleRecord);
-  MOZ_ASSERT(lineNumber);
-  MOZ_ASSERT(columnNumber);
-
-  auto& module = moduleRecord->as<ModuleObject>();
-  *lineNumber = module.requestedModules()[index].lineNumber();
-  *columnNumber = module.requestedModules()[index].columnNumber();
 }
 
 JS_PUBLIC_API JS::ModuleType JS::GetRequestedModuleType(
@@ -813,7 +738,8 @@ static void ThrowUnexpectedModuleStatus(JSContext* cx, ModuleStatus status) {
 bool js::HostLoadImportedModule(JSContext* cx, Handle<JSScript*> referrer,
                                 Handle<JSObject*> moduleRequest,
                                 Handle<Value> hostDefined,
-                                Handle<Value> payload) {
+                                Handle<Value> payload, uint32_t lineNumber,
+                                JS::ColumnNumberOneOrigin columnNumber) {
   MOZ_ASSERT(moduleRequest);
   MOZ_ASSERT(!payload.isUndefined());
 
@@ -823,7 +749,8 @@ bool js::HostLoadImportedModule(JSContext* cx, Handle<JSScript*> referrer,
     return false;
   }
 
-  bool ok = moduleLoadHook(cx, referrer, moduleRequest, hostDefined, payload);
+  bool ok = moduleLoadHook(cx, referrer, moduleRequest, hostDefined, payload,
+                           lineNumber, columnNumber);
 
   if (!ok) {
     MOZ_ASSERT(JS_IsExceptionPending(cx));
@@ -1561,7 +1488,8 @@ static bool InnerModuleLoading(JSContext* cx,
         Rooted<Value> hostDefined(cx, state->hostDefined());
         Rooted<Value> payload(cx, ObjectValue(*state));
         if (!HostLoadImportedModule(cx, referrer, moduleRequest, hostDefined,
-                                    payload)) {
+                                    payload, request.lineNumber(),
+                                    request.columnNumber())) {
           return false;
         }
       }
@@ -1734,7 +1662,7 @@ static bool ModuleLink(JSContext* cx, Handle<ModuleObject*> module) {
       MOZ_ASSERT(m->status() == ModuleStatus::Linking);
       // Step 4.a.ii. Set m.[[Status]] to unlinked.
       m->setStatus(ModuleStatus::Unlinked);
-      m->clearDfsIndexes();
+      m->clearDfsAncestorIndex();
     }
 
     // Step 4.b. Assert: module.[[Status]] is unlinked.
@@ -1797,8 +1725,8 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   // Step 4. Set module.[[Status]] to linking.
   module->setStatus(ModuleStatus::Linking);
 
-  // Step 5. Set module.[[DFSIndex]] to index.
-  module->setDfsIndex(index);
+  // Step 5. Let moduleIndex be index.
+  size_t moduleIndex = index;
 
   // Step 6. Set module.[[DFSAncestorIndex]] to index.
   module->setDfsAncestorIndex(index);
@@ -1865,11 +1793,11 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   // Step 11. Assert: module occurs exactly once in stack.
   MOZ_ASSERT(CountElements(stack, module) == 1);
 
-  // Step 12. Assert: module.[[DFSAncestorIndex]] <= module.[[DFSIndex]].
-  MOZ_ASSERT(module->dfsAncestorIndex() <= module->dfsIndex());
+  // Step 12. Assert: module.[[DFSAncestorIndex]] <= moduleIndex.
+  MOZ_ASSERT(module->dfsAncestorIndex() <= moduleIndex);
 
-  // Step 13. If module.[[DFSAncestorIndex]] = module.[[DFSIndex]], then
-  if (module->dfsAncestorIndex() == module->dfsIndex()) {
+  // Step 13. If module.[[DFSAncestorIndex]] = moduleIndex, then
+  if (module->dfsAncestorIndex() == moduleIndex) {
     // Step 13.a.
     bool done = false;
 
@@ -2032,7 +1960,7 @@ static bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
     // Step 10.b. Assert: module.[[EvaluationError]] is empty.
     MOZ_ASSERT(!module->hadEvaluationError());
 
-    // Step 10.c. If module.[[AsyncEvaluation]] is false, then:
+    // Step 10.c. If module.[[Status]] is evalated, then:
     if (module->status() == ModuleStatus::Evaluated) {
       // Step 10.c.ii. Perform ! Call(capability.[[Resolve]], undefined,
       //               undefined).
@@ -2100,8 +2028,8 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
   // Step 5. Set module.[[Status]] to evaluating.
   module->setStatus(ModuleStatus::Evaluating);
 
-  // Step 6. Set module.[[DFSIndex]] to index.
-  module->setDfsIndex(index);
+  // Step 6. Let moduleIndex be index.
+  size_t moduleIndex = index;
 
   // Step 7. Set module.[[DFSAncestorIndex]] to index.
   module->setDfsAncestorIndex(index);
@@ -2116,11 +2044,8 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
   Rooted<ModuleRequestObject*> required(cx);
   Rooted<ModuleObject*> requiredModule(cx);
   for (const RequestedModule& request : module->requestedModules()) {
-    // Step 11.a. Let requiredModule be ! GetImportedModule(module,
+    // Step 11.a. Let requiredModule be GetImportedModule(module,
     //            required).
-    // Step 11.b. NOTE: Link must be completed successfully prior to invoking
-    //            this method, so every requested module is guaranteed to
-    //            resolve successfully.
     required = request.moduleRequest();
     requiredModule = GetImportedModule(cx, module, required);
     if (!requiredModule) {
@@ -2128,43 +2053,43 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
     }
     MOZ_ASSERT(requiredModule->status() >= ModuleStatus::Linked);
 
-    // Step 11.c. Set index to ? InnerModuleEvaluation(requiredModule, stack,
+    // Step 11.b. Set index to ? InnerModuleEvaluation(requiredModule, stack,
     //            index).
     if (!InnerModuleEvaluation(cx, requiredModule, stack, index, &index)) {
       return false;
     }
 
-    // Step 11.d. If requiredModule is a Cyclic Module Record, then:
+    // Step 11.c. If requiredModule is a Cyclic Module Record, then:
     if (requiredModule->hasCyclicModuleFields()) {
-      // Step 11.d.i. Assert: requiredModule.[[Status]] is either evaluating,
+      // Step 11.c.i. Assert: requiredModule.[[Status]] is either evaluating,
       //              evaluating-async, or evaluated.
       MOZ_ASSERT(requiredModule->status() == ModuleStatus::Evaluating ||
                  requiredModule->status() == ModuleStatus::EvaluatingAsync ||
                  requiredModule->status() == ModuleStatus::Evaluated);
 
-      // Step 11.d.ii. Assert: requiredModule.[[Status]] is evaluating if and
+      // Step 11.c.ii. Assert: requiredModule.[[Status]] is evaluating if and
       //               only if requiredModule is in stack.
       MOZ_ASSERT((requiredModule->status() == ModuleStatus::Evaluating) ==
                  ContainsElement(stack, requiredModule));
 
-      // Step 11.d.iii. If requiredModule.[[Status]] is evaluating, then:
+      // Step 11.c.iii. If requiredModule.[[Status]] is evaluating, then:
       if (requiredModule->status() == ModuleStatus::Evaluating) {
-        // Step 11.d.iii.1. Set module.[[DFSAncestorIndex]] to
+        // Step 11.c.iii.1. Set module.[[DFSAncestorIndex]] to
         //                  min(module.[[DFSAncestorIndex]],
         //                  requiredModule.[[DFSAncestorIndex]]).
         module->setDfsAncestorIndex(std::min(
             module->dfsAncestorIndex(), requiredModule->dfsAncestorIndex()));
       } else {
-        // Step 11.d.iv. Else:
-        // Step 11.d.iv.1. Set requiredModule to requiredModule.[[CycleRoot]].
+        // Step 11.c.iv. Else:
+        // Step 11.c.iv.1. Set requiredModule to requiredModule.[[CycleRoot]].
         requiredModule = requiredModule->getCycleRoot();
 
-        // Step 11.d.iv.2. Assert: requiredModule.[[Status]] is evaluating-async
+        // Step 11.c.iv.2. Assert: requiredModule.[[Status]] is evaluating-async
         //                 or evaluated.
         MOZ_ASSERT(requiredModule->status() >= ModuleStatus::EvaluatingAsync ||
                    requiredModule->status() == ModuleStatus::Evaluated);
 
-        // Step 11.d.iv.3. If requiredModule.[[EvaluationError]] is not empty,
+        // Step 11.c.iv.3. If requiredModule.[[EvaluationError]] is not empty,
         //                 return ? requiredModule.[[EvaluationError]].
         if (requiredModule->hadEvaluationError()) {
           Rooted<Value> error(cx, requiredModule->evaluationError());
@@ -2173,10 +2098,10 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
         }
       }
 
-      // Step 11.d.v. If requiredModule.[[AsyncEvaluation]] is true, then:
-      if (requiredModule->isAsyncEvaluating() &&
-          requiredModule->status() != ModuleStatus::Evaluated) {
-        // Step 11.d.v.2. Append module to
+      // Step 11.c.v. If requiredModule.[[AsyncEvaluationOrder]] is an integer,
+      // then:
+      if (requiredModule->asyncEvaluationOrder().isInteger()) {
+        // Step 11.c.v.2. Append module to
         // requiredModule.[[AsyncParentModules]].
         if (!ModuleObject::appendAsyncParentModule(cx, requiredModule,
                                                    module)) {
@@ -2194,15 +2119,12 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
   // Step 12. If module.[[PendingAsyncDependencies]] > 0 or module.[[HasTLA]] is
   //          true, then:
   if (module->pendingAsyncDependencies() > 0 || module->hasTopLevelAwait()) {
-    // Step 12.a. Assert: module.[[AsyncEvaluation]] is false and was never
-    //            previously set to true.
-    MOZ_ASSERT(!module->isAsyncEvaluating());
+    // Step 12.a. Assert: module.[[AsyncEvaluationOrder]] is unset.
+    MOZ_ASSERT(module->asyncEvaluationOrder().isUnset());
 
-    // Step 12.b. Set module.[[AsyncEvaluation]] to true.
-    // Step 12.c. NOTE: The order in which module records have their
-    //            [[AsyncEvaluation]] fields transition to true is
-    //            significant. (See 16.2.1.5.2.4.)
-    module->setAsyncEvaluating();
+    // Step 12.b. Set module.[[AsyncEvaluationOrder]] to
+    // IncrementModuleAsyncEvaluationCount().
+    module->asyncEvaluationOrder().set(cx->runtime());
 
     // Step 12.d. If module.[[PendingAsyncDependencies]] is 0, perform
     //            ExecuteAsyncModule(module).
@@ -2221,11 +2143,11 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
   // Step 14. Assert: module occurs exactly once in stack.
   MOZ_ASSERT(CountElements(stack, module) == 1);
 
-  // Step 15. Assert: module.[[DFSAncestorIndex]] <= module.[[DFSIndex]].
-  MOZ_ASSERT(module->dfsAncestorIndex() <= module->dfsIndex());
+  // Step 15. Assert: module.[[DFSAncestorIndex]] <= moduleIndex.
+  MOZ_ASSERT(module->dfsAncestorIndex() <= moduleIndex);
 
-  // Step 16. If module.[[DFSAncestorIndex]] = module.[[DFSIndex]], then:
-  if (module->dfsAncestorIndex() == module->dfsIndex()) {
+  // Step 16. If module.[[DFSAncestorIndex]] = momoduleIndex, then:
+  if (module->dfsAncestorIndex() == moduleIndex) {
     // Step 16.a. Let done be false.
     bool done = false;
 
@@ -2235,21 +2157,26 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
       // Step 16.b.ii. Remove the last element of stack.
       requiredModule = stack.popCopy();
 
-      // Step 16.b.iv. If requiredModule.[[AsyncEvaluation]] is false, set
+      // Step 16.b.iii. Assert: requiredModule.[[AsyncEvaluationOrder]] is
+      //                either an integer or unset
+      MOZ_ASSERT(requiredModule->asyncEvaluationOrder().isInteger() ||
+                 requiredModule->asyncEvaluationOrder().isUnset());
+
+      // Step 16.b.v. If requiredModule.[[AsyncEvaluationOrder]] is unset, set
       //               requiredModule.[[Status]] to evaluated.
-      if (!requiredModule->isAsyncEvaluating()) {
+      if (requiredModule->asyncEvaluationOrder().isUnset()) {
         requiredModule->setStatus(ModuleStatus::Evaluated);
       } else {
-        // Step 16.b.v. Otherwise, set requiredModule.[[Status]] to
-        //              evaluating-async.
+        // Step 16.b.vi. Otherwise, set requiredModule.[[Status]] to
+        //               evaluating-async.
         requiredModule->setStatus(ModuleStatus::EvaluatingAsync);
       }
 
-      // Step 16.b.vi. If requiredModule and module are the same Module Record,
-      //               set done to true.
+      // Step 16.b.vii. If requiredModule and module are the same Module Record,
+      //                set done to true.
       done = requiredModule == module;
 
-      // Step 16.b.vii. Set requiredModule.[[CycleRoot]] to module.
+      // Step 16.b.viii. Set requiredModule.[[CycleRoot]] to module.
       requiredModule->setCycleRoot(module);
     }
   }
@@ -2303,8 +2230,8 @@ static bool GatherAvailableModuleAncestors(
       // Step 1.a.ii. Assert: m.[[EvaluationError]] is empty.
       MOZ_ASSERT(!m->hadEvaluationError());
 
-      // Step 1.a.iii. Assert: m.[[AsyncEvaluation]] is true.
-      MOZ_ASSERT(m->isAsyncEvaluating());
+      // Step 1.a.iii. Assert: m.[[AsyncEvaluationOrder]] is an integer.
+      MOZ_ASSERT(m->asyncEvaluationOrder().isInteger());
 
       // Step 1.a.iv. Assert: m.[[PendingAsyncDependencies]] > 0.
       MOZ_ASSERT(m->pendingAsyncDependencies() > 0);
@@ -2336,8 +2263,8 @@ static bool GatherAvailableModuleAncestors(
 
 struct EvalOrderComparator {
   bool operator()(ModuleObject* a, ModuleObject* b, bool* lessOrEqualp) {
-    int32_t result = int32_t(a->getAsyncEvaluatingPostOrder()) -
-                     int32_t(b->getAsyncEvaluatingPostOrder());
+    int32_t result = int32_t(a->asyncEvaluationOrder().get()) -
+                     int32_t(b->asyncEvaluationOrder().get());
     *lessOrEqualp = (result <= 0);
     return true;
   }
@@ -2372,8 +2299,8 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
   // Step 2. Assert: module.[[Status]] is evaluating-async.
   MOZ_ASSERT(module->status() == ModuleStatus::EvaluatingAsync);
 
-  // Step 3. Assert: module.[[AsyncEvaluation]] is true.
-  MOZ_ASSERT(module->isAsyncEvaluating());
+  // Step 3. Assert: module.[[AsyncEvaluationOrder]] is an integer.
+  MOZ_ASSERT(module->asyncEvaluationOrder().isInteger());
 
   // Step 4. Assert: module.[[EvaluationError]] is empty.
   MOZ_ASSERT(!module->hadEvaluationError());
@@ -2406,12 +2333,12 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
                             scratch.begin(), EvalOrderComparator()));
 
   // Step 11. Assert: All elements of sortedExecList have their
-  //          [[AsyncEvaluation]] field set to true,
+  //          [[AsyncEvaluationOrder]] field set to an integer,
   //          [[PendingAsyncDependencies]] field set to 0, and
   //          [[EvaluationError]] field set to empty.
 #ifdef DEBUG
   for (ModuleObject* m : execList) {
-    MOZ_ASSERT(m->isAsyncEvaluating());
+    MOZ_ASSERT(m->asyncEvaluationOrder().isInteger());
     MOZ_ASSERT(m->pendingAsyncDependencies() == 0);
     MOZ_ASSERT(!m->hadEvaluationError());
   }
@@ -2421,9 +2348,11 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
 
   ModuleObject::onTopLevelEvaluationFinished(module);
 
+  // Step 5. Set module.[[AsyncEvaluationOrder]] to done.
+  module->asyncEvaluationOrder().setDone(cx->runtime());
+
   // Step 6. Set module.[[Status]] to evaluated.
   module->setStatus(ModuleStatus::Evaluated);
-  module->clearAsyncEvaluatingPostOrder();
 
   // Step 7. If module.[[TopLevelCapability]] is not empty, then:
   if (module->hasTopLevelCapability()) {
@@ -2466,9 +2395,10 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
         RejectExecutionWithPendingException(cx, m);
       } else {
         // Step 12.c.iii. Else:
-        // Step 12.c.iii.1. Set m.[[Status]] to evaluated.
+        // Step 12.c.iii.1. Set m.[[AsyncEvaluationOrder]] to done.
+        m->asyncEvaluationOrder().setDone(m->zone()->runtimeFromMainThread());
+        // Step 12.c.iii.2. Set m.[[Status]] to evaluated.
         m->setStatus(ModuleStatus::Evaluated);
-        m->clearAsyncEvaluatingPostOrder();
 
         // Step 12.c.iii.2. If m.[[TopLevelCapability]] is not empty, then:
         if (m->hasTopLevelCapability()) {
@@ -2508,7 +2438,7 @@ void js::AsyncModuleExecutionRejected(JSContext* cx,
   MOZ_ASSERT(module->status() == ModuleStatus::EvaluatingAsync);
 
   // Step 3. Assert: module.[[AsyncEvaluationOrder]] is an integer.
-  MOZ_ASSERT(module->isAsyncEvaluating());
+  MOZ_ASSERT(module->asyncEvaluationOrder().isInteger());
 
   // Step 4. Assert: module.[[EvaluationError]] is empty.
   MOZ_ASSERT(!module->hadEvaluationError());
@@ -2522,7 +2452,7 @@ void js::AsyncModuleExecutionRejected(JSContext* cx,
   MOZ_ASSERT(module->status() == ModuleStatus::Evaluated);
 
   // Step 7. Set module.[[AsyncEvaluationOrder]] to done.
-  module->clearAsyncEvaluatingPostOrder();
+  module->asyncEvaluationOrder().setDone(cx->runtime());
 
   // Step 9. If module.[[TopLevelCapability]] is not empty, then:
   if (module->hasTopLevelCapability()) {

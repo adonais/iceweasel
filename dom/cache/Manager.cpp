@@ -15,7 +15,6 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/cache/CacheTypes.h"
 #include "mozilla/dom/cache/Context.h"
 #include "mozilla/dom/cache/DBAction.h"

@@ -11,7 +11,6 @@
 #include "mozilla/MmapFaultHandler.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/UniquePtrExtensions.h"
 
 #include "nsEscape.h"
 #include "nsDebug.h"

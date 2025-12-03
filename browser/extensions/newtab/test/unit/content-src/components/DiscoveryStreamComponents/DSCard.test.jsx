@@ -329,7 +329,6 @@ describe("<DSCard>", () => {
             features: undefined,
             matches_selected_topic: undefined,
             selected_topics: undefined,
-            is_list_card: undefined,
             format: "medium-card",
           },
         })
@@ -347,7 +346,6 @@ describe("<DSCard>", () => {
               recommendation_id: undefined,
               topic: undefined,
               selected_topics: undefined,
-              is_list_card: undefined,
               format: "medium-card",
             },
           ],
@@ -392,7 +390,6 @@ describe("<DSCard>", () => {
             features: undefined,
             matches_selected_topic: undefined,
             selected_topics: undefined,
-            is_list_card: undefined,
             format: "spoc",
           },
         })
@@ -410,7 +407,6 @@ describe("<DSCard>", () => {
               recommendation_id: undefined,
               topic: undefined,
               selected_topics: undefined,
-              is_list_card: undefined,
               format: "spoc",
             },
           ],
@@ -458,7 +454,6 @@ describe("<DSCard>", () => {
             features: undefined,
             matches_selected_topic: undefined,
             selected_topics: undefined,
-            is_list_card: undefined,
             format: "medium-card",
           },
         })
@@ -477,39 +472,11 @@ describe("<DSCard>", () => {
               recommendation_id: undefined,
               topic: undefined,
               selected_topics: undefined,
-              is_list_card: undefined,
               format: "medium-card",
             },
           ],
           window_inner_width: 1000,
           window_inner_height: 900,
-        })
-      );
-    });
-
-    it("fakespot onLinkClick should dispatch with the correct events", () => {
-      wrapper.setProps({
-        id: "fooidx",
-        pos: 1,
-        type: "foo",
-        isFakespot: true,
-        category: "fakespot",
-      });
-
-      sandbox
-        .stub(wrapper.instance(), "doesLinkTopicMatchSelectedTopic")
-        .returns(undefined);
-
-      wrapper.instance().onLinkClick();
-
-      assert.calledWith(
-        dispatch,
-        ac.DiscoveryStreamUserEvent({
-          event: "FAKESPOT_CLICK",
-          value: {
-            product_id: "fooidx",
-            category: "fakespot",
-          },
         })
       );
     });
@@ -1059,68 +1026,6 @@ describe("<PlaceholderDSCard> component", () => {
     wrapper.setState({ isSeen: true });
     const linkMenu = wrapper.find(DSLinkMenu);
     assert.lengthOf(linkMenu, 0);
-  });
-});
-
-describe("Listfeed <DSCard />", () => {
-  let wrapper;
-  let sandbox;
-  let dispatch;
-
-  beforeEach(() => {
-    sandbox = sinon.createSandbox();
-    dispatch = sandbox.stub();
-    wrapper = shallow(
-      <DSCard dispatch={dispatch} {...DEFAULT_PROPS} isListFeed={true} />
-    );
-    wrapper.setState({ isSeen: true });
-  });
-
-  afterEach(() => {
-    sandbox.restore();
-  });
-
-  it("should not render thumbs up/down UI", () => {
-    wrapper.setState({ mayHaveThumbsUpDown: true });
-    const thumbs_up_down_buttons_component = wrapper.find(
-      DSThumbsUpDownButtons
-    );
-    const thumbs_up_down_buttons = thumbs_up_down_buttons_component.find(
-      ".card-stp-thumbs-buttons"
-    );
-    assert.ok(!thumbs_up_down_buttons.exists());
-  });
-
-  it("should not render the excerpt UI", () => {
-    const excerpt_element = wrapper.find(".excerpt");
-
-    assert.ok(!excerpt_element.exists());
-  });
-});
-
-describe("ListFeed fakespot <DSCard />", () => {
-  let wrapper;
-  let sandbox;
-  let dispatch;
-
-  beforeEach(() => {
-    sandbox = sinon.createSandbox();
-    dispatch = sandbox.stub();
-    wrapper = shallow(
-      <DSCard
-        dispatch={dispatch}
-        {...DEFAULT_PROPS}
-        isListFeed={true}
-        isFakespot={true}
-      />
-    );
-    wrapper.setState({ isSeen: true });
-  });
-
-  it("should not render source element", () => {
-    const source_element = wrapper.find(".source");
-
-    assert.ok(!source_element.exists());
   });
 });
 

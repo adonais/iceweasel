@@ -59,9 +59,6 @@ LayoutDeviceIntSize ScrollbarDrawingWin11::GetMinimumWidgetSize(
     case StyleAppearance::ScrollbarbuttonDown:
     case StyleAppearance::ScrollbarbuttonLeft:
     case StyleAppearance::ScrollbarbuttonRight: {
-      if (IsScrollbarWidthThin(aFrame)) {
-        return {};
-      }
       const LayoutDeviceIntCoord size =
           ScrollbarDrawing::GetScrollbarSize(aPresContext, aFrame);
       return LayoutDeviceIntSize{

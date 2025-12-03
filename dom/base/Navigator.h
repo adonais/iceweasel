@@ -147,6 +147,11 @@ class Navigator final : public nsISupports, public nsWrapperCache {
                                Maybe<bool> aShouldResistFingerprinting,
                                nsAString& aUserAgent);
 
+  // Clears the language cache by calling:
+  // Navigator_Binding::ClearCachedLanguageValue(this); and
+  // Navigator_Binding::ClearCachedLanguagesValue(this);
+  void ClearLanguageCache();
+
   // Clears the platform cache by calling:
   // Navigator_Binding::ClearCachedPlatformValue(this);
   void ClearPlatformCache();
@@ -220,7 +225,8 @@ class Navigator final : public nsISupports, public nsWrapperCache {
 
   StorageManager* Storage();
 
-  static void GetAcceptLanguages(nsTArray<nsString>& aLanguages);
+  static void GetAcceptLanguages(nsTArray<nsString>& aLanguages,
+                                 const nsCString* aLanguageOverride);
 
   dom::MediaCapabilities* MediaCapabilities();
   dom::MediaSession* MediaSession();

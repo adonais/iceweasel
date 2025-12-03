@@ -11,8 +11,6 @@
 #include "DOMSVGAnimatedNumberList.h"
 #include "mozilla/SVGFilterInstance.h"
 #include "mozilla/SVGUtils.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/SVGFEConvolveMatrixElementBinding.h"

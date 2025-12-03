@@ -9,7 +9,6 @@
 
 #include "SVGAnimatedPointList.h"
 #include "SVGGeometryElement.h"
-#include "mozilla/Attributes.h"
 
 namespace mozilla::dom {
 

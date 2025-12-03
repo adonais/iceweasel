@@ -78,7 +78,7 @@ class WorkerDebuggerEnumerator final : public nsSimpleEnumerator {
       : mIndex(0) {
     for (auto debugger : aDebuggers) {
       bool isRemote;
-      Unused << debugger->GetIsRemote(&isRemote);
+      (void)debugger->GetIsRemote(&isRemote);
       if (!isRemote) {
         mDebuggers.AppendElement(debugger);
       }

@@ -95,11 +95,6 @@ newtab-menu-section-tooltip =
     .title = Open menu
     .aria-label = Open menu
 
-# Tooltip for dismiss button
-newtab-dismiss-button-tooltip =
-    .title = Remove
-    .aria-label = Remove
-
 # This tooltip is for the context menu of Pocket cards or Topsites
 # Variables:
 #   $title (string) - The label or hostname of the site. This is for screen readers when the context menu button is focused/active.
@@ -117,7 +112,6 @@ newtab-menu-pin = Pin
 newtab-menu-unpin = Unpin
 newtab-menu-delete-history = Delete from History
 newtab-menu-show-privacy-info = Our sponsors & your privacy
-newtab-menu-about-fakespot = About { -fakespot-brand-name }
 # Report is a verb (i.e. report issue with the content).
 newtab-menu-report = Report
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,

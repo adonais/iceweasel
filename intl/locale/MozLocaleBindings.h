@@ -8,8 +8,6 @@
 #include "mozilla/intl/unic_langid_ffi_generated.h"
 #include "mozilla/intl/fluent_langneg_ffi_generated.h"
 
-#include "mozilla/UniquePtr.h"
-
 namespace std {
 
 template <>

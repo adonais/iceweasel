@@ -211,7 +211,7 @@ newtab-wallpaper-light-pink = हल्का गुलाबी
 newtab-wallpaper-red = लाल
 newtab-wallpaper-brown = भूरा
 
-## Celestial
+## Firefox
 
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }

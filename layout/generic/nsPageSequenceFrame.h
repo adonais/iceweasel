@@ -6,7 +6,6 @@
 #ifndef nsPageSequenceFrame_h___
 #define nsPageSequenceFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "nsContainerFrame.h"
 #include "nsIPrintSettings.h"

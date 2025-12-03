@@ -6,7 +6,6 @@
 #ifndef Telemetry_h__
 #define Telemetry_h__
 
-#include "mozilla/Maybe.h"
 #include "mozilla/TelemetryEventEnums.h"
 #include "mozilla/TelemetryHistogramEnums.h"
 #include "mozilla/TelemetryScalarEnums.h"

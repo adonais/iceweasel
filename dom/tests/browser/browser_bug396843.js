@@ -1,4 +1,4 @@
-/** Test for Bug 396843 **/
+/** Test for Bug 396843 */
 
 function testInDocument(doc, documentID) {
   var allNodes = [];

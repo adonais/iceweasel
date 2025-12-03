@@ -47,6 +47,7 @@ from ..frontend.data import (
     HostSources,
     InstallationTarget,
     JARManifest,
+    LegacyRunTests,
     Linkable,
     LocalInclude,
     LocalizedFiles,
@@ -589,6 +590,9 @@ class RecursiveMakeBackend(MakeBackend):
 
         elif isinstance(obj, RustTests):
             self._process_rust_tests(obj, backend_file)
+
+        elif isinstance(obj, LegacyRunTests):
+            self._process_legacy_run_tests(obj, backend_file)
 
         elif isinstance(obj, Program):
             self._process_program(obj, backend_file)
@@ -1237,6 +1241,45 @@ class RecursiveMakeBackend(MakeBackend):
         backend_file.write_once("CARGO_FILE := $(srcdir)/Cargo.toml\n")
         backend_file.write_once("RUST_TESTS := %s\n" % " ".join(obj.names))
         backend_file.write_once("RUST_TEST_FEATURES := %s\n" % " ".join(obj.features))
+
+    def _process_legacy_run_tests(self, obj, backend_file):
+        self._no_skip["check"].add(backend_file.relobjdir)
+        rules = Makefile()
+        for i, test in enumerate(obj.tests):
+            backend_file.write(f"check:: force-run-test{i}\n")
+            program, *args = test["args"]
+            program = self._pretty_path(Path(obj._context, program), backend_file)
+            args = [
+                (
+                    arg
+                    if arg.startswith("-")
+                    else self._pretty_path(Path(obj._context, arg), backend_file)
+                )
+                for arg in args
+            ]
+            args = [shell_quote(arg) for arg in args]
+            rule = rules.create_rule([f"force-run-test{i}"])
+            depends = [program] + [
+                self._pretty_path(Path(obj._context, dep), backend_file)
+                for dep in test["depends"]
+            ]
+            rule.add_dependencies(depends)
+
+            commands = []
+            if description := test["description"]:
+                commands.append(f"@echo Running {description}")
+            if env := test["env"]:
+                envargs = " ".join(
+                    make_quote(shell_quote(f"{k}={v}")) for k, v in env.items()
+                )
+                command = f"env {envargs} "
+            else:
+                command = ""
+            command += f"{program} "
+            command += " ".join(args)
+            commands.append(command)
+            rule.add_commands(commands)
+        rules.dump(backend_file.fh)
 
     def _process_simple_program(self, obj, backend_file):
         if obj.is_unit_test:

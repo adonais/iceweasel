@@ -1300,7 +1300,6 @@ TEST_F(JsepTrackTest, DataChannelDraft21AnswerWithDifferentPort) {
   ASSERT_EQ(std::string::npos, mAnswer->ToString().find("a=sctpmap"));
 }
 
-#if 0
 TEST_F(JsepTrackTest, SimulcastRejected) {
   Init(SdpMediaSection::kVideo);
   std::vector<std::string> rids;
@@ -1311,7 +1310,6 @@ TEST_F(JsepTrackTest, SimulcastRejected) {
   CheckOffEncodingCount(1);
   CheckAnsEncodingCount(1);
 }
-#endif
 
 TEST_F(JsepTrackTest, SimulcastPrevented) {
   Init(SdpMediaSection::kVideo);

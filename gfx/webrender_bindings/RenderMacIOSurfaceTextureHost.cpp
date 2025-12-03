@@ -114,8 +114,7 @@ wr::WrExternalImage RenderMacIOSurfaceTextureHost::Lock(uint8_t aChannelIndex,
     // in the D3D11 texture host.
     auto timeout = TimeDuration::FromMilliseconds(10000);
     auto start = TimeStamp::Now();
-    AUTO_PROFILER_TRACING_MARKER("WebRender", "Lock MacIOSurfaceTexture",
-                                 GRAPHICS);
+    AUTO_PROFILER_MARKER("Lock MacIOSurfaceTexture", GRAPHICS);
     while (!mGpuFence->HasCompleted() && (TimeStamp::Now() - start) < timeout) {
       PR_Sleep(PR_MillisecondsToInterval(1));
     }

@@ -9,8 +9,6 @@
 #include "MediaResult.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
-#include "mozilla/Types.h"
-#include "mozilla/Vector.h"
 #include "mp4parse.h"
 #include "nsString.h"
 #include "nsTArray.h"

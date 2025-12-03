@@ -1994,10 +1994,9 @@ nsresult nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsINode* aNode,
         // unless everything before us in just whitespace.  NOTE: we need a more
         // general solution that truly detects all cases of non-significant
         // whitesace with no false alarms.
-        nsAutoString text;
-        nodeAsText->SubstringData(0, offset, text, IgnoreErrors());
-        text.CompressWhitespace();
-        if (!text.IsEmpty()) return NS_OK;
+        if (!nodeAsText->TextStartsWithOnlyWhitespace(offset)) {
+          return NS_OK;
+        }
         bResetPromotion = true;
       }
       // else
@@ -2057,10 +2056,9 @@ nsresult nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsINode* aNode,
         // unless everything after us in just whitespace.  NOTE: we need a more
         // general solution that truly detects all cases of non-significant
         // whitespace with no false alarms.
-        nsAutoString text;
-        nodeAsText->SubstringData(offset, len - offset, text, IgnoreErrors());
-        text.CompressWhitespace();
-        if (!text.IsEmpty()) return NS_OK;
+        if (!nodeAsText->TextEndsWithOnlyWhitespace(offset)) {
+          return NS_OK;
+        }
         bResetPromotion = true;
       }
       rv = GetNodeLocation(aNode, address_of(parent), &offset);

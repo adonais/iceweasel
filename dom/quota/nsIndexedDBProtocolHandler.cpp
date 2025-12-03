@@ -11,7 +11,6 @@
 
 #include "ErrorList.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/MacroForEach.h"
 #include "nsIWeakReference.h"
 #include "nsStandardURL.h"
 #include "nsStringFwd.h"

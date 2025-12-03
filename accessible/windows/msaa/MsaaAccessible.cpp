@@ -19,7 +19,6 @@
 #include "MsaaRootAccessible.h"
 #include "MsaaXULMenuAccessible.h"
 #include "nsEventMap.h"
-#include "nsViewManager.h"
 #include "nsWinUtils.h"
 #include "Relation.h"
 #include "sdnAccessible.h"
@@ -179,17 +178,16 @@ HWND MsaaAccessible::GetHWNDFor(Accessible* aAccessible) {
   // Popup lives in own windows, use its HWND until the popup window is
   // hidden to make old JAWS versions work with collapsed comboboxes (see
   // discussion in bug 379678).
-  nsIFrame* frame = localAcc->GetFrame();
-  if (frame) {
+  if (nsIFrame* frame = localAcc->GetFrame()) {
     nsIWidget* widget = frame->GetNearestWidget();
     if (widget && widget->IsVisible()) {
-      if (nsViewManager* vm = document->PresShellPtr()->GetViewManager()) {
-        nsCOMPtr<nsIWidget> rootWidget = vm->GetRootWidget();
-        // Make sure the accessible belongs to popup. If not then use
-        // document HWND (which might be different from root widget in the
-        // case of window emulation).
-        if (rootWidget != widget)
-          return static_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
+      nsCOMPtr<nsIWidget> rootWidget =
+          document->PresShellPtr()->GetRootWidget();
+      // Make sure the accessible belongs to popup. If not then use
+      // document HWND (which might be different from root widget in the
+      // case of window emulation).
+      if (rootWidget != widget) {
+        return static_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
       }
     }
   }

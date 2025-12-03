@@ -150,6 +150,13 @@ class SVGElement : public SVGElementBase  // nsIContent
   bool IsStringAnimatable(uint8_t aAttrEnum) {
     return GetStringInfo().mInfos[aAttrEnum].mIsAnimatable;
   }
+  bool LengthAttrIsNonNegative(uint8_t aAttrEnum) {
+    const nsStaticAtom* name = GetLengthInfo().mInfos[aAttrEnum].mName;
+    return name == nsGkAtoms::width || name == nsGkAtoms::height ||
+           name == nsGkAtoms::r || name == nsGkAtoms::rx ||
+           name == nsGkAtoms::ry || name == nsGkAtoms::markerWidth ||
+           name == nsGkAtoms::markerHeight || name == nsGkAtoms::textLength;
+  }
   bool NumberAttrAllowsPercentage(uint8_t aAttrEnum) {
     return IsSVGElement(nsGkAtoms::stop) &&
            GetNumberInfo().mInfos[aAttrEnum].mName == nsGkAtoms::offset;

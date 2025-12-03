@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,8 +45,8 @@ private fun MenuGroupPreview() {
     FirefoxTheme {
         Column(
             modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer1)
-                .padding(16.dp),
+                .background(color = MaterialTheme.colorScheme.surface)
+                .padding(all = FirefoxTheme.layout.space.static200),
         ) {
             MenuGroup {
                 MenuItem(

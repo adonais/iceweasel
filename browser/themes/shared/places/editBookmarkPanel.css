@@ -15,7 +15,7 @@
   border-radius: var(--button-border-radius);
   background-color: var(--button-background-color);
   color: var(--button-text-color);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   min-width: 0;
   padding: 8px 16px;
 

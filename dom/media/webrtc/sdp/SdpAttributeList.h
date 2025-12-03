@@ -7,8 +7,6 @@
 #ifndef _SDPATTRIBUTELIST_H_
 #define _SDPATTRIBUTELIST_H_
 
-#include "mozilla/Attributes.h"
-#include "mozilla/UniquePtr.h"
 #include "sdp/SdpAttribute.h"
 
 namespace mozilla {

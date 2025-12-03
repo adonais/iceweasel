@@ -159,7 +159,7 @@ xul|findbar {
 }
 
 .findbar-find-status[status="notfound"] {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .find-status-icon {

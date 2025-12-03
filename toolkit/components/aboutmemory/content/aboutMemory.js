@@ -2276,7 +2276,7 @@ function formatPercentage(aPerc100x) {
   return formatNum(aPerc100x / 10000, kPercFormatter);
 }
 
-/*
+/**
  * Converts a tree fraction to an appropriate string representation.
  *
  * @param aNum

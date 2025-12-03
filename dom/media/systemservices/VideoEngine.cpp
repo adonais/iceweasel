@@ -83,7 +83,7 @@ int VideoEngine::ReleaseVideoCapture(const int32_t aId) {
   {
     auto it = mIdMap.find(aId);
     MOZ_ASSERT(it != mIdMap.end());
-    Unused << it;
+    (void)it;
   }
 #endif
 
@@ -218,7 +218,7 @@ bool VideoEngine::WithEntry(
   {
     auto it = mIdMap.find(entryCapnum);
     MOZ_ASSERT(it != mIdMap.end());
-    Unused << it;
+    (void)it;
   }
 #endif
 

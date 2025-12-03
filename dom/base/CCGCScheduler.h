@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "js/SliceBudget.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/IdleTaskRunner.h"
 #include "mozilla/MainThreadIdlePeriod.h"

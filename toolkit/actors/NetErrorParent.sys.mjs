@@ -239,7 +239,7 @@ export class NetErrorParent extends EscapablePageParent {
       case "Browser:CertExceptionError":
         switch (message.data.elementId) {
           case "viewCertificate": {
-            let certs = message.data.failedCertChain.map(certBase64 =>
+            let certs = message.data.handshakeCertificates.map(certBase64 =>
               encodeURIComponent(certBase64)
             );
             let certsStringURL = certs.map(elem => `cert=${elem}`);

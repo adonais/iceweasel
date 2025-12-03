@@ -9,7 +9,6 @@
 
 #include "MainThreadUtils.h"
 #include "js/ContextOptions.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"

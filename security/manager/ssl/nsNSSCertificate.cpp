@@ -11,15 +11,13 @@
 #include "X509CertValidity.h"
 #include "certdb.h"
 #include "ipc/IPCMessageUtils.h"
+#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Base64.h"
 #include "mozilla/Casting.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/Span.h"
-#include "mozilla/TextUtils.h"
-#include "mozilla/Unused.h"
 #include "mozilla/ipc/TransportSecurityInfoUtils.h"
-#include "mozilla/ipc/IPDLParamTraits.h"
 #include "mozilla/net/DNS.h"
 #include "mozpkix/Result.h"
 #include "mozpkix/pkixnss.h"
@@ -105,7 +103,7 @@ nsresult nsNSSCertificate::GetCertType(uint32_t* aCertType) {
   // If there is no stored trust information, CERT_GetCertTrust will return
   // SECFailure. This isn't a failure. In this case, all trust bits will remain
   // unset.
-  Unused << CERT_GetCertTrust(cert.get(), &certTrust);
+  (void)CERT_GetCertTrust(cert.get(), &certTrust);
   nsNSSCertTrust trust(&certTrust);
   if (cert->nickname && trust.HasAnyUser()) {
     *aCertType = nsIX509Cert::USER_CERT;

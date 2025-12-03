@@ -7,10 +7,8 @@
 #include "DBAction.h"
 #include "FileUtilsImpl.h"
 #include "QuotaClientImpl.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/GeckoTrace.h"
 #include "mozilla/ResultExtensions.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/cache/DBSchema.h"
 #include "mozilla/dom/cache/Manager.h"
 #include "mozilla/dom/quota/PersistenceType.h"
@@ -430,7 +428,7 @@ nsresult CacheQuotaClient::RestorePaddingFileInternal(
   QM_TRY_INSPECT(const int64_t& dummyPaddingSize,
                  DirectoryPaddingRestore(*aBaseDir, *aConn,
                                          /* aMustRestore */ true));
-  Unused << dummyPaddingSize;
+  (void)dummyPaddingSize;
 
   return NS_OK;
 }

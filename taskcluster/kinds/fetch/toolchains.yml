@@ -240,19 +240,13 @@ wine:
         strip-components: 1
         add-prefix: wine-source/
 
-cbindgen-0.27.0:
-    description: cbindgen 0.27 source code
+cbindgen-0.29.1:
+    description: cbindgen 0.29.1 source code
     fetch:
         type: git
         repo: https://github.com/mozilla/cbindgen
-        revision: 58c6156b0d91e82abb03c26187b8d18fa4345ce0
-
-cbindgen:
-    description: cbindgen 0.28 source code
-    fetch:
-        type: git
-        repo: https://github.com/mozilla/cbindgen
-        revision: bd78bbe59b10eda6ef1255e4acda95c56c6d0279
+        revision: eef17769e2739ebb425fee0bbd88e6a52ac2a4e1
+    fetch-alias: cbindgen
 
 cctools-port:
     description: cctools-port source code
@@ -338,8 +332,8 @@ sccache:
     fetch:
         type: git
         repo: https://github.com/mozilla/sccache
-        # 0.9.1 release
-        revision: 77f67d73445a383ffd8af095fb7a8e41f258e80f
+        # 0.11.0 release
+        revision: 5709f069514a775ddb6604a6e9f5f5c91c0e9821
 
 fxc2:
     description: fxc2 source code
@@ -353,7 +347,7 @@ mingw-w64:
     fetch:
         type: git
         repo: https://git.code.sf.net/p/mingw-w64/mingw-w64
-        revision: 849a151baf187f32eb57b34c00365cbc7d2353a7
+        revision: 287a0d4d478e3575d082ba37ce4dcba86524fc9e
 
 mingw-w64-trunk:
     description: mingw-w64 master branch source code
@@ -562,9 +556,9 @@ jdk-8-linux64:
     description: Java 8 JDK
     fetch:
         type: static-url
-        url: https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u462-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u462b08.tar.gz
-        sha256: 5d64ae542b59a962b3caadadd346f4b1c3010879a28bb02d928326993de16e79
-        size: 103087414
+        url: https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u472-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u472b08.tar.gz
+        sha256: 5becaa4ac660e844c5a39e2ebc39ff5ac824c37ff1b625af8c8b111dc13c3592
+        size: 103123206
         artifact-name: jdk-8.tar.zst
         strip-components: 1
         add-prefix: jdk-8/
@@ -775,15 +769,11 @@ windows-rs:
         add-prefix: windows-rs/
 
 libxml2:
-    description: Source of the libxml2 library
+    description: libxml2 2.9.12 source code
     fetch:
-        type: static-url
-        url: https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.9.12/libxml2-v2.9.12.tar.gz
-        sha256: 98bfa7a9a5e2a75638422050740448ee9f02bf4dc2075c9822d7747d5ff9e617
-        size: 5233674
-        artifact-name: libxml2.tar.zst
-        strip-components: 1
-        add-prefix: libxml2/
+        type: git
+        repo: https://gitlab.gnome.org/GNOME/libxml2
+        revision: b48e77cf4f6fa0792c5f4b639707a2b0675e461b
 
 mozilla-pdf.js:
     description: Mozilla pdf.js Github repo
@@ -800,15 +790,6 @@ xmlstarlet-1.6.1:
         sha256: d1d7f55f7887d2d1c3283e1b06a68675b5bead2eebf14939f9cdd84b849ced19
         size: 267112
         artifact-name: xmlstarlet.deb
-
-chromium-depot-tools:
-    description: Chromium depot tools for managing Chromium repository
-    fetch:
-        type: git
-        repo: https://chromium.googlesource.com/chromium/tools/depot_tools.git
-        revision: 5304f2bbb31bad413e029a660097d1da1552e6f4
-        artifact-name: chromium-depot-tools.tar.zst
-        include-dot-git: true
 
 uv:
     description: uv 0.7.2 source code
@@ -836,7 +817,7 @@ firefox-profiler:
     fetch:
         type: git
         repo: https://github.com/firefox-devtools/profiler
-        revision: 5a054f9ae741515b8112d4c248e8ac096ee7a3ce
+        revision: 26904094839504de2b8f9193971a37086e305c27
 
 # See https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads
 windowsappsdk-redist:

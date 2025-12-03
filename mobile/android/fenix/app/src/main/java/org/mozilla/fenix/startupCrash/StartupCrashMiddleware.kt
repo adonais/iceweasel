@@ -16,7 +16,6 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.Store
 import org.mozilla.fenix.crashes.SettingsCrashReportCache
-import org.mozilla.fenix.crashes.StartupCrashCanary
 import org.mozilla.fenix.utils.Settings
 
 private const val FIVE_DAYS_IN_MILLIS = DateUtils.DAY_IN_MILLIS * 5
@@ -25,7 +24,6 @@ internal class StartupCrashMiddleware(
     settings: Settings,
     private val crashReporter: CrashReporter,
     private val restartHandler: () -> Unit,
-    private val startupCrashCanaryCache: StartupCrashCanary,
     private val currentTimeInMillis: () -> TimeInMillis = { System.currentTimeMillis() },
     private val cache: CrashReportCache = SettingsCrashReportCache(settings),
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
@@ -42,14 +40,12 @@ internal class StartupCrashMiddleware(
             ReportTapped -> {
                 scope.launch {
                     sendUnsentCrashReports(context.store)
-                    startupCrashCanaryCache.clearCanary()
                 }
             }
             ReopenTapped -> restartHandler()
             NoTapped -> {
                 scope.launch {
                     cache.setDeferredUntil(currentTimeInMillis() + FIVE_DAYS_IN_MILLIS)
-                    startupCrashCanaryCache.clearCanary()
                 }
             }
             CrashReportCompleted,

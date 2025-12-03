@@ -611,7 +611,7 @@ class SourceActor extends Actor {
     this.pausePoints = uncompressed;
   }
 
-  /*
+  /**
    * Ensure the given BreakpointActor is set as a breakpoint handler on all
    * scripts that match its location in the generated source.
    *

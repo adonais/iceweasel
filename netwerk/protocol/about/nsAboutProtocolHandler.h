@@ -9,7 +9,6 @@
 #include "nsIProtocolHandler.h"
 #include "nsSimpleNestedURI.h"
 #include "nsWeakReference.h"
-#include "mozilla/Attributes.h"
 #include "nsIURIMutator.h"
 
 class nsIURI;

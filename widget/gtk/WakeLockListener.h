@@ -24,6 +24,7 @@ class WakeLockListener final : public nsIDOMMozWakeLockListener {
   NS_DECL_ISUPPORTS;
 
   nsresult Callback(const nsAString& topic, const nsAString& state) override;
+  void SetState(const nsAString& topic, bool aBackground, bool aInhibit);
 
   WakeLockListener();
 
@@ -32,7 +33,8 @@ class WakeLockListener final : public nsIDOMMozWakeLockListener {
 
   // Map of topic names to |WakeLockTopic|s.
   // We assume a small, finite-sized set of topics.
-  nsRefPtrHashtable<nsStringHashKey, WakeLockTopic> mTopics;
+  nsRefPtrHashtable<nsStringHashKey, WakeLockTopic> mForegroundTopics;
+  nsRefPtrHashtable<nsStringHashKey, WakeLockTopic> mBackgroundTopics;
 };
 
 #endif  // __WakeLockListener_h__

@@ -17,7 +17,6 @@ import android.view.autofill.AutofillValue
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import org.hamcrest.Matchers.equalTo
 import org.junit.*
@@ -330,7 +329,6 @@ class GeckoViewTest : BaseSessionTest() {
 
     @Test
     @NullDelegate(Autofill.Delegate::class)
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     fun autofillWithNoSession() {
         mainSession.loadTestPath(FORMS_XORIGIN_HTML_PATH)
         mainSession.waitForPageStop()

@@ -7,7 +7,6 @@
 #ifndef DOM_SMIL_SMILTIMEVALUESPEC_H_
 #define DOM_SMIL_SMILTIMEVALUESPEC_H_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/SMILTimeValueSpecParams.h"
 #include "mozilla/dom/IDTracker.h"
 #include "nsIDOMEventListener.h"

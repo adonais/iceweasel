@@ -5,7 +5,6 @@
 
 #include "RTCIdentityProviderRegistrar.h"
 
-#include "mozilla/Attributes.h"
 #include "nsCycleCollectionParticipant.h"
 
 namespace mozilla::dom {

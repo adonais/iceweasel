@@ -15,6 +15,7 @@ kind-dependencies:
     - release-secondary-balrog-submit-toplevel
 
 task-defaults:
+    run-on-repo-type: [hg]
     run-on-projects: []
     shipping-phase: ship
     worker-type: balrog

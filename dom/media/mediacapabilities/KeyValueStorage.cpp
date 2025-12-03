@@ -147,7 +147,7 @@ class GetValueCallback final : public nsIKeyValueVariantCallback {
 
   NS_IMETHOD Resolve(nsIVariant* aResult) override {
     int32_t value = 0;
-    Unused << aResult->GetAsInt32(&value);
+    (void)aResult->GetAsInt32(&value);
     mResultPromise.Resolve(value, __func__);
     return NS_OK;
   }

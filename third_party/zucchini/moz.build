@@ -161,6 +161,7 @@ DIRS += [
     "executable",
 ]
 
-TEST_DIRS += [
-    "tests/gtest",
-]
+if CONFIG["MOZ_APP_NAME"] != "zucchini":
+    TEST_DIRS += [
+        "tests/gtest",
+    ]

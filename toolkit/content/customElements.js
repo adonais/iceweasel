@@ -236,7 +236,7 @@
           }
         }
       }
-      /*
+      /**
        * A declarative way to wire up attribute inheritance and automatically generate
        * the `observedAttributes` getter.  For example, if you returned:
        *    {
@@ -346,7 +346,7 @@
         }
       }
 
-      /*
+      /**
        * Implements attribute value inheritance by child elements.
        *
        * @param {array} list
@@ -851,9 +851,13 @@
         "moz-message-bar",
         "chrome://global/content/elements/moz-message-bar.mjs",
       ],
-      ["moz-promo", "chrome://global/content/elements/moz-promo.mjs"],
       ["moz-option", "chrome://global/content/elements/moz-select.mjs"],
+      [
+        "moz-page-header",
+        "chrome://global/content/elements/moz-page-header.mjs",
+      ],
       ["moz-page-nav", "chrome://global/content/elements/moz-page-nav.mjs"],
+      ["moz-promo", "chrome://global/content/elements/moz-promo.mjs"],
       ["moz-radio", "chrome://global/content/elements/moz-radio-group.mjs"],
       [
         "moz-radio-group",

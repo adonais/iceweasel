@@ -73,11 +73,11 @@ class ConnectUDPTransaction : public nsAHttpTransaction {
                                       uint32_t count,
                                       uint32_t* countRead) override {
     mReader = reader;
-    Unused << mProxyConnectStream->ReadSegments(ReadRequestSegment, this, count,
-                                                countRead);
+    (void)mProxyConnectStream->ReadSegments(ReadRequestSegment, this, count,
+                                            countRead);
     mReader = nullptr;
     uint64_t avil = 0;
-    Unused << mProxyConnectStream->Available(&avil);
+    (void)mProxyConnectStream->Available(&avil);
     if (!avil) {
       mIsDone = true;
     }
@@ -445,7 +445,7 @@ nsresult HttpConnectionUDP::Activate(nsAHttpTransaction* trans, uint32_t caps,
   if (IsProxyConnectInProgress() && !mIsInTunnel && hTrans) {
     if (!mConnected) {
       mQueuedHttpConnectTransaction.AppendElement(hTrans);
-      Unused << ResumeSend();
+      (void)ResumeSend();
     } else {
       // Don’t call ResetTransaction() directly here.
       // HttpConnectionUDP::Activate() may be invoked from
@@ -488,7 +488,7 @@ nsresult HttpConnectionUDP::Activate(nsAHttpTransaction* trans, uint32_t caps,
     mExperienceState |= ConnectionExperienceState::Experienced;
   }
 
-  Unused << ResumeSend();
+  (void)ResumeSend();
   return NS_OK;
 }
 
@@ -618,6 +618,11 @@ void HttpConnectionUDP::Close(nsresult reason, bool aIsShutdown) {
   if (socket) {
     socket->Close();
   }
+  if (mHttp3Session) {
+    mHttp3Session->SetCleanShutdown(true);
+    mHttp3Session->Close(reason);
+    mHttp3Session = nullptr;
+  }
 
   for (const auto& trans : mQueuedHttpConnectTransaction) {
     trans->Close(reason);
@@ -718,7 +723,7 @@ nsresult HttpConnectionUDP::OnHeadersAvailable(nsAHttpTransaction* trans,
     // response headers so that it will be ready to receive the new response.
     if (mIsReused &&
         ((PR_IntervalNow() - mHttp3Session->LastWriteTime()) < k1000ms)) {
-      Close(NS_ERROR_NET_RESET);
+      CloseTransaction(mHttp3Session, NS_ERROR_NET_RESET);
       *reset = true;
       return NS_OK;
     }
@@ -758,7 +763,7 @@ void HttpConnectionUDP::HandleTunnelResponse(
     }
     mQueuedConnectUdpTransaction.Clear();
     mProxyConnectSucceeded = true;
-    Unused << ResumeSend();
+    (void)ResumeSend();
   } else {
     LOG(("proxy CONNECT failed! onlyconnect=%d\n", onlyConnect));
     aHttpTransaction->SetProxyConnectFailed();
@@ -1127,7 +1132,9 @@ NS_IMETHODIMP HttpConnectionUDP::OnPacketReceived(nsIUDPSocket* aSocket) {
 
 NS_IMETHODIMP HttpConnectionUDP::OnStopListening(nsIUDPSocket* aSocket,
                                                  nsresult aStatus) {
-  CloseTransaction(mHttp3Session, aStatus);
+  // At this point, the UDP socket has already been closed. Set aIsShutdown to
+  // true to ensure that mHttp3Session is also closed.
+  CloseTransaction(mHttp3Session, aStatus, true);
   return NS_OK;
 }
 

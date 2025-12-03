@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -858,7 +865,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[ייתכן שמדובר בבעיה בתצורת השרת או שגורם כלשהו מנסה להתחזות לשרת.<br/><br/> אם התחברת לשרת זה בהצלחה בעבר, ייתכן שהשגיאה זמנית.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>ייתכן שמישהו מנסה להתחזות לאתר, וההמשך אליו עלול להיות מסוכן.</label> <br><br> <label>ל־%1$s אין אמון ב־<b>%2$s</b> כיוון שמנפיק האישור אינו מוכר, האישור נחתם עצמאית, או שהשרת לא שולח את אישורי הביניים הנכונים.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>ייתכן שמישהו מנסה להתחזות לאתר, וההמשך אליו עלול להיות מסוכן.</label> <br><br>\n<label>ל־%1$s אין אמון ב־<b>%2$s</b> כיוון שמנפיק האישור אינו מוכר, האישור נחתם עצמאית, או שהשרת לא שולח את אישורי הביניים הנכונים.</label>]]></string>
   <!--
     Sessions List
 

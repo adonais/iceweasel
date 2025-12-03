@@ -210,7 +210,7 @@ class JsepTransportController : public PayloadTypeSuggester,
   void MaybeStartGathering();
   RTCError AddRemoteCandidates(const std::string& mid,
                                const std::vector<Candidate>& candidates);
-  RTCError RemoveRemoteCandidates(const std::vector<Candidate>& candidates);
+  bool RemoveRemoteCandidate(const IceCandidate* candidate);
 
   /**********************
    * DTLS-related methods
@@ -334,8 +334,8 @@ class JsepTransportController : public PayloadTypeSuggester,
   CallbackList<const IceCandidateErrorEvent&> signal_ice_candidate_error_
       RTC_GUARDED_BY(network_thread_);
 
-  CallbackList<const std::vector<Candidate>&> signal_ice_candidates_removed_
-      RTC_GUARDED_BY(network_thread_);
+  CallbackList<IceTransportInternal*, const std::vector<Candidate>&>
+      signal_ice_candidates_removed_ RTC_GUARDED_BY(network_thread_);
 
   CallbackList<const CandidatePairChangeEvent&>
       signal_ice_candidate_pair_changed_ RTC_GUARDED_BY(network_thread_);

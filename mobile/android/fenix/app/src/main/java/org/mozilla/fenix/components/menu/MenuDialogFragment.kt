@@ -68,6 +68,7 @@ import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
+import org.mozilla.fenix.automotive.isAndroidAutomotiveAvailable
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.menu.compose.Addons
@@ -677,6 +678,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                             isOpenInAppMenuHighlighted = isOpenInAppMenuHighlighted,
                                             translationInfo = translationInfo,
                                             showShortcuts = settings.showTopSitesFeature,
+                                            isAndroidAutomotiveAvailable = context.isAndroidAutomotiveAvailable(),
                                             onWebCompatReporterClick = {
                                                 store.dispatch(MenuAction.Navigate.WebCompatReporter)
                                             },

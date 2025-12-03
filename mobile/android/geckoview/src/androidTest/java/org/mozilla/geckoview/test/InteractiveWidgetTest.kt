@@ -16,6 +16,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.not
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -244,5 +245,89 @@ class InteractiveWidgetTest : BaseSessionTest() {
 
         // Close the software keyboard.
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0)
+    }
+
+    @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
+    @Test
+    fun bug1994311() {
+        mainSession.setActive(true)
+        sessionRule.display?.run { setDynamicToolbarMaxHeight(0) }
+
+        mainSession.loadTestPath(BaseSessionTest.BUG1994311_HTML_PATH)
+        mainSession.waitForPageStop()
+        mainSession.promiseAllPaintsDone()
+        mainSession.flushApzRepaints()
+
+        val viewportHeight = mainSession.evaluateJS("window.visualViewport.height") as Double
+
+        // Open the software keyboard.
+        ensureKeyboardOpen()
+
+        mainSession.flushApzRepaints()
+        mainSession.promiseAllPaintsDone()
+
+        // Scroll down visually.
+        mainSession.panZoomController.scrollBy(
+            ScreenLength.zero(),
+            ScreenLength.fromPixels(viewportHeight),
+            PanZoomController.SCROLL_BEHAVIOR_AUTO,
+        )
+
+        mainSession.flushApzRepaints()
+        mainSession.promiseAllPaintsDone()
+
+        var scrollY = mainSession.evaluateJS("window.scrollY") as Double
+
+        // Now the layout scroll offset is different from the visual scroll offset.
+        assertThat(
+              "The layout scroll offset hasn't reached the destination",
+              scrollY,
+              not(equalTo(viewportHeight)),
+            )
+
+        var resizeEventPromise = mainSession.evaluatePromiseJS(
+            """
+              new Promise(resolve => {
+                visualViewport.addEventListener('resize', () => {
+                  resolve(true);
+                }, { once: true });
+              });
+            """.trimIndent(),
+        )
+        // Explicitly call `waitForRoundTrip()` to make sure the above event listener
+        // has set up in the content.
+        mainSession.waitForRoundTrip()
+
+        // Dismiss the software keyboard.
+        imm.hideSoftInputFromWindow(view.getWindowToken(), 0)
+
+        assertThat(
+            "The visual viewport height should be changed",
+            resizeEventPromise.value as Boolean,
+            equalTo(true),
+        )
+
+        val currentViewportHeight = mainSession.evaluateJS("window.visualViewport.height") as Double
+        assertThat(
+            "The visual viewport height is restored to the original one",
+            currentViewportHeight,
+            equalTo(viewportHeight),
+        )
+
+        // Dismissing the software keyboard changes the root composition size,
+        // and the new composition size is propagated to APZ and the root
+        // content APZC notifies to the main-thread that there's a pending visual
+        // scroll offset change which needs to be reflected to the main-thread.
+        // Because of this round trip of the information we need to wait for it.
+        mainSession.flushApzRepaints()
+        mainSession.promiseAllPaintsDone()
+
+        scrollY = mainSession.evaluateJS("window.scrollY") as Double
+
+        assertThat(
+              "Now the layout scroll offset is equal to the visual scroll destination",
+              scrollY,
+              equalTo(viewportHeight),
+            )
     }
 }

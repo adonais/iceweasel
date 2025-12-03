@@ -8,7 +8,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
-#include "mozilla/Span.h"
 
 #include <algorithm>
 #include <array>

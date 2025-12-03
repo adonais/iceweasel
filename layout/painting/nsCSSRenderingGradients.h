@@ -10,7 +10,6 @@
 #include "Units.h"
 #include "gfxRect.h"
 #include "gfxUtils.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/webrender/webrender_ffi.h"
 #include "nsStyleStruct.h"

@@ -15,7 +15,7 @@
 .tab-preview-title {
   overflow: hidden;
   -webkit-line-clamp: 2;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--heading-font-weight);
 }
 
 .tab-preview-uri {
@@ -57,6 +57,10 @@
   }
 }
 
-#tabgroup-panel-content > toolbarbutton.active-tab {
-  font-weight: var(--font-weight-bold);
+#tabgroup-panel-content {
+  max-width: var(--menuitem-max-width);
+
+  & toolbarbutton.active-tab {
+    font-weight: var(--font-weight-semibold);
+  }
 }

@@ -63,6 +63,7 @@
 #include "nsTransportUtils.h"
 #include "sslerr.h"
 #include "SpeculativeTransaction.h"
+#include "mozilla/Preferences.h"
 
 //-----------------------------------------------------------------------------
 
@@ -341,7 +342,7 @@ nsresult nsHttpTransaction::Init(
        !(mCaps & NS_HTTP_DISALLOW_HTTPS_RR)) ||
       forceUseHTTPSRR) {
     nsCOMPtr<nsIEventTarget> target;
-    Unused << gHttpHandler->GetSocketThreadTarget(getter_AddRefs(target));
+    (void)gHttpHandler->GetSocketThreadTarget(getter_AddRefs(target));
     if (target) {
       if (forceUseHTTPSRR) {
         mCaps |= NS_HTTP_FORCE_WAIT_HTTP_RR;
@@ -536,7 +537,7 @@ void nsHttpTransaction::OnActivated() {
     if (NS_FAILED(rv) || !teHeader.Equals("moz_no_te_trailers"_ns)) {
       // If the request already has TE:moz_no_te_trailers then
       // Http2Compressor::EncodeHeaderBlock won't actually add this header.
-      Unused << mRequestHead->SetHeader(nsHttp::TE, "trailers"_ns);
+      (void)mRequestHead->SetHeader(nsHttp::TE, "trailers"_ns);
     }
   }
 
@@ -792,7 +793,7 @@ nsresult nsHttpTransaction::ReadSegments(nsAHttpSegmentReader* reader,
     nsCOMPtr<nsIAsyncInputStream> asyncIn = do_QueryInterface(mRequestStream);
     if (asyncIn) {
       nsCOMPtr<nsIEventTarget> target;
-      Unused << gHttpHandler->GetSocketThreadTarget(getter_AddRefs(target));
+      (void)gHttpHandler->GetSocketThreadTarget(getter_AddRefs(target));
       if (target) {
         asyncIn->AsyncWait(this, 0, 0, target);
       } else {
@@ -972,7 +973,7 @@ nsresult nsHttpTransaction::WriteSegments(nsAHttpSegmentWriter* writer,
   // occur on socket thread so we stay synchronized.
   if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
     nsCOMPtr<nsIEventTarget> target;
-    Unused << gHttpHandler->GetSocketThreadTarget(getter_AddRefs(target));
+    (void)gHttpHandler->GetSocketThreadTarget(getter_AddRefs(target));
     if (target) {
       mPipeOut->AsyncWait(this, 0, 0, target);
       mWaitingOnPipeOut = true;
@@ -1063,7 +1064,7 @@ bool nsHttpTransaction::PrepareSVCBRecordsForRetry(
 
   bool unused;
   nsTArray<RefPtr<nsISVCBRecord>> records;
-  Unused << mHTTPSSVCRecord->GetAllRecordsWithEchConfig(
+  (void)mHTTPSSVCRecord->GetAllRecordsWithEchConfig(
       mCaps & NS_HTTP_DISALLOW_SPDY, noHttp3, mCname, &aAllRecordsHaveEchConfig,
       &unused, records);
 
@@ -1106,13 +1107,13 @@ nsHttpTransaction::PrepareFastFallbackConnInfo(bool aEchConfigUsed) {
 
   RefPtr<nsHttpConnectionInfo> fallbackConnInfo;
   nsCOMPtr<nsISVCBRecord> fastFallbackRecord;
-  Unused << mHTTPSSVCRecord->GetServiceModeRecordWithCname(
+  (void)mHTTPSSVCRecord->GetServiceModeRecordWithCname(
       mCaps & NS_HTTP_DISALLOW_SPDY, true, mCname,
       getter_AddRefs(fastFallbackRecord));
 
   if (fastFallbackRecord && aEchConfigUsed) {
     nsAutoCString echConfig;
-    Unused << fastFallbackRecord->GetEchConfig(echConfig);
+    (void)fastFallbackRecord->GetEchConfig(echConfig);
     if (echConfig.IsEmpty()) {
       fastFallbackRecord = nullptr;
     }
@@ -1283,8 +1284,8 @@ void nsHttpTransaction::MaybeReportFailedSVCDomain(
                                       : aFailedConnInfo->GetRoutedHost();
     LOG(("add failed domain name [%s] -> [%s] to exclusion list",
          aFailedConnInfo->GetOrigin().get(), failedHost.get()));
-    Unused << dns->ReportFailedSVCDomainName(aFailedConnInfo->GetOrigin(),
-                                             failedHost);
+    (void)dns->ReportFailedSVCDomainName(aFailedConnInfo->GetOrigin(),
+                                         failedHost);
   }
 }
 
@@ -1596,7 +1597,7 @@ void nsHttpTransaction::Close(nsresult reason) {
       uint32_t unused = 0;
       // If we have a partial line already, we actually need two \ns to finish
       // the headers section.
-      Unused << ParseHead(data, mLineBuf.IsEmpty() ? 1 : 2, &unused);
+      (void)ParseHead(data, mLineBuf.IsEmpty() ? 1 : 2, &unused);
 
       if (mResponseHead->Version() == HttpVersion::v0_9) {
         // Reject 0 byte HTTP/0.9 Responses - bug 423506
@@ -1850,7 +1851,7 @@ nsresult nsHttpTransaction::Restart() {
     if (NS_SUCCEEDED(
             mRequestHead->GetHeader(nsHttp::Proxy_Authorization, proxyAuth)) &&
         IsStickyAuthSchemeAt(proxyAuth)) {
-      Unused << mRequestHead->ClearHeader(nsHttp::Proxy_Authorization);
+      (void)mRequestHead->ClearHeader(nsHttp::Proxy_Authorization);
     }
   }
 
@@ -2072,13 +2073,12 @@ nsresult nsHttpTransaction::ParseLineSegment(char* segment, uint32_t len) {
       nsresult rv = mResponseHead->GetHeader(nsHttp::Link, linkHeader);
 
       nsCString referrerPolicy;
-      Unused << mResponseHead->GetHeader(nsHttp::Referrer_Policy,
-                                         referrerPolicy);
+      (void)mResponseHead->GetHeader(nsHttp::Referrer_Policy, referrerPolicy);
 
       if (NS_SUCCEEDED(rv) && !linkHeader.IsEmpty()) {
         nsCString cspHeader;
-        Unused << mResponseHead->GetHeader(nsHttp::Content_Security_Policy,
-                                           cspHeader);
+        (void)mResponseHead->GetHeader(nsHttp::Content_Security_Policy,
+                                       cspHeader);
 
         nsCOMPtr<nsIEarlyHintObserver> earlyHint;
         {
@@ -2269,15 +2269,14 @@ nsresult nsHttpTransaction::HandleContentStart() {
         // We will report this state when the final responce arrives.
         mEarlyDataDisposition = EARLY_425;
       } else {
-        Unused << mResponseHead->SetHeader(nsHttp::X_Firefox_Early_Data,
-                                           "accepted"_ns);
+        (void)mResponseHead->SetHeader(nsHttp::X_Firefox_Early_Data,
+                                       "accepted"_ns);
       }
     } else if (mEarlyDataDisposition == EARLY_SENT) {
-      Unused << mResponseHead->SetHeader(nsHttp::X_Firefox_Early_Data,
-                                         "sent"_ns);
+      (void)mResponseHead->SetHeader(nsHttp::X_Firefox_Early_Data, "sent"_ns);
     } else if (mEarlyDataDisposition == EARLY_425) {
-      Unused << mResponseHead->SetHeader(nsHttp::X_Firefox_Early_Data,
-                                         "received 425"_ns);
+      (void)mResponseHead->SetHeader(nsHttp::X_Firefox_Early_Data,
+                                     "received 425"_ns);
       mEarlyDataDisposition = EARLY_NONE;
     }  // no header on NONE case
 
@@ -2318,7 +2317,7 @@ nsresult nsHttpTransaction::HandleContentStart() {
       return NS_OK;
     }
 
-    Unused << mResponseHead->GetHeader(nsHttp::Server, mServerHeader);
+    (void)mResponseHead->GetHeader(nsHttp::Server, mServerHeader);
 
     bool responseChecked = false;
     if (mIsForWebTransport) {
@@ -2981,8 +2980,8 @@ bool nsHttpTransaction::TryToRunPacedRequest() {
 
   mSubmittedRatePacing = true;
   mSynchronousRatePaceRequest = true;
-  Unused << gHttpHandler->SubmitPacedRequest(
-      this, getter_AddRefs(mTokenBucketCancel));
+  (void)gHttpHandler->SubmitPacedRequest(this,
+                                         getter_AddRefs(mTokenBucketCancel));
   mSynchronousRatePaceRequest = false;
   return mPassedRatePacing;
 }
@@ -3164,8 +3163,7 @@ void nsHttpTransaction::SetHttpTrailers(nsCString& aTrailers) {
     if (NS_SUCCEEDED(httpTrailers->ParseHeaderLine(line, &hdr, &hdrNameOriginal,
                                                    &val))) {
       if (hdr == nsHttp::Server_Timing) {
-        Unused << httpTrailers->SetHeaderFromNet(hdr, hdrNameOriginal, val,
-                                                 true);
+        (void)httpTrailers->SetHeaderFromNet(hdr, hdrNameOriginal, val, true);
       }
     }
 
@@ -3313,7 +3311,7 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
   }
 
   bool hasIPAddress = false;
-  Unused << record->GetHasIPAddresses(&hasIPAddress);
+  (void)record->GetHasIPAddresses(&hasIPAddress);
 
   if (mActivated) {
     receivedStage = hasIPAddress ? HTTPSSVC_WITH_IPHINT_RECEIVED_STAGE_2
@@ -3329,13 +3327,13 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
     LOG(("  no usable record!"));
     nsCOMPtr<nsIDNSService> dns = do_GetService(NS_DNSSERVICE_CONTRACTID);
     bool allRecordsExcluded = false;
-    Unused << record->GetAllRecordsExcluded(&allRecordsExcluded);
+    (void)record->GetAllRecordsExcluded(&allRecordsExcluded);
     glean::http::dns_httpssvc_connection_failed_reason.AccumulateSingleSample(
         allRecordsExcluded ? HTTPSSVC_CONNECTION_ALL_RECORDS_EXCLUDED
                            : HTTPSSVC_CONNECTION_NO_USABLE_RECORD);
     if (allRecordsExcluded &&
         StaticPrefs::network_dns_httpssvc_reset_exclustion_list() && dns) {
-      Unused << dns->ResetExcludedSVCDomainName(mConnInfo->GetOrigin());
+      (void)dns->ResetExcludedSVCDomainName(mConnInfo->GetOrigin());
       if (NS_FAILED(record->GetServiceModeRecordWithCname(
               mCaps & NS_HTTP_DISALLOW_SPDY, mCaps & NS_HTTP_DISALLOW_HTTP3,
               aCname, getter_AddRefs(svcbRecord)))) {
@@ -3389,7 +3387,7 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
 
   // Prefetch the A/AAAA records of the target name.
   nsAutoCString targetName;
-  Unused << svcbRecord->GetName(targetName);
+  (void)svcbRecord->GetName(targetName);
   if (mResolver) {
     mResolver->PrefetchAddrRecord(targetName, mCaps & NS_HTTP_REFRESH_DNS);
   }
@@ -3617,7 +3615,7 @@ void nsHttpTransaction::HandleFallback(
   }
 
   UpdateConnectionInfo(aFallbackConnInfo);
-  Unused << gHttpHandler->ConnMgr()->ProcessNewTransaction(this);
+  (void)gHttpHandler->ConnMgr()->ProcessNewTransaction(this);
 }
 
 NS_IMETHODIMP
@@ -3737,8 +3735,26 @@ nsILoadInfo::IPAddressSpace nsHttpTransaction::GetTargetIPAddressSpace() {
 bool nsHttpTransaction::AllowedToConnectToIpAddressSpace(
     nsILoadInfo::IPAddressSpace aTargetIpAddressSpace) {
   // skip checks if LNA feature is disabled
+
   if (!StaticPrefs::network_lna_enabled()) {
     return true;
+  }
+
+  if (mConnection) {
+    // update peer address required for LNA telemetry and console logging
+    MutexAutoLock lock(mLock);
+    mConnection->GetPeerAddr(&mPeerAddr);
+  }
+  // Skip LNA checks if domain is in skip list
+  if (mConnInfo && gIOService &&
+      gIOService->ShouldSkipDomainForLNA(mConnInfo->GetOrigin())) {
+    return true;
+  }
+
+  // Skip LNA checks entirely for WebSocket connections if websocket LNA is
+  // disabled
+  if (!StaticPrefs::network_lna_websocket_enabled() && IsWebsocketUpgrade()) {
+    return true;  // Allow all WebSocket connections
   }
 
   // store targetIpAddress space which is required later by nsHttpChannel for
@@ -3761,6 +3777,13 @@ bool nsHttpTransaction::AllowedToConnectToIpAddressSpace(
   // for private network access
   // XXX add link to LNA spec once it is published
 
+  // Skip LNA checks for private network to localhost if preference is enabled
+  if (StaticPrefs::network_lna_local_network_to_localhost_skip_checks() &&
+      mParentIPAddressSpace == nsILoadInfo::IPAddressSpace::Private &&
+      aTargetIpAddressSpace == nsILoadInfo::IPAddressSpace::Local) {
+    return true;  // Allow private->localhost access
+  }
+
   if (mozilla::net::IsLocalOrPrivateNetworkAccess(mParentIPAddressSpace,
                                                   aTargetIpAddressSpace)) {
     if (aTargetIpAddressSpace == nsILoadInfo::IPAddressSpace::Local &&
@@ -3775,9 +3798,12 @@ bool nsHttpTransaction::AllowedToConnectToIpAddressSpace(
 
     if ((StaticPrefs::network_lna_blocking() ||
          StaticPrefs::network_lna_block_trackers()) &&
-        (mLnaPermissionStatus.mLocalHostPermission == LNAPermission::Pending) &&
-        (mLnaPermissionStatus.mLocalNetworkPermission ==
-         LNAPermission::Pending)) {
+        ((aTargetIpAddressSpace == nsILoadInfo::IPAddressSpace::Local &&
+          mLnaPermissionStatus.mLocalHostPermission ==
+              LNAPermission::Pending) ||
+         (aTargetIpAddressSpace == nsILoadInfo::IPAddressSpace::Private &&
+          mLnaPermissionStatus.mLocalNetworkPermission ==
+              LNAPermission::Pending))) {
       // If LNA prompts are enabled or tracker blocking is enabled we disallow
       // requests
       return false;

@@ -16,6 +16,7 @@ kind-dependencies:
     - build-fat-aar
 
 task-defaults:
+    run-on-repo-type: [hg]
     attributes:
         build_platform: android
         retrigger: true
@@ -57,10 +58,10 @@ tasks:
         worker:
             artifacts:
                 - name: public/reports/index.html
-                  path: /builds/worker/checkouts/gecko/mobile/android/focus-android/app/build/reports/tests/testFocusDebugUnitTest/index.html
+                  path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/focus-android/app/reports/tests/testFocusDebugUnitTest/index.html
                   type: file
                 - name: public/reports/test
-                  path: /builds/worker/checkouts/gecko/mobile/android/focus-android/app/build/reports/tests
+                  path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/focus-android/app/reports/tests
                   type: directory
 
     fenix-debug:
@@ -80,10 +81,10 @@ tasks:
         worker:
             artifacts:
                 - name: public/reports/index.html
-                  path: /builds/worker/checkouts/gecko/mobile/android/fenix/app/build/reports/tests/testFenixDebugUnitTest/index.html
+                  path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/fenix/app/reports/tests/testFenixDebugUnitTest/index.html
                   type: file
                 - name: public/reports/test
-                  path: /builds/worker/checkouts/gecko/mobile/android/fenix/app/build/reports/tests
+                  path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/fenix/app/reports/tests
                   type: directory
         routes:
             by-level:

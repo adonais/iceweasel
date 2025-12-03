@@ -10,7 +10,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d881b16dd8a6813fe
  1 file changed, 6 insertions(+)
 
 diff --git a/rtc_base/platform_thread.cc b/rtc_base/platform_thread.cc
-index 2320fa5172..ebde0b3865 100644
+index 927c92d0e9..3f33fa406f 100644
 --- a/rtc_base/platform_thread.cc
 +++ b/rtc_base/platform_thread.cc
 @@ -25,6 +25,8 @@

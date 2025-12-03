@@ -498,7 +498,7 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
         observeSuggestionProvidersState()
 
         val shouldShowSuggestions = store.state.run {
-            (showTrendingSearches || showRecentSearches || showShortcutsSuggestions) &&
+            (showTrendingSearches || showRecentSearches) &&
                 (query.isNotEmpty() || FxNimbus.features.searchSuggestionsOnHomepage.value().enabled)
         }
 

@@ -8,7 +8,6 @@
 #define mozilla_dom_MediaKeySession_h
 
 #include "DecoderDoctorLogger.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/DetailedPromise.h"
 #include "mozilla/Mutex.h"

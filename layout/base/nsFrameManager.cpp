@@ -12,7 +12,6 @@
 #include "GeckoProfiler.h"
 #include "mozilla/AbsoluteContainingBlock.h"
 #include "mozilla/ComputedStyle.h"
-#include "mozilla/MemoryReporting.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresState.h"
 #include "mozilla/ViewportFrame.h"

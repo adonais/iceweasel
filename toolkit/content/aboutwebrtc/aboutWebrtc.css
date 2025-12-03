@@ -95,7 +95,7 @@ h3 > span {
 }
 
 .peer-connection table th {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .peer-connection table th,
@@ -152,7 +152,7 @@ h3 > span {
 }
 
 .info-label {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .info-body,

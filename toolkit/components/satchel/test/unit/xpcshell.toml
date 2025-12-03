@@ -36,4 +36,6 @@ skip-if = ["condprof"]  # Bug 1769154 - not supported
 
 ["test_history_sources.js"]
 
+["test_isOriginInList.js"]
+
 ["test_notify.js"]

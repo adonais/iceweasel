@@ -476,7 +476,7 @@ static already_AddRefed<gfx::Path> BuildDefaultPathForURL(
   }
 
   Array<const StylePathCommand, 1> array(StylePathCommand::Move(
-      StyleByTo::By, StyleCoordinatePair<StyleCSSFloat>{0.0, 0.0}));
+      StyleCommandEndPoint<StyleCSSFloat>::ByCoordinate({0.0, 0.0})));
   return SVGPathData::BuildPath(array, aBuilder, StyleStrokeLinecap::Butt, 0.0);
 }
 

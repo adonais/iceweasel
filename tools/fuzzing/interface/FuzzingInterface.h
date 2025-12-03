@@ -17,7 +17,6 @@
 #endif
 
 #include "FuzzerRegistry.h"
-#include "mozilla/Assertions.h"
 
 #ifndef JS_STANDALONE
 #  include "mozilla/Logging.h"

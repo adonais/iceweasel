@@ -10,8 +10,6 @@
 #include "GetFileOrDirectoryTask.h"
 #include "GetFilesTask.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/FileSystemBase.h"

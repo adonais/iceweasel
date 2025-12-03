@@ -318,7 +318,7 @@ bool WindowGlobalChild::IsProcessRoot() {
 void WindowGlobalChild::BeforeUnloadAdded() {
   // Don't bother notifying the parent if we don't have an IPC link open.
   if (mBeforeUnloadListeners == 0 && CanSend()) {
-    Unused << mWindowContext->SetNeedsBeforeUnload(true);
+    (void)mWindowContext->SetNeedsBeforeUnload(true);
   }
 
   mBeforeUnloadListeners++;
@@ -332,7 +332,7 @@ void WindowGlobalChild::BeforeUnloadRemoved() {
   MOZ_ASSERT(mBeforeUnloadListeners >= 0);
 
   if (mBeforeUnloadListeners == 0) {
-    Unused << mWindowContext->SetNeedsBeforeUnload(false);
+    (void)mWindowContext->SetNeedsBeforeUnload(false);
   }
 }
 
@@ -661,7 +661,7 @@ void WindowGlobalChild::SetDocumentPrincipal(
                               aNewDocumentStoragePrincipal);
 }
 
-const nsACString& WindowGlobalChild::GetRemoteType() {
+const nsACString& WindowGlobalChild::GetRemoteType() const {
   if (XRE_IsContentProcess()) {
     return ContentChild::GetSingleton()->GetRemoteType();
   }

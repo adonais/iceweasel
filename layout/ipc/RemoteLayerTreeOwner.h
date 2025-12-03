@@ -8,7 +8,6 @@
 #define mozilla_layout_RemoteLayerTreeOwner_h
 
 #include "base/process.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/LayersTypes.h"

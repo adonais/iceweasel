@@ -54,7 +54,7 @@ void PerfStats::SetCollectionMask(MetricMask aMask) {
   ContentParent::GetAll(contentParents);
 
   for (ContentParent* parent : contentParents) {
-    Unused << parent->SendUpdatePerfStatsCollectionMask(aMask);
+    (void)parent->SendUpdatePerfStatsCollectionMask(aMask);
   }
 }
 

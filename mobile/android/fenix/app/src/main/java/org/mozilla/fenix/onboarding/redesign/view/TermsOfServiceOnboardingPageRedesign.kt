@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.FilledButton
@@ -197,6 +198,7 @@ private fun BodyLinkText(
         text = text,
         linkTextStates = listOf(linkState),
         style = style,
+        linkTextDecoration = TextDecoration.Underline,
         shouldApplyAccessibleSize = true,
     )
 }

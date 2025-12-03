@@ -8,7 +8,6 @@
 #define mozilla_dom_PromiseDebugging_h
 
 #include "js/TypeDecls.h"
-#include "mozilla/RefPtr.h"
 #include "nsTArray.h"
 
 namespace mozilla {

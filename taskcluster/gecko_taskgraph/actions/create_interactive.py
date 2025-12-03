@@ -159,7 +159,7 @@ def create_interactive_action(parameters, graph_config, input, task_group_id, ta
         if email and email != "noreply@noreply.mozilla.org":
             info = {
                 "url": taskcluster_urls.ui(
-                    get_root_url(False), "tasks/${status.taskId}/connect"
+                    get_root_url(block_proxy=True), "tasks/${status.taskId}/connect"
                 ),
                 "label": label,
                 "revision": parameters["head_rev"],

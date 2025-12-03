@@ -8,8 +8,9 @@
  */
 
 /**
- * @import { UrlbarProvider, UrlbarSearchStringTokenData } from "UrlbarUtils.sys.mjs"
+ * @import { UrlbarProvider } from "UrlbarUtils.sys.mjs"
  * @import { UrlbarMuxer } from "UrlbarUtils.sys.mjs"
+ * @import { UrlbarSearchStringTokenData } from "UrlbarTokenizer.sys.mjs"
  */
 
 const lazy = {};
@@ -425,7 +426,8 @@ export class ProvidersManager {
     }
 
     // Apply tokenization.
-    lazy.UrlbarTokenizer.tokenize(queryContext);
+    let tokens = lazy.UrlbarTokenizer.tokenize(queryContext);
+    queryContext.tokens = tokens;
 
     // If there's a single source, we are in restriction mode.
     if (queryContext.sources && queryContext.sources.length == 1) {
@@ -755,15 +757,23 @@ export class Query {
     }
 
     // Start querying active providers.
+    /**
+     * @type {(provider: UrlbarProvider) => Promise<void>}
+     */
     let startQuery = async provider => {
       provider.logger.debug(
         `Starting query for "${this.context.searchString}"`
       );
       let addedResult = false;
-      await provider.tryMethod("startQuery", this.context, (...args) => {
-        addedResult = true;
-        this.add(...args);
-      });
+      await provider.tryMethod(
+        "startQuery",
+        this.context,
+        /** @type {Parameters<UrlbarProvider['startQuery']>[1]} */
+        (innerProvider, result) => {
+          addedResult = true;
+          this.add(innerProvider, result);
+        }
+      );
       if (!addedResult) {
         this.context.deferUserSelectionProviders.delete(provider.name);
       }
@@ -992,18 +1002,21 @@ function updateSourcesIfEmpty(context) {
   }
   let acceptedSources = [];
   // There can be only one restrict token per query.
-  let restrictToken = context.tokens.find(t =>
-    [
-      lazy.UrlbarTokenizer.TYPE.RESTRICT_HISTORY,
-      lazy.UrlbarTokenizer.TYPE.RESTRICT_BOOKMARK,
-      lazy.UrlbarTokenizer.TYPE.RESTRICT_TAG,
-      lazy.UrlbarTokenizer.TYPE.RESTRICT_OPENPAGE,
-      lazy.UrlbarTokenizer.TYPE.RESTRICT_SEARCH,
-      lazy.UrlbarTokenizer.TYPE.RESTRICT_TITLE,
-      lazy.UrlbarTokenizer.TYPE.RESTRICT_URL,
-      lazy.UrlbarTokenizer.TYPE.RESTRICT_ACTION,
-    ].includes(t.type)
-  );
+  let restrictToken =
+    context.sapName != "urlbar"
+      ? undefined
+      : context.tokens.find(t =>
+          [
+            lazy.UrlbarTokenizer.TYPE.RESTRICT_HISTORY,
+            lazy.UrlbarTokenizer.TYPE.RESTRICT_BOOKMARK,
+            lazy.UrlbarTokenizer.TYPE.RESTRICT_TAG,
+            lazy.UrlbarTokenizer.TYPE.RESTRICT_OPENPAGE,
+            lazy.UrlbarTokenizer.TYPE.RESTRICT_SEARCH,
+            lazy.UrlbarTokenizer.TYPE.RESTRICT_TITLE,
+            lazy.UrlbarTokenizer.TYPE.RESTRICT_URL,
+            lazy.UrlbarTokenizer.TYPE.RESTRICT_ACTION,
+          ].includes(t.type)
+        );
 
   // RESTRICT_TITLE and RESTRICT_URL do not affect query sources.
   let restrictTokenType =
@@ -1014,10 +1027,6 @@ function updateSourcesIfEmpty(context) {
       : undefined;
 
   for (let source of Object.values(lazy.UrlbarUtils.RESULT_SOURCE)) {
-    // Skip sources that the context doesn't care about.
-    if (context.sources && !context.sources.includes(source)) {
-      continue;
-    }
     // Check prefs and restriction tokens.
     switch (source) {
       case lazy.UrlbarUtils.RESULT_SOURCE.BOOKMARKS:

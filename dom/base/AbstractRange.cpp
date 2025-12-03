@@ -7,7 +7,6 @@
 #include "mozilla/dom/AbstractRange.h"
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/RangeUtils.h"
 #include "mozilla/dom/AbstractRangeBinding.h"
 #include "mozilla/dom/ChildIterator.h"

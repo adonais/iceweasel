@@ -786,7 +786,3 @@ style:
     ignoreLateinitVar: false
   WildcardImport:
     active: true
-
-mozilla-rules:
-  ForbiddenSuppression:
-    active: true

@@ -7,6 +7,7 @@
 #include "mozilla/dom/ShadowRoot.h"
 
 #include "ChildIterator.h"
+#include "mozilla/DeclarationBlock.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/GlobalStyleSheetCache.h"
 #include "mozilla/IdentifierMapEntry.h"
@@ -410,12 +411,15 @@ void ShadowRoot::RuleRemoved(StyleSheet& aSheet, css::Rule& aRule) {
   ApplicableRulesChanged();
 }
 
-void ShadowRoot::RuleChanged(StyleSheet& aSheet, css::Rule*,
-                             const StyleRuleChange&) {
+void ShadowRoot::RuleChanged(StyleSheet& aSheet, css::Rule* aRule,
+                             const StyleRuleChange& aChange) {
   if (!aSheet.IsApplicable()) {
     return;
   }
-
+  if (mStyleRuleMap && aChange.mOldBlock != aChange.mNewBlock) {
+    mStyleRuleMap->RuleDeclarationsChanged(*aRule, aChange.mOldBlock->Raw(),
+                                           aChange.mNewBlock->Raw());
+  }
   MOZ_ASSERT(mServoStyles);
   Servo_AuthorStyles_ForceDirty(mServoStyles.get());
   ApplicableRulesChanged();

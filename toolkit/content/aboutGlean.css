@@ -30,7 +30,7 @@ body {
 }
 
 #tag-pings:invalid + label > span {
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
   text-decoration: underline;
   color: var(--text-color-error);
 }
@@ -72,13 +72,53 @@ body {
   overflow-y: scroll;
 }
 
+#metrics-table-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+#metrics-table-settings:not([hidden="true"]) .content {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+#metrics-table-settings .content > * {
+  flex: 1 0 auto;
+}
+
+@media (max-width: 1096px) {
+  #metrics-table-settings .content > * {
+    flex-basis: 100%;
+  }
+}
+
+#metrics-table-settings,
+#metrics-table-settings .box {
+  margin-bottom: 5px;
+  padding: 10px;
+  border: 1px solid var(--border-color-card);
+  border-radius: var(--border-radius-small);
+  background-color: var(--background-color-box);
+}
+
+#metrics-table-settings h2,
+#metrics-table-settings h3,
+#metrics-table-settings h4 {
+  margin: 10px 0;
+}
+
+#metrics-table-settings hr {
+  margin: 20px 0;
+}
+
 td[data-d3-cell="actions"] > div {
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-td[data-d3-cell="value"] > pre {
+td[data-d3-cell="value"] > pre,
+#metrics-table-settings-timeline-example > pre {
   background-color: var(--background-color-box);
   padding: 5px;
   border-radius: var(--border-radius-small);
@@ -86,11 +126,17 @@ td[data-d3-cell="value"] > pre {
   width: fit-content;
 }
 
-td[data-d3-cell="value"] > svg {
+td[data-d3-cell="value"] > svg,
+.chart-display > svg {
   color: var(--text-color);
   border: 1px solid var(--border-color-card);
   border-radius: var(--border-radius-small);
   background-color: var(--background-color-box);
+}
+
+.vertical-flex {
+  display: flex;
+  flex-direction: column;
 }
 
 .histogram .boxes rect,
@@ -118,7 +164,6 @@ td[data-d3-cell="value"] > svg {
   stroke: var(--text-color);
 }
 
-svg.timeline,
 pre.withChart {
   max-width: 500px;
   overflow: scroll;

@@ -1639,7 +1639,7 @@ CodeOffset MacroAssembler::call(wasm::SymbolicAddress imm) {
   return CodeOffset(currentOffset());
 }
 
-void MacroAssembler::call(const Address& addr) {
+CodeOffset MacroAssembler::call(const Address& addr) {
   vixl::UseScratchRegisterScope temps(this);
   const Register scratch = temps.AcquireX().asUnsized();
   // This sync has been observed (and is expected) to be necessary.
@@ -1647,6 +1647,7 @@ void MacroAssembler::call(const Address& addr) {
   syncStackPtr();
   loadPtr(addr, scratch);
   Blr(ARMRegister(scratch, 64));
+  return CodeOffset(currentOffset());
 }
 
 void MacroAssembler::call(JitCode* c) {
@@ -3274,48 +3275,47 @@ void MacroAssembler::atomicEffectOpJS(Scalar::Type arrayType,
 
 void MacroAssembler::atomicPause() { Isb(); }
 
-void MacroAssembler::flexibleQuotient32(Register rhs, Register srcDest,
-                                        bool isUnsigned,
+void MacroAssembler::flexibleQuotient32(Register lhs, Register rhs,
+                                        Register dest, bool isUnsigned,
                                         const LiveRegisterSet&) {
-  quotient32(rhs, srcDest, isUnsigned);
+  quotient32(lhs, rhs, dest, isUnsigned);
 }
 
 void MacroAssembler::flexibleQuotientPtr(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
-  quotient64(rhs, srcDest, isUnsigned);
+  quotient64(lhs, rhs, dest, isUnsigned);
 }
 
-void MacroAssembler::flexibleRemainder32(Register rhs, Register srcDest,
-                                         bool isUnsigned,
+void MacroAssembler::flexibleRemainder32(Register lhs, Register rhs,
+                                         Register dest, bool isUnsigned,
                                          const LiveRegisterSet&) {
-  remainder32(rhs, srcDest, isUnsigned);
+  remainder32(lhs, rhs, dest, isUnsigned);
 }
 
 void MacroAssembler::flexibleRemainderPtr(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
-  remainder64(rhs, srcDest, isUnsigned);
+  remainder64(lhs, rhs, dest, isUnsigned);
 }
 
-void MacroAssembler::flexibleDivMod32(Register rhs, Register srcDest,
-                                      Register remOutput, bool isUnsigned,
-                                      const LiveRegisterSet&) {
-  vixl::UseScratchRegisterScope temps(this);
-  ARMRegister src = temps.AcquireW();
-
-  // Preserve src for remainder computation
-  Mov(src, ARMRegister(srcDest, 32));
+void MacroAssembler::flexibleDivMod32(Register lhs, Register rhs,
+                                      Register divOutput, Register remOutput,
+                                      bool isUnsigned, const LiveRegisterSet&) {
+  MOZ_ASSERT(lhs != divOutput && lhs != remOutput, "lhs is preserved");
+  MOZ_ASSERT(rhs != divOutput && rhs != remOutput, "rhs is preserved");
 
   if (isUnsigned) {
-    Udiv(ARMRegister(srcDest, 32), src, ARMRegister(rhs, 32));
+    Udiv(ARMRegister(divOutput, 32), ARMRegister(lhs, 32),
+         ARMRegister(rhs, 32));
   } else {
-    Sdiv(ARMRegister(srcDest, 32), src, ARMRegister(rhs, 32));
+    Sdiv(ARMRegister(divOutput, 32), ARMRegister(lhs, 32),
+         ARMRegister(rhs, 32));
   }
 
-  // Compute the remainder: remOutput = src - (srcDest * rhs).
-  Msub(/* result= */ ARMRegister(remOutput, 32), ARMRegister(srcDest, 32),
-       ARMRegister(rhs, 32), src);
+  // Compute the remainder: remOutput = lhs - (divOutput * rhs).
+  Msub(/* result= */ ARMRegister(remOutput, 32), ARMRegister(divOutput, 32),
+       ARMRegister(rhs, 32), ARMRegister(lhs, 32));
 }
 
 CodeOffset MacroAssembler::moveNearAddressWithPatch(Register dest) {
@@ -3373,8 +3373,8 @@ void MacroAssembler::floorFloat32ToInt32(FloatRegister src, Register dest,
   B(&fin);
 
   bind(&handleZero);
-  // Move the top word of the float into the output reg, if it is non-zero,
-  // then the original value was -0.0.
+  // Move the float into the output reg, if it is non-zero, then the original
+  // value was -0.0.
   Fmov(o32, iFlt);
   Cbnz(o32, fail);
   bind(&fin);
@@ -3384,7 +3384,6 @@ void MacroAssembler::floorDoubleToInt32(FloatRegister src, Register dest,
                                         Label* fail) {
   ARMFPRegister iDbl(src, 64);
   ARMRegister o64(dest, 64);
-  ARMRegister o32(dest, 32);
 
   Label handleZero;
   Label fin;
@@ -3407,8 +3406,8 @@ void MacroAssembler::floorDoubleToInt32(FloatRegister src, Register dest,
   B(&fin);
 
   bind(&handleZero);
-  // Move the top word of the double into the output reg, if it is non-zero,
-  // then the original value was -0.0.
+  // Move the double into the output reg, if it is non-zero, then the original
+  // value was -0.0.
   Fmov(o64, iDbl);
   Cbnz(o64, fail);
   bind(&fin);
@@ -3439,8 +3438,8 @@ void MacroAssembler::ceilFloat32ToInt32(FloatRegister src, Register dest,
 
   // Bail if the input is in (-1, -0] or NaN.
   bind(&handleZero);
-  // Move the top word of the float into the output reg, if it is non-zero,
-  // then the original value wasn't +0.0.
+  // Move the float into the output reg, if it is non-zero, then the original
+  // value wasn't +0.0.
   Fmov(o32, iFlt);
   Cbnz(o32, fail);
   bind(&fin);
@@ -3450,7 +3449,6 @@ void MacroAssembler::ceilDoubleToInt32(FloatRegister src, Register dest,
                                        Label* fail) {
   ARMFPRegister iDbl(src, 64);
   ARMRegister o64(dest, 64);
-  ARMRegister o32(dest, 32);
 
   Label handleZero;
   Label fin;
@@ -3471,8 +3469,8 @@ void MacroAssembler::ceilDoubleToInt32(FloatRegister src, Register dest,
 
   // Bail if the input is in (-1, -0] or NaN.
   bind(&handleZero);
-  // Move the top word of the double into the output reg, if it is non-zero,
-  // then the original value wasn't +0.0.
+  // Move the double into the output reg, if it is non-zero, then the original
+  // value wasn't +0.0.
   Fmov(o64, iDbl);
   Cbnz(o64, fail);
   bind(&fin);
@@ -3802,7 +3800,10 @@ void MacroAssembler::shiftIndex32AndAdd(Register indexTemp32, int shift,
       Operand(ARMRegister(indexTemp32, 64), vixl::LSL, shift));
 }
 
-void MacroAssembler::wasmMarkCallAsSlow() { Mov(x28, x28); }
+void MacroAssembler::wasmMarkCallAsSlow() {
+  // Use mov() instead of Mov() to ensure this no-op move isn't elided.
+  vixl::MacroAssembler::mov(x28, x28);
+}
 
 const int32_t SlowCallMarker = 0xaa1c03fc;
 

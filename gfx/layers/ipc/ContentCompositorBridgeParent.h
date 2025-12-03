@@ -10,7 +10,6 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"
-#include "mozilla/UniquePtr.h"
 
 namespace mozilla::layers {
 

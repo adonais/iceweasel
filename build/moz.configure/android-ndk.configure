@@ -35,8 +35,8 @@ option(
 
 @dependable
 def min_android_version():
-    # Sync with android_sdk_version
-    return "21"
+    # Sync with android_sdk_version.min_sdk_version
+    return "26"
 
 
 option(

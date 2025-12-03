@@ -22,7 +22,6 @@
 #include "VPXDecoder.h"
 #include "VideoUtils.h"
 #include "gfxMacUtils.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/gfx/gfxVars.h"

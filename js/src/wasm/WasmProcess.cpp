@@ -18,8 +18,6 @@
 
 #include "wasm/WasmProcess.h"
 
-#include "mozilla/Attributes.h"
-
 #include "gc/Memory.h"
 #include "threading/ExclusiveData.h"
 #include "vm/MutexIDs.h"

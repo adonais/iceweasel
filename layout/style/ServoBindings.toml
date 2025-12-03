@@ -136,7 +136,7 @@ rusty-enums = [
     "mozilla::StyleMathVariant",
     "mozilla::StyleTextDecorationSkipInk",
     "mozilla::StyleTextDecorationLength",
-    "mozilla::StyleTextDecorationTrim",
+    "mozilla::StyleTextDecorationInset",
     "mozilla::StyleMaskType",
     "mozilla::StyleShapeRendering",
     "mozilla::StyleTextAnchor",
@@ -327,6 +327,7 @@ opaque-types = [
                                   # https://github.com/rust-lang/rust-bindgen/pull/1515
                                   # is available
     "mozilla::detail::PointerType",
+    "mozilla::HashMap",
     "mozilla::HashSet",
     "mozilla::ScrollAxis",  # <- For some reason the alignment of this is 4
                             # for clang.
@@ -445,7 +446,7 @@ cbindgen-types = [
     { gecko = "StyleOverflowAnchor", servo = "crate::values::computed::OverflowAnchor" },
     { gecko = "StyleTextDecorationSkipInk", servo = "crate::values::computed::TextDecorationSkipInk" },
     { gecko = "StyleTextDecorationLength", servo = "crate::values::computed::TextDecorationLength" },
-    { gecko = "StyleTextDecorationTrim", servo = "crate::values::computed::TextDecorationTrim" },
+    { gecko = "StyleTextDecorationInset", servo = "crate::values::computed::TextDecorationInset" },
     { gecko = "StyleRubyPosition", servo = "crate::values::computed::RubyPosition" },
     { gecko = "StyleLength", servo = "crate::values::computed::CSSPixelLength" },
     { gecko = "StyleLengthPercentage", servo = "crate::values::computed::LengthPercentage" },
@@ -578,11 +579,9 @@ cbindgen-types = [
     { gecko = "StyleSymbolsType", servo = "crate::counter_style::SymbolsType" },
     { gecko = "StyleCounterStyle", servo = "crate::counter_style::CounterStyle" },
     { gecko = "StyleComputedJustifyItems", servo = "crate::values::computed::align::ComputedJustifyItems" },
-    { gecko = "StyleAlignItems", servo = "crate::values::computed::AlignItems" },
-    { gecko = "StyleJustifySelf", servo = "crate::values::computed::JustifySelf" },
-    { gecko = "StyleAlignSelf", servo = "crate::values::computed::AlignSelf" },
-    { gecko = "StyleAlignContent", servo = "crate::values::computed::align::AlignContent" },
-    { gecko = "StyleJustifyContent", servo = "crate::values::computed::align::JustifyContent" },
+    { gecko = "StyleItemPlacement", servo = "crate::values::computed::ItemPlacement" },
+    { gecko = "StyleContentDistribution", servo = "crate::values::computed::ContentDistribution" },
+    { gecko = "StyleSelfAlignment", servo = "crate::values::computed::SelfAlignment" },
     { gecko = "StyleComputedValueFlags", servo = "crate::computed_value_flags::ComputedValueFlags" },
     { gecko = "StyleImage", servo = "crate::values::computed::Image" },
     { gecko = "StyleShapeOutside", servo = "crate::values::computed::basic_shape::ShapeOutside" },

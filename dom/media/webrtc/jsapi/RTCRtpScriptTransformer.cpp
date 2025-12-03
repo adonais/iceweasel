@@ -26,7 +26,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/Result.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Promise-inl.h"

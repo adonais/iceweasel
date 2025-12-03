@@ -22,7 +22,6 @@
      */
     add_task(async function test_backupTriggerStateChange() {
       let settings = document.getElementById("test-backup-settings");
-      let triggerBackupButton = settings.triggerBackupButtonEl;
 
       settings.backupServiceState = {
         defaultParent: {
@@ -34,11 +33,7 @@
       }
       await settings.updateComplete;
 
-      is(
-        triggerBackupButton.getAttribute("data-l10n-id"),
-        "settings-data-backup-in-progress-button"
-      );
-      ok(triggerBackupButton.disabled, "Trigger backup button is disabled when backup is off");
+      ok(!settings.triggerBackupButtonEl, "Trigger backup button is not visible when backup is off");
 
       settings.backupServiceState = {
         defaultParent: {
@@ -50,7 +45,7 @@
       }
       await settings.updateComplete;
 
-      ok(triggerBackupButton.disabled, "Trigger backup button should be disabled when backing up");
+      ok(settings.triggerBackupButtonEl.disabled, "Trigger backup button should be disabled when backing up");
 
       settings.backupServiceState = {
         defaultParent: {
@@ -62,7 +57,7 @@
       }
       await settings.updateComplete;
 
-      ok(!triggerBackupButton.disabled, "Trigger backup button should be enabled");
+      ok(!settings.triggerBackupButtonEl.enabled, "Trigger backup button should be enabled");
 
       settings.remove();
     });

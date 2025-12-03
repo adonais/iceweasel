@@ -8,7 +8,6 @@
 #define nsCUPSShim_h___
 
 #include <cups/cups.h>
-#include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 
 // TODO: This should be a configure option, ideally.

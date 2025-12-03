@@ -41,6 +41,8 @@ data class FocusTypography(
     val onboardingButton: TextStyle,
     val cfrTextStyle: TextStyle,
     val cfrCookieBannerTextStyle: TextStyle,
+    val preferenceTitle: TextStyle,
+    val preferenceSummary: TextStyle,
 ) {
 
     val displayLarge: TextStyle get() = materialTypography.displayLarge
@@ -135,5 +137,15 @@ val focusTypography: FocusTypography
             fontSize = 14.sp,
             letterSpacing = 0.25.sp,
             lineHeight = 20.sp,
+        ),
+        preferenceTitle = TextStyle(
+            fontSize = 16.sp,
+            lineHeight = 21.sp, // from 16sp textSize + 5sp lineSpacingExtra
+            color = focusColors.settingsTextColor,
+        ),
+        preferenceSummary = TextStyle(
+            fontSize = 14.sp,
+            letterSpacing = 0.42.sp, // from 14sp textSize * 0.03 letterSpacing
+            color = focusColors.settingsTextSummaryColor,
         ),
     )

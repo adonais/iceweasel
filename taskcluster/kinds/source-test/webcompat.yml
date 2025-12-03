@@ -15,6 +15,7 @@ task-defaults:
             - target.tar.xz
         toolchain:
             - linux64-geckodriver
+    run-on-repo-type: [hg]
     run-on-projects: []
     treeherder:
         kind: test

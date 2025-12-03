@@ -129,8 +129,8 @@ void UtilityMediaServiceParent::Start(
 #endif
 
   auto supported = media::MCSInfo::GetSupportFromFactory();
-  Unused << SendUpdateMediaCodecsSupported(GetRemoteMediaInFromKind(mKind),
-                                           supported);
+  (void)SendUpdateMediaCodecsSupported(GetRemoteMediaInFromKind(mKind),
+                                       supported);
   PROFILER_MARKER_UNTYPED("UtilityMediaServiceParent::Start", IPC,
                           MarkerOptions(MarkerTiming::IntervalUntilNowFrom(
                               mUtilityMediaServiceParentStart)));
@@ -163,7 +163,6 @@ mozilla::ipc::IPCResult UtilityMediaServiceParent::RecvInitVideoBridge(
           gfx::Feature::HW_COMPOSITING,
           gfx::Feature::D3D11_COMPOSITING,
           gfx::Feature::OPENGL_COMPOSITING,
-          gfx::Feature::DIRECT2D,
       },
       aContentDeviceData.prefs());
 
@@ -173,7 +172,7 @@ mozilla::ipc::IPCResult UtilityMediaServiceParent::RecvInitVideoBridge(
     }
   }
 
-  Unused << SendCompleteCreatedVideoBridge();
+  (void)SendCompleteCreatedVideoBridge();
   return IPC_OK();
 }
 #endif
@@ -190,7 +189,7 @@ IPCResult UtilityMediaServiceParent::RecvUpdateVar(
                 "UtilityMediaServiceParent::UpdateMediaCodecsSupported",
                 [self, supported = media::MCSInfo::GetSupportFromFactory(
                            true /* force refresh */)]() {
-                  Unused << self->SendUpdateMediaCodecsSupported(
+                  (void)self->SendUpdateMediaCodecsSupported(
                       GetRemoteMediaInFromKind(self->mKind), supported);
                 }));
           }),

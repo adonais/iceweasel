@@ -26,7 +26,7 @@ interface nsIFormFillController : nsISupports
   /*
    * The input or textarea element the form fill controller is currently bound to.
    */
-  readonly attribute Element focusedElement;
+  [setter_can_run_script] attribute Element controlledElement;
 
   /*
    * Whether the autocomplete popup on a password field was automatically opened

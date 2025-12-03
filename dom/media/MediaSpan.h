@@ -8,7 +8,6 @@
 
 #include "MediaData.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/Span.h"
 
 namespace mozilla {
 

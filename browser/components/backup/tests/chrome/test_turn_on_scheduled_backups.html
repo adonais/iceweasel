@@ -42,7 +42,16 @@
       let turnOnScheduledBackups = document.getElementById("test-turn-on-scheduled-backups");
       let confirmButton = turnOnScheduledBackups.confirmButtonEl;
 
+      // The confirm button will be disabled if BackupService cannot find a file path
+      const defaultPathFilename = "testdefaultpath";
+      let defaultPath = PathUtils.join(PathUtils.tempDir, defaultPathFilename);
+      turnOnScheduledBackups.defaultPath = defaultPath;
+      turnOnScheduledBackups.defaultLabel = defaultPathFilename;
+
+      await turnOnScheduledBackups.updateComplete;
+
       ok(confirmButton, "Confirm button should be found");
+      ok(!confirmButton.disabled, "confirm button should be active");
 
       let content = document.getElementById("content");
       let promise = BrowserTestUtils.waitForEvent(content, "BackupUI:EnableScheduledBackups");
@@ -129,6 +138,25 @@
       await invalidPromise;
 
       ok(confirmButton.disabled, "Confirm button should be disabled again");
+    })
+
+    /**
+     * Tests that the Confirm button cannot be selected if the file path is invalid.
+     */
+     add_task(async function test_filepathValidityConfirmButton() {
+      let turnOnScheduledBackups = document.getElementById("test-turn-on-scheduled-backups");
+
+      // The confirm button will be disabled if BackupService cannot find a file path
+      const emptyPathFilename = "";
+      let emptyPath = PathUtils.join(PathUtils.tempDir, emptyPathFilename);
+      turnOnScheduledBackups.defaultPath = emptyPath;
+      turnOnScheduledBackups.defaultLabel = emptyPathFilename;
+
+      await turnOnScheduledBackups.updateComplete;
+
+      let confirmButton = turnOnScheduledBackups.confirmButtonEl;
+      ok(confirmButton, "Confirm button should be found");
+      ok(confirmButton.disabled, "Confirm button should be disabled since there is no default file path");
     })
 
     /**

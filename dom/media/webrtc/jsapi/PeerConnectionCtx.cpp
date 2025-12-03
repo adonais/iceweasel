@@ -540,7 +540,7 @@ PeerConnectionImpl* PeerConnectionCtx::GetPeerConnection(
 
 void PeerConnectionCtx::ClearClosedStats() {
   for (auto& [id, pc] : mPeerConnections) {
-    Unused << id;
+    (void)id;
     if (pc->IsClosed()) {
       // Rare case
       pc->DisableLongTermStats();

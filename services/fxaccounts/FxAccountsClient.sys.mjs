@@ -292,7 +292,7 @@ FxAccountsClient.prototype = {
    * @param String clientId: OAuth client ID
    *
    * @returns { Object } object containing `refresh_token`, `access_token` and `keys_jwe`
-   **/
+   */
   async oauthToken(sessionTokenHex, code, verifier, clientId) {
     const credentials = await deriveHawkCredentials(
       sessionTokenHex,

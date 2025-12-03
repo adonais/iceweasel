@@ -9,7 +9,6 @@
 
 #include <functional>
 
-#include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/Types.h"
 
 struct AVFrame;

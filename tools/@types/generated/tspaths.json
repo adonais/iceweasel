@@ -110,8 +110,14 @@
       "chrome://browser/content/preferences/widgets/nav-notice.mjs": [
         "browser/components/preferences/widgets/nav-notice/nav-notice.mjs"
       ],
+      "chrome://browser/content/preferences/widgets/placeholder-message.mjs": [
+        "browser/components/preferences/widgets/placeholder-message/placeholder-message.mjs"
+      ],
       "chrome://browser/content/preferences/widgets/setting-control.mjs": [
         "browser/components/preferences/widgets/setting-control/setting-control.mjs"
+      ],
+      "chrome://browser/content/preferences/widgets/setting-element.mjs": [
+        "browser/components/preferences/widgets/setting-element/setting-element.mjs"
       ],
       "chrome://browser/content/preferences/widgets/setting-group.mjs": [
         "browser/components/preferences/widgets/setting-group/setting-group.mjs"
@@ -371,9 +377,6 @@
       "chrome://global/content/vendor/Redux.sys.mjs": [
         "toolkit/content/vendor/react/Redux.sys.mjs"
       ],
-      "chrome://global/content/vendor/lit.all.mjs": [
-        "toolkit/content/widgets/vendor/lit.all.mjs"
-      ],
       "chrome://mochikit/content/ShutdownLeaksCollector.sys.mjs": [
         "testing/mochitest/ShutdownLeaksCollector.sys.mjs"
       ],
@@ -404,6 +407,12 @@
       "chrome://mochitests/content/browser/devtools/shared/test-helpers/allocation-tracker.js": [
         "devtools/shared/test-helpers/allocation-tracker.js"
       ],
+      "chrome://mochitests/content/browser/devtools/shared/test-helpers/cc-analyzer.sys.mjs": [
+        "devtools/shared/test-helpers/cc-analyzer.sys.mjs"
+      ],
+      "chrome://mochitests/content/browser/devtools/shared/test-helpers/trace-objects.sys.mjs": [
+        "devtools/shared/test-helpers/trace-objects.sys.mjs"
+      ],
       "chrome://mochitests/content/browser/dom/serviceworkers/test/browser_head.js": [
         "dom/serviceworkers/test/browser_head.js"
       ],
@@ -415,9 +424,6 @@
       ],
       "chrome://mochitests/content/browser/toolkit/components/translations/tests/browser/translations-test.mjs": [
         "toolkit/components/translations/tests/browser/translations-test.mjs"
-      ],
-      "chrome://mochitests/content/browser/tools/profiler/tests/browser/value_summary_reader.mjs": [
-        "tools/profiler/tests/browser/value_summary_reader.mjs"
       ],
       "chrome://mochitests/content/chrome/dom/network/tests/tcpsocket_test.sys.mjs": [
         "dom/network/tests/tcpsocket_test.sys.mjs"
@@ -547,6 +553,9 @@
       ],
       "chrome://remote/content/shared/MobileTabBrowser.sys.mjs": [
         "remote/shared/MobileTabBrowser.sys.mjs"
+      ],
+      "chrome://remote/content/shared/NavigableManager.sys.mjs": [
+        "remote/shared/NavigableManager.sys.mjs"
       ],
       "chrome://remote/content/shared/Navigate.sys.mjs": [
         "remote/shared/Navigate.sys.mjs"
@@ -1244,17 +1253,35 @@
       "resource:///modules/ipprotection/GuardianClient.sys.mjs": [
         "browser/components/ipprotection/GuardianClient.sys.mjs"
       ],
+      "resource:///modules/ipprotection/IPPAutoStart.sys.mjs": [
+        "browser/components/ipprotection/IPPAutoStart.sys.mjs"
+      ],
       "resource:///modules/ipprotection/IPPChannelFilter.sys.mjs": [
         "browser/components/ipprotection/IPPChannelFilter.sys.mjs"
+      ],
+      "resource:///modules/ipprotection/IPPExceptionsManager.sys.mjs": [
+        "browser/components/ipprotection/IPPExceptionsManager.sys.mjs"
       ],
       "resource:///modules/ipprotection/IPPNetworkErrorObserver.sys.mjs": [
         "browser/components/ipprotection/IPPNetworkErrorObserver.sys.mjs"
       ],
+      "resource:///modules/ipprotection/IPPNimbusHelper.sys.mjs": [
+        "browser/components/ipprotection/IPPNimbusHelper.sys.mjs"
+      ],
       "resource:///modules/ipprotection/IPPProxyManager.sys.mjs": [
         "browser/components/ipprotection/IPPProxyManager.sys.mjs"
       ],
+      "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs": [
+        "browser/components/ipprotection/IPPSignInWatcher.sys.mjs"
+      ],
+      "resource:///modules/ipprotection/IPPStartupCache.sys.mjs": [
+        "browser/components/ipprotection/IPPStartupCache.sys.mjs"
+      ],
       "resource:///modules/ipprotection/IPProtection.sys.mjs": [
         "browser/components/ipprotection/IPProtection.sys.mjs"
+      ],
+      "resource:///modules/ipprotection/IPProtectionHelpers.sys.mjs": [
+        "browser/components/ipprotection/IPProtectionHelpers.sys.mjs"
       ],
       "resource:///modules/ipprotection/IPProtectionPanel.sys.mjs": [
         "browser/components/ipprotection/IPProtectionPanel.sys.mjs"
@@ -3602,50 +3629,20 @@
       "resource://devtools/client/shared/components/reps/index.mjs": [
         "devtools/client/shared/components/reps/index.mjs"
       ],
-      "resource://devtools/client/shared/components/reps/reps/accessible.mjs": [
-        "devtools/client/shared/components/reps/reps/accessible.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/accessor.mjs": [
-        "devtools/client/shared/components/reps/reps/accessor.mjs"
-      ],
       "resource://devtools/client/shared/components/reps/reps/array.mjs": [
         "devtools/client/shared/components/reps/reps/array.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/attribute.mjs": [
-        "devtools/client/shared/components/reps/reps/attribute.mjs"
       ],
       "resource://devtools/client/shared/components/reps/reps/big-int.mjs": [
         "devtools/client/shared/components/reps/reps/big-int.mjs"
       ],
-      "resource://devtools/client/shared/components/reps/reps/comment-node.mjs": [
-        "devtools/client/shared/components/reps/reps/comment-node.mjs"
-      ],
       "resource://devtools/client/shared/components/reps/reps/constants.mjs": [
         "devtools/client/shared/components/reps/reps/constants.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/custom-formatter.mjs": [
-        "devtools/client/shared/components/reps/reps/custom-formatter.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/date-time.mjs": [
-        "devtools/client/shared/components/reps/reps/date-time.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/document-type.mjs": [
-        "devtools/client/shared/components/reps/reps/document-type.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/document.mjs": [
-        "devtools/client/shared/components/reps/reps/document.mjs"
       ],
       "resource://devtools/client/shared/components/reps/reps/element-node.mjs": [
         "devtools/client/shared/components/reps/reps/element-node.mjs"
       ],
       "resource://devtools/client/shared/components/reps/reps/error.mjs": [
         "devtools/client/shared/components/reps/reps/error.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/event.mjs": [
-        "devtools/client/shared/components/reps/reps/event.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/function.mjs": [
-        "devtools/client/shared/components/reps/reps/function.mjs"
       ],
       "resource://devtools/client/shared/components/reps/reps/grip-array.mjs": [
         "devtools/client/shared/components/reps/reps/grip-array.mjs"
@@ -3656,42 +3653,6 @@
       "resource://devtools/client/shared/components/reps/reps/grip-map.mjs": [
         "devtools/client/shared/components/reps/reps/grip-map.mjs"
       ],
-      "resource://devtools/client/shared/components/reps/reps/grip.mjs": [
-        "devtools/client/shared/components/reps/reps/grip.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/infinity.mjs": [
-        "devtools/client/shared/components/reps/reps/infinity.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/json-number.mjs": [
-        "devtools/client/shared/components/reps/reps/json-number.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/nan.mjs": [
-        "devtools/client/shared/components/reps/reps/nan.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/null.mjs": [
-        "devtools/client/shared/components/reps/reps/null.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/number.mjs": [
-        "devtools/client/shared/components/reps/reps/number.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/object-with-text.mjs": [
-        "devtools/client/shared/components/reps/reps/object-with-text.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/object-with-url.mjs": [
-        "devtools/client/shared/components/reps/reps/object-with-url.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/object.mjs": [
-        "devtools/client/shared/components/reps/reps/object.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/promise.mjs": [
-        "devtools/client/shared/components/reps/reps/promise.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/prop-rep.mjs": [
-        "devtools/client/shared/components/reps/reps/prop-rep.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/regexp.mjs": [
-        "devtools/client/shared/components/reps/reps/regexp.mjs"
-      ],
       "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs": [
         "devtools/client/shared/components/reps/reps/rep-utils.mjs"
       ],
@@ -3701,26 +3662,11 @@
       "resource://devtools/client/shared/components/reps/reps/string.mjs": [
         "devtools/client/shared/components/reps/reps/string.mjs"
       ],
-      "resource://devtools/client/shared/components/reps/reps/stylesheet.mjs": [
-        "devtools/client/shared/components/reps/reps/stylesheet.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/symbol.mjs": [
-        "devtools/client/shared/components/reps/reps/symbol.mjs"
-      ],
       "resource://devtools/client/shared/components/reps/reps/text-node.mjs": [
         "devtools/client/shared/components/reps/reps/text-node.mjs"
       ],
-      "resource://devtools/client/shared/components/reps/reps/undefined.mjs": [
-        "devtools/client/shared/components/reps/reps/undefined.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/reps/window.mjs": [
-        "devtools/client/shared/components/reps/reps/window.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/shared/dom-node-constants.mjs": [
-        "devtools/client/shared/components/reps/shared/dom-node-constants.mjs"
-      ],
-      "resource://devtools/client/shared/components/reps/shared/grip-length-bubble.mjs": [
-        "devtools/client/shared/components/reps/shared/grip-length-bubble.mjs"
+      "resource://devtools/client/shared/components/reps/reps/value-summary-reader.mjs": [
+        "devtools/client/shared/components/reps/reps/value-summary-reader.mjs"
       ],
       "resource://devtools/client/shared/components/splitter/Draggable.js": [
         "devtools/client/shared/components/splitter/Draggable.js"
@@ -5846,6 +5792,9 @@
       "resource://gre/modules/LoginManagerPrompter.sys.mjs": [
         "toolkit/components/passwordmgr/LoginManagerPrompter.sys.mjs"
       ],
+      "resource://gre/modules/LoginManagerRustMirror.sys.mjs": [
+        "toolkit/components/passwordmgr/LoginManagerRustMirror.sys.mjs"
+      ],
       "resource://gre/modules/LoginRecipes.sys.mjs": [
         "toolkit/components/passwordmgr/LoginRecipes.sys.mjs"
       ],
@@ -6164,6 +6113,9 @@
       "resource://gre/modules/UrlClassifierRemoteSettingsService.sys.mjs": [
         "toolkit/components/url-classifier/UrlClassifierRemoteSettingsService.sys.mjs"
       ],
+      "resource://gre/modules/UrlUtils.sys.mjs": [
+        "toolkit/modules/UrlUtils.sys.mjs"
+      ],
       "resource://gre/modules/UsageReporting.sys.mjs": [
         "toolkit/components/telemetry/app/UsageReporting.sys.mjs"
       ],
@@ -6434,6 +6386,9 @@
       "resource://gre/modules/storage-json.sys.mjs": [
         "toolkit/components/passwordmgr/storage-json.sys.mjs"
       ],
+      "resource://gre/modules/storage-rust.sys.mjs": [
+        "toolkit/components/passwordmgr/storage-rust.sys.mjs"
+      ],
       "resource://gre/modules/subprocess/subprocess_common.sys.mjs": [
         "toolkit/modules/subprocess/subprocess_common.sys.mjs"
       ],
@@ -6529,6 +6484,12 @@
       ],
       "resource://newtab/lib/InferredPersonalizationFeed.sys.mjs": [
         "browser/extensions/newtab/lib/InferredPersonalizationFeed.sys.mjs"
+      ],
+      "resource://newtab/lib/NewTabAttributionFeed.sys.mjs": [
+        "browser/extensions/newtab/lib/NewTabAttributionFeed.sys.mjs"
+      ],
+      "resource://newtab/lib/NewTabAttributionService.sys.mjs": [
+        "browser/extensions/newtab/lib/NewTabAttributionService.sys.mjs"
       ],
       "resource://newtab/lib/NewTabContentPing.sys.mjs": [
         "browser/extensions/newtab/lib/NewTabContentPing.sys.mjs"
@@ -6742,9 +6703,6 @@
       ],
       "resource://normandy/lib/NormandyUtils.sys.mjs": [
         "toolkit/components/normandy/lib/NormandyUtils.sys.mjs"
-      ],
-      "resource://normandy/lib/PrefUtils.sys.mjs": [
-        "toolkit/components/normandy/lib/PrefUtils.sys.mjs"
       ],
       "resource://normandy/lib/PreferenceExperiments.sys.mjs": [
         "toolkit/components/normandy/lib/PreferenceExperiments.sys.mjs"
@@ -7477,6 +7435,18 @@
       ],
       "resource://testing-common/services/sync/utils.sys.mjs": [
         "services/sync/modules-testing/utils.sys.mjs"
+      ],
+      "chrome://global/content/vendor/lit.all.mjs": [
+        "toolkit/content/widgets/vendor/lit.all.d.ts"
+      ],
+      "@lit/reactive-element": [
+        "node_modules/@lit/reactive-element/reactive-element"
+      ],
+      "lit/*": [
+        "node_modules/lit/*"
+      ],
+      "lit-html": [
+        "node_modules/lit-html/lit-html"
       ],
       "moz-src:///*": [
         "./*"

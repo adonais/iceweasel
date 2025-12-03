@@ -28,7 +28,7 @@ class DataChannelConnectionDcSctp : public DataChannelConnection,
   bool Init(const uint16_t aLocalPort, const uint16_t aNumStreams) override;
   int SendMessage(DataChannel& aChannel, OutgoingMsg&& aMsg) override;
   void OnSctpPacketReceived(const MediaPacket& aPacket) override;
-  void ResetStreams(nsTArray<uint16_t>& aStreams) override;
+  bool ResetStreams(nsTArray<uint16_t>& aStreams) override;
   // This is called after an ACK comes in, to prompt subclasses to deliver
   // anything they've buffered while awaiting the ACK.
   void OnStreamOpen(uint16_t aStream) override;

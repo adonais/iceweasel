@@ -64,6 +64,8 @@ skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64'"] # Bu
 
 ["test_moz_message_bar.html"]
 
+["test_moz_page_header.html"]
+
 ["test_moz_page_nav.html"]
 
 ["test_moz_promo.html"]
@@ -75,6 +77,11 @@ skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64'"] # Bu
 ["test_moz_reorderable_list.html"]
 
 ["test_moz_select.html"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64'", # Bug 1997197
+  "os == 'win' && os_version == '10.2009' && processor == 'x86_64' && debug", # Bug 1997197
+  "os == 'win' && os_version == '11.26100' && processor == 'x86' && debug", # Bug 1997197
+]
 
 ["test_moz_support_link.html"]
 

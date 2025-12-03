@@ -203,15 +203,15 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
 template <typename Key>
 struct WeakMapKeyHasher : public StableCellHasher<HeapPtr<Key>> {};
 
-template <class Key, class Value>
+template <class Key, class Value, class AllocPolicy>
 class WeakMap : public WeakMapBase {
   using BarrieredKey = HeapPtr<Key>;
   using BarrieredValue = HeapPtr<Value>;
 
-  using Map = HashMap<HeapPtr<Key>, HeapPtr<Value>, WeakMapKeyHasher<Key>,
-                      ZoneAllocPolicy>;
+  using Map =
+      HashMap<HeapPtr<Key>, HeapPtr<Value>, WeakMapKeyHasher<Key>, AllocPolicy>;
   using UnbarrieredMap =
-      HashMap<Key, Value, StableCellHasher<Key>, ZoneAllocPolicy>;
+      HashMap<Key, Value, StableCellHasher<Key>, AllocPolicy>;
 
   UnbarrieredMap map_;  // Barriers are added by |map()| accessor.
 
@@ -384,12 +384,6 @@ class WeakMap : public WeakMapBase {
   // JSObject.
   void traceMappings(WeakMapTracer* tracer) override;
 };
-
-using ObjectValueWeakMap = WeakMap<JSObject*, Value>;
-using ValueValueWeakMap = WeakMap<Value, Value>;
-
-// Generic weak map for mapping objects to other objects.
-using ObjectWeakMap = WeakMap<JSObject*, JSObject*>;
 
 // Get the hash from the Symbol.
 HashNumber GetSymbolHash(JS::Symbol* sym);

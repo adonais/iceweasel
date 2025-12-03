@@ -17,11 +17,13 @@ prefs = [
   "browser.newtabpage.activity-stream.discoverystream.endpoints=data:",
   "browser.newtabpage.activity-stream.feeds.system.topstories=true",
   "browser.newtabpage.activity-stream.feeds.section.topstories=true",
+  "browser.newtabpage.activity-stream.discoverystream.sections.region-content-config=",
   "messaging-system.log=all",
 ]
 tags = "newtab"
 
 ["browser_SmartShortcuts.js"]
+skip-if = ["os == 'win' && os_version == '11.26100' && verify-standalone"]
 
 ["browser_TrendingSearch.js"]
 

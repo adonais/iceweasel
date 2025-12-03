@@ -6,7 +6,6 @@
 #ifndef nsJSEnvironment_h
 #define nsJSEnvironment_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"

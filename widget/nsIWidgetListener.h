@@ -17,6 +17,7 @@
 class nsView;
 class nsIWidget;
 class nsIAppWindow;
+class nsMenuPopupFrame;
 
 namespace mozilla {
 class PresShell;
@@ -53,6 +54,9 @@ class nsIWidgetListener {
 
   /** If this listener is for an nsView, return it. */
   virtual nsView* GetView() { return nullptr; }
+
+  /** If this listener is for an nsMenuPopupFrame, return it. */
+  virtual nsMenuPopupFrame* GetAsMenuPopupFrame() { return nullptr; }
 
   /** Return the presshell for this widget listener. */
   virtual mozilla::PresShell* GetPresShell() { return nullptr; }

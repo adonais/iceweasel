@@ -145,7 +145,7 @@ export class NewTabMessaging {
     }
   }
 
-  async onAction(action) {
+  onAction(action) {
     switch (action.type) {
       case at.INIT:
         this.init();

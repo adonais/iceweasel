@@ -117,7 +117,7 @@
 /* All tabs menupopup */
 
 .alltabs-item[selected="true"] {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 #UITourHighlight {

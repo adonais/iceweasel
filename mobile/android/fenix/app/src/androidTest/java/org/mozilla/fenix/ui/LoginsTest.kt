@@ -17,7 +17,7 @@ import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
-import org.mozilla.fenix.helpers.TestAssetHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.saveLoginAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
@@ -115,8 +115,7 @@ class LoginsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/523839
     @Test
     fun saveLoginFromPromptTest() {
-        val saveLoginTest =
-            TestAssetHelper.getSaveLoginAsset(mockWebServer)
+        val saveLoginTest = mockWebServer.saveLoginAsset
 
         homeScreen {
         }.openThreeDotMenu {
@@ -182,7 +181,7 @@ class LoginsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/517817
     @Test
     fun neverSaveLoginFromPromptTest() {
-        val saveLoginTest = TestAssetHelper.getSaveLoginAsset(mockWebServer)
+        val saveLoginTest = mockWebServer.saveLoginAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(saveLoginTest.url) {
@@ -212,8 +211,7 @@ class LoginsTest : TestSetup() {
     @Test
     @SkipLeaks
     fun verifyUpdatedLoginIsSavedTest() {
-        val saveLoginTest =
-            TestAssetHelper.getSaveLoginAsset(mockWebServer)
+        val saveLoginTest = mockWebServer.saveLoginAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(saveLoginTest.url) {
@@ -461,7 +459,7 @@ class LoginsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/876532
     @Test
     fun verifyDeleteLoginButtonTest() {
-        val loginPage = TestAssetHelper.getSaveLoginAsset(mockWebServer)
+        val loginPage = mockWebServer.saveLoginAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(loginPage.url) {
@@ -494,7 +492,7 @@ class LoginsTest : TestSetup() {
     @Test
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1935209"])
     fun verifyNeverSaveLoginOptionTest() {
-        val loginPage = TestAssetHelper.getSaveLoginAsset(mockWebServer)
+        val loginPage = mockWebServer.saveLoginAsset
 
         homeScreen {
         }.openThreeDotMenu {
@@ -602,7 +600,7 @@ class LoginsTest : TestSetup() {
     @Test
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1935209"])
     fun searchLoginsByUsernameTest() {
-        val firstLoginPage = TestAssetHelper.getSaveLoginAsset(mockWebServer)
+        val firstLoginPage = mockWebServer.saveLoginAsset
         val secondLoginPage = "https://mozilla-mobile.github.io/testapp/v2.0/loginForm.html"
         val originWebsite = "mozilla-mobile.github.io"
 
@@ -648,7 +646,7 @@ class LoginsTest : TestSetup() {
     @Test
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1935209"])
     fun searchLoginsByUrlTest() {
-        val firstLoginPage = TestAssetHelper.getSaveLoginAsset(mockWebServer)
+        val firstLoginPage = mockWebServer.saveLoginAsset
         val secondLoginPage = "https://mozilla-mobile.github.io/testapp/v2.0/loginForm.html"
         val originWebsite = "mozilla-mobile.github.io"
 
@@ -693,7 +691,7 @@ class LoginsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2266441
     @Test
     fun verifyLastUsedLoginSortingOptionTest() {
-        val firstLoginPage = TestAssetHelper.getSaveLoginAsset(mockWebServer)
+        val firstLoginPage = mockWebServer.saveLoginAsset
         val secondLoginPage = "https://mozilla-mobile.github.io/testapp/v2.0/loginForm.html"
         val originWebsite = "mozilla-mobile.github.io"
 
@@ -740,7 +738,7 @@ class LoginsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2266442
     @Test
     fun verifyAlphabeticalLoginSortingOptionTest() {
-        val firstLoginPage = TestAssetHelper.getSaveLoginAsset(mockWebServer)
+        val firstLoginPage = mockWebServer.saveLoginAsset
         val secondLoginPage = "https://mozilla-mobile.github.io/testapp/v2.0/loginForm.html"
         val originWebsite = "mozilla-mobile.github.io"
 
@@ -826,7 +824,7 @@ class LoginsTest : TestSetup() {
     @Test
     @SdkSuppress(maxSdkVersion = 32)
     fun verifyCopyLoginCredentialsToClipboardTest() {
-        val firstLoginPage = TestAssetHelper.getSaveLoginAsset(mockWebServer)
+        val firstLoginPage = mockWebServer.saveLoginAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(firstLoginPage.url) {

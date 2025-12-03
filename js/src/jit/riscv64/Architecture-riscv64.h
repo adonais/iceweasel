@@ -473,7 +473,7 @@ struct FloatRegister {
     MOZ_ASSERT(uint32_t(encoding) < Codes::Total);
   }
 
-  constexpr FloatRegister(Encoding encoding)
+  constexpr explicit FloatRegister(Encoding encoding)
       : encoding_(encoding), kind_(FloatRegisters::Double), invalid_(false) {
     MOZ_ASSERT(uint32_t(encoding) < Codes::Total);
   }

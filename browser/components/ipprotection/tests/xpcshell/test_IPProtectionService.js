@@ -15,6 +15,9 @@ const { IPProtectionService, IPProtectionStates } = ChromeUtils.importESModule(
 const { IPPSignInWatcher } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs"
 );
+const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
+  "resource:///modules/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
+);
 
 do_get_profile();
 
@@ -50,6 +53,10 @@ function setupStubs(
     error: null,
     entitlement: options.entitlement,
   });
+  sandbox.stub(IPProtectionService.guardian, "enroll").resolves({
+    status: 200,
+    error: null,
+  });
   sandbox.stub(IPProtectionService.guardian, "fetchProxyPass").resolves({
     status: 200,
     error: undefined,
@@ -66,7 +73,6 @@ add_setup(async function () {
 
   registerCleanupFunction(async () => {
     await IPProtectionService.init();
-    await IPProtectionService.init();
   });
 });
 
@@ -77,7 +83,13 @@ add_task(async function test_IPProtectionService_start() {
   let sandbox = sinon.createSandbox();
   setupStubs(sandbox);
 
-  await IPProtectionService.init();
+  IPProtectionService.init();
+
+  await waitForEvent(
+    IPProtectionService,
+    "IPProtectionService:StateChanged",
+    () => IPProtectionService.state === IPProtectionStates.READY
+  );
 
   Assert.ok(
     !IPProtectionService.activatedAt,
@@ -87,7 +99,6 @@ add_task(async function test_IPProtectionService_start() {
   let startedEventPromise = waitForEvent(
     IPProtectionService,
     "IPProtectionService:StateChanged",
-    false,
     () => IPProtectionService.state === IPProtectionStates.ACTIVE
   );
 
@@ -120,14 +131,20 @@ add_task(async function test_IPProtectionService_stop() {
   let sandbox = sinon.createSandbox();
   setupStubs(sandbox);
 
-  await IPProtectionService.init();
+  const waitForReady = waitForEvent(
+    IPProtectionService,
+    "IPProtectionService:StateChanged",
+    () => IPProtectionService.state === IPProtectionStates.READY
+  );
+
+  IPProtectionService.init();
+  await waitForReady;
 
   await IPProtectionService.start();
 
   let stoppedEventPromise = waitForEvent(
     IPProtectionService,
     "IPProtectionService:StateChanged",
-    false,
     () => IPProtectionService.state !== IPProtectionStates.ACTIVE
   );
   IPProtectionService.stop();
@@ -156,6 +173,9 @@ add_task(async function test_IPProtectionService_stop() {
  */
 add_task(async function test_IPProtectionService_updateState_signedIn() {
   let sandbox = sinon.createSandbox();
+  sandbox
+    .stub(IPPEnrollAndEntitleManager, "isEnrolledAndEntitled")
+    .get(() => true);
 
   await IPProtectionService.init();
 
@@ -164,11 +184,10 @@ add_task(async function test_IPProtectionService_updateState_signedIn() {
   let signedInEventPromise = waitForEvent(
     IPProtectionService,
     "IPProtectionService:StateChanged",
-    false,
     () => IPProtectionService.state === IPProtectionStates.READY
   );
 
-  await IPProtectionService.updateState();
+  IPProtectionService.updateState();
 
   await signedInEventPromise;
 
@@ -192,11 +211,10 @@ add_task(async function test_IPProtectionService_updateState_signedOut() {
   let signedOutEventPromise = waitForEvent(
     IPProtectionService,
     "IPProtectionService:StateChanged",
-    false,
     () => IPProtectionService.state === IPProtectionStates.UNAVAILABLE
   );
 
-  await IPProtectionService.updateState();
+  IPProtectionService.updateState();
 
   await signedOutEventPromise;
 
@@ -210,15 +228,21 @@ add_task(async function test_IPProtectionService_updateState_signedOut() {
 });
 
 /**
- * Tests that refetchEntitlement returns true if a linked VPN is found
- * and sends an event.
+ * Tests that refetchEntitlement works as expected if a linked VPN is found and sends an event.
  */
 add_task(
   async function test_IPProtectionService_refetchEntitlement_has_vpn_linked() {
     const sandbox = sinon.createSandbox();
     setupStubs(sandbox);
 
-    await IPProtectionService.init();
+    const waitForReady = waitForEvent(
+      IPProtectionService,
+      "IPProtectionService:StateChanged",
+      () => IPProtectionService.state === IPProtectionStates.READY
+    );
+
+    IPProtectionService.init();
+    await waitForReady;
 
     IPProtectionService.guardian.fetchUserInfo.resolves({
       status: 200,
@@ -231,17 +255,19 @@ add_task(
     });
 
     let hasUpgradedEventPromise = waitForEvent(
-      IPProtectionService,
-      "IPProtectionService:StateChanged",
-      false,
-      () => IPProtectionService.hasUpgraded
+      IPPEnrollAndEntitleManager,
+      "IPPEnrollAndEntitleManager:StateChanged",
+      () => IPPEnrollAndEntitleManager.hasUpgraded
     );
 
-    await IPProtectionService.refetchEntitlement();
+    await IPPEnrollAndEntitleManager.refetchEntitlement();
 
     await hasUpgradedEventPromise;
 
-    Assert.ok(IPProtectionService.hasUpgraded, "hasUpgraded should be true");
+    Assert.ok(
+      IPPEnrollAndEntitleManager.hasUpgraded,
+      "hasUpgraded should be true"
+    );
 
     IPProtectionService.uninit();
     sandbox.restore();
@@ -249,7 +275,7 @@ add_task(
 );
 
 /**
- * Tests that refetchEntitlement returns false if no linked VPN is found and
+ * Tests that refetchEntitlement returns errors if no linked VPN is found and
  * sends an event.
  */
 add_task(
@@ -266,15 +292,18 @@ add_task(
     });
 
     let hasUpgradedEventPromise = waitForEvent(
-      IPProtectionService,
-      "IPProtectionService:StateChanged"
+      IPPEnrollAndEntitleManager,
+      "IPPEnrollAndEntitleManager:StateChanged"
     );
 
-    await IPProtectionService.refetchEntitlement();
+    await IPPEnrollAndEntitleManager.refetchEntitlement();
 
     await hasUpgradedEventPromise;
 
-    Assert.ok(!IPProtectionService.hasUpgraded, "hasUpgraded should be false");
+    Assert.ok(
+      !IPPEnrollAndEntitleManager.hasUpgraded,
+      "hasUpgraded should be false"
+    );
 
     IPProtectionService.uninit();
     sandbox.restore();
@@ -282,8 +311,8 @@ add_task(
 );
 
 /**
- * Tests that refetchEntitlement returns false when signed out and sends
- * an event.
+ * Tests that signing off generates a reset of the entitlement and the sending
+ * of an event.
  */
 add_task(async function test_IPProtectionService_hasUpgraded_signed_out() {
   let sandbox = sinon.createSandbox();
@@ -297,12 +326,12 @@ add_task(async function test_IPProtectionService_hasUpgraded_signed_out() {
     IPProtectionService,
     "IPProtectionService:StateChanged"
   );
-  await IPProtectionService.updateState();
+  IPProtectionService.updateState();
 
   await signedOutEventPromise;
 
   Assert.ok(
-    !IPProtectionService.hasUpgraded,
+    !IPPEnrollAndEntitleManager.hasUpgraded,
     "hasUpgraded should be false in after signing out"
   );
 

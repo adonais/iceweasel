@@ -522,7 +522,7 @@ TLSTransportLayer::Close(nsresult aReason) {
 
   if (mOwner) {
     RefPtr<TLSTransportLayer> self = this;
-    Unused << NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+    (void)NS_DispatchToCurrentThread(NS_NewRunnableFunction(
         "TLSTransportLayer::Close", [self{std::move(self)}]() {
           nsCOMPtr<nsIInputStreamCallback> inputCallback =
               std::move(self->mOwner);
@@ -531,8 +531,7 @@ TLSTransportLayer::Close(nsresult aReason) {
             // nsHttpConnection::OnInputStreamReady be called, so
             // nsHttpConnection::CloseTransaction can be called to release the
             // transaction.
-            Unused << inputCallback->OnInputStreamReady(
-                &self->mSocketInWrapper);
+            (void)inputCallback->OnInputStreamReady(&self->mSocketInWrapper);
           }
         }));
   }

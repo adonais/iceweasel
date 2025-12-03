@@ -761,7 +761,11 @@ export class SearchService {
         null,
         originAttributes
       );
-      engine = new lazy.OpenSearchEngine({ engineData, faviconURL: iconURL });
+      engine = new lazy.OpenSearchEngine({
+        engineData,
+        faviconURL: iconURL,
+        originAttributes,
+      });
     } catch (ex) {
       throw Components.Exception(
         "addEngine: Error adding engine:\n" + ex,

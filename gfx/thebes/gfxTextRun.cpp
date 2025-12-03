@@ -28,7 +28,7 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPresData.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
+#include "nsLayoutUtils.h"
 #include "nsStyleConsts.h"
 #include "nsStyleUtil.h"
 #include "nsUnicodeProperties.h"
@@ -329,14 +329,16 @@ gfxTextRun::LigatureData gfxTextRun::ComputeLigatureData(
   if (aProvider && (mFlags & gfx::ShapedTextFlags::TEXT_ENABLE_SPACING)) {
     gfxFont::Spacing spacing;
     if (aPartRange.start == result.mRange.start) {
-      aProvider->GetSpacing(Range(aPartRange.start, aPartRange.start + 1),
-                            &spacing);
-      result.mPartWidth += spacing.mBefore;
+      if (aProvider->GetSpacing(Range(aPartRange.start, aPartRange.start + 1),
+                                &spacing)) {
+        result.mPartWidth += spacing.mBefore;
+      }
     }
     if (aPartRange.end == result.mRange.end) {
-      aProvider->GetSpacing(Range(aPartRange.end - 1, aPartRange.end),
-                            &spacing);
-      result.mPartWidth += spacing.mAfter;
+      if (aProvider->GetSpacing(Range(aPartRange.end - 1, aPartRange.end),
+                                &spacing)) {
+        result.mPartWidth += spacing.mAfter;
+      }
     }
   }
 
@@ -358,15 +360,16 @@ int32_t gfxTextRun::GetAdvanceForGlyphs(Range aRange) const {
   return advance;
 }
 
-static void GetAdjustedSpacing(
+// Returns false if there is definitely no spacing to apply.
+static bool GetAdjustedSpacing(
     const gfxTextRun* aTextRun, gfxTextRun::Range aRange,
     const gfxTextRun::PropertyProvider& aProvider,
     gfxTextRun::PropertyProvider::Spacing* aSpacing) {
   if (aRange.start >= aRange.end) {
-    return;
+    return false;
   }
 
-  aProvider.GetSpacing(aRange, aSpacing);
+  bool result = aProvider.GetSpacing(aRange, aSpacing);
 
 #ifdef DEBUG
   // Check to see if we have spacing inside ligatures
@@ -385,6 +388,8 @@ static void GetAdjustedSpacing(
     }
   }
 #endif
+
+  return result;
 }
 
 bool gfxTextRun::GetAdjustedSpacingArray(
@@ -398,8 +403,11 @@ bool gfxTextRun::GetAdjustedSpacingArray(
   }
   auto spacingOffset = aSpacingRange.start - aRange.start;
   memset(aSpacing->Elements(), 0, sizeof(gfxFont::Spacing) * spacingOffset);
-  GetAdjustedSpacing(this, aSpacingRange, *aProvider,
-                     aSpacing->Elements() + spacingOffset);
+  if (!GetAdjustedSpacing(this, aSpacingRange, *aProvider,
+                          aSpacing->Elements() + spacingOffset)) {
+    aSpacing->Clear();
+    return false;
+  }
   memset(aSpacing->Elements() + spacingOffset + aSpacingRange.Length(), 0,
          sizeof(gfxFont::Spacing) * (aRange.end - aSpacingRange.end));
   return true;
@@ -1227,15 +1235,16 @@ gfxFloat gfxTextRun::GetAdvanceWidth(
     uint32_t i;
     AutoTArray<PropertyProvider::Spacing, 200> spacingBuffer;
     if (spacingBuffer.AppendElements(aRange.Length(), fallible)) {
-      GetAdjustedSpacing(this, ligatureRange, *aProvider,
-                         spacingBuffer.Elements());
-      for (i = 0; i < ligatureRange.Length(); ++i) {
-        PropertyProvider::Spacing* space = &spacingBuffer[i];
-        result += space->mBefore + space->mAfter;
-      }
-      if (aSpacing) {
-        aSpacing->mBefore = spacingBuffer[0].mBefore;
-        aSpacing->mAfter = spacingBuffer.LastElement().mAfter;
+      if (GetAdjustedSpacing(this, ligatureRange, *aProvider,
+                             spacingBuffer.Elements())) {
+        for (i = 0; i < ligatureRange.Length(); ++i) {
+          PropertyProvider::Spacing* space = &spacingBuffer[i];
+          result += space->mBefore + space->mAfter;
+        }
+        if (aSpacing) {
+          aSpacing->mBefore = spacingBuffer[0].mBefore;
+          aSpacing->mAfter = spacingBuffer.LastElement().mAfter;
+        }
       }
     }
   }
@@ -2166,7 +2175,7 @@ already_AddRefed<gfxFont> gfxFontGroup::GetDefaultFont() {
     fontlist::Family* fam = family.mShared;
     if (!fam->IsInitialized()) {
       // If this fails, FindFaceForStyle will just safely return nullptr
-      Unused << pfl->InitializeFamily(fam);
+      (void)pfl->InitializeFamily(fam);
     }
     fontlist::Face* face = fam->FindFaceForStyle(pfl->SharedFontList(), mStyle);
     if (face) {
@@ -2199,7 +2208,7 @@ already_AddRefed<gfxFont> gfxFontGroup::GetDefaultFont() {
       for (uint32_t i = 0; i < numFonts; ++i) {
         fontlist::Family* fam = &families[i];
         if (!fam->IsInitialized()) {
-          Unused << pfl->InitializeFamily(fam);
+          (void)pfl->InitializeFamily(fam);
         }
         fontlist::Face* face =
             fam->FindFaceForStyle(pfl->SharedFontList(), mStyle);
@@ -2626,7 +2635,7 @@ static Script ResolveScriptForLang(const nsAtom* aLanguage, Script aDefault) {
   Locale locale;
   if (LocaleParser::TryParse(lang, locale).isOk()) {
     if (locale.Script().Missing()) {
-      Unused << locale.AddLikelySubtags();
+      (void)locale.AddLikelySubtags();
     }
     if (locale.Script().Present()) {
       Span span = locale.Script().Span();
@@ -3887,7 +3896,7 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
       if (family.mShared) {
         fontlist::Family* fam = family.mShared;
         if (!fam->IsInitialized()) {
-          Unused << pfl->InitializeFamily(fam);
+          (void)pfl->InitializeFamily(fam);
         }
         fontlist::Face* face =
             fam->FindFaceForStyle(pfl->SharedFontList(), mStyle);

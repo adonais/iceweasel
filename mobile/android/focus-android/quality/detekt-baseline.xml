@@ -94,7 +94,6 @@
     <ID>UndocumentedPublicClass:SearchWidgetProvider.kt$SearchWidgetProvider : AppSearchWidgetProvider</ID>
     <ID>UndocumentedPublicClass:SearchWidgetUtils.kt$SearchWidgetUtils</ID>
     <ID>UndocumentedPublicClass:SecretSettingsFragment.kt$SecretSettingsFragment : BaseSettingsFragmentOnSharedPreferenceChangeListener</ID>
-    <ID>UndocumentedPublicClass:SettingsFragment.kt$SettingsFragment : BaseSettingsFragment</ID>
     <ID>UndocumentedPublicFunction:SitePermissionOptionsStorage.kt$SitePermissionOptionsStorage$fun getSitePermissionLabel(sitePermission: SitePermission): String</ID>
     <ID>UndocumentedPublicClass:SitePermission.kt$SitePermission : Parcelable</ID>
     <ID>UndocumentedPublicClass:SitePermissionOption.kt$AutoplayOption</ID>

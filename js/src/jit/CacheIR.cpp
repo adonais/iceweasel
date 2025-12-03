@@ -21,6 +21,7 @@
 #include "builtin/Object.h"
 #include "builtin/WeakMapObject.h"
 #include "builtin/WeakSetObject.h"
+#include "gc/GC.h"
 #include "jit/BaselineIC.h"
 #include "jit/CacheIRCloner.h"
 #include "jit/CacheIRCompiler.h"
@@ -300,8 +301,12 @@ gc::AllocSite* IRGenerator::maybeCreateAllocSite() {
 GetPropIRGenerator::GetPropIRGenerator(JSContext* cx, HandleScript script,
                                        jsbytecode* pc, ICState state,
                                        CacheKind cacheKind, HandleValue val,
-                                       HandleValue idVal)
-    : IRGenerator(cx, script, pc, cacheKind, state), val_(val), idVal_(idVal) {}
+                                       HandleValue idVal,
+                                       HandleValue receiverVal)
+    : IRGenerator(cx, script, pc, cacheKind, state),
+      val_(val),
+      idVal_(idVal),
+      receiverVal_(receiverVal) {}
 
 static void EmitLoadSlotResult(CacheIRWriter& writer, ObjOperandId holderId,
                                NativeObject* holder, PropertyInfo prop) {
@@ -461,12 +466,6 @@ AttachDecision GetPropIRGenerator::tryAttachStub() {
 
     if (nameOrSymbol) {
       TRY_ATTACH(tryAttachObjectLength(obj, objId, id));
-      TRY_ATTACH(tryAttachTypedArray(obj, objId, id));
-      TRY_ATTACH(tryAttachDataView(obj, objId, id));
-      TRY_ATTACH(tryAttachArrayBufferMaybeShared(obj, objId, id));
-      TRY_ATTACH(tryAttachRegExp(obj, objId, id));
-      TRY_ATTACH(tryAttachMap(obj, objId, id));
-      TRY_ATTACH(tryAttachSet(obj, objId, id));
       TRY_ATTACH(tryAttachNative(obj, objId, id, receiverId));
       TRY_ATTACH(tryAttachModuleNamespace(obj, objId, id));
       TRY_ATTACH(tryAttachWindowProxy(obj, objId, id));
@@ -1113,12 +1112,22 @@ void GetPropIRGenerator::emitCallGetterResultGuards(NativeObject* obj,
 }
 
 void GetPropIRGenerator::emitCallGetterResult(NativeGetPropKind kind,
-                                              NativeObject* obj,
-                                              NativeObject* holder, HandleId id,
-                                              PropertyInfo prop,
+                                              Handle<NativeObject*> obj,
+                                              Handle<NativeObject*> holder,
+                                              HandleId id, PropertyInfo prop,
                                               ObjOperandId objId,
                                               ValOperandId receiverId) {
   emitCallGetterResultGuards(obj, holder, id, prop, objId);
+
+  if (kind == NativeGetPropKind::NativeGetter &&
+      mode_ == ICState::Mode::Specialized) {
+    auto attached = tryAttachInlinableNativeGetter(holder, prop, receiverId);
+    if (attached != AttachDecision::NoAction) {
+      MOZ_ASSERT(attached == AttachDecision::Attach);
+      return;
+    }
+  }
+
   emitCallGetterResultNoGuards(kind, obj, holder, prop, receiverId);
 }
 
@@ -1251,10 +1260,10 @@ AttachDecision GetPropIRGenerator::tryAttachNative(HandleObject obj,
                                                    HandleId id,
                                                    ValOperandId receiverId) {
   Maybe<PropertyInfo> prop;
-  NativeObject* holder = nullptr;
+  Rooted<NativeObject*> holder(cx_);
 
   NativeGetPropKind kind =
-      CanAttachNativeGetProp(cx_, obj, id, &holder, &prop, pc_);
+      CanAttachNativeGetProp(cx_, obj, id, holder.address(), &prop, pc_);
   switch (kind) {
     case NativeGetPropKind::None:
       return AttachDecision::NoAction;
@@ -1282,7 +1291,7 @@ AttachDecision GetPropIRGenerator::tryAttachNative(HandleObject obj,
     }
     case NativeGetPropKind::ScriptedGetter:
     case NativeGetPropKind::NativeGetter: {
-      auto* nobj = &obj->as<NativeObject>();
+      auto nobj = obj.as<NativeObject>();
       MOZ_ASSERT(!IsWindow(nobj));
 
       // If we're in megamorphic mode, we assume that a specialized
@@ -1383,11 +1392,11 @@ AttachDecision GetPropIRGenerator::tryAttachWindowProxy(HandleObject obj,
   }
 
   // Now try to do the lookup on the Window (the current global).
-  GlobalObject* windowObj = cx_->global();
-  NativeObject* holder = nullptr;
+  Handle<GlobalObject*> windowObj = cx_->global();
+  Rooted<NativeObject*> holder(cx_);
   Maybe<PropertyInfo> prop;
   NativeGetPropKind kind =
-      CanAttachNativeGetProp(cx_, windowObj, id, &holder, &prop, pc_);
+      CanAttachNativeGetProp(cx_, windowObj, id, holder.address(), &prop, pc_);
   switch (kind) {
     case NativeGetPropKind::None:
       return AttachDecision::NoAction;
@@ -2442,411 +2451,29 @@ AttachDecision GetPropIRGenerator::tryAttachObjectLength(HandleObject obj,
   return AttachDecision::NoAction;
 }
 
-AttachDecision GetPropIRGenerator::tryAttachTypedArray(HandleObject obj,
-                                                       ObjOperandId objId,
-                                                       HandleId id) {
-  if (!obj->is<TypedArrayObject>()) {
-    return AttachDecision::NoAction;
-  }
+AttachDecision GetPropIRGenerator::tryAttachInlinableNativeGetter(
+    Handle<NativeObject*> holder, PropertyInfo prop, ValOperandId receiverId) {
+  MOZ_ASSERT(mode_ == ICState::Mode::Specialized);
 
-  if (mode_ != ICState::Mode::Specialized) {
-    return AttachDecision::NoAction;
-  }
+  // Suppress GC because |CacheIRWriter::trace()| doesn't yet support stub
+  // field tracing and stub fields were already added for shape and prototype
+  // guards.
+  gc::AutoSuppressGC suppressGC(cx_);
 
-  // Receiver should be the object.
-  if (isSuper()) {
-    return AttachDecision::NoAction;
-  }
+  Rooted<JSFunction*> target(cx_, &holder->getGetter(prop)->as<JSFunction>());
+  MOZ_ASSERT(target->isNativeWithoutJitEntry());
 
-  bool isLength = id.isAtom(cx_->names().length);
-  bool isByteOffset = id.isAtom(cx_->names().byteOffset);
-  if (!isLength && !isByteOffset && !id.isAtom(cx_->names().byteLength)) {
-    return AttachDecision::NoAction;
-  }
+  Handle<Value> thisValue = receiverVal_;
 
-  NativeObject* holder = nullptr;
-  Maybe<PropertyInfo> prop;
-  NativeGetPropKind kind =
-      CanAttachNativeGetProp(cx_, obj, id, &holder, &prop, pc_);
-  if (kind != NativeGetPropKind::NativeGetter) {
-    return AttachDecision::NoAction;
-  }
+  bool isSpread = false;
+  bool isSameRealm = cx_->realm() == target->realm();
+  bool isConstructing = false;
+  CallFlags flags(isConstructing, isSpread, isSameRealm);
 
-  JSFunction& fun = holder->getGetter(*prop)->as<JSFunction>();
-  if (isLength) {
-    if (!TypedArrayObject::isOriginalLengthGetter(fun.native())) {
-      return AttachDecision::NoAction;
-    }
-  } else if (isByteOffset) {
-    if (!TypedArrayObject::isOriginalByteOffsetGetter(fun.native())) {
-      return AttachDecision::NoAction;
-    }
-  } else {
-    if (!TypedArrayObject::isOriginalByteLengthGetter(fun.native())) {
-      return AttachDecision::NoAction;
-    }
-  }
-
-  auto* tarr = &obj->as<TypedArrayObject>();
-
-  maybeEmitIdGuard(id);
-  // Emit all the normal guards for calling this native, but specialize
-  // callNativeGetterResult.
-  emitCallGetterResultGuards(tarr, holder, id, *prop, objId);
-  if (isLength) {
-    size_t length = tarr->length().valueOr(0);
-    if (!tarr->is<ResizableTypedArrayObject>()) {
-      if (length <= INT32_MAX) {
-        writer.loadArrayBufferViewLengthInt32Result(objId);
-      } else {
-        writer.loadArrayBufferViewLengthDoubleResult(objId);
-      }
-    } else {
-      if (length <= INT32_MAX) {
-        writer.resizableTypedArrayLengthInt32Result(objId);
-      } else {
-        writer.resizableTypedArrayLengthDoubleResult(objId);
-      }
-    }
-    trackAttached("GetProp.TypedArrayLength");
-  } else if (isByteOffset) {
-    // byteOffset doesn't need to use different code paths for fixed-length and
-    // resizable TypedArrays.
-    size_t byteOffset = tarr->byteOffset().valueOr(0);
-    if (byteOffset <= INT32_MAX) {
-      writer.arrayBufferViewByteOffsetInt32Result(objId);
-    } else {
-      writer.arrayBufferViewByteOffsetDoubleResult(objId);
-    }
-    trackAttached("GetProp.TypedArrayByteOffset");
-  } else {
-    size_t byteLength = tarr->byteLength().valueOr(0);
-    if (!tarr->is<ResizableTypedArrayObject>()) {
-      if (byteLength <= INT32_MAX) {
-        writer.typedArrayByteLengthInt32Result(objId);
-      } else {
-        writer.typedArrayByteLengthDoubleResult(objId);
-      }
-    } else {
-      if (byteLength <= INT32_MAX) {
-        writer.resizableTypedArrayByteLengthInt32Result(objId);
-      } else {
-        writer.resizableTypedArrayByteLengthDoubleResult(objId);
-      }
-    }
-    trackAttached("GetProp.TypedArrayByteLength");
-  }
-  writer.returnFromIC();
-
-  return AttachDecision::Attach;
-}
-
-AttachDecision GetPropIRGenerator::tryAttachDataView(HandleObject obj,
-                                                     ObjOperandId objId,
-                                                     HandleId id) {
-  if (!obj->is<DataViewObject>()) {
-    return AttachDecision::NoAction;
-  }
-  auto* dv = &obj->as<DataViewObject>();
-
-  if (mode_ != ICState::Mode::Specialized) {
-    return AttachDecision::NoAction;
-  }
-
-  // Receiver should be the object.
-  if (isSuper()) {
-    return AttachDecision::NoAction;
-  }
-
-  bool isByteOffset = id.isAtom(cx_->names().byteOffset);
-  if (!isByteOffset && !id.isAtom(cx_->names().byteLength)) {
-    return AttachDecision::NoAction;
-  }
-
-  // byteOffset and byteLength both throw when the ArrayBuffer is detached.
-  if (dv->hasDetachedBuffer()) {
-    // The has-attached-arraybuffer guard is elided for immutable views. Assert
-    // we never see an immutable view with a detached buffer.
-    MOZ_ASSERT(!dv->is<ImmutableDataViewObject>(),
-               "immutable data views can't have their buffer detached");
-    return AttachDecision::NoAction;
-  }
-
-  // byteOffset and byteLength both throw when the ArrayBuffer is out-of-bounds.
-  if (dv->is<ResizableDataViewObject>() &&
-      dv->as<ResizableDataViewObject>().isOutOfBounds()) {
-    return AttachDecision::NoAction;
-  }
-
-  NativeObject* holder = nullptr;
-  Maybe<PropertyInfo> prop;
-  NativeGetPropKind kind =
-      CanAttachNativeGetProp(cx_, obj, id, &holder, &prop, pc_);
-  if (kind != NativeGetPropKind::NativeGetter) {
-    return AttachDecision::NoAction;
-  }
-
-  auto& fun = holder->getGetter(*prop)->as<JSFunction>();
-  if (isByteOffset) {
-    if (!DataViewObject::isOriginalByteOffsetGetter(fun.native())) {
-      return AttachDecision::NoAction;
-    }
-  } else {
-    if (!DataViewObject::isOriginalByteLengthGetter(fun.native())) {
-      return AttachDecision::NoAction;
-    }
-  }
-
-  maybeEmitIdGuard(id);
-  // Emit all the normal guards for calling this native, but specialize
-  // callNativeGetterResult.
-  emitCallGetterResultGuards(dv, holder, id, *prop, objId);
-
-  // Immutable array buffers can never get detached.
-  if (!dv->is<ImmutableDataViewObject>()) {
-    writer.guardHasAttachedArrayBuffer(objId);
-  } else {
-#ifdef DEBUG
-    // Add a guard in debug-mode, so if the buffer unexpectedly got detached,
-    // we bail out and rely on the above assertion to fire.
-    writer.guardHasAttachedArrayBuffer(objId);
-#endif
-  }
-
-  // Resizable array buffers can get out-of-bounds when shrunk.
-  if (dv->is<ResizableDataViewObject>()) {
-    writer.guardResizableArrayBufferViewInBounds(objId);
-  }
-
-  if (isByteOffset) {
-    // byteOffset doesn't need to use different code paths for fixed-length,
-    // resizable, or immutable DataViews.
-    size_t byteOffset = dv->byteOffset().valueOr(0);
-    if (byteOffset <= INT32_MAX) {
-      writer.arrayBufferViewByteOffsetInt32Result(objId);
-    } else {
-      writer.arrayBufferViewByteOffsetDoubleResult(objId);
-    }
-    trackAttached("GetProp.DataViewByteOffset");
-  } else {
-    size_t byteLength = dv->byteLength().valueOr(0);
-    if (!dv->is<ResizableDataViewObject>()) {
-      if (byteLength <= INT32_MAX) {
-        writer.loadArrayBufferViewLengthInt32Result(objId);
-      } else {
-        writer.loadArrayBufferViewLengthDoubleResult(objId);
-      }
-    } else {
-      if (byteLength <= INT32_MAX) {
-        writer.resizableDataViewByteLengthInt32Result(objId);
-      } else {
-        writer.resizableDataViewByteLengthDoubleResult(objId);
-      }
-    }
-    trackAttached("GetProp.DataViewByteLength");
-  }
-  writer.returnFromIC();
-
-  return AttachDecision::Attach;
-}
-
-AttachDecision GetPropIRGenerator::tryAttachArrayBufferMaybeShared(
-    HandleObject obj, ObjOperandId objId, HandleId id) {
-  if (!obj->is<ArrayBufferObjectMaybeShared>()) {
-    return AttachDecision::NoAction;
-  }
-  auto* buf = &obj->as<ArrayBufferObjectMaybeShared>();
-
-  if (mode_ != ICState::Mode::Specialized) {
-    return AttachDecision::NoAction;
-  }
-
-  // Receiver should be the object.
-  if (isSuper()) {
-    return AttachDecision::NoAction;
-  }
-
-  if (!id.isAtom(cx_->names().byteLength)) {
-    return AttachDecision::NoAction;
-  }
-
-  NativeObject* holder = nullptr;
-  Maybe<PropertyInfo> prop;
-  NativeGetPropKind kind =
-      CanAttachNativeGetProp(cx_, obj, id, &holder, &prop, pc_);
-  if (kind != NativeGetPropKind::NativeGetter) {
-    return AttachDecision::NoAction;
-  }
-
-  auto& fun = holder->getGetter(*prop)->as<JSFunction>();
-  if (buf->is<ArrayBufferObject>()) {
-    if (!ArrayBufferObject::isOriginalByteLengthGetter(fun.native())) {
-      return AttachDecision::NoAction;
-    }
-  } else {
-    if (!SharedArrayBufferObject::isOriginalByteLengthGetter(fun.native())) {
-      return AttachDecision::NoAction;
-    }
-  }
-
-  maybeEmitIdGuard(id);
-  // Emit all the normal guards for calling this native, but specialize
-  // callNativeGetterResult.
-  emitCallGetterResultGuards(buf, holder, id, *prop, objId);
-  if (!buf->is<GrowableSharedArrayBufferObject>()) {
-    if (buf->byteLength() <= INT32_MAX) {
-      writer.loadArrayBufferByteLengthInt32Result(objId);
-    } else {
-      writer.loadArrayBufferByteLengthDoubleResult(objId);
-    }
-  } else {
-    if (buf->byteLength() <= INT32_MAX) {
-      writer.growableSharedArrayBufferByteLengthInt32Result(objId);
-    } else {
-      writer.growableSharedArrayBufferByteLengthDoubleResult(objId);
-    }
-  }
-  writer.returnFromIC();
-
-  trackAttached("GetProp.ArrayBufferMaybeSharedByteLength");
-  return AttachDecision::Attach;
-}
-
-AttachDecision GetPropIRGenerator::tryAttachRegExp(HandleObject obj,
-                                                   ObjOperandId objId,
-                                                   HandleId id) {
-  if (!obj->is<RegExpObject>()) {
-    return AttachDecision::NoAction;
-  }
-  auto* regExp = &obj->as<RegExpObject>();
-
-  if (mode_ != ICState::Mode::Specialized) {
-    return AttachDecision::NoAction;
-  }
-
-  // Receiver should be the object.
-  if (isSuper()) {
-    return AttachDecision::NoAction;
-  }
-
-  NativeObject* holder = nullptr;
-  Maybe<PropertyInfo> prop;
-  NativeGetPropKind kind =
-      CanAttachNativeGetProp(cx_, obj, id, &holder, &prop, pc_);
-  if (kind != NativeGetPropKind::NativeGetter) {
-    return AttachDecision::NoAction;
-  }
-
-  auto& fun = holder->getGetter(*prop)->as<JSFunction>();
-  JS::RegExpFlags flags = JS::RegExpFlag::NoFlags;
-  if (!RegExpObject::isOriginalFlagGetter(fun.native(), &flags)) {
-    return AttachDecision::NoAction;
-  }
-
-  maybeEmitIdGuard(id);
-  // Emit all the normal guards for calling this native, but specialize
-  // callNativeGetterResult.
-  emitCallGetterResultGuards(regExp, holder, id, *prop, objId);
-
-  writer.regExpFlagResult(objId, flags.value());
-  writer.returnFromIC();
-
-  trackAttached("GetProp.RegExpFlag");
-  return AttachDecision::Attach;
-}
-
-AttachDecision GetPropIRGenerator::tryAttachMap(HandleObject obj,
-                                                ObjOperandId objId,
-                                                HandleId id) {
-  if (!obj->is<MapObject>()) {
-    return AttachDecision::NoAction;
-  }
-  auto* mapObj = &obj->as<MapObject>();
-
-  if (mode_ != ICState::Mode::Specialized) {
-    return AttachDecision::NoAction;
-  }
-
-  // Receiver should be the object.
-  if (isSuper()) {
-    return AttachDecision::NoAction;
-  }
-
-  if (!id.isAtom(cx_->names().size)) {
-    return AttachDecision::NoAction;
-  }
-
-  NativeObject* holder = nullptr;
-  Maybe<PropertyInfo> prop;
-  NativeGetPropKind kind =
-      CanAttachNativeGetProp(cx_, obj, id, &holder, &prop, pc_);
-  if (kind != NativeGetPropKind::NativeGetter) {
-    return AttachDecision::NoAction;
-  }
-
-  auto& fun = holder->getGetter(*prop)->as<JSFunction>();
-  if (!MapObject::isOriginalSizeGetter(fun.native())) {
-    return AttachDecision::NoAction;
-  }
-
-  maybeEmitIdGuard(id);
-
-  // Emit all the normal guards for calling this native, but specialize
-  // callNativeGetterResult.
-  emitCallGetterResultGuards(mapObj, holder, id, *prop, objId);
-
-  writer.mapSizeResult(objId);
-  writer.returnFromIC();
-
-  trackAttached("GetProp.MapSize");
-  return AttachDecision::Attach;
-}
-
-AttachDecision GetPropIRGenerator::tryAttachSet(HandleObject obj,
-                                                ObjOperandId objId,
-                                                HandleId id) {
-  if (!obj->is<SetObject>()) {
-    return AttachDecision::NoAction;
-  }
-  auto* setObj = &obj->as<SetObject>();
-
-  if (mode_ != ICState::Mode::Specialized) {
-    return AttachDecision::NoAction;
-  }
-
-  // Receiver should be the object.
-  if (isSuper()) {
-    return AttachDecision::NoAction;
-  }
-
-  if (!id.isAtom(cx_->names().size)) {
-    return AttachDecision::NoAction;
-  }
-
-  NativeObject* holder = nullptr;
-  Maybe<PropertyInfo> prop;
-  NativeGetPropKind kind =
-      CanAttachNativeGetProp(cx_, obj, id, &holder, &prop, pc_);
-  if (kind != NativeGetPropKind::NativeGetter) {
-    return AttachDecision::NoAction;
-  }
-
-  auto& fun = holder->getGetter(*prop)->as<JSFunction>();
-  if (!SetObject::isOriginalSizeGetter(fun.native())) {
-    return AttachDecision::NoAction;
-  }
-
-  maybeEmitIdGuard(id);
-
-  // Emit all the normal guards for calling this native, but specialize
-  // callNativeGetterResult.
-  emitCallGetterResultGuards(setObj, holder, id, *prop, objId);
-
-  writer.setSizeResult(objId);
-  writer.returnFromIC();
-
-  trackAttached("GetProp.SetSize");
-  return AttachDecision::Attach;
+  // Check for specific native-function optimizations.
+  InlinableNativeIRGenerator nativeGen(*this, target, thisValue, flags,
+                                       receiverId);
+  return nativeGen.tryAttachStub();
 }
 
 AttachDecision GetPropIRGenerator::tryAttachFunction(HandleObject obj,
@@ -3022,53 +2649,48 @@ AttachDecision GetPropIRGenerator::tryAttachPrimitive(ValOperandId valId,
     return AttachDecision::NoAction;
   }
 
-  NativeObject* holder = nullptr;
+  Rooted<NativeObject*> holder(cx_);
   Maybe<PropertyInfo> prop;
   NativeGetPropKind kind =
-      CanAttachNativeGetProp(cx_, proto, id, &holder, &prop, pc_);
+      CanAttachNativeGetProp(cx_, proto, id, holder.address(), &prop, pc_);
+  if (kind == NativeGetPropKind::None) {
+    return AttachDecision::NoAction;
+  }
+
+  if (val_.isNumber()) {
+    writer.guardIsNumber(valId);
+  } else {
+    writer.guardNonDoubleType(valId, val_.type());
+  }
+  maybeEmitIdGuard(id);
+
+  Rooted<NativeObject*> nproto(cx_, &proto->as<NativeObject>());
+  ObjOperandId protoId = writer.loadObject(nproto);
+
   switch (kind) {
-    case NativeGetPropKind::None:
-      return AttachDecision::NoAction;
-    case NativeGetPropKind::Missing:
+    case NativeGetPropKind::Missing: {
+      EmitMissingPropResult(writer, nproto, protoId);
+      writer.returnFromIC();
+
+      trackAttached("GetProp.PrimitiveMissing");
+      return AttachDecision::Attach;
+    }
     case NativeGetPropKind::Slot: {
-      auto* nproto = &proto->as<NativeObject>();
+      emitLoadDataPropertyResult(nproto, holder, id, *prop, protoId);
+      writer.returnFromIC();
 
-      if (val_.isNumber()) {
-        writer.guardIsNumber(valId);
-      } else {
-        writer.guardNonDoubleType(valId, val_.type());
-      }
-      maybeEmitIdGuard(id);
-
-      ObjOperandId protoId = writer.loadObject(nproto);
-      if (kind == NativeGetPropKind::Slot) {
-        emitLoadDataPropertyResult(nproto, holder, id, *prop, protoId);
-        writer.returnFromIC();
-        trackAttached("GetProp.PrimitiveSlot");
-      } else {
-        EmitMissingPropResult(writer, nproto, protoId);
-        writer.returnFromIC();
-        trackAttached("GetProp.PrimitiveMissing");
-      }
+      trackAttached("GetProp.PrimitiveSlot");
       return AttachDecision::Attach;
     }
     case NativeGetPropKind::ScriptedGetter:
     case NativeGetPropKind::NativeGetter: {
-      auto* nproto = &proto->as<NativeObject>();
-
-      if (val_.isNumber()) {
-        writer.guardIsNumber(valId);
-      } else {
-        writer.guardNonDoubleType(valId, val_.type());
-      }
-      maybeEmitIdGuard(id);
-
-      ObjOperandId protoId = writer.loadObject(nproto);
       emitCallGetterResult(kind, nproto, holder, id, *prop, protoId, valId);
 
       trackAttached("GetProp.PrimitiveGetter");
       return AttachDecision::Attach;
     }
+    case NativeGetPropKind::None:
+      break;
   }
 
   MOZ_CRASH("Bad NativeGetPropKind");
@@ -5857,12 +5479,13 @@ bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
       return false;
     }
   } else {
-    // Normal Case: If property exists this isn't an "add"
+    // Normal Case: If property exists or is an OOB typed array index, this
+    // isn't an "add".
     PropertyResult prop;
     if (!LookupOwnPropertyPure(cx_, nobj, id, &prop)) {
       return false;
     }
-    if (prop.isFound()) {
+    if (prop.isFound() || prop.isTypedArrayOutOfRange()) {
       return false;
     }
   }
@@ -5966,6 +5589,10 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(
   }
 
   JSObject* obj = &lhsVal_.toObject();
+  if (!obj->is<NativeObject>()) {
+    return AttachDecision::NoAction;
+  }
+  NativeObject* nobj = &obj->as<NativeObject>();
 
   PropertyResult prop;
   if (!LookupOwnPropertyPure(cx_, obj, id, &prop)) {
@@ -5975,11 +5602,7 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(
     return AttachDecision::NoAction;
   }
 
-  if (!obj->is<NativeObject>()) {
-    return AttachDecision::NoAction;
-  }
-  auto* nobj = &obj->as<NativeObject>();
-
+  MOZ_RELEASE_ASSERT(prop.isNativeProperty());
   PropertyInfo propInfo = prop.propertyInfo();
   NativeObject* holder = nobj;
 
@@ -5991,6 +5614,7 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(
 
   // The property must be the last added property of the object.
   SharedShape* newShape = holder->sharedShape();
+  MOZ_RELEASE_ASSERT(oldShape != newShape);
   MOZ_RELEASE_ASSERT(newShape->lastProperty() == propInfo);
 
 #ifdef DEBUG
@@ -6082,10 +5706,16 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
   MOZ_ASSERT(cacheKind_ == CacheKind::InstanceOf);
   AutoAssertNoPendingException aanpe(cx_);
 
+  TRY_ATTACH(tryAttachFunction());
+
+  trackAttached(IRGenerator::NotAttached);
+  return AttachDecision::NoAction;
+}
+
+AttachDecision InstanceOfIRGenerator::tryAttachFunction() {
   // Ensure RHS is a function -- could be a Proxy, which the IC isn't prepared
   // to handle.
   if (!rhsObj_->is<JSFunction>()) {
-    trackAttached(IRGenerator::NotAttached);
     return AttachDecision::NoAction;
   }
 
@@ -6098,18 +5728,15 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
   // hasInstance hook will not change without the need to guard on the actual
   // property value.
   PropertyResult hasInstanceProp;
-  NativeObject* hasInstanceHolder = nullptr;
+  Rooted<NativeObject*> hasInstanceHolder(cx_);
   jsid hasInstanceID = PropertyKey::Symbol(cx_->wellKnownSymbols().hasInstance);
-  if (!LookupPropertyPure(cx_, fun, hasInstanceID, &hasInstanceHolder,
+  if (!LookupPropertyPure(cx_, fun, hasInstanceID, hasInstanceHolder.address(),
                           &hasInstanceProp) ||
       !hasInstanceProp.isNativeProperty()) {
-    trackAttached(IRGenerator::NotAttached);
     return AttachDecision::NoAction;
   }
 
-  JSObject& funProto = cx_->global()->getPrototype(JSProto_Function);
-  if (hasInstanceHolder != &funProto) {
-    trackAttached(IRGenerator::NotAttached);
+  if (hasInstanceHolder != &cx_->global()->getPrototype(JSProto_Function)) {
     return AttachDecision::NoAction;
   }
 
@@ -6121,17 +5748,34 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
 
   MOZ_ASSERT(IsCacheableProtoChain(fun, hasInstanceHolder));
 
-  // Ensure that the function's prototype slot is the same.
-  Maybe<PropertyInfo> prop = fun->lookupPure(cx_->names().prototype);
-  if (prop.isNothing() || !prop->isDataProperty()) {
-    trackAttached(IRGenerator::NotAttached);
+  // Look up the function's .prototype property.
+  Maybe<PropertyInfo> prototypeProp = fun->lookupPure(cx_->names().prototype);
+  if (prototypeProp.isNothing()) {
+    if (!fun->needsPrototypeProperty()) {
+      return AttachDecision::NoAction;
+    }
+    // The function does not have a (lazily resolved) .prototype property yet.
+    // If the LHS is a primitive, the fallback code in OrdinaryHasInstance will
+    // return before resolving this property. Our CacheIR implementation expects
+    // a .prototype property so we resolve it now.
+    bool hasProp;
+    if (!HasProperty(cx_, fun, cx_->names().prototype, &hasProp)) {
+      cx_->clearPendingException();
+      return AttachDecision::NoAction;
+    }
+    MOZ_ASSERT(hasProp);
+    prototypeProp = fun->lookupPure(cx_->names().prototype);
+    MOZ_ASSERT(prototypeProp);
+  }
+  if (!prototypeProp->isDataProperty()) {
     return AttachDecision::NoAction;
   }
 
-  uint32_t slot = prop->slot();
-  MOZ_ASSERT(slot >= fun->numFixedSlots(), "Stub code relies on this");
-  if (!fun->getSlot(slot).isObject()) {
-    trackAttached(IRGenerator::NotAttached);
+  // Ensure the .prototype value is an object.
+  uint32_t prototypeSlot = prototypeProp->slot();
+  MOZ_ASSERT(prototypeSlot >= fun->numFixedSlots(),
+             "LoadDynamicSlot expects a dynamic slot");
+  if (!fun->getSlot(prototypeSlot).isObject()) {
     return AttachDecision::NoAction;
   }
 
@@ -6153,7 +5797,7 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
 
   // Load the .prototype value and ensure it's an object.
   ValOperandId protoValId =
-      writer.loadDynamicSlot(rhsId, slot - fun->numFixedSlots());
+      writer.loadDynamicSlot(rhsId, prototypeSlot - fun->numFixedSlots());
   ObjOperandId protoId = writer.guardToObject(protoValId);
 
   // Needn't guard LHS is object, because the actual stub can handle that
@@ -6523,12 +6167,11 @@ void OptimizeSpreadCallIRGenerator::trackAttached(const char* name) {
 }
 
 CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
-                                 jsbytecode* pc, JSOp op, ICState state,
+                                 jsbytecode* pc, ICState state,
                                  BaselineFrame* frame, uint32_t argc,
                                  HandleValue callee, HandleValue thisval,
                                  HandleValue newTarget, HandleValueArray args)
     : IRGenerator(cx, script, pc, CacheKind::Call, state, frame),
-      op_(op),
       argc_(argc),
       callee_(callee),
       thisval_(thisval),
@@ -6544,36 +6187,20 @@ BoundFunctionObject* InlinableNativeIRGenerator::boundCallee() const {
   return &callee()->as<BoundFunctionObject>();
 }
 
-bool InlinableNativeIRGenerator::isTargetBoundFunction() const {
-  switch (flags_.getArgFormat()) {
-    case CallFlags::Standard:
-    case CallFlags::Spread:
-      return false;
-    case CallFlags::FunCall:
-    case CallFlags::FunApplyArgsObj:
-    case CallFlags::FunApplyArray:
-    case CallFlags::FunApplyNullUndefined:
-      if (callee()->is<JSFunction>()) {
-        MOZ_ASSERT(generator_.thisval_.isObject());
-        return generator_.thisval_.toObject().is<BoundFunctionObject>();
-      }
-      return false;
-    case CallFlags::Unknown:
-      break;
-  }
-  MOZ_CRASH("Unsupported arg format");
-}
-
-BoundFunctionObject* InlinableNativeIRGenerator::boundTarget() const {
-  MOZ_ASSERT(isTargetBoundFunction());
-  return &generator_.thisval_.toObject().as<BoundFunctionObject>();
-}
-
 ObjOperandId InlinableNativeIRGenerator::emitNativeCalleeGuard(
     Int32OperandId argcId) {
   // Note: we rely on GuardSpecificFunction to also guard against the same
   // native from a different realm.
   MOZ_ASSERT(target_->isNativeWithoutJitEntry());
+
+  // Guards already emitted in GetPropIRGenerator::emitCallGetterResultGuards.
+  if (isAccessorOp()) {
+    MOZ_ASSERT(flags_.getArgFormat() == CallFlags::Standard);
+    MOZ_ASSERT(!flags_.isConstructing());
+    MOZ_ASSERT(!isCalleeBoundFunction());
+    MOZ_ASSERT(!isTargetBoundFunction());
+    return ObjOperandId();
+  }
 
   ValOperandId calleeValId;
   switch (flags_.getArgFormat()) {
@@ -6738,7 +6365,9 @@ ObjOperandId InlinableNativeIRGenerator::emitLoadArgsArray() {
   }
 
   MOZ_ASSERT(flags_.getArgFormat() == CallFlags::FunApplyArray);
-  return generator_.emitFunApplyArgsGuard(flags_.getArgFormat()).ref();
+  return gen_.as<CallIRGenerator*>()
+      ->emitFunApplyArgsGuard(flags_.getArgFormat())
+      .ref();
 }
 
 ValOperandId InlinableNativeIRGenerator::loadBoundArgument(
@@ -6760,6 +6389,15 @@ ValOperandId InlinableNativeIRGenerator::loadBoundArgument(
 }
 
 ValOperandId InlinableNativeIRGenerator::loadThis(ObjOperandId calleeId) {
+  // Accessor operations use the receiver as their |this| value.
+  if (isAccessorOp()) {
+    MOZ_ASSERT(flags_.getArgFormat() == CallFlags::Standard);
+    MOZ_ASSERT(!isTargetBoundFunction());
+    MOZ_ASSERT(!isCalleeBoundFunction());
+    MOZ_ASSERT(receiverId_.valid());
+    return receiverId_;
+  }
+
   switch (flags_.getArgFormat()) {
     case CallFlags::Standard:
     case CallFlags::Spread:
@@ -6839,6 +6477,7 @@ ValOperandId InlinableNativeIRGenerator::loadArgument(ObjOperandId calleeId,
              flags_.getArgFormat() == CallFlags::FunApplyNullUndefined);
   MOZ_ASSERT_IF(flags_.getArgFormat() == CallFlags::FunApplyNullUndefined,
                 isTargetBoundFunction() && hasBoundArguments());
+  MOZ_ASSERT(!isAccessorOp(), "get property operations don't have arguments");
 
   // Check if the |this| value is stored in the bound arguments.
   bool thisFromBoundArgs = flags_.getArgFormat() == CallFlags::FunCall &&
@@ -7203,6 +6842,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArraySlice() {
   if (isPackedArray) {
     emitOptimisticClassGuard(objId, &thisval_.toObject(),
                              GuardClassKind::Array);
+    writer.guardArrayIsPacked(objId);
   } else {
     auto* args = &thisval_.toObject().as<ArgumentsObject>();
 
@@ -7317,14 +6957,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewGet(
   ObjOperandId objId = writer.guardToObject(thisValId);
 
   if (dv->is<FixedLengthDataViewObject>()) {
-    emitOptimisticClassGuard(objId, &thisval_.toObject(),
-                             GuardClassKind::FixedLengthDataView);
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::FixedLengthDataView);
   } else if (dv->is<ImmutableDataViewObject>()) {
-    emitOptimisticClassGuard(objId, &thisval_.toObject(),
-                             GuardClassKind::ImmutableDataView);
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::ImmutableDataView);
   } else {
-    emitOptimisticClassGuard(objId, &thisval_.toObject(),
-                             GuardClassKind::ResizableDataView);
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::ResizableDataView);
   }
 
   // Convert offset to intPtr.
@@ -7397,11 +7034,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewSet(
   ObjOperandId objId = writer.guardToObject(thisValId);
 
   if (dv->is<FixedLengthDataViewObject>()) {
-    emitOptimisticClassGuard(objId, &thisval_.toObject(),
-                             GuardClassKind::FixedLengthDataView);
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::FixedLengthDataView);
   } else {
-    emitOptimisticClassGuard(objId, &thisval_.toObject(),
-                             GuardClassKind::ResizableDataView);
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::ResizableDataView);
   }
 
   // Convert offset to intPtr.
@@ -7428,6 +7063,166 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewSet(
   writer.returnFromIC();
 
   trackAttached("DataViewSet");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachDataViewByteLength() {
+  // Expecting no arguments.
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure |this| is a DataViewObject.
+  if (!thisval_.isObject() || !thisval_.toObject().is<DataViewObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  auto* dv = &thisval_.toObject().as<DataViewObject>();
+
+  // byteLength throws when the ArrayBuffer is detached.
+  if (dv->hasDetachedBuffer()) {
+    // The has-attached-arraybuffer guard is elided for immutable views. Assert
+    // we never see an immutable view with a detached buffer.
+    MOZ_ASSERT(!dv->is<ImmutableDataViewObject>(),
+               "immutable data views can't have their buffer detached");
+    return AttachDecision::NoAction;
+  }
+
+  // byteLength throws when the ArrayBuffer is out-of-bounds.
+  if (dv->is<ResizableDataViewObject>() &&
+      dv->as<ResizableDataViewObject>().isOutOfBounds()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'byteLength' native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard |this| is a DataViewObject.
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+
+  if (dv->is<FixedLengthDataViewObject>()) {
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::FixedLengthDataView);
+  } else if (dv->is<ImmutableDataViewObject>()) {
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::ImmutableDataView);
+  } else {
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::ResizableDataView);
+  }
+
+  // Immutable array buffers can never get detached.
+  if (!dv->is<ImmutableDataViewObject>()) {
+    writer.guardHasAttachedArrayBuffer(objId);
+  } else {
+#ifdef DEBUG
+    // Add a guard in debug-mode, so if the buffer unexpectedly got detached,
+    // we bail out and rely on the above assertion to fire.
+    writer.guardHasAttachedArrayBuffer(objId);
+#endif
+  }
+
+  // Resizable array buffers can get out-of-bounds when shrunk.
+  if (dv->is<ResizableDataViewObject>()) {
+    writer.guardResizableArrayBufferViewInBounds(objId);
+  }
+
+  size_t byteLength = dv->byteLength().valueOr(0);
+  if (!dv->is<ResizableDataViewObject>()) {
+    if (byteLength <= INT32_MAX) {
+      writer.loadArrayBufferViewLengthInt32Result(objId);
+    } else {
+      writer.loadArrayBufferViewLengthDoubleResult(objId);
+    }
+  } else {
+    if (byteLength <= INT32_MAX) {
+      writer.resizableDataViewByteLengthInt32Result(objId);
+    } else {
+      writer.resizableDataViewByteLengthDoubleResult(objId);
+    }
+  }
+
+  writer.returnFromIC();
+
+  trackAttached("DataViewByteLength");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachDataViewByteOffset() {
+  // Expecting no arguments.
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure |this| is a DataViewObject.
+  if (!thisval_.isObject() || !thisval_.toObject().is<DataViewObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  auto* dv = &thisval_.toObject().as<DataViewObject>();
+
+  // byteOffset throws when the ArrayBuffer is detached.
+  if (dv->hasDetachedBuffer()) {
+    // The has-attached-arraybuffer guard is elided for immutable views. Assert
+    // we never see an immutable view with a detached buffer.
+    MOZ_ASSERT(!dv->is<ImmutableDataViewObject>(),
+               "immutable data views can't have their buffer detached");
+    return AttachDecision::NoAction;
+  }
+
+  // byteOffset throws when the ArrayBuffer is out-of-bounds.
+  if (dv->is<ResizableDataViewObject>() &&
+      dv->as<ResizableDataViewObject>().isOutOfBounds()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'byteLength' native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard |this| is a DataViewObject.
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+
+  if (dv->is<FixedLengthDataViewObject>()) {
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::FixedLengthDataView);
+  } else if (dv->is<ImmutableDataViewObject>()) {
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::ImmutableDataView);
+  } else {
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::ResizableDataView);
+  }
+
+  // Immutable array buffers can never get detached.
+  if (!dv->is<ImmutableDataViewObject>()) {
+    writer.guardHasAttachedArrayBuffer(objId);
+  } else {
+#ifdef DEBUG
+    // Add a guard in debug-mode, so if the buffer unexpectedly got detached,
+    // we bail out and rely on the above assertion to fire.
+    writer.guardHasAttachedArrayBuffer(objId);
+#endif
+  }
+
+  // Resizable array buffers can get out-of-bounds when shrunk.
+  if (dv->is<ResizableDataViewObject>()) {
+    writer.guardResizableArrayBufferViewInBounds(objId);
+  }
+
+  // byteOffset doesn't need to use different code paths for fixed-length,
+  // resizable, or immutable DataViews.
+  size_t byteOffset = dv->byteOffset().valueOr(0);
+  if (byteOffset <= INT32_MAX) {
+    writer.arrayBufferViewByteOffsetInt32Result(objId);
+  } else {
+    writer.arrayBufferViewByteOffsetDoubleResult(objId);
+  }
+
+  writer.returnFromIC();
+
+  trackAttached("DataViewByteOffset");
   return AttachDecision::Attach;
 }
 
@@ -7942,6 +7737,38 @@ AttachDecision InlinableNativeIRGenerator::tryAttachHasClass(
   writer.returnFromIC();
 
   trackAttached("HasClass");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachRegExpFlag(
+    JS::RegExpFlags flags) {
+  // Expecting no arguments.
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure |this| is a RegExpObject.
+  if (!thisval_.isObject() || !thisval_.toObject().is<RegExpObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  auto* regExp = &thisval_.toObject().as<RegExpObject>();
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the native RegExp getter function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard |this| is a RegExpObject.
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  writer.guardShapeForClass(objId, regExp->shape());
+
+  writer.regExpFlagResult(objId, flags.value());
+  writer.returnFromIC();
+
+  trackAttached("RegExpFlag");
   return AttachDecision::Attach;
 }
 
@@ -8831,6 +8658,106 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToUpperCase() {
 
   trackAttached("StringToUpperCase");
   return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachStringToLocaleLowerCase() {
+#if JS_HAS_INTL_API
+  // Expecting no arguments.
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure |this| is a primitive string value.
+  if (!thisval_.isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Don't inline when not using the default locale.
+  if (cx_->realm()->behaviors().localeOverride()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Default case mapping fuse must still be intact.
+  if (!cx_->runtime()
+           ->runtimeFuses.ref()
+           .defaultLocaleHasDefaultCaseMappingFuse.intact()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'toLocaleLowerCase' native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard this is a string.
+  ValOperandId thisValId = loadThis(calleeId);
+  StringOperandId strId = writer.guardToString(thisValId);
+
+  // Guard runtime default locale uses default case mapping.
+  writer.guardRuntimeFuse(
+      RuntimeFuses::FuseIndex::DefaultLocaleHasDefaultCaseMappingFuse);
+
+  // Return string converted to lower-case.
+  writer.stringToLowerCaseResult(strId);
+  writer.returnFromIC();
+
+  trackAttached("StringToLocaleLowerCase");
+  return AttachDecision::Attach;
+#else
+  // No inlining when Intl support is disabled.
+  return AttachDecision::Attach;
+#endif
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachStringToLocaleUpperCase() {
+#if JS_HAS_INTL_API
+  // Expecting no arguments.
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure |this| is a primitive string value.
+  if (!thisval_.isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Don't inline when not using the default locale.
+  if (cx_->realm()->behaviors().localeOverride()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Default case mapping fuse must still be intact.
+  if (!cx_->runtime()
+           ->runtimeFuses.ref()
+           .defaultLocaleHasDefaultCaseMappingFuse.intact()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'toLocaleUpperCase' native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard this is a string.
+  ValOperandId thisValId = loadThis(calleeId);
+  StringOperandId strId = writer.guardToString(thisValId);
+
+  // Guard runtime default locale uses default case mapping.
+  writer.guardRuntimeFuse(
+      RuntimeFuses::FuseIndex::DefaultLocaleHasDefaultCaseMappingFuse);
+
+  // Return string converted to upper-case.
+  writer.stringToUpperCaseResult(strId);
+  writer.returnFromIC();
+
+  trackAttached("StringToLocaleUpperCase");
+  return AttachDecision::Attach;
+#else
+  // No inlining when Intl support is disabled.
+  return AttachDecision::Attach;
+#endif
 }
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringTrim() {
@@ -10835,7 +10762,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetSize() {
   // Guard |this| is a SetObject.
   ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
-  writer.guardClass(objId, GuardClassKind::Set);
+  emitOptimisticClassGuard(objId, &thisval_.toObject(), GuardClassKind::Set);
 
   writer.setSizeResult(objId);
   writer.returnFromIC();
@@ -11074,6 +11001,35 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapSet() {
   writer.returnFromIC();
 
   trackAttached("MapSet");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachMapSize() {
+  // Ensure |this| is a MapObject.
+  if (!thisval_.isObject() || !thisval_.toObject().is<MapObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Expecting no arguments.
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'size' native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard |this| is a MapObject.
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  emitOptimisticClassGuard(objId, &thisval_.toObject(), GuardClassKind::Map);
+
+  writer.mapSizeResult(objId);
+  writer.returnFromIC();
+
+  trackAttached("MapSize");
   return AttachDecision::Attach;
 }
 
@@ -11336,8 +11292,8 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
                   : HandleValueArray::empty();
 
     // Check for specific native-function optimizations.
-    InlinableNativeIRGenerator nativeGen(*this, target, newTarget, thisValue,
-                                         args, targetFlags);
+    InlinableNativeIRGenerator nativeGen(*this, callee, target, newTarget,
+                                         thisValue, args, targetFlags);
     TRY_ATTACH(nativeGen.tryAttachStub());
   }
 
@@ -11352,7 +11308,7 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
       writer.callScriptedFunction(thisObjId, argcId, targetFlags,
                                   ClampFixedArgc(argc_));
     } else {
-      writer.callNativeFunction(thisObjId, argcId, op_, target, targetFlags,
+      writer.callNativeFunction(thisObjId, argcId, jsop(), target, targetFlags,
                                 ClampFixedArgc(argc_));
     }
   } else {
@@ -11710,6 +11666,135 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArraySubarray() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength() {
+  // Expecting no arguments.
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure |this| is a TypedArrayObject.
+  if (!thisval_.isObject() || !thisval_.toObject().is<TypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  auto* tarr = &thisval_.toObject().as<TypedArrayObject>();
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'length' native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard |this| is a TypedArrayObject.
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  writer.guardShapeForClass(objId, tarr->shape());
+
+  size_t length = tarr->length().valueOr(0);
+  if (!tarr->is<ResizableTypedArrayObject>()) {
+    if (length <= INT32_MAX) {
+      writer.loadArrayBufferViewLengthInt32Result(objId);
+    } else {
+      writer.loadArrayBufferViewLengthDoubleResult(objId);
+    }
+  } else {
+    if (length <= INT32_MAX) {
+      writer.resizableTypedArrayLengthInt32Result(objId);
+    } else {
+      writer.resizableTypedArrayLengthDoubleResult(objId);
+    }
+  }
+
+  writer.returnFromIC();
+
+  trackAttached("TypedArrayLength");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayByteLength() {
+  // Expecting no arguments.
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure |this| is a TypedArrayObject.
+  if (!thisval_.isObject() || !thisval_.toObject().is<TypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  auto* tarr = &thisval_.toObject().as<TypedArrayObject>();
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'byteLength' native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard |this| is a TypedArrayObject.
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  writer.guardShapeForClass(objId, tarr->shape());
+
+  size_t byteLength = tarr->byteLength().valueOr(0);
+  if (!tarr->is<ResizableTypedArrayObject>()) {
+    if (byteLength <= INT32_MAX) {
+      writer.typedArrayByteLengthInt32Result(objId);
+    } else {
+      writer.typedArrayByteLengthDoubleResult(objId);
+    }
+  } else {
+    if (byteLength <= INT32_MAX) {
+      writer.resizableTypedArrayByteLengthInt32Result(objId);
+    } else {
+      writer.resizableTypedArrayByteLengthDoubleResult(objId);
+    }
+  }
+
+  writer.returnFromIC();
+
+  trackAttached("TypedArrayByteLength");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayByteOffset() {
+  // Expecting no arguments.
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure |this| is a TypedArrayObject.
+  if (!thisval_.isObject() || !thisval_.toObject().is<TypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  auto* tarr = &thisval_.toObject().as<TypedArrayObject>();
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'byteLength' native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard |this| is a TypedArrayObject.
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  writer.guardShapeForClass(objId, tarr->shape());
+
+  // byteOffset doesn't need to use different code paths for fixed-length and
+  // resizable TypedArrays.
+  size_t byteOffset = tarr->byteOffset().valueOr(0);
+  if (byteOffset <= INT32_MAX) {
+    writer.arrayBufferViewByteOffsetInt32Result(objId);
+  } else {
+    writer.arrayBufferViewByteOffsetDoubleResult(objId);
+  }
+
+  writer.returnFromIC();
+
+  trackAttached("TypedArrayByteOffset");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachIsTypedArray(
     bool isPossiblyWrapped) {
   // Self-hosted code calls this with a single object argument.
@@ -11807,6 +11892,101 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength(
   writer.returnFromIC();
 
   trackAttached("IntrinsicTypedArrayLength");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachArrayBufferByteLength() {
+  // Expecting no arguments.
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure |this| is an ArrayBufferObject.
+  if (!thisval_.isObject() || !thisval_.toObject().is<ArrayBufferObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  auto* buf = &thisval_.toObject().as<ArrayBufferObject>();
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'byteLength' native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard |this| is an ArrayBufferObject.
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+
+  if (buf->is<FixedLengthArrayBufferObject>()) {
+    emitOptimisticClassGuard(objId, buf,
+                             GuardClassKind::FixedLengthArrayBuffer);
+  } else if (buf->is<ImmutableArrayBufferObject>()) {
+    emitOptimisticClassGuard(objId, buf, GuardClassKind::ImmutableArrayBuffer);
+  } else {
+    emitOptimisticClassGuard(objId, buf, GuardClassKind::ResizableArrayBuffer);
+  }
+
+  if (buf->byteLength() <= INT32_MAX) {
+    writer.loadArrayBufferByteLengthInt32Result(objId);
+  } else {
+    writer.loadArrayBufferByteLengthDoubleResult(objId);
+  }
+
+  writer.returnFromIC();
+
+  trackAttached("ArrayBufferByteLength");
+  return AttachDecision::Attach;
+}
+
+AttachDecision
+InlinableNativeIRGenerator::tryAttachSharedArrayBufferByteLength() {
+  // Expecting no arguments.
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure |this| is a SharedArrayBufferObject.
+  if (!thisval_.isObject() ||
+      !thisval_.toObject().is<SharedArrayBufferObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  auto* buf = &thisval_.toObject().as<SharedArrayBufferObject>();
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'byteLength' native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard |this| is a SharedArrayBufferObject.
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+
+  if (buf->is<FixedLengthSharedArrayBufferObject>()) {
+    emitOptimisticClassGuard(objId, buf,
+                             GuardClassKind::FixedLengthSharedArrayBuffer);
+
+    if (buf->byteLength() <= INT32_MAX) {
+      writer.loadArrayBufferByteLengthInt32Result(objId);
+    } else {
+      writer.loadArrayBufferByteLengthDoubleResult(objId);
+    }
+  } else {
+    emitOptimisticClassGuard(objId, buf,
+                             GuardClassKind::GrowableSharedArrayBuffer);
+
+    if (buf->byteLength() <= INT32_MAX) {
+      writer.growableSharedArrayBufferByteLengthInt32Result(objId);
+    } else {
+      writer.growableSharedArrayBufferByteLengthDoubleResult(objId);
+    }
+  }
+
+  writer.returnFromIC();
+
+  trackAttached("SharedArrayBufferByteLength");
   return AttachDecision::Attach;
 }
 
@@ -12002,6 +12182,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectConstructor() {
   gc::AllocSite* site = nullptr;
   PlainObject* templateObj = nullptr;
   if (args_.length() == 0) {
+    // Don't optimize if we can't create an alloc-site.
+    if (!BytecodeOpCanHaveAllocSite(op())) {
+      return AttachDecision::NoAction;
+    }
+
     // Stub doesn't support metadata builder
     if (cx_->realm()->hasAllocationMetadataBuilder()) {
       return AttachDecision::NoAction;
@@ -12053,6 +12238,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectConstructor() {
 }
 
 AttachDecision InlinableNativeIRGenerator::tryAttachArrayConstructor() {
+  // Don't optimize if we can't create an alloc-site.
+  if (!BytecodeOpCanHaveAllocSite(op())) {
+    return AttachDecision::NoAction;
+  }
+
   // Only optimize the |Array()| and |Array(n)| cases (with or without |new|)
   // for now. Note that self-hosted code calls this without |new| via std_Array.
   if (args_.length() > 1) {
@@ -12614,8 +12804,8 @@ AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
         aobj->length(), aobj->getDenseElements());
 
     // Check for specific native-function optimizations.
-    InlinableNativeIRGenerator nativeGen(*this, target, newTarget, thisValue,
-                                         args, targetFlags);
+    InlinableNativeIRGenerator nativeGen(*this, calleeFunc, target, newTarget,
+                                         thisValue, args, targetFlags);
     TRY_ATTACH(nativeGen.tryAttachStub());
   }
   if (format == CallFlags::FunApplyArray &&
@@ -12633,8 +12823,8 @@ AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
     HandleValueArray args = HandleValueArray::empty();
 
     // Check for specific native-function optimizations.
-    InlinableNativeIRGenerator nativeGen(*this, target, newTarget, thisValue,
-                                         args, targetFlags);
+    InlinableNativeIRGenerator nativeGen(*this, calleeFunc, target, newTarget,
+                                         thisValue, args, targetFlags);
     TRY_ATTACH(nativeGen.tryAttachStub());
   }
 
@@ -12664,7 +12854,7 @@ AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
     if (isScripted) {
       writer.callScriptedFunction(thisObjId, argcId, targetFlags, fixedArgc);
     } else {
-      writer.callNativeFunction(thisObjId, argcId, op_, target, targetFlags,
+      writer.callNativeFunction(thisObjId, argcId, jsop(), target, targetFlags,
                                 fixedArgc);
     }
   } else {
@@ -12834,8 +13024,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(HandleFunction callee,
   MOZ_ASSERT(flags.getArgFormat() == CallFlags::Standard ||
              flags.getArgFormat() == CallFlags::Spread);
 
-  InlinableNativeIRGenerator nativeGen(*this, callee, newTarget_, thisval_,
-                                       args_, flags);
+  InlinableNativeIRGenerator nativeGen(*this, callee, callee, newTarget_,
+                                       thisval_, args_, flags);
   return nativeGen.tryAttachStub();
 }
 
@@ -12866,7 +13056,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
   MOZ_ASSERT(target_->isNativeWithoutJitEntry());
 
   // Special case functions are only optimized for normal calls.
-  if (!BytecodeCallOpCanHaveInlinableNative(op())) {
+  if (!BytecodeCallOpCanHaveInlinableNative(op()) &&
+      !BytecodeGetOpCanHaveInlinableNative(op())) {
     return AttachDecision::NoAction;
   }
 
@@ -12997,6 +13188,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachDataViewSet(Scalar::BigInt64);
     case InlinableNative::DataViewSetBigUint64:
       return tryAttachDataViewSet(Scalar::BigUint64);
+    case InlinableNative::DataViewByteLength:
+      return tryAttachDataViewByteLength();
+    case InlinableNative::DataViewByteOffset:
+      return tryAttachDataViewByteOffset();
 
     // Function natives.
     case InlinableNative::FunctionBind:
@@ -13078,6 +13273,22 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachArrayIteratorPrototypeOptimizable();
 
     // RegExp natives.
+    case InlinableNative::RegExpDotAll:
+      return tryAttachRegExpFlag(JS::RegExpFlag::DotAll);
+    case InlinableNative::RegExpGlobal:
+      return tryAttachRegExpFlag(JS::RegExpFlag::Global);
+    case InlinableNative::RegExpHasIndices:
+      return tryAttachRegExpFlag(JS::RegExpFlag::HasIndices);
+    case InlinableNative::RegExpIgnoreCase:
+      return tryAttachRegExpFlag(JS::RegExpFlag::IgnoreCase);
+    case InlinableNative::RegExpMultiline:
+      return tryAttachRegExpFlag(JS::RegExpFlag::Multiline);
+    case InlinableNative::RegExpSticky:
+      return tryAttachRegExpFlag(JS::RegExpFlag::Sticky);
+    case InlinableNative::RegExpUnicode:
+      return tryAttachRegExpFlag(JS::RegExpFlag::Unicode);
+    case InlinableNative::RegExpUnicodeSets:
+      return tryAttachRegExpFlag(JS::RegExpFlag::UnicodeSets);
     case InlinableNative::IsRegExpObject:
       return tryAttachHasClass(&RegExpObject::class_,
                                /* isPossiblyWrapped = */ false);
@@ -13136,6 +13347,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachStringToLowerCase();
     case InlinableNative::StringToUpperCase:
       return tryAttachStringToUpperCase();
+    case InlinableNative::StringToLocaleLowerCase:
+      return tryAttachStringToLocaleLowerCase();
+    case InlinableNative::StringToLocaleUpperCase:
+      return tryAttachStringToLocaleUpperCase();
     case InlinableNative::StringTrim:
       return tryAttachStringTrim();
     case InlinableNative::StringTrimStart:
@@ -13272,6 +13487,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachTypedArraySet();
     case InlinableNative::TypedArraySubarray:
       return tryAttachTypedArraySubarray();
+    case InlinableNative::TypedArrayLength:
+      return tryAttachTypedArrayLength();
+    case InlinableNative::TypedArrayByteLength:
+      return tryAttachTypedArrayByteLength();
+    case InlinableNative::TypedArrayByteOffset:
+      return tryAttachTypedArrayByteOffset();
 
     // TypedArray intrinsics.
     case InlinableNative::IntrinsicIsTypedArray:
@@ -13348,6 +13569,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachMapDelete();
     case InlinableNative::MapSet:
       return tryAttachMapSet();
+    case InlinableNative::MapSize:
+      return tryAttachMapSize();
 
     // Date natives and intrinsics.
     case InlinableNative::DateGetTime:
@@ -13374,6 +13597,14 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachWeakMapHas();
     case InlinableNative::WeakSetHas:
       return tryAttachWeakSetHas();
+
+    // ArrayBuffer natives.
+    case InlinableNative::ArrayBufferByteLength:
+      return tryAttachArrayBufferByteLength();
+
+    // SharedArrayBuffer natives.
+    case InlinableNative::SharedArrayBufferByteLength:
+      return tryAttachSharedArrayBufferByteLength();
 
     // Testing functions.
     case InlinableNative::TestBailout:
@@ -13536,13 +13767,6 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
     return AttachDecision::NoAction;
   }
 
-  if (isConstructing && !calleeFunc->hasJitScript()) {
-    // If we're constructing, require the callee to have a JitScript. This isn't
-    // required for correctness but avoids allocating a template object below
-    // for constructors that aren't hot. See bug 1419758.
-    return AttachDecision::TemporarilyUnoptimizable;
-  }
-
   // Verify that spread calls have a reasonable number of arguments.
   if (isSpread && args_.length() > JIT_ARGS_LENGTH_MAX) {
     return AttachDecision::NoAction;
@@ -13661,7 +13885,7 @@ AttachDecision CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   } else if (isSpecialized) {
     // Ensure callee matches this stub's callee
     writer.guardSpecificFunction(calleeObjId, calleeFunc);
-    writer.callNativeFunction(calleeObjId, argcId, op_, calleeFunc, flags,
+    writer.callNativeFunction(calleeObjId, argcId, jsop(), calleeFunc, flags,
                               ClampFixedArgc(argc_));
 
     trackAttached("Call.CallNative");
@@ -13909,16 +14133,20 @@ AttachDecision CallIRGenerator::tryAttachBoundNative(
   auto args = numBoundArgs != 0 ? concatenatedArgs : args_;
 
   // Check for specific native-function optimizations.
-  InlinableNativeIRGenerator nativeGen(*this, target, newTarget_, thisValue,
-                                       args, flags);
+  InlinableNativeIRGenerator nativeGen(*this, calleeObj, target, newTarget_,
+                                       thisValue, args, flags);
   return nativeGen.tryAttachStub();
+}
+
+static bool IsInlinableFunCallOrApply(JSOp op) {
+  return op == JSOp::Call || op == JSOp::CallContent ||
+         op == JSOp::CallIgnoresRv;
 }
 
 AttachDecision CallIRGenerator::tryAttachBoundFunCall(
     Handle<BoundFunctionObject*> calleeObj) {
   // Only optimize fun_call for simple calls.
-  if (op_ != JSOp::Call && op_ != JSOp::CallContent &&
-      op_ != JSOp::CallIgnoresRv) {
+  if (!IsInlinableFunCallOrApply(jsop())) {
     return AttachDecision::NoAction;
   }
 
@@ -14014,16 +14242,15 @@ AttachDecision CallIRGenerator::tryAttachBoundFunCall(
   })();
 
   // Check for specific native-function optimizations.
-  InlinableNativeIRGenerator nativeGen(*this, target, newTarget, thisValue,
-                                       args, targetFlags);
+  InlinableNativeIRGenerator nativeGen(*this, calleeObj, target, newTarget,
+                                       thisValue, args, targetFlags);
   return nativeGen.tryAttachStub();
 }
 
 AttachDecision CallIRGenerator::tryAttachBoundFunApply(
     Handle<BoundFunctionObject*> calleeObj) {
   // Only optimize fun_apply for simple calls.
-  if (op_ != JSOp::Call && op_ != JSOp::CallContent &&
-      op_ != JSOp::CallIgnoresRv) {
+  if (!IsInlinableFunCallOrApply(jsop())) {
     return AttachDecision::NoAction;
   }
 
@@ -14102,8 +14329,8 @@ AttachDecision CallIRGenerator::tryAttachBoundFunApply(
   HandleValueArray args = HandleValueArray::empty();
 
   // Check for specific native-function optimizations.
-  InlinableNativeIRGenerator nativeGen(*this, target, newTarget, thisValue,
-                                       args, targetFlags);
+  InlinableNativeIRGenerator nativeGen(*this, calleeObj, target, newTarget,
+                                       thisValue, args, targetFlags);
   return nativeGen.tryAttachStub();
 }
 
@@ -14186,8 +14413,8 @@ AttachDecision CallIRGenerator::tryAttachFunCallBound(
   auto args = numBoundArgs != 0 ? concatenatedArgs : callArgs;
 
   // Check for specific native-function optimizations.
-  InlinableNativeIRGenerator nativeGen(*this, target, newTarget, thisValue,
-                                       args, targetFlags);
+  InlinableNativeIRGenerator nativeGen(*this, callee, target, newTarget,
+                                       thisValue, args, targetFlags, bound);
   return nativeGen.tryAttachStub();
 }
 
@@ -14272,8 +14499,8 @@ AttachDecision CallIRGenerator::tryAttachFunApplyBound(
   }
 
   // Check for specific native-function optimizations.
-  InlinableNativeIRGenerator nativeGen(*this, target, newTarget, thisValue,
-                                       args, targetFlags);
+  InlinableNativeIRGenerator nativeGen(*this, callee, target, newTarget,
+                                       thisValue, args, targetFlags, bound);
   return nativeGen.tryAttachStub();
 }
 
@@ -14281,7 +14508,7 @@ AttachDecision CallIRGenerator::tryAttachStub() {
   AutoAssertNoPendingException aanpe(cx_);
 
   // Some opcodes are not yet supported.
-  switch (op_) {
+  switch (jsop()) {
     case JSOp::Call:
     case JSOp::CallContent:
     case JSOp::CallIgnoresRv:
@@ -14331,8 +14558,7 @@ AttachDecision CallIRGenerator::tryAttachStub() {
   // Try inlining Function.prototype.{call,apply}. We don't use the
   // InlinableNative mechanism for this because we want to optimize these more
   // aggressively than other natives.
-  if (op_ == JSOp::Call || op_ == JSOp::CallContent ||
-      op_ == JSOp::CallIgnoresRv) {
+  if (IsInlinableFunCallOrApply(jsop())) {
     TRY_ATTACH(tryAttachFunCall(calleeFunc));
     TRY_ATTACH(tryAttachFunApply(calleeFunc));
     TRY_ATTACH(tryAttachFunCallBound(calleeFunc));

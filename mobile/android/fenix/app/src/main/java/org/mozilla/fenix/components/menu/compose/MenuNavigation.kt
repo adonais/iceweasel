@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -43,17 +44,17 @@ import mozilla.components.ui.icons.R as iconsR
 @Suppress("LongParameterList")
 @Composable
 internal fun MenuNavigation(
-    state: MenuItemState = MenuItemState.ENABLED,
     isSiteLoading: Boolean,
-    goBackState: MenuItemState = MenuItemState.ENABLED,
-    goForwardState: MenuItemState = MenuItemState.ENABLED,
+    isExtensionsExpanded: Boolean,
+    isMoreMenuExpanded: Boolean,
     onBackButtonClick: (longPress: Boolean) -> Unit,
     onForwardButtonClick: (longPress: Boolean) -> Unit,
     onRefreshButtonClick: (longPress: Boolean) -> Unit,
     onStopButtonClick: () -> Unit,
     onShareButtonClick: () -> Unit,
-    isExtensionsExpanded: Boolean,
-    isMoreMenuExpanded: Boolean,
+    state: MenuItemState = MenuItemState.ENABLED,
+    goBackState: MenuItemState = MenuItemState.ENABLED,
+    goForwardState: MenuItemState = MenuItemState.ENABLED,
 ) {
     val navigationHeaderContentDescription =
         stringResource(id = R.string.browser_main_menu_content_description_navigation_header)
@@ -63,9 +64,9 @@ internal fun MenuNavigation(
             .fillMaxWidth()
             .background(
                 color = if (isExtensionsExpanded || isMoreMenuExpanded) {
-                    FirefoxTheme.colors.layerSearch
+                    MaterialTheme.colorScheme.surfaceContainerHighest
                 } else {
-                    FirefoxTheme.colors.layer1
+                    MaterialTheme.colorScheme.surface
                 },
             )
             .padding(horizontal = 4.dp, vertical = 12.dp)
@@ -146,7 +147,7 @@ private fun MenuNavItem(
             tint = getIconTint(state = state),
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static50))
 
         Text(
             text = label,
@@ -162,65 +163,91 @@ private fun MenuNavItem(
 @Composable
 private fun getLabelTextColor(state: MenuItemState): Color {
     return when (state) {
-        MenuItemState.ACTIVE -> FirefoxTheme.colors.textAccent
-        MenuItemState.WARNING -> FirefoxTheme.colors.textCritical
-        MenuItemState.DISABLED -> FirefoxTheme.colors.textDisabled
-        else -> FirefoxTheme.colors.textPrimary
+        MenuItemState.ACTIVE -> MaterialTheme.colorScheme.tertiary
+        MenuItemState.WARNING -> MaterialTheme.colorScheme.error
+        MenuItemState.DISABLED -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+        else -> MaterialTheme.colorScheme.onSurface
     }
 }
 
 @Composable
 private fun getIconTint(state: MenuItemState): Color {
     return when (state) {
-        MenuItemState.ACTIVE -> FirefoxTheme.colors.iconAccentViolet
-        MenuItemState.WARNING -> FirefoxTheme.colors.iconCritical
-        MenuItemState.DISABLED -> FirefoxTheme.colors.iconDisabled
-        else -> FirefoxTheme.colors.iconPrimary
+        MenuItemState.ACTIVE -> MaterialTheme.colorScheme.tertiary
+        MenuItemState.WARNING -> MaterialTheme.colorScheme.error
+        MenuItemState.DISABLED -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+        else -> MaterialTheme.colorScheme.onSurface
     }
 }
 
 @PreviewLightDark
 @Composable
-private fun MenuHeaderPreview() {
+private fun MenuNavigationPreview() {
     FirefoxTheme {
-        Column(
-            modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer3),
-        ) {
-            MenuNavigation(
-                isSiteLoading = false,
-                onBackButtonClick = {},
-                onForwardButtonClick = {},
-                onRefreshButtonClick = {},
-                onStopButtonClick = {},
-                onShareButtonClick = {},
-                isExtensionsExpanded = false,
-                isMoreMenuExpanded = false,
-            )
-        }
+        MenuNavigation(
+            isSiteLoading = false,
+            isExtensionsExpanded = false,
+            isMoreMenuExpanded = false,
+            onBackButtonClick = {},
+            onForwardButtonClick = {},
+            onRefreshButtonClick = {},
+            onStopButtonClick = {},
+            onShareButtonClick = {},
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun MenuNavigationExpandedPreview() {
+    FirefoxTheme {
+        MenuNavigation(
+            isSiteLoading = false,
+            isExtensionsExpanded = true,
+            isMoreMenuExpanded = false,
+            onBackButtonClick = {},
+            onForwardButtonClick = {},
+            onRefreshButtonClick = {},
+            onStopButtonClick = {},
+            onShareButtonClick = {},
+        )
     }
 }
 
 @Preview
 @Composable
-private fun MenuHeaderPrivatePreview(
+private fun MenuNavigationPrivatePreview(
     @PreviewParameter(SiteLoadingPreviewParameterProvider::class) isSiteLoading: Boolean,
 ) {
     FirefoxTheme(theme = Theme.Private) {
-        Column(
-            modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer3),
-        ) {
-            MenuNavigation(
-                isSiteLoading = isSiteLoading,
-                onBackButtonClick = {},
-                onForwardButtonClick = {},
-                onRefreshButtonClick = {},
-                onStopButtonClick = {},
-                onShareButtonClick = {},
-                isExtensionsExpanded = false,
-                isMoreMenuExpanded = false,
-            )
-        }
+        MenuNavigation(
+            isSiteLoading = isSiteLoading,
+            isExtensionsExpanded = false,
+            isMoreMenuExpanded = false,
+            onBackButtonClick = {},
+            onForwardButtonClick = {},
+            onRefreshButtonClick = {},
+            onStopButtonClick = {},
+            onShareButtonClick = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun MenuNavigationExpandedPrivatePreview(
+    @PreviewParameter(SiteLoadingPreviewParameterProvider::class) isSiteLoading: Boolean,
+) {
+    FirefoxTheme(theme = Theme.Private) {
+        MenuNavigation(
+            isSiteLoading = isSiteLoading,
+            isExtensionsExpanded = true,
+            isMoreMenuExpanded = false,
+            onBackButtonClick = {},
+            onForwardButtonClick = {},
+            onRefreshButtonClick = {},
+            onStopButtonClick = {},
+            onShareButtonClick = {},
+        )
     }
 }

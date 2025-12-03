@@ -989,7 +989,7 @@ class CssComputedView {
 }
 
 class PropertyInfo {
-  /*
+  /**
    * @param {CssComputedView} tree
    *        The CssComputedView instance we are working with.
    * @param {String} name
@@ -1023,7 +1023,7 @@ class PropertyInfo {
  * A container to give easy access to property data from the template engine.
  */
 class PropertyView {
-  /*
+  /**
    * @param {CssComputedView} tree
    *        The CssComputedView instance we are working with.
    * @param {String} name

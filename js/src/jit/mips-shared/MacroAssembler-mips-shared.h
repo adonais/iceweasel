@@ -147,12 +147,6 @@ class MacroAssemblerMIPSShared : public Assembler {
   void ma_mul32TestOverflow(Register rd, Register rs, Imm32 imm,
                             Label* overflow);
 
-  // divisions
-  void ma_div_branch_overflow(Register rd, Register rs, Register rt,
-                              Label* overflow);
-  void ma_div_branch_overflow(Register rd, Register rs, Imm32 imm,
-                              Label* overflow);
-
   // fast mod, uses scratch registers, and thus needs to be in the assembler
   // implicitly assumes that we can overwrite dest at the beginning of the
   // sequence
@@ -205,11 +199,6 @@ class MacroAssemblerMIPSShared : public Assembler {
                          DoubleCondition c);
   void ma_cmp_set_float32(Register dst, FloatRegister lhs, FloatRegister rhs,
                           DoubleCondition c);
-
-  void moveToDoubleLo(Register src, FloatRegister dest) { as_mtc1(src, dest); }
-  void moveFromDoubleLo(FloatRegister src, Register dest) {
-    as_mfc1(dest, src);
-  }
 
   void moveToFloat32(Register src, FloatRegister dest) { as_mtc1(src, dest); }
   void moveFromFloat32(FloatRegister src, Register dest) { as_mfc1(dest, src); }

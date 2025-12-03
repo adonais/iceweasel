@@ -25,7 +25,6 @@
 #include "plbase64.h"
 #include "nsIClassInfoImpl.h"
 #include "mozilla/AppShutdown.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/Preferences.h"
@@ -219,7 +218,7 @@ void nsFaviconService::ClearImageCache(nsIURI* aImageURI) {
       GetImgTools()->GetImgCacheForDocument(nullptr, getter_AddRefs(imgCache));
   MOZ_ASSERT(NS_SUCCEEDED(rv));
   if (NS_SUCCEEDED(rv)) {
-    Unused << imgCache->RemoveEntry(aImageURI, nullptr);
+    (void)imgCache->RemoveEntry(aImageURI, nullptr);
   }
 }
 

@@ -9,7 +9,6 @@
 
 #include "xpcIJSWeakReference.h"
 #include "nsIWeakReferenceUtils.h"
-#include "mozilla/Attributes.h"
 
 class xpcJSWeakReference final : public xpcIJSWeakReference {
   ~xpcJSWeakReference() = default;

@@ -17,7 +17,6 @@
 #include "nsXULAppAPI.h"
 
 #ifdef XP_WIN
-#  include "mozilla/WindowsVersion.h"
 #  include "mozilla/gfx/DeviceManagerDx.h"
 #  include "mozilla/gfx/DisplayConfigWindows.h"
 #endif
@@ -37,8 +36,6 @@ void gfxConfigManager::Init() {
       StaticPrefs::gfx_wayland_hdr_force_enabled_AtStartup() ||
 #endif
       StaticPrefs::gfx_webrender_compositor_force_enabled_AtStartup();
-  mGPUProcessAllowSoftware =
-      StaticPrefs::layers_gpu_process_allow_software_AtStartup();
   mWrForcePartialPresent =
       StaticPrefs::gfx_webrender_force_partial_present_AtStartup();
   mWrPartialPresent =
@@ -249,15 +246,6 @@ void gfxConfigManager::ConfigureWebRender() {
       // still be forced on by the user, and if so, this should have no effect.
       mFeatureHwCompositing->Disable(FeatureStatus::Blocked,
                                      "Acceleration blocked by platform", ""_ns);
-    }
-
-    if (!mFeatureHwCompositing->IsEnabled() &&
-        mFeatureGPUProcess->IsEnabled() && !mGPUProcessAllowSoftware) {
-      // We have neither WebRender nor OpenGL, we don't allow the GPU process
-      // for basic compositor, and it wasn't disabled already.
-      mFeatureGPUProcess->Disable(FeatureStatus::Unavailable,
-                                  "Hardware compositing is unavailable.",
-                                  ""_ns);
     }
   }
 

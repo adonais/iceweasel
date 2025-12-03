@@ -8,7 +8,6 @@
 
 #include "cairo-ft.h"
 #include "gfxFT2FontBase.h"
-#include "mozilla/Likely.h"
 
 // Rounding and truncation functions for a FreeType fixed point number
 // (FT26Dot6) stored in a 32bit integer with high 26 bits for the integer

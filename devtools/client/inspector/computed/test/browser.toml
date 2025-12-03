@@ -35,7 +35,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_computed_getNodeInfo.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bugs 1849028 and 1858041 to investigate intermittent a11y_checks results
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1849028 and 1858041 to investigate intermittent a11y_checks results
 ]
 
@@ -62,7 +61,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_computed_original-source-link.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bug 1858037 to investigate intermittent a11y_checks results (fails on Autoland, passes on Try)
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858037
 ]
 

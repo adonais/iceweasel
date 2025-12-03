@@ -10,6 +10,10 @@
 #include "mozilla/WeakPtr.h"
 #include "mozilla/gfx/2D.h"
 
+namespace mozilla {
+class WebGLBuffer;
+}  // namespace mozilla
+
 namespace mozilla::gfx {
 
 class DrawTargetWebgl;
@@ -46,7 +50,8 @@ class SourceSurfaceWebgl : public DataSourceSurface {
 
   explicit SourceSurfaceWebgl(const RefPtr<SharedContextWebgl>& aSharedContext);
 
-  bool EnsureData();
+  bool EnsureData(bool aForce = true);
+  bool ForceReadFromPBO();
 
   void DrawTargetWillChange(bool aNeedHandle);
 
@@ -54,12 +59,14 @@ class SourceSurfaceWebgl : public DataSourceSurface {
 
   void SetHandle(TextureHandle* aHandle);
 
-  void OnUnlinkTexture(SharedContextWebgl* aContext);
+  void OnUnlinkTexture(SharedContextWebgl* aContext, TextureHandle* aHandle,
+                       bool aForce);
 
   DrawTargetWebgl* GetTarget() const { return mDT.get(); }
 
   SurfaceFormat mFormat = SurfaceFormat::UNKNOWN;
   IntSize mSize;
+  RefPtr<WebGLBuffer> mReadBuffer;
   // Any data that has been read back from the WebGL context for mapping.
   RefPtr<DataSourceSurface> mData;
   // The draw target that currently owns the texture for this surface.

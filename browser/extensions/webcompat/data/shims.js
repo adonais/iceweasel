@@ -160,6 +160,20 @@ const AVAILABLE_SHIMS = [
     onlyIfBlockedByETP: true,
   },
   {
+    id: "ArtstationLogin",
+    platform: "all",
+    name: "Artstation Google Login",
+    bug: "1926551",
+    contentScripts: [
+      {
+        js: "artstationLogin.js",
+        matches: ["*://www.artstation.com/*"],
+        runAt: "document_start",
+      },
+    ],
+    onlyIfDFPIActive: true,
+  },
+  {
     id: "BmAuth",
     platform: "all",
     name: "BmAuth by 9c9media",
@@ -629,6 +643,20 @@ const AVAILABLE_SHIMS = [
           "*://support.microsoft.com/*",
           "*://answers.microsoft.com/*",
         ],
+        runAt: "document_start",
+      },
+    ],
+    onlyIfDFPIActive: true,
+  },
+  {
+    id: "CambridgeDictionaryLogin",
+    platform: "all",
+    name: "Cambridge Dictionary Google Login",
+    bug: "1993727",
+    contentScripts: [
+      {
+        js: "cambridgeDictionaryLogin.js",
+        matches: ["*://dictionary.cambridge.org/*"],
         runAt: "document_start",
       },
     ],

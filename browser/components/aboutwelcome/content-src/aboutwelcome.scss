@@ -128,10 +128,10 @@ html {
   --picker-background-color: color-mix(in srgb, transparent 98%, light-dark(black, white) 2%);
   --picker-hover-background-color: color-mix(in srgb, transparent 95%, light-dark(black, white) 5%);
   --picker-border-color: var(--in-content-border-color);
-  --picker-checked-border-color: var(--in-content-item-selected);
+  --picker-checked-border-color: var(--color-accent-primary-selected);
   --picker-hover-border-color: var(--picker-border-color);
-  --picker-focus-ring-color: var(--in-content-item-selected);
-  --picker-checkbox-color: var(--in-content-item-selected);
+  --picker-focus-ring-color: var(--color-accent-primary-selected);
+  --picker-checkbox-color: var(--color-accent-primary-selected);
   --picker-checkbox-hover-color: var(--picker-checkbox-color);
   --picker-backup-flair-background: color-mix(in srgb, var(--color-accent-primary) 20%, transparent);
   --picker-backup-flair-color: var(--color-accent-primary);
@@ -191,6 +191,13 @@ html {
 
   &:dir(rtl) {
     transform: rotateY(180deg);
+  }
+
+  &:has([pos='split'][fullscreen]) {
+    min-height: 100vh;
+    height: auto;
+    display: flex;
+    flex-direction: column;
   }
 
   .section-main {
@@ -269,7 +276,7 @@ html {
     border: var(--button-border);
     line-height: 12px;
     font-size: 0.72em;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
     padding: 8px 16px;
     text-decoration: none;
     cursor: default;
@@ -503,13 +510,13 @@ html {
           .addon-title {
             margin: 10px 0 3px;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: var(--heading-font-weight);
           }
 
           .addon-description {
             margin: 2px 0 10px;
             font-size: 13px;
-            font-weight: 400;
+            font-weight: normal;
           }
 
           .install-button-wrapper {
@@ -901,7 +908,7 @@ html {
 
         h1 {
           color: var(--mr-screen-heading-color);
-          font-weight: 700;
+          font-weight: var(--font-weight-bold);
           font-size: 47px;
           line-height: 110%;
           max-width: 340px;
@@ -1069,15 +1076,24 @@ html {
         $split-section-width: 50%;
         $split-screen-height: 100%;
 
+        min-height:100vh;
+
         .section-secondary,
         .section-main {
           width: $split-section-width;
-          height: $split-screen-height;
+          height: auto;
+        }
+
+        .section-main {
+          margin: 0;
+          display: flex;
         }
 
         .section-main .main-content {
           border-radius: 0;
           padding: 0;
+          flex: 1;
+          height: auto;
 
           h1 {
             width: auto;
@@ -1088,6 +1104,7 @@ html {
             flex-grow: 0;
             padding-inline: 110px;
             margin-block: auto;
+            padding-block: 40px;
 
             @media only screen and (width <= 800px) {
               padding-block: 20px;
@@ -1135,7 +1152,7 @@ html {
             max-width: 450px;
 
             h1 {
-              font-weight: 510;
+              font-weight: var(--heading-font-weight);
               font-size: 80px;
               margin: 0;
               width: 100%;
@@ -1146,7 +1163,7 @@ html {
               font-size: 20px;
               margin: 0;
               margin-block-start: 24px;
-              font-weight: 510;
+              font-weight: var(--heading-font-weight);
               width: 100%;
             }
           }
@@ -1217,7 +1234,7 @@ html {
 
                   .addon-title {
                     font-size: 16px;
-                    font-weight: 600;
+                    font-weight: var(--heading-font-weight);
                   }
 
                   .addon-author {
@@ -1285,6 +1302,9 @@ html {
 
           .section-main {
             height: 75%;
+            flex-grow: 1;
+            margin: 0;
+            display: flex;
 
             &[hide-secondary-section='responsive'] {
               height: 100%;
@@ -1292,6 +1312,7 @@ html {
               .main-content {
                 border-radius: 0;
                 padding: 0;
+                height: auto;
               }
             }
           }
@@ -1311,6 +1332,8 @@ html {
           .section-secondary {
             --mr-secondary-position: center var(--mr-secondary-background-position-y) / 50%;
 
+            height: 250px;
+
             .hero-image {
               img {
                 width: 25%;
@@ -1321,6 +1344,8 @@ html {
         }
 
         @media only screen and (width <= 800px) {
+          height: 100%;
+
           @include narrow-split-fullscreen;
         }
 
@@ -1577,35 +1602,37 @@ html {
         @include narrow-split;
       }
 
-      @media only screen and (height <= 650px) {
-        // Hide the "Sign in" button on the welcome screen when it would
-        // otherwise overlap the screen. We'd reposition it, but then it would
-        // overlap the dismiss button. We may change the alignment so they don't
-        // overlap in a future revision.
-        @media (800px <= width <= 990px) {
-          .section-main .secondary-cta.top {
-            display: none;
+      &:where(:not([fullscreen])) {
+        @media only screen and (height <= 650px) {
+          // Hide the "Sign in" button on the welcome screen when it would
+          // otherwise overlap the screen. We'd reposition it, but then it would
+          // overlap the dismiss button. We may change the alignment so they don't
+          // overlap in a future revision.
+          @media (800px <= width <= 990px) {
+            .section-main .secondary-cta.top {
+              display: none;
+            }
           }
-        }
 
-        // Reposition the "Sign in" button on the welcome screen to move inside
-        // the screen when it would otherwise overlap the screen.
-        @mixin extra-narrow-secondary-cta {
-          .section-main .secondary-buttons-top-container {
-            position: absolute;
-            padding: 0;
-            top: 0;
-            inset-inline-end: 0;
+          // Reposition the "Sign in" button on the welcome screen to move inside
+          // the screen when it would otherwise overlap the screen.
+          @mixin extra-narrow-secondary-cta {
+            .section-main .secondary-buttons-top-container {
+              position: absolute;
+              padding: 0;
+              top: 0;
+              inset-inline-end: 0;
+            }
           }
-        }
 
-        @media (width <= 620px) {
-          @include extra-narrow-secondary-cta;
-        }
-
-        [narrow] & {
           @media (width <= 620px) {
             @include extra-narrow-secondary-cta;
+          }
+
+          [narrow] & {
+            @media (width <= 620px) {
+              @include extra-narrow-secondary-cta;
+            }
           }
         }
       }
@@ -1677,7 +1704,7 @@ html {
 
     h1 {
       font-size: 24px;
-      font-weight: 600;
+      font-weight: var(--heading-font-weight);
       margin: 0 6px;
       letter-spacing: -0.02em;
       outline: none;
@@ -2061,7 +2088,7 @@ html {
     gap: 16px;
     margin-block: -1em 2em;
     margin-inline: 1em;
-    font-weight: 400;
+    font-weight: normal;
     font-size: 14px;
     text-align: initial;
     transition: var(--transition);
@@ -2131,11 +2158,12 @@ html {
 
       .confirmation-checklist-icon-wrapper {
         display: flex;
+        align-items: center;
       }
 
       .confirmation-checklist-text {
         margin-inline-start: 8px;
-        font-weight: 500;
+        font-weight: var(--font-weight-semibold);
       }
 
       .confirmation-checklist-subtext {
@@ -2157,7 +2185,7 @@ html {
       @include text-link-styles;
 
       font-size: 16px;
-      font-weight: 400;
+      font-weight: normal;
 
       &:hover {
         background: none;
@@ -2243,7 +2271,7 @@ html {
   button.content-tiles-header {
     margin: 0.5em 0 0;
     font-size: 11px;
-    font-weight: 400;
+    font-weight: normal;
     justify-content: center;
     border-width: 1px 0;
 
@@ -2315,12 +2343,12 @@ html {
           flex-direction: column;
 
           .header-title {
-            font-weight: var(--font-weight-bold);
+            font-weight: var(--heading-font-weight);
             line-height: 1.5;
           }
 
           .header-subtitle {
-            font-weight: 400;
+            font-weight: normal;
             line-height: 1.5;
           }
         }
@@ -2426,7 +2454,7 @@ html {
 
   .tile-title {
     font-size: 24px;
-    font-weight: 600;
+    font-weight: var(--heading-font-weight);
     margin-block: 0;
 
     &:not(:last-child) {
@@ -2515,6 +2543,7 @@ html {
     inset-inline-end: 10px;
     width: auto;
     height: auto;
+    z-index: 2;
 
     .secondary-cta.top {
       position: relative;

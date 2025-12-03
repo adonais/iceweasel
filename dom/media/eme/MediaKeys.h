@@ -8,7 +8,6 @@
 #define mozilla_dom_mediakeys_h__
 
 #include "DecoderDoctorLogger.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/DetailedPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"

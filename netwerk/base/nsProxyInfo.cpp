@@ -32,13 +32,13 @@ nsProxyInfo::nsProxyInfo(const nsACString& aType, const nsACString& aHost,
                          uint32_t aTimeout, uint32_t aResolveFlags,
                          const nsACString& aProxyAuthorizationHeader,
                          const nsACString& aConnectionIsolationKey,
-                         const nsACString& aPathTemplate)
+                         const nsACString& aMasqueTemplate)
     : mHost(aHost),
       mUsername(aUsername),
       mPassword(aPassword),
       mProxyAuthorizationHeader(aProxyAuthorizationHeader),
       mConnectionIsolationKey(aConnectionIsolationKey),
-      mPathTemplate(aPathTemplate),
+      mMasqueTemplate(aMasqueTemplate),
       mPort(aPort),
       mFlags(aFlags),
       mResolveFlags(aResolveFlags),
@@ -151,14 +151,14 @@ nsProxyInfo::SetSourceId(const nsACString& sourceId) {
 }
 
 NS_IMETHODIMP
-nsProxyInfo::SetPathTemplate(const nsACString& aPathTemplate) {
-  mPathTemplate = aPathTemplate;
+nsProxyInfo::SetMasqueTemplate(const nsACString& aMasqueTemplate) {
+  mMasqueTemplate = aMasqueTemplate;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsProxyInfo::GetPathTemplate(nsACString& aPathTemplate) {
-  aPathTemplate = mPathTemplate;
+nsProxyInfo::GetMasqueTemplate(nsACString& aMasqueTemplate) {
+  aMasqueTemplate = mMasqueTemplate;
   return NS_OK;
 }
 
@@ -188,7 +188,7 @@ void nsProxyInfo::SerializeProxyInfo(nsProxyInfo* aProxyInfo,
     arg->type() = nsCString(iter->Type());
     arg->host() = iter->Host();
     arg->port() = iter->Port();
-    arg->pathTemplate() = iter->PathTemplate();
+    arg->masqueTemplate() = iter->MasqueTemplate();
     arg->username() = iter->Username();
     arg->password() = iter->Password();
     arg->proxyAuthorizationHeader() = iter->ProxyAuthorizationHeader();
@@ -207,7 +207,7 @@ nsProxyInfo* nsProxyInfo::DeserializeProxyInfo(
     pi = new nsProxyInfo(info.type(), info.host(), info.port(), info.username(),
                          info.password(), info.flags(), info.timeout(),
                          info.resolveFlags(), info.proxyAuthorizationHeader(),
-                         info.connectionIsolationKey(), info.pathTemplate());
+                         info.connectionIsolationKey(), info.masqueTemplate());
     if (last) {
       last->mNext = pi;
       // |mNext| will be released in |last|'s destructor.

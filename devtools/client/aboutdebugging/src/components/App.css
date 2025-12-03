@@ -33,7 +33,7 @@
   grid-template-columns: var(--sidebar-width) auto;
 
   font-size: var(--base-font-size);
-  font-weight: var(--base-font-weight);
+  font-weight: var(--base-font-weight, normal);
   line-height: var(--base-line-height);
 }
 
@@ -66,6 +66,6 @@
   max-width: var(--page-main-content-width);
   min-width: min-content;
   font-size: var(--body-20-font-size);
-  font-weight: var(--body-20-font-weight);
+  font-weight: var(--body-20-font-weight, normal);
   padding-inline-end: var(--app-right-padding);
 }

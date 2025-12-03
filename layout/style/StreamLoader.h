@@ -7,7 +7,6 @@
 #ifndef mozilla_css_StreamLoader_h
 #define mozilla_css_StreamLoader_h
 
-#include "mozilla/Assertions.h"
 #include "mozilla/css/SheetLoadData.h"
 #include "nsIChannelEventSink.h"
 #include "nsIInterfaceRequestor.h"

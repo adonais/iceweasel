@@ -6,7 +6,7 @@
 import logging
 
 import requests
-from requests.exceptions import HTTPError
+from taskcluster.exceptions import TaskclusterRestFailure
 from taskgraph.util.taskcluster import get_artifact_from_index, get_task_definition
 
 from .registry import register_callback_action
@@ -105,7 +105,7 @@ def geckoprofile_action(parameters, graph_config, input, task_group_id, task_id)
             push_decision_task_id, full_task_graph, label_to_taskid, _ = (
                 fetch_graph_and_labels(push_params, graph_config)
             )
-        except HTTPError as e:
+        except TaskclusterRestFailure as e:
             logger.info(f"Skipping {push} due to missing index artifacts! Error: {e}")
             continue
 

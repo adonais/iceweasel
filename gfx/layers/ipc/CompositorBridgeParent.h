@@ -9,7 +9,6 @@
 
 #include <stdint.h>  // for uint64_t
 #include <unordered_map>
-#include "mozilla/Assertions.h"  // for MOZ_ASSERT_HELPER2
 #include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"        // for Monitor
 #include "mozilla/RefPtr.h"         // for RefPtr

@@ -6,7 +6,6 @@
 #ifndef mozilla_dom_HTMLAudioElement_h
 #define mozilla_dom_HTMLAudioElement_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/TypedArray.h"
 

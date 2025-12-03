@@ -2,6 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * Note: If you add or modify the list of helpers, make sure to update the
+ * corresponding documentation in the `docs` folder as well.
+ */
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -16,10 +21,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
   IPProtectionStates:
     "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
-  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
 });
 
+import { IPPAutoStartHelpers } from "resource:///modules/ipprotection/IPPAutoStart.sys.mjs";
+import { IPPEnrollAndEntitleManager } from "resource:///modules/ipprotection/IPPEnrollAndEntitleManager.sys.mjs";
+import { IPPNimbusHelper } from "resource:///modules/ipprotection/IPPNimbusHelper.sys.mjs";
+import { IPProtectionServerlist } from "resource:///modules/ipprotection/IPProtectionServerlist.sys.mjs";
 import { IPPSignInWatcher } from "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs";
+import { IPPStartupCache } from "resource:///modules/ipprotection/IPPStartupCache.sys.mjs";
 
 const VPN_ADDON_ID = "vpn@mozilla.com";
 
@@ -37,6 +46,8 @@ class UIHelper {
       this.handleEvent
     );
   }
+
+  initOnStartupCompleted() {}
 
   uninit() {
     lazy.IPProtectionService.removeEventListener(
@@ -64,7 +75,7 @@ class UIHelper {
 /**
  * This simple class resets the account data when needed
  */
-class AccountResetHelper {
+class ProxyResetHelper {
   constructor() {
     this.handleEvent = this.#handleEvent.bind(this);
   }
@@ -76,6 +87,8 @@ class AccountResetHelper {
     );
   }
 
+  initOnStartupCompleted() {}
+
   uninit() {
     lazy.IPProtectionService.removeEventListener(
       "IPProtectionService:StateChanged",
@@ -84,15 +97,19 @@ class AccountResetHelper {
   }
 
   #handleEvent(_event) {
-    // Reset stored account information and stop the proxy,
-    // if the account is no longer available.
+    if (!lazy.IPProtectionService.proxyManager) {
+      return;
+    }
+
     if (
-      (lazy.IPProtectionService.hasEntitlement &&
-        lazy.IPProtectionService.state ===
-          lazy.IPProtectionStates.UNAVAILABLE) ||
+      lazy.IPProtectionService.state === lazy.IPProtectionStates.UNAVAILABLE ||
       lazy.IPProtectionService.state === lazy.IPProtectionStates.UNAUTHENTICATED
     ) {
-      lazy.IPProtectionService.resetAccount();
+      if (lazy.IPProtectionService.proxyManager.active) {
+        lazy.IPProtectionService.proxyManager.stop(false);
+      }
+
+      lazy.IPProtectionService.proxyManager.reset();
     }
   }
 }
@@ -101,13 +118,18 @@ class AccountResetHelper {
  * This class removes the UI widget if the VPN add-on is installed.
  */
 class VPNAddonHelper {
+  init() {}
+
   /**
    * Adds an observer to monitor the VPN add-on installation
    */
-  init() {
+  initOnStartupCompleted() {
     this.addonVPNListener = {
       onInstallEnded(_install, addon) {
-        if (addon.id === VPN_ADDON_ID && lazy.IPProtectionService.hasUpgraded) {
+        if (
+          addon.id === VPN_ADDON_ID &&
+          IPPEnrollAndEntitleManager.hasUpgraded
+        ) {
           // Place the widget in the customization palette.
           lazy.CustomizableUI.removeWidgetFromArea(
             lazy.IPProtectionWidget.WIDGET_ID
@@ -129,29 +151,19 @@ class VPNAddonHelper {
   }
 }
 
-/**
- * This class monitors the eligibility flag from Nimbus
- */
-class EligibilityHelper {
-  init() {
-    lazy.NimbusFeatures.ipProtection.onUpdate(
-      lazy.IPProtectionService.updateState
-    );
-  }
-
-  uninit() {
-    lazy.NimbusFeatures.ipProtection.offUpdate(
-      lazy.IPProtectionService.updateState
-    );
-  }
-}
-
+// The order is important! NimbusHelper must be the last one because nimbus
+// triggers the callback immdiately, which could compute a new state for all
+// the helpers.
 const IPPHelpers = [
-  new AccountResetHelper(),
-  new EligibilityHelper(),
-  new VPNAddonHelper(),
-  new UIHelper(),
+  IPPStartupCache,
   IPPSignInWatcher,
+  IPProtectionServerlist,
+  IPPEnrollAndEntitleManager,
+  new UIHelper(),
+  new ProxyResetHelper(),
+  new VPNAddonHelper(),
+  ...IPPAutoStartHelpers,
+  IPPNimbusHelper,
 ];
 
 export { IPPHelpers };

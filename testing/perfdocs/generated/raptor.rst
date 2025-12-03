@@ -1075,12 +1075,13 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
    * **expose browser profiler**: true
    * **expose chrome trace**: true
    * **gecko profile interval**: 1
-   * **link searchfox**: `<https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests/benchmarks/jetstream3-desktop.toml#16>`__
+   * **link searchfox**: `<https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests/benchmarks/jetstream3-desktop.toml#17>`__
    * **lower is better**: false
    * **page cycles**: 1
    * **page timeout**: 2000000
    * **repository**: https://github.com/webkit/jetstream
-   * **repository revision**: b03c3933691122168a8fff49cf835200bf76696a
+   * **repository revision**: 0debbb0b94486d4c78162ad5a102279b96dc79d3
+   * **subtest alert threshold**: 5.0
    * **subtest lower is better**: true
    * **subtest unit**: ms
    * **suite name**: JetStream3.0
@@ -1381,13 +1382,14 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
    * **expected**: pass
    * **expose browser profiler**: true
    * **gecko profile interval**: 1
-   * **link searchfox**: `<https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests/benchmarks/jetstream3-mobile.toml#21>`__
+   * **link searchfox**: `<https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests/benchmarks/jetstream3-mobile.toml#22>`__
    * **lower is better**: false
    * **page cycles**: 1
    * **page timeout**: 2000000
    * **preferences**: dom.max_script_run_time=0
    * **repository**: https://github.com/webkit/jetstream
-   * **repository revision**: b03c3933691122168a8fff49cf835200bf76696a
+   * **repository revision**: 0debbb0b94486d4c78162ad5a102279b96dc79d3
+   * **subtest alert threshold**: 5.0
    * **subtest lower is better**: true
    * **subtest unit**: ms
    * **suite name**: JetStream3.0

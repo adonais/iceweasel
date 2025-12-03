@@ -5,7 +5,6 @@
 
 #include "RootAccessible.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "nsXULPopupManager.h"
 
 #define CreateEvent CreateEventA

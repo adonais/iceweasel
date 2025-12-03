@@ -2204,11 +2204,7 @@ LocaleData.prototype = {
   },
 
   get acceptLanguages() {
-    let result = Services.prefs.getComplexValue(
-      "intl.accept_languages",
-      Ci.nsIPrefLocalizedString
-    ).data;
-    return result.split(/\s*,\s*/g);
+    return Services.locale.acceptLanguages.split(/\s*,\s*/g);
   },
 
   get uiLocale() {
@@ -2248,7 +2244,7 @@ LocaleData.prototype = {
  * content process).
  */
 class EventManager {
-  /*
+  /**
    * A persistent event must provide module and name.  Additionally the
    * module must implement primeListeners in the ExtensionAPI class.
    *
@@ -2366,7 +2362,7 @@ class EventManager {
     this.remove = new Map();
   }
 
-  /*
+  /**
    * Information about listeners to persistent events is associated with
    * the extension to which they belong.  Any extension thas has such
    * listeners has a property called `persistentListeners` that is a

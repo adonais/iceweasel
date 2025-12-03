@@ -9,7 +9,6 @@
 
 #include <algorithm>
 
-#include "mozilla/Attributes.h"
 #include "nsAttrValue.h"
 #include "nsAttrValueInlines.h"
 #include "nsGenericHTMLElement.h"

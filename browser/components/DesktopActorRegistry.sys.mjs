@@ -238,6 +238,10 @@ let JSWINDOWACTORS = {
         "BackupUI:RerunEncryption": { wantUntrusted: true },
         "BackupUI:ShowBackupLocation": { wantUntrusted: true },
         "BackupUI:EditBackupLocation": { wantUntrusted: true },
+        "BackupUI:SetEmbeddedComponentPersistentData": { wantUntrusted: true },
+        "BackupUI:FlushEmbeddedComponentPersistentData": {
+          wantUntrusted: true,
+        },
       },
     },
     includeChrome: true,
@@ -523,6 +527,12 @@ let JSWINDOWACTORS = {
     },
 
     allFrames: true,
+  },
+
+  PageInfoPreview: {
+    child: {
+      esModuleURI: "resource:///actors/PageInfoPreviewChild.sys.mjs",
+    },
   },
 
   PageStyle: {

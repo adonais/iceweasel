@@ -20,7 +20,6 @@
 #define wasm_op_iter_h
 
 #include "mozilla/CompactPair.h"
-#include "mozilla/Poison.h"
 
 #include <type_traits>
 

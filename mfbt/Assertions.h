@@ -523,7 +523,7 @@ struct AssertionConditionType {
 #  define MOZ_VALIDATE_ASSERT_CONDITION_TYPE(x)
 #endif
 
-#if defined(DEBUG) || defined(MOZ_ASAN)
+#if defined(DEBUG) || defined(MOZ_ASAN) || defined(FUZZING)
 #  define MOZ_REPORT_ASSERTION_FAILURE(...) \
     MOZ_ReportAssertionFailure(__VA_ARGS__)
 #else

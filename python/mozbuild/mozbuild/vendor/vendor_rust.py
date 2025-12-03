@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, # You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import copy
 import errno
 import hashlib
 import json
@@ -16,6 +17,7 @@ from pathlib import Path
 
 import mozpack.path as mozpath
 import toml
+import tomlkit
 from looseversion import LooseVersion
 from mozboot.util import MINIMUM_RUST_VERSION
 
@@ -879,20 +881,61 @@ license file's hash.
                 )
             )
 
+        def recursive_sort(obj):
+            if isinstance(obj, tomlkit.items.Table):
+                new_obj = obj.copy()
+                body = [(k, recursive_sort(v)) for k, v in new_obj.value.body]
+                # Only order the direct elements in the Table. Anything after
+                # the first whitespace (key is None) or AoT is not expected to
+                # be a direct element. This is a more or less assumption based
+                # on the original order cargo will have written out.
+                for n, (k, v) in enumerate(body):
+                    if k is None or v.is_aot():
+                        break
+                else:
+                    n = len(body)
+                body[:n] = sorted(body[:n], key=lambda x: str(x[0]))
+                new_obj.value.body[:] = body
+                return new_obj
+            if isinstance(obj, tomlkit.items.AoT):
+                # Somehow obj.copy() yields a list instead of a AoT
+                new_obj = copy.copy(obj)
+                body = [recursive_sort(v) for v in new_obj.body]
+                new_obj.body[:] = body
+                return new_obj
+            return obj
+
         # cargo 1.89 started adding things that older versions didn't add, but
         # it's a tough sell to bump the vendoring requirement to 1.89 when we're
         # still using 1.86 on CI.
-        if self.cargo_version(cargo) >= "1.89":
+        cargo_version = self.cargo_version(cargo)
+        if cargo_version >= "1.89":
             for package in cargo_lock["package"]:
-                # Crates vendored from crates.io are affected by changes, but not
-                # those vendored from git.
-                if not package.get("source", "").startswith("registry+"):
+                source = package.get("source")
+                if not source:
                     continue
+                unlinked = []
+                modified = {}
                 package_dir = Path(vendor_dir) / package["name"]
-                # Cargo.toml.orig was not included before but now is.
-                unlinked = ["Cargo.toml.orig"]
                 with (package_dir / "Cargo.toml").open(encoding="utf-8") as fh:
-                    toml_data = toml.load(fh)
+                    toml_data = tomlkit.parse(fh.read())
+                # Crates vendored from crates.io are affected by changes from cargo 1.89,
+                # but not those vendored from git. However, crates vendored from git are
+                # affected by other changes happening starting with cargo 1.90: the
+                # metadata ends up not ordered in the same manner as it used to be.
+                if not source.startswith("registry+"):
+                    metadata = toml_data.get("package", {}).get("metadata", {})
+                    if metadata and cargo_version >= "1.90":
+                        with (package_dir / "Cargo.toml").open("wb") as fh:
+                            toml_data["package"]["metadata"] = recursive_sort(metadata)
+                            raw_data = tomlkit.dumps(toml_data).encode("utf-8")
+                            modified["Cargo.toml"] = hashlib.sha256(
+                                raw_data
+                            ).hexdigest()
+                            fh.write(raw_data)
+                else:
+                    # Cargo.toml.orig was not included before but now is.
+                    unlinked += ["Cargo.toml.orig"]
                     cargo_package = toml_data.get("package", {})
                     # A readme explicitly listed in package.readme is now included
                     # even when it's not in package.include.
@@ -908,39 +951,39 @@ license file's hash.
                                 except FileNotFoundError:
                                     pass
 
-                # dotfiles weren't included before, but now are.
-                for path in package_dir.glob("**/.*"):
-                    # The checksum file is handled separately because it needs to
-                    # be updated.
-                    if path.name == ".cargo-checksum.json":
-                        continue
-                    if path.is_dir():
-                        for root_path, dirs, files in os.walk(path, topdown=False):
-                            root = Path(root_path)
-                            for name in files:
-                                to_unlink = root / name
-                                try:
-                                    to_unlink.unlink()
-                                    unlinked.append(
-                                        mozpath.normsep(
-                                            str(to_unlink.relative_to(package_dir))
+                    # dotfiles weren't included before, but now are.
+                    for path in package_dir.glob("**/.*"):
+                        # The checksum file is handled separately because it needs to
+                        # be updated.
+                        if path.name == ".cargo-checksum.json":
+                            continue
+                        if path.is_dir():
+                            for root_path, dirs, files in os.walk(path, topdown=False):
+                                root = Path(root_path)
+                                for name in files:
+                                    to_unlink = root / name
+                                    try:
+                                        to_unlink.unlink()
+                                        unlinked.append(
+                                            mozpath.normsep(
+                                                str(to_unlink.relative_to(package_dir))
+                                            )
                                         )
-                                    )
-                                except FileNotFoundError:
-                                    pass
-                            for name in dirs:
-                                try:
-                                    (root / name).rmdir()
-                                except OSError:
-                                    pass
-                    else:
-                        try:
-                            path.unlink()
-                            unlinked.append(
-                                mozpath.normsep(str(path.relative_to(package_dir)))
-                            )
-                        except FileNotFoundError:
-                            pass
+                                    except FileNotFoundError:
+                                        pass
+                                for name in dirs:
+                                    try:
+                                        (root / name).rmdir()
+                                    except OSError:
+                                        pass
+                        else:
+                            try:
+                                path.unlink()
+                                unlinked.append(
+                                    mozpath.normsep(str(path.relative_to(package_dir)))
+                                )
+                            except FileNotFoundError:
+                                pass
 
                 # Update the checksums with the changes we made.
                 checksum_json = package_dir / ".cargo-checksum.json"
@@ -951,6 +994,8 @@ license file's hash.
                         del checksum_data["files"][path]
                     except KeyError:
                         pass
+                for path, sha256 in modified.items():
+                    checksum_data["files"][path] = sha256
                 with checksum_json.open(mode="w", encoding="utf-8") as fh:
                     json.dump(checksum_data, fh, separators=(",", ":"))
 

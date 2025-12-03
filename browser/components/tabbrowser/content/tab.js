@@ -273,6 +273,14 @@
       gBrowser._tabAttrModified(this, ["undiscardable"]);
     }
 
+    get animationsEnabled() {
+      return this.style.transition == "";
+    }
+
+    set animationsEnabled(val) {
+      this.style.transition = val ? "" : "none";
+    }
+
     get isEmpty() {
       // Determines if a tab is "empty", usually used in the context of determining
       // if it's ok to close the tab.
@@ -374,17 +382,12 @@
     }
 
     get group() {
-      if (this.parentElement?.tagName == "tab-group") {
-        return this.parentElement;
-      }
-      return null;
+      return this.closest("tab-group");
     }
 
     get splitview() {
-      if (
-        this.parentElement?.parentElement?.tagName == "tab-split-view-wrapper"
-      ) {
-        return this.parentElement.parentElement;
+      if (this.parentElement?.tagName == "tab-split-view-wrapper") {
+        return this.parentElement;
       }
       return null;
     }

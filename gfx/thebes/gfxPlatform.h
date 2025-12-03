@@ -135,16 +135,12 @@ const uint32_t kMaxLenPrefLangList = 32;
 
 inline const char* GetBackendName(mozilla::gfx::BackendType aBackend) {
   switch (aBackend) {
-    case mozilla::gfx::BackendType::DIRECT2D:
-      return "direct2d";
     case mozilla::gfx::BackendType::CAIRO:
       return "cairo";
     case mozilla::gfx::BackendType::SKIA:
       return "skia";
     case mozilla::gfx::BackendType::RECORDING:
       return "recording";
-    case mozilla::gfx::BackendType::DIRECT2D1_1:
-      return "direct2d 1.1";
     case mozilla::gfx::BackendType::WEBRENDER_TEXT:
       return "webrender text";
     case mozilla::gfx::BackendType::NONE:
@@ -288,7 +284,8 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static already_AddRefed<DrawTarget> CreateDrawTargetForData(
       unsigned char* aData, const mozilla::gfx::IntSize& aSize, int32_t aStride,
-      mozilla::gfx::SurfaceFormat aFormat, bool aUninitialized = false);
+      mozilla::gfx::SurfaceFormat aFormat, bool aUninitialized = false,
+      bool aIsClear = false);
 
   /**
    * Returns true if we should use Azure to render content with aTarget. For

@@ -407,7 +407,7 @@ newtab-wallpaper-abstract-purple-green = Paars en groene lichtgradiënt
 newtab-wallpaper-abstract-blue-purple-waves = Blauwe en paarse golvende vormen
 newtab-wallpaper-abstract-black-waves = Zwarte golvende vormen
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Foto’s
 newtab-wallpaper-beach-at-sunrise = Strand bij zonsopgang
@@ -436,6 +436,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -676,10 +680,6 @@ newtab-widget-timer-mode-focus =
     .label = Focus
 newtab-widget-timer-mode-break =
     .label = Pauze
-newtab-widget-timer-play =
-    .title = Afspelen
-newtab-widget-timer-pause =
-    .title = Pauzeren
 newtab-widget-timer-label-play =
     .label = Afspelen
 newtab-widget-timer-label-pause =

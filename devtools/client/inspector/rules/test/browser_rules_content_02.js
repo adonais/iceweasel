@@ -41,6 +41,7 @@ add_task(async function () {
     },
     {
       selector: "element",
+      inherited: true,
       declarations: [
         {
           name: "color",
@@ -54,6 +55,7 @@ add_task(async function () {
     },
     {
       selector: "element",
+      inherited: true,
       declarations: [
         {
           name: "color",
@@ -67,6 +69,7 @@ add_task(async function () {
     },
     {
       selector: "element",
+      inherited: true,
       declarations: [
         {
           name: "color",

@@ -65,6 +65,15 @@ class AndroidEmulatorTest(
                 },
             ],
             [
+                ["--timeout-factor"],
+                {
+                    "action": "store",
+                    "dest": "timeout_factor",
+                    "default": None,
+                    "help": "Multiplier for test timeout values",
+                },
+            ],
+            [
                 ["--enable-xorigin-tests"],
                 {
                     "action": "store_true",
@@ -127,6 +136,15 @@ class AndroidEmulatorTest(
                     "help": "Strategy used to determine whether or not a particular site should"
                     "load into a webIsolated content process, see "
                     "fission.webContentIsolationStrategy.",
+                },
+            ],
+            [
+                ["--enable-isolated-zygote-process"],
+                {
+                    "action": "store_true",
+                    "dest": "enable_isolated_zygote_process",
+                    "default": False,
+                    "help": "Run with app Zygote preloading enabled.",
                 },
             ],
             [
@@ -196,6 +214,7 @@ class AndroidEmulatorTest(
         self.test_suite = suite
         self.this_chunk = c.get("this_chunk")
         self.total_chunks = c.get("total_chunks")
+        self.timeout_factor = c.get("timeout_factor")
         self.xre_path = None
         self.device_serial = "emulator-5554"
         self.log_raw_level = c.get("log_raw_level")
@@ -206,6 +225,7 @@ class AndroidEmulatorTest(
         self.disable_e10s = c.get("disable_e10s")
         self.disable_fission = c.get("disable_fission")
         self.web_content_isolation_strategy = c.get("web_content_isolation_strategy")
+        self.enable_isolated_zygote_process = c.get("enable_isolated_zygote_process")
         self.extra_prefs = c.get("extra_prefs")
         self.test_tags = c.get("test_tags")
 
@@ -347,6 +367,9 @@ class AndroidEmulatorTest(
         if c["disable_fission"] and category not in ["gtest", "cppunittest"]:
             cmd.append("--disable-fission")
 
+        if c["enable_isolated_zygote_process"]:
+            cmd.append("--enable-isolated-zygote-process")
+
         if "web_content_isolation_strategy" in c:
             cmd.append(
                 "--web-content-isolation-strategy=%s"
@@ -365,6 +388,9 @@ class AndroidEmulatorTest(
                     cmd.extend(["--this-chunk", self.this_chunk])
                 if self.total_chunks is not None:
                     cmd.extend(["--total-chunks", self.total_chunks])
+
+        if self.timeout_factor is not None:
+            cmd.extend(["--timeout-factor", self.timeout_factor])
 
         if category not in SUITE_NO_E10S:
             if category in SUITE_DEFAULT_E10S and not c["e10s"]:

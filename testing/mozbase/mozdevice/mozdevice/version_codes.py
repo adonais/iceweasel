@@ -77,3 +77,5 @@ TIRAMISU = 33
 UPSIDE_DOWN_CAKE = 34
 # 15 (Vanilla Ice Cream)
 VANILLA_ICE_CREAM = 35
+# 16 (Baklava)
+BAKLAVA = 36

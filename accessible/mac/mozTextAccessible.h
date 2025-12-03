@@ -7,22 +7,10 @@
 
 #import "mozAccessible.h"
 
-@interface mozTextAccessible : mozAccessible
-
-// override
-- (id)moxValue;
-
-// override
-- (id)moxRequired;
-
-// override
-- (NSString*)moxInvalid;
+@interface mozAccessible (TextField)
 
 // override
 - (NSNumber*)moxInsertionPointLineNumber;
-
-// override
-- (NSString*)moxRole;
 
 // override
 - (NSNumber*)moxNumberOfCharacters;
@@ -35,9 +23,6 @@
 
 // override
 - (NSValue*)moxVisibleCharacterRange;
-
-// override
-- (BOOL)moxBlockSelector:(SEL)selector;
 
 // override
 - (void)moxSetValue:(id)value;
@@ -66,16 +51,15 @@
 // override
 - (NSValue*)moxBoundsForRange:(NSValue*)range;
 
-#pragma mark - mozAccessible
-
 // override
+- (BOOL)moxIsTextField;
+
+- (BOOL)blockTextFieldMethod:(SEL)selector;
+
 - (void)handleAccessibleTextChangeEvent:(NSString*)change
                                inserted:(BOOL)isInserted
                             inContainer:(mozilla::a11y::Accessible*)container
                                      at:(int32_t)start;
-
-// override
-- (void)handleAccessibleEvent:(uint32_t)eventType;
 
 @end
 

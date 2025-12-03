@@ -52,7 +52,6 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -329,12 +328,7 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
       mSelectionActionDelegate = new BasicSelectionActionDelegate(activity);
     }
 
-    if (Build.VERSION.SDK_INT >= 26) {
-      mAutofillDelegate = new AndroidAutofillDelegate();
-    } else {
-      // We don't support Autofill on SDK < 26
-      mAutofillDelegate = new Autofill.Delegate() {};
-    }
+    mAutofillDelegate = new AndroidAutofillDelegate();
     mPrintDelegate = new GeckoViewPrintDelegate();
   }
 
@@ -859,10 +853,7 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
 
   @Override
   public Handler getHandler() {
-    if (Build.VERSION.SDK_INT >= 24 || mSession == null) {
-      return super.getHandler();
-    }
-    return mSession.getTextInput().getHandler(super.getHandler());
+    return super.getHandler();
   }
 
   @Override
@@ -992,7 +983,6 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
   }
 
   @Override
-  @RequiresApi(Build.VERSION_CODES.O)
   public void onProvideAutofillVirtualStructure(final ViewStructure structure, final int flags) {
     if (mSession == null) {
       return;
@@ -1006,7 +996,6 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
   }
 
   @Override
-  @RequiresApi(Build.VERSION_CODES.O)
   public void autofill(@NonNull final SparseArray<AutofillValue> values) {
     // Note: we can't use mSession.getAutofillSession() because the app might have swapped
     // the session under us between the onProvideAutofillVirtualStructure and this call
@@ -1055,7 +1044,6 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
    *
    * @param enabled Whether or not Android autofill is enabled for this view.
    */
-  @RequiresApi(Build.VERSION_CODES.O)
   public void setAutofillEnabled(final boolean enabled) {
     mAutofillEnabled = enabled;
 
@@ -1071,12 +1059,10 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
   /**
    * @return Whether or not Android autofill is enabled for this view.
    */
-  @RequiresApi(Build.VERSION_CODES.O)
   public boolean getAutofillEnabled() {
     return mAutofillEnabled;
   }
 
-  @RequiresApi(Build.VERSION_CODES.O)
   private class AndroidAutofillDelegate implements Autofill.Delegate {
     AutofillManager mAutofillManager;
     boolean mDisabled = false;

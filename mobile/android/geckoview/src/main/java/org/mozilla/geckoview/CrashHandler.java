@@ -12,7 +12,6 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 import android.util.Log;
@@ -354,7 +353,6 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
       @NonNull final String dumpFile, @NonNull final String extraFile) {
     try {
       final Context context = getAppContext();
-      final ProcessBuilder pb;
 
       if (mHandlerService == null) {
         Log.w(LOGTAG, "No crash handler service defined, unable to report crash");
@@ -371,67 +369,32 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
         intent.putExtra(GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE, "main");
         intent.setClass(context, mHandlerService);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-          context.startForegroundService(intent);
-        } else {
-          context.startService(intent);
-        }
+        context.startForegroundService(intent);
         return true;
       }
 
-      final int deviceSdkVersion = Build.VERSION.SDK_INT;
-      if (deviceSdkVersion < 17) {
-        pb =
-            new ProcessBuilder(
-                "/system/bin/am",
-                "startservice",
-                "-a",
-                GeckoRuntime.ACTION_CRASHED,
-                "-n",
-                getAppPackageName() + '/' + mHandlerService.getName(),
-                "--es",
-                GeckoRuntime.EXTRA_MINIDUMP_PATH,
-                dumpFile,
-                "--es",
-                GeckoRuntime.EXTRA_EXTRAS_PATH,
-                extraFile,
-                "--es",
-                GeckoRuntime.EXTRA_CRASH_PROCESS_VISIBILITY,
-                GeckoRuntime.CRASHED_PROCESS_VISIBILITY_MAIN,
-                "--es",
-                GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE,
-                "main");
-      } else {
-        final String startServiceCommand;
-        if (deviceSdkVersion >= 26) {
-          startServiceCommand = "start-foreground-service";
-        } else {
-          startServiceCommand = "startservice";
-        }
-
-        pb =
-            new ProcessBuilder(
-                "/system/bin/am",
-                startServiceCommand,
-                "--user", /* USER_CURRENT_OR_SELF */
-                "-3",
-                "-a",
-                GeckoRuntime.ACTION_CRASHED,
-                "-n",
-                getAppPackageName() + '/' + mHandlerService.getName(),
-                "--es",
-                GeckoRuntime.EXTRA_MINIDUMP_PATH,
-                dumpFile,
-                "--es",
-                GeckoRuntime.EXTRA_EXTRAS_PATH,
-                extraFile,
-                "--es",
-                GeckoRuntime.EXTRA_CRASH_PROCESS_VISIBILITY,
-                GeckoRuntime.CRASHED_PROCESS_VISIBILITY_MAIN,
-                "--es",
-                GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE,
-                "main");
-      }
+      final ProcessBuilder pb =
+          new ProcessBuilder(
+              "/system/bin/am",
+              "start-foreground-service",
+              "--user",
+              /* USER_CURRENT_OR_SELF */ "-3",
+              "-a",
+              GeckoRuntime.ACTION_CRASHED,
+              "-n",
+              getAppPackageName() + '/' + mHandlerService.getName(),
+              "--es",
+              GeckoRuntime.EXTRA_MINIDUMP_PATH,
+              dumpFile,
+              "--es",
+              GeckoRuntime.EXTRA_EXTRAS_PATH,
+              extraFile,
+              "--es",
+              GeckoRuntime.EXTRA_CRASH_PROCESS_VISIBILITY,
+              GeckoRuntime.CRASHED_PROCESS_VISIBILITY_MAIN,
+              "--es",
+              GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE,
+              "main");
 
       pb.start().waitFor();
 

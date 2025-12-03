@@ -204,13 +204,8 @@ nsMacSharingService::ShareUrl(const nsAString& aServiceName,
     [shareDelegate release];
   }
 
-  // Twitter likes the the title as an additional share item
-  NSArray* toShare = [[service name] isEqual:NSSharingServiceNamePostOnTwitter]
-                         ? @[ pageUrl, pageTitle ]
-                         : @[ pageUrl ];
-
   [service setSubject:pageTitle];
-  [service performWithItems:toShare];
+  [service performWithItems:@[ pageUrl ]];
 
   return NS_OK;
 

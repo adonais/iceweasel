@@ -105,7 +105,6 @@ export const DefaultMeta = ({
   mayHaveThumbsUpDown,
   onThumbsUpClick,
   onThumbsDownClick,
-  isListCard,
   state,
   format,
   topic,
@@ -113,12 +112,10 @@ export const DefaultMeta = ({
   showTopics,
   icon_src,
   refinedCardsLayout,
+  tabIndex,
 }) => {
   const shouldHaveThumbs =
-    !isListCard &&
-    format !== "rectangle" &&
-    mayHaveSectionsCards &&
-    mayHaveThumbsUpDown;
+    format !== "rectangle" && mayHaveSectionsCards && mayHaveThumbsUpDown;
   const shouldHaveFooterSection =
     isSectionsCard && (shouldHaveThumbs || showTopics);
 
@@ -149,8 +146,7 @@ export const DefaultMeta = ({
           excerpt && <p className="excerpt clamp">{excerpt}</p>
         )}
       </div>
-      {!isListCard &&
-        format !== "rectangle" &&
+      {format !== "rectangle" &&
         !mayHaveSectionsCards &&
         mayHaveThumbsUpDown &&
         !refinedCardsLayout && (
@@ -160,6 +156,7 @@ export const DefaultMeta = ({
             sponsor={sponsor}
             isThumbsDownActive={state.isThumbsDownActive}
             isThumbsUpActive={state.isThumbsUpActive}
+            tabIndex={tabIndex}
           />
         )}
       {(shouldHaveFooterSection || refinedCardsLayout) && (
@@ -186,6 +183,7 @@ export const DefaultMeta = ({
               isThumbsDownActive={state.isThumbsDownActive}
               isThumbsUpActive={state.isThumbsUpActive}
               refinedCardsLayout={refinedCardsLayout}
+              tabIndex={tabIndex}
             />
           )}
           {showTopics && (
@@ -333,41 +331,68 @@ export class _DSCard extends React.PureComponent {
   onLinkClick() {
     const matchesSelectedTopic = this.doesLinkTopicMatchSelectedTopic();
     if (this.props.dispatch) {
-      if (this.props.isFakespot) {
-        this.props.dispatch(
-          ac.DiscoveryStreamUserEvent({
-            event: "FAKESPOT_CLICK",
-            value: {
-              product_id: this.props.id,
-              category: this.props.category || "",
-            },
-          })
-        );
-      } else {
-        this.props.dispatch(
-          ac.DiscoveryStreamUserEvent({
-            event: "CLICK",
-            source: this.props.type.toUpperCase(),
-            action_position: this.props.pos,
-            value: {
-              event_source: "card",
-              card_type: this.props.flightId ? "spoc" : "organic",
-              recommendation_id: this.props.recommendation_id,
-              tile_id: this.props.id,
+      this.props.dispatch(
+        ac.DiscoveryStreamUserEvent({
+          event: "CLICK",
+          source: this.props.type.toUpperCase(),
+          action_position: this.props.pos,
+          value: {
+            event_source: "card",
+            card_type: this.props.flightId ? "spoc" : "organic",
+            recommendation_id: this.props.recommendation_id,
+            tile_id: this.props.id,
+            ...(this.props.shim && this.props.shim.click
+              ? { shim: this.props.shim.click }
+              : {}),
+            fetchTimestamp: this.props.fetchTimestamp,
+            firstVisibleTimestamp: this.props.firstVisibleTimestamp,
+            corpus_item_id: this.props.corpus_item_id,
+            scheduled_corpus_item_id: this.props.scheduled_corpus_item_id,
+            recommended_at: this.props.recommended_at,
+            received_rank: this.props.received_rank,
+            topic: this.props.topic,
+            features: this.props.features,
+            matches_selected_topic: matchesSelectedTopic,
+            selected_topics: this.props.selectedTopics,
+            ...(this.props.format
+              ? { format: this.props.format }
+              : {
+                  format: getActiveCardSize(
+                    window.innerWidth,
+                    this.props.sectionsClassNames,
+                    this.props.section,
+                    this.props.flightId
+                  ),
+                }),
+            ...(this.props.section
+              ? {
+                  section: this.props.section,
+                  section_position: this.props.sectionPosition,
+                  is_section_followed: this.props.sectionFollowed,
+                  layout_name: this.props.sectionLayoutName,
+                }
+              : {}),
+          },
+        })
+      );
+
+      this.props.dispatch(
+        ac.ImpressionStats({
+          source: this.props.type.toUpperCase(),
+          click: 0,
+          window_inner_width: this.props.windowObj.innerWidth,
+          window_inner_height: this.props.windowObj.innerHeight,
+          tiles: [
+            {
+              id: this.props.id,
+              pos: this.props.pos,
               ...(this.props.shim && this.props.shim.click
                 ? { shim: this.props.shim.click }
                 : {}),
-              fetchTimestamp: this.props.fetchTimestamp,
-              firstVisibleTimestamp: this.props.firstVisibleTimestamp,
-              corpus_item_id: this.props.corpus_item_id,
-              scheduled_corpus_item_id: this.props.scheduled_corpus_item_id,
-              recommended_at: this.props.recommended_at,
-              received_rank: this.props.received_rank,
+              type: this.props.flightId ? "spoc" : "organic",
+              recommendation_id: this.props.recommendation_id,
               topic: this.props.topic,
-              features: this.props.features,
-              matches_selected_topic: matchesSelectedTopic,
               selected_topics: this.props.selectedTopics,
-              is_list_card: this.props.isListCard,
               ...(this.props.format
                 ? { format: this.props.format }
                 : {
@@ -383,53 +408,12 @@ export class _DSCard extends React.PureComponent {
                     section: this.props.section,
                     section_position: this.props.sectionPosition,
                     is_section_followed: this.props.sectionFollowed,
-                    layout_name: this.props.sectionLayoutName,
                   }
                 : {}),
             },
-          })
-        );
-
-        this.props.dispatch(
-          ac.ImpressionStats({
-            source: this.props.type.toUpperCase(),
-            click: 0,
-            window_inner_width: this.props.windowObj.innerWidth,
-            window_inner_height: this.props.windowObj.innerHeight,
-            tiles: [
-              {
-                id: this.props.id,
-                pos: this.props.pos,
-                ...(this.props.shim && this.props.shim.click
-                  ? { shim: this.props.shim.click }
-                  : {}),
-                type: this.props.flightId ? "spoc" : "organic",
-                recommendation_id: this.props.recommendation_id,
-                topic: this.props.topic,
-                selected_topics: this.props.selectedTopics,
-                is_list_card: this.props.isListCard,
-                ...(this.props.format
-                  ? { format: this.props.format }
-                  : {
-                      format: getActiveCardSize(
-                        window.innerWidth,
-                        this.props.sectionsClassNames,
-                        this.props.section,
-                        this.props.flightId
-                      ),
-                    }),
-                ...(this.props.section
-                  ? {
-                      section: this.props.section,
-                      section_position: this.props.sectionPosition,
-                      is_section_followed: this.props.sectionFollowed,
-                    }
-                  : {}),
-              },
-            ],
-          })
-        );
-      }
+          ],
+        })
+      );
     }
   }
 
@@ -773,8 +757,6 @@ export class _DSCard extends React.PureComponent {
       isRecentSave,
       DiscoveryStream,
       Prefs,
-      isListCard,
-      isFakespot,
       mayHaveSectionsCards,
       format,
     } = this.props;
@@ -806,9 +788,7 @@ export class _DSCard extends React.PureComponent {
       }
       return (
         <div
-          className={`ds-card placeholder ${placeholderClassName} ${
-            isListCard ? "list-card-placeholder" : ""
-          } ${refinedCardsClassName}`}
+          className={`ds-card placeholder ${placeholderClassName} ${refinedCardsClassName}`}
           ref={this.setPlaceholderRef}
         >
           {placeholderElements}
@@ -861,8 +841,6 @@ export class _DSCard extends React.PureComponent {
     const imageGradientClassName = imageGradient
       ? `ds-card-image-gradient`
       : ``;
-    const listCardClassName = isListCard ? `list-feed-card` : ``;
-    const fakespotClassName = isFakespot ? `fakespot` : ``;
     const sectionsCardsClassName = [
       mayHaveSectionsCards ? `sections-card-ui` : ``,
       this.props.sectionsClassNames,
@@ -876,15 +854,13 @@ export class _DSCard extends React.PureComponent {
     let images = this.renderImage({ sizes: this.standardCardImageSizes });
     if (isMediumRectangle) {
       images = this.renderImage();
-    } else if (isListCard) {
-      images = this.renderImage({ sizes: this.listCardImageSizes });
     } else if (sectionsEnabled) {
       images = this.renderSectionCardImages();
     }
 
     return (
       <article
-        className={`ds-card ${listCardClassName} ${fakespotClassName} ${sectionsCardsClassName} ${compactImagesClassName} ${imageGradientClassName} ${titleLinesName} ${descLinesClassName} ${spocFormatClassName} ${ctaButtonClassName} ${ctaButtonVariantClassName} ${refinedCardsClassName}`}
+        className={`ds-card ${sectionsCardsClassName} ${compactImagesClassName} ${imageGradientClassName} ${titleLinesName} ${descLinesClassName} ${spocFormatClassName} ${ctaButtonClassName} ${ctaButtonVariantClassName} ${refinedCardsClassName}`}
         ref={this.setContextMenuButtonHostRef}
         data-position-one={this.props["data-position-one"]}
         data-position-two={this.props["data-position-one"]}
@@ -898,11 +874,12 @@ export class _DSCard extends React.PureComponent {
           url={this.props.url}
           title={this.props.title}
           isSponsored={!!this.props.flightId}
+          tabIndex={this.props.tabIndex}
+          onFocus={this.props.onFocus}
         >
           {this.props.showTopics &&
             !this.props.mayHaveSectionsCards &&
             this.props.topic &&
-            !isListCard &&
             !refinedCardsLayout && (
               <span
                 className="ds-card-topic"
@@ -927,9 +904,7 @@ export class _DSCard extends React.PureComponent {
                 received_rank: this.props.received_rank,
                 topic: this.props.topic,
                 features: this.props.features,
-                is_list_card: isListCard,
                 ...(format ? { format } : {}),
-                isFakespot,
                 category: this.props.category,
                 ...(this.props.section
                   ? {
@@ -946,7 +921,6 @@ export class _DSCard extends React.PureComponent {
               },
             ]}
             dispatch={this.props.dispatch}
-            isFakespot={isFakespot}
             source={this.props.type}
             firstVisibleTimestamp={this.props.firstVisibleTimestamp}
           />
@@ -954,92 +928,78 @@ export class _DSCard extends React.PureComponent {
           {ctaButtonVariant === "variant-b" && (
             <div className="cta-header">Shop Now</div>
           )}
-          {isFakespot ? (
-            <div className="meta">
-              <div className="info-wrap">
-                <h3 className="title clamp">{this.props.title}</h3>
-              </div>
-            </div>
-          ) : (
-            <DefaultMeta
-              source={source}
-              title={this.props.title}
-              excerpt={excerpt}
-              newSponsoredLabel={newSponsoredLabel}
-              timeToRead={timeToRead}
-              context={this.props.context}
-              context_type={this.props.context_type}
-              sponsor={this.props.sponsor}
-              sponsored_by_override={this.props.sponsored_by_override}
-              ctaButtonVariant={ctaButtonVariant}
-              dispatch={this.props.dispatch}
-              mayHaveThumbsUpDown={this.props.mayHaveThumbsUpDown}
-              mayHaveSectionsCards={this.props.mayHaveSectionsCards}
-              onThumbsUpClick={this.onThumbsUpClick}
-              onThumbsDownClick={this.onThumbsDownClick}
-              state={this.state}
-              isListCard={isListCard}
-              showTopics={!refinedCardsLayout && this.props.showTopics}
-              isSectionsCard={
-                this.props.mayHaveSectionsCards &&
-                this.props.topic &&
-                !isListCard
-              }
-              format={format}
-              topic={this.props.topic}
-              icon_src={faviconSrc}
-              refinedCardsLayout={refinedCardsLayout}
-            />
-          )}
+          <DefaultMeta
+            source={source}
+            title={this.props.title}
+            excerpt={excerpt}
+            newSponsoredLabel={newSponsoredLabel}
+            timeToRead={timeToRead}
+            context={this.props.context}
+            context_type={this.props.context_type}
+            sponsor={this.props.sponsor}
+            sponsored_by_override={this.props.sponsored_by_override}
+            ctaButtonVariant={ctaButtonVariant}
+            dispatch={this.props.dispatch}
+            mayHaveThumbsUpDown={this.props.mayHaveThumbsUpDown}
+            mayHaveSectionsCards={this.props.mayHaveSectionsCards}
+            onThumbsUpClick={this.onThumbsUpClick}
+            onThumbsDownClick={this.onThumbsDownClick}
+            state={this.state}
+            showTopics={!refinedCardsLayout && this.props.showTopics}
+            isSectionsCard={this.props.mayHaveSectionsCards && this.props.topic}
+            format={format}
+            topic={this.props.topic}
+            icon_src={faviconSrc}
+            refinedCardsLayout={refinedCardsLayout}
+            tabIndex={this.props.tabIndex}
+          />
         </SafeAnchor>
         <div className="card-stp-button-hover-background">
           <div className="card-stp-button-position-wrapper">
-            {!isFakespot && (
-              <DSLinkMenu
-                id={this.props.id}
-                index={this.props.pos}
-                dispatch={this.props.dispatch}
-                url={this.props.url}
-                title={this.props.title}
-                source={source}
-                type={this.props.type}
-                card_type={this.props.flightId ? "spoc" : "organic"}
-                pocket_id={this.props.pocket_id}
-                shim={this.props.shim}
-                bookmarkGuid={this.props.bookmarkGuid}
-                flightId={this.props.flightId}
-                showPrivacyInfo={!!this.props.flightId}
-                onMenuUpdate={this.onMenuUpdate}
-                onMenuShow={this.onMenuShow}
-                isRecentSave={isRecentSave}
-                recommendation_id={this.props.recommendation_id}
-                tile_id={this.props.id}
-                block_key={this.props.id}
-                corpus_item_id={this.props.corpus_item_id}
-                scheduled_corpus_item_id={this.props.scheduled_corpus_item_id}
-                recommended_at={this.props.recommended_at}
-                received_rank={this.props.received_rank}
-                is_list_card={this.props.isListCard}
-                section={this.props.section}
-                section_position={this.props.sectionPosition}
-                is_section_followed={this.props.sectionFollowed}
-                fetchTimestamp={this.props.fetchTimestamp}
-                firstVisibleTimestamp={this.props.firstVisibleTimestamp}
-                format={
-                  format
-                    ? format
-                    : getActiveCardSize(
-                        window.innerWidth,
-                        this.props.sectionsClassNames,
-                        this.props.section,
-                        this.props.flightId
-                      )
-                }
-                isSectionsCard={this.props.mayHaveSectionsCards}
-                topic={this.props.topic}
-                selected_topics={this.props.selected_topics}
-              />
-            )}
+            <DSLinkMenu
+              id={this.props.id}
+              index={this.props.pos}
+              dispatch={this.props.dispatch}
+              url={this.props.url}
+              title={this.props.title}
+              source={source}
+              type={this.props.type}
+              card_type={this.props.flightId ? "spoc" : "organic"}
+              pocket_id={this.props.pocket_id}
+              shim={this.props.shim}
+              bookmarkGuid={this.props.bookmarkGuid}
+              flightId={this.props.flightId}
+              showPrivacyInfo={!!this.props.flightId}
+              onMenuUpdate={this.onMenuUpdate}
+              onMenuShow={this.onMenuShow}
+              isRecentSave={isRecentSave}
+              recommendation_id={this.props.recommendation_id}
+              tile_id={this.props.id}
+              block_key={this.props.id}
+              corpus_item_id={this.props.corpus_item_id}
+              scheduled_corpus_item_id={this.props.scheduled_corpus_item_id}
+              recommended_at={this.props.recommended_at}
+              received_rank={this.props.received_rank}
+              section={this.props.section}
+              section_position={this.props.sectionPosition}
+              is_section_followed={this.props.sectionFollowed}
+              fetchTimestamp={this.props.fetchTimestamp}
+              firstVisibleTimestamp={this.props.firstVisibleTimestamp}
+              format={
+                format
+                  ? format
+                  : getActiveCardSize(
+                      window.innerWidth,
+                      this.props.sectionsClassNames,
+                      this.props.section,
+                      this.props.flightId
+                    )
+              }
+              isSectionsCard={this.props.mayHaveSectionsCards}
+              topic={this.props.topic}
+              selected_topics={this.props.selected_topics}
+              tabIndex={this.props.tabIndex}
+            />
           </div>
         </div>
       </article>

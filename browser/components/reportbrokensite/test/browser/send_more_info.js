@@ -152,7 +152,6 @@ async function reformatExpectedWebCompatInfo(tab, overrides) {
 
   const { gfxData } = reformatted.details.additionalData;
   for (const optional of [
-    "direct2DEnabled",
     "directWriteEnabled",
     "directWriteVersion",
     "clearTypeParameters",

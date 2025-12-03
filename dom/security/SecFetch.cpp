@@ -202,13 +202,13 @@ bool IsSameSite(nsIChannel* aHTTPChannel) {
   nsAutoCString hostDomain;
   nsCOMPtr<nsILoadInfo> loadInfo = aHTTPChannel->LoadInfo();
   nsresult rv = loadInfo->TriggeringPrincipal()->GetBaseDomain(hostDomain);
-  mozilla::Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 
   nsAutoCString channelDomain;
   nsCOMPtr<nsIURI> channelURI;
   NS_GetFinalChannelURI(aHTTPChannel, getter_AddRefs(channelURI));
   rv = thirdPartyUtil->GetBaseDomain(channelURI, channelDomain);
-  mozilla::Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 
   // if the initial request is not same-site, or not https, we can
   // return here because we already know it's not a same-site request
@@ -302,7 +302,7 @@ void mozilla::dom::SecFetch::AddSecFetchDest(nsIHttpChannel* aHTTPChannel) {
 
   nsresult rv =
       aHTTPChannel->SetRequestHeader("Sec-Fetch-Dest"_ns, dest, false);
-  mozilla::Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 }
 
 void mozilla::dom::SecFetch::AddSecFetchMode(nsIHttpChannel* aHTTPChannel) {
@@ -324,7 +324,7 @@ void mozilla::dom::SecFetch::AddSecFetchMode(nsIHttpChannel* aHTTPChannel) {
 
   nsresult rv =
       aHTTPChannel->SetRequestHeader("Sec-Fetch-Mode"_ns, mode, false);
-  mozilla::Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 }
 
 void mozilla::dom::SecFetch::AddSecFetchSite(nsIHttpChannel* aHTTPChannel) {
@@ -346,7 +346,7 @@ void mozilla::dom::SecFetch::AddSecFetchSite(nsIHttpChannel* aHTTPChannel) {
 
   nsresult rv =
       aHTTPChannel->SetRequestHeader("Sec-Fetch-Site"_ns, site, false);
-  mozilla::Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 }
 
 void mozilla::dom::SecFetch::AddSecFetchUser(nsIHttpChannel* aHTTPChannel) {
@@ -369,7 +369,7 @@ void mozilla::dom::SecFetch::AddSecFetchUser(nsIHttpChannel* aHTTPChannel) {
   nsAutoCString user("?1");
   nsresult rv =
       aHTTPChannel->SetRequestHeader("Sec-Fetch-User"_ns, user, false);
-  mozilla::Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 }
 
 void mozilla::dom::SecFetch::AddSecFetchHeader(nsIHttpChannel* aHTTPChannel) {

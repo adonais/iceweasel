@@ -21,8 +21,10 @@ skip-if = ["os == 'android'"] # Disabled due to crashes (see bug 1331366)
 tags = "addons"
 
 ["test_CoveragePing.js"]
+skip-if = ["os == 'android'"] # Legacy telemetry is always disabled on Android
 
 ["test_EventPing.js"]
+skip-if = ["os == 'android'"] # Legacy telemetry is always disabled on Android
 tags = "coverage"
 
 ["test_HealthPing.js"]
@@ -33,8 +35,10 @@ skip-if = [
 tags = "addons"
 
 ["test_MigratePendingPings.js"]
+skip-if = ["os == 'android'"] # Legacy telemetry is always disabled on Android
 
 ["test_PingAPI.js"]
+skip-if = ["os == 'android'"] # Legacy telemetry is always disabled on Android
 
 ["test_PingSender.js"]
 skip-if = ["os == 'android'"]
@@ -72,8 +76,10 @@ skip-if = ["os == 'android' && processor == 'x86_64'"]  # Disabled as Android/Ge
 tags = "addons"
 
 ["test_TelemetryController_idle.js"]
+skip-if = ["os == 'android'"] # Legacy telemetry is always disabled on Android
 
 ["test_TelemetryEnvironment.js"]
+requesttimeoutfactor = 2  # Slow on Windows
 skip-if = [
   "os == 'android'",
   "os == 'win' && msix", # https://bugzilla.mozilla.org/show_bug.cgi?id=1807929
@@ -101,6 +107,7 @@ skip-if = ["os == 'win' && msix"] # https://bugzilla.mozilla.org/show_bug.cgi?id
 ["test_TelemetryScalars_impressionId.js"]
 
 ["test_TelemetrySend.js"]
+requesttimeoutfactor = 3  # Slow on Windows
 skip-if = ["os == 'linux' && ccov"] # Bug 1701874
 
 ["test_TelemetrySendOldPings.js"]
@@ -115,6 +122,7 @@ skip-if = ["os == 'linux' && verify && debug"]
 skip-if = ["os == 'android'"]
 
 ["test_TelemetrySession_activeTicks.js"]
+skip-if = ["os == 'android'"] # Legacy telemetry is always disabled on Android
 
 ["test_TelemetryTimestamps.js"]
 

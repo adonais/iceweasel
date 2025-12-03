@@ -16,12 +16,8 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/RemoteCDMParent.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
-
-using AMediaCodecCryptoInfoFnPtr_setPattern = void (*)(AMediaCodecCryptoInfo*,
-                                                       cryptoinfo_pattern_t*);
 
 class MediaDrmCrypto final {
   template <typename T, typename... Args>
@@ -150,8 +146,6 @@ class MediaDrmRemoteCDMParent final : public RemoteCDMParent {
 
   using DrmCallbackMap = std::map<AMediaDrm*, MediaDrmRemoteCDMParent*>;
   static StaticAutoPtr<DrmCallbackMap> sCbMap;
-  static AMediaCodecCryptoInfoFnPtr_setPattern
-      sAMediaCodecCryptoInfo_setPattern;
 
   struct SessionEntry {
     AMediaDrmSessionId id;

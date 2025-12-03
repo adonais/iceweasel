@@ -6,7 +6,6 @@
  * extensions */
 
 #include "ppc.h"
-#include "mozilla/Unused.h"
 
 #include <stdio.h>
 #include <stdlib.h>

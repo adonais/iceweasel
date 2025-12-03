@@ -47,7 +47,7 @@ WorkletImpl::WorkletImpl(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal)
       mFinishedOnExecutionThread(false),
       mIsPrivateBrowsing(false),
       mTrials(OriginTrials::FromWindow(nsGlobalWindowInner::Cast(aWindow))) {
-  Unused << NS_WARN_IF(
+  (void)NS_WARN_IF(
       NS_FAILED(ipc::PrincipalToPrincipalInfo(mPrincipal, &mPrincipalInfo)));
 
   if (aWindow->GetDocGroup()) {

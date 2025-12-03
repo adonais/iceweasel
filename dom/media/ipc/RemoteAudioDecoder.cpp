@@ -10,7 +10,6 @@
 #include "RemoteCDMParent.h"
 #include "RemoteMediaManagerChild.h"
 #include "RemoteMediaManagerParent.h"
-#include "mozilla/PodOperations.h"
 #include "mozilla/StaticPrefs_media.h"
 
 namespace mozilla {

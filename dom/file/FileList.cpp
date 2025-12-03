@@ -13,7 +13,6 @@
 #include "js/RootingAPI.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/MacroForEach.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/File.h"

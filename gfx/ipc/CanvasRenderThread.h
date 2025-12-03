@@ -15,10 +15,8 @@
 
 class nsIRunnable;
 class nsIThread;
-class nsIThreadPool;
 
 namespace mozilla {
-class TaskQueue;
 
 namespace gfx {
 
@@ -53,26 +51,15 @@ class CanvasRenderThread final {
   /// Can be called from any thread, may return nullptr late in shutdown.
   static already_AddRefed<nsIThread> GetCanvasRenderThread();
 
-  static already_AddRefed<TaskQueue> CreateWorkerTaskQueue();
-
-  static void ShutdownWorkerTaskQueue(TaskQueue* aTaskQueue);
-
-  static void FinishShutdownWorkerTaskQueue(TaskQueue* aTaskQueue);
-
   static void Dispatch(already_AddRefed<nsIRunnable> aRunnable);
 
  private:
-  CanvasRenderThread(nsCOMPtr<nsIThread>&& aThread,
-                     nsCOMPtr<nsIThreadPool>&& aWorkers, bool aCreatedThread);
+  CanvasRenderThread(nsCOMPtr<nsIThread>&& aThread, bool aCreatedThread);
   ~CanvasRenderThread();
 
   Mutex mMutex;
 
   nsCOMPtr<nsIThread> const mThread;
-
-  nsCOMPtr<nsIThreadPool> const mWorkers;
-
-  nsTArray<RefPtr<TaskQueue>> mPendingShutdownTaskQueues MOZ_GUARDED_BY(mMutex);
 
   // True if mThread points to CanvasRender thread, false if mThread points to
   // Compositor/Render thread.

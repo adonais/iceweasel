@@ -8,7 +8,6 @@
 #include "mozilla/ipc/PUtilityProcessChild.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "mozilla/ipc/UtilityMediaServiceParent.h"
-#include "mozilla/UniquePtr.h"
 #include "ChildProfilerController.h"
 
 #if defined(MOZ_SANDBOX) && defined(MOZ_DEBUG) && defined(ENABLE_TESTS)

@@ -107,7 +107,9 @@ impl Counter for DualLabeledCounterSubMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<i32> for DualLabeledCounterSubMetric {
+impl glean::TestGetValue for DualLabeledCounterSubMetric {
+    type Output = i32;
+
     /// **Test-only API.**
     ///
     /// Get the currently stored value as an integer.

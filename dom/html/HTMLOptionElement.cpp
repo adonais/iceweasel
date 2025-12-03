@@ -254,7 +254,7 @@ void HTMLOptionElement::UnbindFromTree(UnbindContext& aContext) {
 }
 
 // Get the select content element that contains this option
-HTMLSelectElement* HTMLOptionElement::GetSelect() {
+HTMLSelectElement* HTMLOptionElement::GetSelect() const {
   nsIContent* parent = GetParent();
   if (!parent) {
     return nullptr;

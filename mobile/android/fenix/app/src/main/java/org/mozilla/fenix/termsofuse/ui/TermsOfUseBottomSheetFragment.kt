@@ -62,6 +62,7 @@ class TermsOfUseBottomSheetFragment : BottomSheetDialogFragment() {
         setContent {
             FirefoxTheme {
                 TermsOfUseBottomSheet(
+                    showDragHandle = settings().shouldShowTermsOfUsePromptDragHandle,
                     onDismiss = { dismiss() },
                     onDismissRequest = {
                         termsOfUsePromptStore.dispatch(

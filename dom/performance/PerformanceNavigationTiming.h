@@ -46,7 +46,7 @@ class PerformanceNavigationTiming final : public PerformanceResourceTiming {
       Performance* aPerformance, const nsAString& aName)
       : PerformanceResourceTiming(std::move(aPerformanceTiming), aPerformance,
                                   aName) {
-    SetEntryType(u"navigation"_ns);
+    SetEntryType(nsGkAtoms::navigation);
     SetInitiatorType(u"navigation"_ns);
   }
 

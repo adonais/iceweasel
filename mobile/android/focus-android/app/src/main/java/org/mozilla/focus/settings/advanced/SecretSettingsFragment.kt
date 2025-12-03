@@ -22,10 +22,15 @@ class SecretSettingsFragment :
     BaseSettingsFragment(),
     SharedPreferences.OnSharedPreferenceChangeListener {
 
-    override fun onStart() {
-        super.onStart()
+    override fun onResume() {
+        super.onResume()
         showToolbar(getString(R.string.preference_secret_settings))
         preferenceManager.sharedPreferences?.registerOnSharedPreferenceChangeListener(this)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        preferenceManager.sharedPreferences?.unregisterOnSharedPreferenceChangeListener(this)
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -54,6 +59,10 @@ class SecretSettingsFragment :
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String?) {
+        if (!isAdded) {
+            return
+        }
+
         findPreference<SwitchPreference>(
             getPreferenceKey(R.string.pref_key_use_nimbus_preview),
         )?.let { nimbusPreviewPref ->

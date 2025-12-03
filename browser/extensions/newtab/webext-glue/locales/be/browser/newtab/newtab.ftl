@@ -408,7 +408,7 @@ newtab-wallpaper-abstract-purple-green = Градыент фіялетавага
 newtab-wallpaper-abstract-blue-purple-waves = Сінія і фіялетавыя хвалістыя формы
 newtab-wallpaper-abstract-black-waves = Чорныя хвалістыя формы
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Фатаграфіі
 newtab-wallpaper-beach-at-sunrise = Пляж на ўсходзе сонца
@@ -437,6 +437,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -677,10 +681,6 @@ newtab-widget-timer-mode-focus =
     .label = Фокус
 newtab-widget-timer-mode-break =
     .label = Перапынак
-newtab-widget-timer-play =
-    .title = Прайграць
-newtab-widget-timer-pause =
-    .title = Прыпыніць
 newtab-widget-timer-label-play =
     .label = Прайграць
 newtab-widget-timer-label-pause =

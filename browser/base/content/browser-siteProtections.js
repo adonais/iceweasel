@@ -15,7 +15,7 @@ XPCOMUtils.defineLazyServiceGetter(
   this,
   "TrackingDBService",
   "@mozilla.org/tracking-db-service;1",
-  "nsITrackingDBService"
+  Ci.nsITrackingDBService
 );
 
 /**
@@ -215,7 +215,7 @@ class ProtectionCategory {
     };
   }
 
-  /*
+  /**
    * Return the number items blocked by this blocker.
    * @returns {Integer} count - The number of items blocked.
    */
@@ -1360,7 +1360,7 @@ let cookieBannerHandling = new (class {
     );
   }
 
-  /*
+  /**
    * @returns {string} - Base domain (eTLD + 1) used for clearing site data.
    */
   get #currentBaseDomain() {

@@ -30,6 +30,11 @@ import mozilla.components.support.ktx.android.content.appName
 // Minimum time for dialog to settle before accepting user interactions.
 internal const val MAX_SUCCESSIVE_DIALOG_MILLIS_LIMIT: Int = 500 // 0.5 seconds
 
+internal val WALLET_SCHEMES: Array<String> = arrayOf(
+    "openid4vp", "mdoc", "mdoc-openid4vp", "haip",
+    "eudi-wallet", "eudi-openid4vp", "openid-credential-offer",
+)
+
 /**
  * This feature implements observer for handling redirects to external apps. The users are asked to
  * confirm their intention before leaving the app if in private session.  These include the Android
@@ -112,10 +117,11 @@ class AppLinksFeature(
         if (appIntent == null) return
 
         val isPrivate = sessionState.content.private
+        val isWallet = isWalletLink(url, appIntent)
         val isAuthenticationFlow =
             AppLinksInterceptor.isAuthentication(sessionState, appIntent.component?.packageName)
 
-        if (shouldBypassPrompt(isPrivate, isAuthenticationFlow, fragmentManager)) {
+        if (shouldBypassPrompt(isPrivate, isWallet, isAuthenticationFlow, fragmentManager)) {
             openApp(appIntent)
             return
         }
@@ -131,6 +137,7 @@ class AppLinksFeature(
             appIntent = appIntent,
             appName = appName,
             isPrivate = isPrivate,
+            isWallet = isWallet,
             fragmentManager = fragmentManager,
         )
     }
@@ -138,10 +145,11 @@ class AppLinksFeature(
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun shouldBypassPrompt(
         isPrivate: Boolean,
+        isWallet: Boolean,
         isAuthenticationFlow: Boolean,
         fragmentManager: FragmentManager?,
     ): Boolean {
-        val shouldShowPrompt = isPrivate || shouldPrompt()
+        val shouldShowPrompt = isPrivate || isWallet || shouldPrompt()
         return fragmentManager == null || !shouldShowPrompt || isAuthenticationFlow
     }
 
@@ -175,6 +183,7 @@ class AppLinksFeature(
         )
     }
 
+    @Suppress("LongParameterList")
     private fun showRedirectDialog(
         sessionState: SessionState,
         url: String,
@@ -182,13 +191,14 @@ class AppLinksFeature(
         appIntent: Intent,
         appName: String?,
         isPrivate: Boolean,
+        isWallet: Boolean,
         fragmentManager: FragmentManager?,
     ) {
         if (fragmentManager == null) {
             return
         }
 
-        getOrCreateDialog(isPrivate, url, appName).apply {
+        getOrCreateDialog(isPrivate, isWallet, url, appName).apply {
             onConfirmRedirect = { isCheckboxTicked ->
                 if (isCheckboxTicked) {
                     alwaysOpenCheckboxAction?.invoke()
@@ -204,6 +214,7 @@ class AppLinksFeature(
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun getOrCreateDialog(
         isPrivate: Boolean,
+        isWallet: Boolean,
         url: String,
         targetAppName: String?,
     ): RedirectDialogFragment {
@@ -241,7 +252,7 @@ class AppLinksFeature(
         return SimpleRedirectDialogFragment.newInstance(
             dialogTitleString = dialogTitle,
             dialogMessageString = dialogMessage,
-            showCheckbox = if (isPrivate) false else alwaysOpenCheckboxAction != null,
+            showCheckbox = if (isPrivate || isWallet) false else alwaysOpenCheckboxAction != null,
             maxSuccessiveDialogMillisLimit = MAX_SUCCESSIVE_DIALOG_MILLIS_LIMIT,
         )
     }
@@ -257,5 +268,13 @@ class AppLinksFeature(
 
     private fun findPreviousDialogFragment(): RedirectDialogFragment? {
         return fragmentManager?.findFragmentByTag(FRAGMENT_TAG) as? RedirectDialogFragment
+    }
+
+    @VisibleForTesting
+    internal fun isWalletLink(url: String, appIntent: Intent?): Boolean {
+        val urlScheme = url.toUri().scheme?.lowercase()
+        val intentScheme = appIntent?.data?.scheme?.lowercase()
+        return (urlScheme != null && WALLET_SCHEMES.contains(urlScheme)) ||
+            (intentScheme != null && WALLET_SCHEMES.contains(intentScheme))
     }
 }

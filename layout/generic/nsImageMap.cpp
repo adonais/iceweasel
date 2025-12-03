@@ -8,6 +8,7 @@
 
 #include "nsImageMap.h"
 
+#include "mozilla/PresShell.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"  // for Event
@@ -762,6 +763,13 @@ void nsImageMap::DrawFocus(nsIFrame* aFrame, DrawTarget& aDrawTarget,
 void nsImageMap::MaybeUpdateAreas(nsIContent* aContent) {
   if (aContent == mMap || mConsiderWholeSubtree) {
     UpdateAreas();
+
+    // If the mouse cursor hovered an <area> or will hover an <area>, we may
+    // need to update the cursor and dispatch mouse/pointer boundary events.
+    // So, let's enqueue a synthesized mouse move.
+    if (PresShell* const presShell = aContent->OwnerDoc()->GetPresShell()) {
+      presShell->SynthesizeMouseMove(false);
+    }
   }
 }
 

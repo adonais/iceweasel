@@ -129,7 +129,9 @@ impl MemoryDistribution for LabeledMemoryDistributionMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<DistributionData> for LabeledMemoryDistributionMetric {
+impl glean::TestGetValue for LabeledMemoryDistributionMetric {
+    type Output = DistributionData;
+
     pub fn test_get_value(&self, ping_name: Option<String>) -> Option<DistributionData> {
         match self {
             LabeledMemoryDistributionMetric::Parent(p) => p.test_get_value(ping_name),

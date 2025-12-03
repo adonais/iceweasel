@@ -410,6 +410,10 @@ add_task(async function test_new_profile_displayed_closed_telemetry() {
     ok(true, "Skipping because !AppConstants.MOZ_SELECTABLE_PROFILES");
     return;
   }
+  if (AppConstants.platform === "win") {
+    ok(true, "Skipping until we fix bug 1994086");
+    return;
+  }
   await setup();
   is(
     null,
@@ -472,6 +476,10 @@ add_task(async function test_new_profile_delete_telemetry() {
     // `mochitest-browser` suite `add_task` does not yet support
     // `properties.skip_if`.
     ok(true, "Skipping because !AppConstants.MOZ_SELECTABLE_PROFILES");
+    return;
+  }
+  if (AppConstants.platform === "win") {
+    ok(true, "Skipping until we fix bug 1994086");
     return;
   }
   await setup();

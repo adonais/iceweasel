@@ -56,6 +56,8 @@ support-files = [
 
 ["test_getMatchingCSSRules_pseudo.html"]
 
+["test_getMatchingCSSRules_shadow_dom.html"]
+
 ["test_getMatchingCSSRules_slotted.html"]
 
 ["test_getMatchingCSSRules_starting_style.html"]
@@ -92,6 +94,8 @@ skip-if = ["os == 'android'"]
 ["test_rgba_to_color_name.html"]
 
 ["test_selectormatcheselement.html"]
+
+["test_selectormatcheselement_host.html"]
 
 ["test_selectormatcheselement_scope.html"]
 

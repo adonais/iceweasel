@@ -13,7 +13,6 @@
 
 #include "FrameMetrics.h"
 #include "SynchronousTask.h"
-#include "mozilla/Unused.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/layers/Compositor.h"
@@ -184,7 +183,7 @@ void UiCompositorControllerParent::ToolbarAnimatorMessageFromCompositor(
     return;
   }
 
-  Unused << SendToolbarAnimatorMessageFromCompositor(aMessage);
+  (void)SendToolbarAnimatorMessageFromCompositor(aMessage);
 }
 
 bool UiCompositorControllerParent::AllocPixelBuffer(const int32_t aSize,

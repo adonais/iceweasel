@@ -4,8 +4,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/ArrayUtils.h"
-
 #include "nsArrayEnumerator.h"
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
@@ -31,10 +29,6 @@
 #  include <stdlib.h>
 #  include <sys/param.h>
 #  include "prenv.h"
-#  ifdef MOZ_WIDGET_COCOA
-#    include <CoreServices/CoreServices.h>
-#    include <Carbon/Carbon.h>
-#  endif
 #endif
 
 #include "SpecialSystemDirectory.h"
@@ -43,10 +37,7 @@
 
 using namespace mozilla;
 
-//----------------------------------------------------------------------------------------
-nsresult nsDirectoryService::GetCurrentProcessDirectory(nsIFile** aFile)
-//----------------------------------------------------------------------------------------
-{
+nsresult nsDirectoryService::GetCurrentProcessDirectory(nsIFile** aFile) {
   if (NS_WARN_IF(!aFile)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -81,7 +72,7 @@ nsresult nsDirectoryService::GetCurrentProcessDirectory(nsIFile** aFile)
 #endif
   }
   return mXCurProcD->Clone(aFile);
-}  // GetCurrentProcessDirectory()
+}
 
 StaticRefPtr<nsDirectoryService> nsDirectoryService::gService;
 
@@ -321,10 +312,9 @@ nsDirectoryService::UnregisterProvider(nsIDirectoryServiceProvider* aProv) {
   return NS_OK;
 }
 
-// DO NOT ADD ANY LOCATIONS TO THIS FUNCTION UNTIL YOU TALK TO:
-// dougt@netscape.com. This is meant to be a place of xpcom or system specific
-// file locations, not application specific locations.  If you need the later,
-// register a callback for your application.
+// This is meant to be a place of xpcom or system specific file locations,
+// not application specific locations. If you need the latter, register a
+// callback for your application.
 
 NS_IMETHODIMP
 nsDirectoryService::GetFile(const char* aProp, bool* aPersistent,

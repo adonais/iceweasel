@@ -212,29 +212,44 @@ export const SmartAssistEngine = {
   },
 
   /**
+   * Gets the intent of the prompt using a text classification model.
    *
    * @param {string} prompt
    * @returns {string} "search" | "chat"
    */
-  async getPromptIntent(prompt) {
-    // TODO : this is mock logic to determine if the user wants to search or chat
-    // We will eventually want to use a model to determine this intent
-    const searchKeywords = [
-      "search",
-      "find",
-      "look",
-      "query",
-      "locate",
-      "explore",
-    ];
-    const formattedPrompt = prompt.toLowerCase();
 
-    const intent = searchKeywords.some(keyword =>
-      formattedPrompt.includes(keyword)
-    )
-      ? "search"
-      : "chat";
+  async getPromptIntent(query) {
+    try {
+      const engine = await this._createEngine({
+        featureId: "smart-intent",
+        modelId: "mozilla/mobilebert-query-intent-detection",
+        modelRevision: "v0.2.0",
+        taskName: "text-classification",
+      });
+      const threshold = 0.6;
+      const cleanedQuery = this._preprocessQuery(query);
+      const resp = await engine.run({ args: [[cleanedQuery]] });
+      // resp example: [{ label: "chat", score: 0.95 }, { label: "search", score: 0.04 }]
+      if (
+        resp[0].label.toLowerCase() === "chat" &&
+        resp[0].score >= threshold
+      ) {
+        return "chat";
+      }
+      return "search";
+    } catch (error) {
+      console.error("Error using intent detection model:", error);
+      throw error;
+    }
+  },
 
-    return intent;
+  // Helper function for preprocessing text input
+  _preprocessQuery(query) {
+    if (typeof query !== "string") {
+      throw new TypeError(
+        `Expected a string for query preprocessing, but received ${typeof query}`
+      );
+    }
+    return query.replace(/\?/g, "").trim();
   },
 };

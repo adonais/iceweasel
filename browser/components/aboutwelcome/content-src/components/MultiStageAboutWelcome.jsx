@@ -15,6 +15,7 @@ const TRANSITION_OUT_TIME = 1000;
 const LANGUAGE_MISMATCH_SCREEN_ID = "AW_LANGUAGE_MISMATCH";
 
 export const MultiStageAboutWelcome = props => {
+  const gateInitialPaint = props.gateInitialPaint ?? false;
   let { defaultScreens } = props;
   const didFilter = useRef(false);
   const [didMount, setDidMount] = useState(false);
@@ -22,6 +23,8 @@ export const MultiStageAboutWelcome = props => {
 
   const [index, setScreenIndex] = useState(props.startScreen);
   const [previousOrder, setPreviousOrder] = useState(props.startScreen - 1);
+  // Gate first paint until we've finished the initial filtering pass.
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -56,8 +59,11 @@ export const MultiStageAboutWelcome = props => {
           filtered => screens.find(s => s.id === filtered.id) ?? filtered
         )
       );
-
-      didFilter.current = true;
+      // Mark the initial filter pass complete and allow the first paint.
+      if (!didFilter.current) {
+        didFilter.current = true;
+        setReady(true);
+      }
 
       // After completing screen filtering, trigger any unhandled campaign
       // action present in the attribution campaign data. This updates the
@@ -240,6 +246,12 @@ export const MultiStageAboutWelcome = props => {
       setInstalledAddons(addons);
     })();
   }, [index]);
+
+  // Do not render anything until the first filtering pass completes if gating
+  // initial paint is enabled.
+  if (gateInitialPaint && !ready) {
+    return null;
+  }
 
   return (
     <React.Fragment>

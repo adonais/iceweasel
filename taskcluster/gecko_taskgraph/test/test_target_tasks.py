@@ -418,8 +418,8 @@ class TestTargetTasks(unittest.TestCase):
                     "repository_type": "git",
                 },
             },
-            False,
-            id="filter_for_repo_type_default_git_removed",
+            True,
+            id="filter_for_repo_type_default_git_not_removed",
         ),
         pytest.param(
             "filter_for_repo_type",

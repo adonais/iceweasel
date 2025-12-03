@@ -24,7 +24,7 @@
 }
 
 .optin-heading {
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--heading-font-weight);
   font-size: var(--font-size-xxlarge);
   margin: 0;
 }

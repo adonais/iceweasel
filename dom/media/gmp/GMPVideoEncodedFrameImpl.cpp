@@ -7,7 +7,6 @@
 
 #include "GMPSharedMemManager.h"
 #include "GMPVideoHost.h"
-#include "mozilla/Unused.h"
 #include "mozilla/gmp/GMPTypes.h"
 
 namespace mozilla::gmp {
@@ -218,7 +217,7 @@ void GMPVideoEncodedFrameImpl::SetAllocatedSize(uint32_t aNewSize) {
   }
 
   if (!mArrayBuffer.IsEmpty()) {
-    Unused << mArrayBuffer.SetLength(aNewSize, fallible);
+    (void)mArrayBuffer.SetLength(aNewSize, fallible);
     return;
   }
 

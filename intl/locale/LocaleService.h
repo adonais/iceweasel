@@ -168,6 +168,16 @@ class LocaleService final : public mozILocaleService,
    */
   bool IsAppLocaleRTL();
 
+  /**
+   * If true, accesskeys should always be appended for the current app locale.
+   */
+  bool AlwaysAppendAccesskeys();
+
+  /**
+   * If true, accesskeys should always be separated from the label.
+   */
+  bool InsertSeparatorBeforeAccesskeys();
+
   static bool LanguagesMatch(const nsACString& aRequested,
                              const nsACString& aAvailable);
 

@@ -4,7 +4,7 @@
 
 
 import re
-from typing import Any, Dict
+from typing import Any
 
 from taskgraph.util.taskcluster import get_artifact_url
 from taskgraph.util.time import json_time_from_now
@@ -47,11 +47,11 @@ def resolve_timestamps(now, task_def):
 
 def resolve_task_references(
     label: str,
-    task_def: Dict[str, Any],
+    task_def: dict[str, Any],
     task_id: str,
     decision_task_id: str,
-    dependencies: Dict[str, str],
-) -> Dict[str, Any]:
+    dependencies: dict[str, str],
+) -> dict[str, Any]:
     """Resolve all instances of ``{'task-reference': '..<..>..'} ``
     and ``{'artifact-reference`: '..<dependency/artifact/path>..'}``
     in the given task definition, using the given dependencies.

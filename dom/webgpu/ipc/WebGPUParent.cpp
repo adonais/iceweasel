@@ -8,7 +8,6 @@
 #include <unordered_set>
 
 #include "ExternalTexture.h"
-#include "mozilla/PodOperations.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/gfx/FileHandleWrapper.h"
@@ -1545,9 +1544,19 @@ void WebGPUParent::SwapChainDrop(const layers::RemoteTextureOwnerId& aOwnerId,
 
   for (const auto bid : data->mAvailableBufferIds) {
     ffi::wgpu_server_buffer_drop(mContext.get(), bid);
+    data->mUnassignedBufferIds.push_back(bid);
   }
   for (const auto bid : data->mQueuedBufferIds) {
     ffi::wgpu_server_buffer_drop(mContext.get(), bid);
+    data->mUnassignedBufferIds.push_back(bid);
+  }
+
+  ipc::ByteBuf bb;
+  ffi::wgpu_server_pack_free_swap_chain_buffer_ids(
+      ToFFI(&bb),
+      {data->mUnassignedBufferIds.data(), data->mUnassignedBufferIds.size()});
+  if (!SendServerMessage(std::move(bb))) {
+    NS_ERROR("SendServerMessage failed");
   }
 }
 

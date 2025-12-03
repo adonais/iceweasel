@@ -158,6 +158,13 @@
   text-decoration: underline;
 }
 
+:any-link:lang(ja),
+:any-link:lang(ko),
+:any-link:lang(zh) {
+  /* stylelint-disable-next-line */
+  text-decoration-inset: auto;
+}
+
 :link {
   color: LinkText;
 }

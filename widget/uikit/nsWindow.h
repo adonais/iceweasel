@@ -10,7 +10,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 
 #include "mozilla/widget/IOSView.h"
-#include "nsBaseWidget.h"
+#include "nsIWidget.h"
 #include "gfxPoint.h"
 
 #include "nsTArray.h"
@@ -33,7 +33,7 @@ class TextInputHandler;
 #define NS_WINDOW_IID \
   {0x5e6fd559, 0xb3f9, 0x40c9, {0x92, 0xd1, 0xef, 0x80, 0xb4, 0xf9, 0x69, 0xe9}}
 
-class nsWindow final : public nsBaseWidget {
+class nsWindow final : public nsIWidget {
  public:
   nsWindow();
 
@@ -45,9 +45,8 @@ class nsWindow final : public nsBaseWidget {
   // nsIWidget
   //
 
-  [[nodiscard]] nsresult Create(
-      nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
-      mozilla::widget::InitData* aInitData = nullptr) override;
+  [[nodiscard]] nsresult Create(nsIWidget* aParent, const LayoutDeviceIntRect&,
+                                const mozilla::widget::InitData&) override;
   void Destroy() override;
   void Show(bool aState) override;
   void Enable(bool aState) override {}
@@ -59,14 +58,16 @@ class nsWindow final : public nsBaseWidget {
   void SetBackgroundColor(const nscolor& aColor) override;
   void* GetNativeData(uint32_t aDataType) override;
 
-  void Move(double aX, double aY) override;
+  void Move(const DesktopPoint&) override;
   nsSizeMode SizeMode() override { return mSizeMode; }
   void SetSizeMode(nsSizeMode aMode) override;
   void EnteredFullScreen(bool aFullScreen);
-  void Resize(double aWidth, double aHeight, bool aRepaint) override;
-  void Resize(double aX, double aY, double aWidth, double aHeight,
-              bool aRepaint) override;
+  void Resize(const DesktopSize&, bool aRepaint) override;
+  void Resize(const DesktopRect&, bool aRepaint) override;
+  void DoResize(double aX, double aY, double aWidth, double aHeight,
+                bool aRepaint);
   LayoutDeviceIntRect GetScreenBounds() override;
+  LayoutDeviceIntRect GetBounds() override { return mBounds; }
   void ReportMoveEvent();
   void ReportSizeEvent();
   void ReportSizeModeEvent(nsSizeMode aMode);
@@ -111,7 +112,7 @@ class nsWindow final : public nsBaseWidget {
                       void* aCallbackData) override;
   */
 
-  RefPtr<mozilla::layers::NativeLayerRoot> GetNativeLayerRoot() override;
+  mozilla::layers::NativeLayerRoot* GetNativeLayerRoot() override;
 
   void HandleMainThreadCATransaction();
 
@@ -165,6 +166,7 @@ class nsWindow final : public nsBaseWidget {
   RefPtr<mozilla::layers::NativeLayerRootCA> mNativeLayerRoot;
 
   RefPtr<mozilla::CancelableRunnable> mUnsuspendAsyncCATransactionsRunnable;
+  LayoutDeviceIntRect mBounds;
 
   void OnSizeChanged(const mozilla::gfx::IntSize& aSize);
 

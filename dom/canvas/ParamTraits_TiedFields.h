@@ -8,7 +8,6 @@
 
 #include "TiedFields.h"
 #include "ipc/IPCMessageUtils.h"
-#include "mozilla/ipc/IPDLParamTraits.h"
 
 namespace IPC {
 

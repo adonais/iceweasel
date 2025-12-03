@@ -101,6 +101,7 @@ arg_writer_info = {
     "AllocKindImm": ("gc::AllocKind", "writeAllocKindImm"),
     "CompletionKindImm": ("CompletionKind", "writeCompletionKindImm"),
     "RealmFuseIndexImm": ("RealmFuses::FuseIndex", "writeRealmFuseIndexImm"),
+    "RuntimeFuseIndexImm": ("RuntimeFuses::FuseIndex", "writeRuntimeFuseIndexImm"),
 }
 
 
@@ -210,6 +211,7 @@ arg_reader_info = {
     "AllocKindImm": ("gc::AllocKind", "", "reader.allocKind()"),
     "CompletionKindImm": ("CompletionKind", "", "reader.completionKind()"),
     "RealmFuseIndexImm": ("RealmFuses::FuseIndex", "", "reader.realmFuseIndex()"),
+    "RuntimeFuseIndexImm": ("RuntimeFuses::FuseIndex", "", "reader.runtimeFuseIndex()"),
 }
 
 
@@ -350,6 +352,7 @@ arg_spewer_method = {
     "AllocKindImm": "spewAllocKindImm",
     "CompletionKindImm": "spewCompletionKindImm",
     "RealmFuseIndexImm": "spewRealmFuseIndexImm",
+    "RuntimeFuseIndexImm": "spewRuntimeFuseIndexImm",
 }
 
 
@@ -492,6 +495,7 @@ arg_length = {
     "AllocKindImm": 1,
     "CompletionKindImm": 1,
     "RealmFuseIndexImm": 1,
+    "RuntimeFuseIndexImm": 1,
 }
 
 

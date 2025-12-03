@@ -101,15 +101,15 @@ class SystemEngineSessionTest {
 
         assertNotNull(loadHeaders)
         assertEquals(1, loadHeaders!!.size)
-        assertTrue(loadHeaders!!.containsKey("X-Requested-With"))
-        assertEquals("", loadHeaders!!["X-Requested-With"])
+        assertTrue(loadHeaders.containsKey("X-Requested-With"))
+        assertEquals("", loadHeaders["X-Requested-With"])
 
         val extraHeaders = mapOf("X-Extra-Header" to "true")
         engineSession.loadUrl("http://mozilla.org", additionalHeaders = extraHeaders)
         assertNotNull(loadHeaders)
-        assertEquals(2, loadHeaders!!.size)
-        assertTrue(loadHeaders!!.containsKey("X-Extra-Header"))
-        assertEquals("true", loadHeaders!!["X-Extra-Header"])
+        assertEquals(2, loadHeaders.size)
+        assertTrue(loadHeaders.containsKey("X-Extra-Header"))
+        assertEquals("true", loadHeaders["X-Extra-Header"])
     }
 
     @Test

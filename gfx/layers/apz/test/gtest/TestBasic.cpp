@@ -390,7 +390,7 @@ TEST_F(APZCBasicTester, MultipleSmoothScrollsSmooth) {
   }
 }
 
-TEST_F(APZCBasicTester, NotifyLayersUpdate_WithScrollUpdates) {
+TEST_F(APZCBasicTester, NotifyLayersUpdate_WithScrollUpdate) {
   // Set an empty metadata as if the APZC is now newly created.
   // This replicates when a document in a background tab now becomes forground.
   ScrollMetadata metadata;
@@ -415,7 +415,7 @@ TEST_F(APZCBasicTester, NotifyLayersUpdate_WithScrollUpdates) {
       CSSPoint::ToAppUnits(CSSPoint(15, 15))));
   metadata.SetScrollUpdates(scrollUpdates);
   metrics.SetScrollGeneration(scrollUpdates.LastElement().GetGeneration());
-  // With the above scroll updates, now the layout/visual scroll offsets (on the
+  // With the above scroll update, now the layout/visual scroll offsets (on the
   // main-thread) need to be updated.
   metrics.SetVisualScrollOffset(CSSPoint(15, 15));
   metrics.SetLayoutViewport(CSSRect(15, 15, 10, 10));
@@ -426,10 +426,49 @@ TEST_F(APZCBasicTester, NotifyLayersUpdate_WithScrollUpdates) {
 
   // The layout/visual scroll ofsets and the relative scroll update need to be
   // reflected.
-  ASSERT_EQ(apzc->GetFrameMetrics().GetLayoutScrollOffset(), CSSPoint(20, 20))
-      << "If the actual value is (15, 15), you fixed bug 1978682, thanks!";
-  ASSERT_EQ(apzc->GetFrameMetrics().GetVisualScrollOffset(), CSSPoint(20, 20))
-      << "If the actual value is (15, 15), you fixed bug 1978682, thanks!";
+  ASSERT_EQ(apzc->GetFrameMetrics().GetLayoutScrollOffset(), CSSPoint(15, 15));
+  ASSERT_EQ(apzc->GetFrameMetrics().GetVisualScrollOffset(), CSSPoint(15, 15));
+}
+
+TEST_F(APZCBasicTester, NotifyLayersUpdate_WithMultipleScrollUpdates) {
+  // Set an empty metadata as if the APZC is now newly created.
+  // This replicates when a document in a background tab now becomes foreground.
+  ScrollMetadata metadata;
+  apzc->SetScrollMetadata(metadata);
+  ASSERT_TRUE(apzc->GetScrollMetadata().IsDefault());
+
+  FrameMetrics& metrics = metadata.GetMetrics();
+  metrics.SetDisplayPort(CSSRect(0, 0, 10, 10));
+  metrics.SetCompositionBounds(ParentLayerRect(0, 0, 10, 10));
+  metrics.SetScrollableRect(CSSRect(0, 0, 100, 100));
+
+  metrics.SetVisualScrollOffset(CSSPoint(0, 0));
+  metrics.SetLayoutViewport(CSSRect(0, 0, 10, 10));
+  metrics.SetScrollId(ScrollableLayerGuid::START_SCROLL_ID);
+
+  AutoTArray<ScrollPositionUpdate, 2> scrollUpdates;
+  // Append a new scroll frame as if the scroll frame was reconstructed.
+  scrollUpdates.AppendElement(ScrollPositionUpdate::NewScrollframe(
+      CSSPoint::ToAppUnits(CSSPoint(0, 0))));
+  // Append a new relative scroll update (0, 0) -> (20, 20).
+  scrollUpdates.AppendElement(ScrollPositionUpdate::NewRelativeScroll(
+      CSSPoint::ToAppUnits(CSSPoint(0, 0)),
+      CSSPoint::ToAppUnits(CSSPoint(20, 20))));
+  metadata.SetScrollUpdates(scrollUpdates);
+  metrics.SetScrollGeneration(scrollUpdates.LastElement().GetGeneration());
+  // With the above scroll updates, now the layout/visual scroll offsets (on the
+  // main-thread) need to be updated.
+  metrics.SetVisualScrollOffset(CSSPoint(20, 20));
+  metrics.SetLayoutViewport(CSSRect(20, 20, 10, 10));
+
+  // It's not first-paint when switching tab.
+  apzc->NotifyLayersUpdated(metadata, /*isFirstPaint=*/false,
+                            /*thisLayerTreeUpdated=*/true);
+
+  // The layout/visual scroll ofsets and the relative scroll update need to be
+  // reflected.
+  ASSERT_EQ(apzc->GetFrameMetrics().GetLayoutScrollOffset(), CSSPoint(20, 20));
+  ASSERT_EQ(apzc->GetFrameMetrics().GetVisualScrollOffset(), CSSPoint(20, 20));
 }
 
 class APZCSmoothScrollTester : public APZCBasicTester {
@@ -702,7 +741,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
     // since the mapping from eKeyDown to it happens in APZCTreeManager which
     // we are bypassing here.
     keyInput.mAction = {KeyboardScrollAction::eScrollLine, /*aForward=*/true};
-    Unused << apzc->ReceiveInputEvent(keyInput);
+    (void)apzc->ReceiveInputEvent(keyInput);
     apzc->AssertInKeyboardScroll();
 
     // Sample the animation 10 frames (a shorter overall duration than the

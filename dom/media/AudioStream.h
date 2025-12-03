@@ -16,7 +16,6 @@
 #  include "mozilla/MozPromise.h"
 #  include "mozilla/ProfilerUtils.h"
 #  include "mozilla/RefPtr.h"
-#  include "mozilla/Result.h"
 #  include "mozilla/SPSCQueue.h"
 #  include "mozilla/TimeStamp.h"
 #  include "mozilla/UniquePtr.h"

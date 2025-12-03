@@ -7,7 +7,6 @@
 #ifndef _FileDescriptorFile_h
 #define _FileDescriptorFile_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/ipc/FileDescriptor.h"
 #include "nsIFile.h"
 #include "private/pprio.h"

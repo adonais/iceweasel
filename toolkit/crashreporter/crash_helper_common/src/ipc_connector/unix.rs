@@ -6,7 +6,7 @@
 use crate::platform::linux::{set_socket_cloexec, set_socket_default_flags};
 #[cfg(target_os = "macos")]
 use crate::platform::macos::{set_socket_cloexec, set_socket_default_flags};
-use crate::{ignore_eintr, ProcessHandle, IO_TIMEOUT};
+use crate::{ignore_eintr, IntoRawAncillaryData, ProcessHandle, IO_TIMEOUT};
 
 use nix::{
     cmsg_space,
@@ -26,10 +26,17 @@ use crate::{
     messages::{self, Message},
 };
 
-pub type AncillaryData = RawFd;
+pub type RawAncillaryData = RawFd;
+pub type AncillaryData = OwnedFd;
+
+impl IntoRawAncillaryData for AncillaryData {
+    fn into_raw(self) -> RawAncillaryData {
+        self.into_raw_fd()
+    }
+}
 
 // This must match `kInvalidHandle` in `mfbt/UniquePtrExt.h`
-pub const INVALID_ANCILLARY_DATA: AncillaryData = -1;
+pub const INVALID_ANCILLARY_DATA: RawAncillaryData = -1;
 
 pub struct IPCConnector {
     socket: OwnedFd,
@@ -39,7 +46,7 @@ impl IPCConnector {
     /// Create a new connector from an already connected socket. The
     /// `FD_CLOEXEC` flag will be set on the underlying socket and thus it
     /// will not be possible to inerhit this connector in a child process.
-    pub fn from_fd(socket: OwnedFd) -> Result<IPCConnector, IPCError> {
+    pub(crate) fn from_fd(socket: OwnedFd) -> Result<IPCConnector, IPCError> {
         let connector = IPCConnector::from_fd_inheritable(socket)?;
         set_socket_cloexec(connector.socket.as_fd()).map_err(IPCError::System)?;
         Ok(connector)
@@ -48,14 +55,28 @@ impl IPCConnector {
     /// Create a new connector from an already connected socket. The
     /// `FD_CLOEXEC` flag will not be set on the underlying socket and thus it
     /// will be possible to inherit this connector in a child process.
-    pub fn from_fd_inheritable(socket: OwnedFd) -> Result<IPCConnector, IPCError> {
+    pub(crate) fn from_fd_inheritable(socket: OwnedFd) -> Result<IPCConnector, IPCError> {
         set_socket_default_flags(socket.as_fd()).map_err(IPCError::System)?;
         Ok(IPCConnector { socket })
     }
 
-    pub fn from_ancillary(ancillary_data: AncillaryData) -> Result<IPCConnector, IPCError> {
-        IPCConnector::from_fd(unsafe { OwnedFd::from_raw_fd(ancillary_data) })
+    pub fn from_ancillary(socket: AncillaryData) -> Result<IPCConnector, IPCError> {
+        IPCConnector::from_fd(socket)
     }
+
+    /// Create a connector from a raw file descriptor.
+    ///
+    /// # Safety
+    ///
+    /// The `ancillary_data` argument must be an open file descriptor
+    /// representing a connected Unix socket.
+    pub unsafe fn from_raw_ancillary(
+        ancillary_data: RawAncillaryData,
+    ) -> Result<IPCConnector, IPCError> {
+        IPCConnector::from_fd(OwnedFd::from_raw_fd(ancillary_data))
+    }
+
+    pub fn set_process(&mut self, _process: ProcessHandle) {}
 
     /// Serialize this connector into a string that can be passed on the
     /// command-line to a child process. This only works for newly
@@ -73,24 +94,12 @@ impl IPCConnector {
         Ok(IPCConnector { socket })
     }
 
-    fn raw_fd(&self) -> RawFd {
-        self.socket.as_raw_fd()
+    pub fn into_ancillary(self) -> AncillaryData {
+        self.socket
     }
 
-    pub fn into_ancillary(
-        self,
-        _dst_process: &Option<ProcessHandle>,
-    ) -> Result<AncillaryData, IPCError> {
-        Ok(self.socket.into_raw_fd())
-    }
-
-    /// Like into_ancillary, but the IPCConnector retains ownership of the file descriptor (so be
-    /// sure to use the result during the lifetime of the IPCConnector).
-    pub fn as_ancillary(
-        &self,
-        _dst_process: &Option<ProcessHandle>,
-    ) -> Result<AncillaryData, IPCError> {
-        Ok(self.raw_fd())
+    pub fn into_raw_ancillary(self) -> RawAncillaryData {
+        self.socket.into_raw()
     }
 
     pub fn as_raw_ref(&self) -> BorrowedFd<'_> {
@@ -110,10 +119,14 @@ impl IPCConnector {
         }
     }
 
-    pub fn send_message(&self, message: &dyn Message) -> Result<(), IPCError> {
+    pub fn send_message<T>(&self, message: T) -> Result<(), IPCError>
+    where
+        T: Message,
+    {
         self.send(&message.header(), None)
             .map_err(IPCError::TransmissionFailure)?;
-        self.send(&message.payload(), message.ancillary_payload())
+        let (payload, ancillary_data) = message.into_payload();
+        self.send(&payload, ancillary_data)
             .map_err(IPCError::TransmissionFailure)
     }
 
@@ -131,13 +144,13 @@ impl IPCConnector {
         T::decode(&data, None).map_err(IPCError::from)
     }
 
-    fn send_nonblock(&self, buff: &[u8], fd: Option<AncillaryData>) -> Result<(), Errno> {
+    fn send_nonblock(&self, buff: &[u8], fd: &Option<AncillaryData>) -> Result<(), Errno> {
         let iov = [IoSlice::new(buff)];
-        let scm_fds: Vec<i32> = fd.map_or(vec![], |fd| vec![fd]);
+        let scm_fds: Vec<i32> = fd.iter().map(|fd| fd.as_raw_fd()).collect();
         let scm = ControlMessage::ScmRights(&scm_fds);
 
         let res = ignore_eintr!(sendmsg::<()>(
-            self.raw_fd(),
+            self.socket.as_raw_fd(),
             &iov,
             &[scm],
             MsgFlags::empty(),
@@ -159,13 +172,13 @@ impl IPCConnector {
     }
 
     fn send(&self, buff: &[u8], fd: Option<AncillaryData>) -> Result<(), Errno> {
-        let res = self.send_nonblock(buff, fd);
+        let res = self.send_nonblock(buff, &fd);
         match res {
             Err(_code @ Errno::EAGAIN) => {
                 // If the socket was not ready to send data wait for it to
                 // become unblocked then retry sending just once.
                 self.poll(PollFlags::POLLOUT)?;
-                self.send_nonblock(buff, fd)
+                self.send_nonblock(buff, &fd)
             }
             _ => res,
         }
@@ -187,7 +200,7 @@ impl IPCConnector {
         let mut iov = [IoSliceMut::new(&mut buff)];
 
         let res = ignore_eintr!(recvmsg::<()>(
-            self.raw_fd(),
+            self.socket.as_raw_fd(),
             &mut iov,
             Some(&mut cmsg_buffer),
             MsgFlags::empty(),
@@ -203,7 +216,7 @@ impl IPCConnector {
         let res = match res {
             #[cfg(target_os = "macos")]
             Err(_code @ Errno::ENOMEM) => ignore_eintr!(recvmsg::<()>(
-                self.raw_fd(),
+                self.socket.as_raw_fd(),
                 &mut iov,
                 Some(&mut cmsg_buffer),
                 MsgFlags::empty(),
@@ -214,7 +227,7 @@ impl IPCConnector {
 
         let fd = if let Some(cmsg) = res.cmsgs()?.next() {
             if let ControlMessageOwned::ScmRights(fds) = cmsg {
-                fds.first().copied()
+                fds.first().map(|&fd| unsafe { OwnedFd::from_raw_fd(fd) })
             } else {
                 return Err(Errno::EBADMSG);
             }

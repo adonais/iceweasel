@@ -10,7 +10,6 @@
 #define js_Debug_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/BaseProfilerUtils.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Vector.h"
@@ -280,7 +279,7 @@ struct ValueSummary {
 struct ObjectSummary {
   // This is a special value for ValueSummary::typeAndFlags. It should be noted
   // that this only works as long as 0xf is not a valid JS::ValueType.
-  static const uint8_t GETTER_SETTER_MAGIC = 0xf0;
+  static const uint8_t GETTER_SETTER_MAGIC = 0x0f;
 
   enum class Kind : uint8_t {
     NotImplemented,

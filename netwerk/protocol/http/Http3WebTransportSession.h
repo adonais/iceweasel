@@ -9,7 +9,6 @@
 #include "WebTransportSessionBase.h"
 #include "Http3StreamBase.h"
 #include "nsIWebTransport.h"
-#include "mozilla/WeakPtr.h"
 #include "mozilla/net/NeqoHttp3Conn.h"
 
 namespace mozilla::net {

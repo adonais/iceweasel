@@ -135,6 +135,12 @@ void RenderCompositorNative::GetCompositorCapabilities(
 #endif
 }
 
+RenderCompositorNative::Surface::~Surface() = default;
+
+RenderCompositorNative::Surface::Surface(wr::DeviceIntSize aTileSize,
+                                         bool aIsOpaque)
+    : mTileSize(aTileSize), mIsOpaque(aIsOpaque) {}
+
 bool RenderCompositorNative::MaybeReadback(
     const gfx::IntSize& aReadbackSize, const wr::ImageFormat& aReadbackFormat,
     const Range<uint8_t>& aReadbackBuffer, bool* aNeedsYFlip) {

@@ -25,7 +25,6 @@
 #  include "mozilla/ServoBindingTypes.h"
 #  include "mozilla/ServoTypes.h"
 #  include "mozilla/Span.h"
-#  include "mozilla/Vector.h"
 #  include "mozilla/gfx/Types.h"
 #  include "mozilla/image/Resolution.h"
 #  include "nsCSSPropertyID.h"

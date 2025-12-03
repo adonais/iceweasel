@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Поверителен %s</string>
@@ -82,7 +89,7 @@
     %1$s is the name of the app (for example "Firefox").
     %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
   -->
-  <string name="felt_privacy_info_card_subtitle_2">%1$s изтрива бисквитките, историята и данни от разглеждането, когато затворите всички поверителни раздели. %2$s</string>
+  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s изтрива бисквитките, историята и данни от разглеждането, когато затворите всички поверителни раздели. %2$s</string>
   <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
@@ -204,8 +211,6 @@
   <string name="browser_menu_manage_extensions">Управление на разширенията</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
   <string name="browser_menu_more_settings">Повече</string>
-  <!-- Browser menu group that contains additional settings in expanded state -->
-  <string name="browser_menu_less_settings" moz:removedIn="144" tools:ignore="UnusedResources">По-малко</string>
   <!--
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
@@ -733,7 +738,6 @@
   <string name="preferences_pbm_lock_screen_title">Използвайте заключване на екрана, за да скриете разделите в поверително сърфиране</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_3">Преглеждане на раздели защитени с вашия пръстов отпечатък, PIN или отключване с лице. Включването на тази функционалност, също предотвратява заснемането и споделянето на екрана.</string>
-  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">Преглеждайте раздели защитени с вашия пръстов отпечатък, PIN или отключване с лице.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Блокиране на банери за бисквитки</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -849,7 +853,7 @@
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">В отметките</string>
   <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts">Показване на преки пътища</string>
+  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Показване на преки пътища</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">В синхронизираните раздели</string>
   <!-- Preference for account settings -->
@@ -975,10 +979,6 @@
     Content description for various wallpapers. %1$s is the name of the wallpaper.
   -->
   <string name="wallpapers_item_name_content_description">Тапет: %1$s</string>
-  <!-- Snackbar message for when wallpaper is selected -->
-  <string name="wallpaper_updated_snackbar_message" tools:ignore="UnusedResources" moz:removedIn="144">Тапетът е променен!</string>
-  <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">Преглед</string>
   <!-- Snackbar message for when wallpaper couldn't be downloaded -->
   <string name="wallpaper_download_error_snackbar_message">Тапетът не можа да бъде изтеглен</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
@@ -1037,16 +1037,12 @@
   <string name="alternative_app_icon_option_gradient_northern_lights">Северно сияние</string>
   <!-- Title for the "Retro 2004" themed alternative app icon variant in the icon picker screen. This app icon uses the classic Firefox logo from 2004. -->
   <string name="alternative_app_icon_option_retro_2004">Ретро 2004</string>
-  <!-- Title for the "Retro 2017" themed alternative app icon variant in the icon picker screen. This app icon uses the Firefox logo from 2017, with a more modernized design. -->
-  <string name="alternative_app_icon_option_retro_2017" tools:ignore="UnusedResources" moz:removedIn="144">Ретро 2017</string>
   <!-- Title for the "Pixelated" themed alternative app icon variant in the icon picker screen. This app icon features a pixel-art style, resembling retro 8-bit graphics. -->
   <string name="alternative_app_icon_option_pixelated">Пикселирано</string>
   <!-- Title for the "Minimal" themed alternative app icon variant in the icon picker screen. The app icon presents a simplified, flat and monochrome version of the Firefox logo. -->
   <string name="alternative_app_icon_option_minimal">Минимална</string>
   <!-- Title for the "Pride" themed alternative app icon variant in the icon picker screen. The app icon incorporates a rainbow color scheme in support of the LGBTQ+ community. -->
   <string name="alternative_app_icon_option_pride">Прайд</string>
-  <!-- Title for the "Cute" themed alternative app icon variant in the icon picker screen. The app icon features a playful design with an adorable aesthetic. -->
-  <string name="alternative_app_icon_option_cute" tools:ignore="UnusedResources" moz:removedIn="144">Симпатична</string>
   <!-- Title for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
   <string name="alternative_app_icon_option_momo">Момо</string>
   <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
@@ -1062,19 +1058,21 @@
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">Приливащи</string>
   <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other">Други</string>
+  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">Други</string>
+  <!-- Title for the "Featured" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
+  <string name="alternative_app_icon_group_featured">Препоръчанa</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
   <string name="restart_warning_dialog_title">Промяна на иконата на приложението?</string>
-  <!-- Message to warn users that applying an alternative app icon requires an app restart -->
-  <string name="restart_warning_dialog_body" tools:ignore="UnusedResources" moz:removedIn="144">Смяната на иконата изисква приложението да се рестартира.</string>
   <!-- Message to warn users that applying an alternative app icon may require an app restart. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
   <string name="restart_warning_dialog_body_2">Приложението може да се затвори. Просто докоснете новата ни лъскава иконка, за да го отворите отново %1$s.</string>
-  <!-- Dialog button text for confirming the app restart to apply the selected icon -->
-  <string name="restart_warning_dialog_button_positive" tools:ignore="UnusedResources" moz:removedIn="144">Рестартиране</string>
+  <!-- Message to warn users that applying an alternative app icon may require an app restart and will remove existing shortcuts because of the OS limitations. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="restart_and_shortcuts_removal_warning_dialog_body">Смяната на иконата ще премахне всички сайтове и преки пътища, които сте запазили от началния екран. \u0020\u0020%1$s може да бъде затворено. Докоснете новата икона, за да я отворите отново.</string>
   <!-- Dialog button text for confirming the possible app restart and new icon selection -->
   <string name="restart_warning_dialog_button_positive_2">Промяна на иконката</string>
   <!-- Dialog button text for cancelling app icon change -->
   <string name="restart_warning_dialog_button_negative">Отказ</string>
+  <!-- Error message snackbar shown after the user tried to apply the new icon but the Android OS threw an error while updating existing app shortcuts (e.g. private mode shortcut) -->
+  <string name="shortcuts_update_error">Неуспешно актуализиране на иконата на приложението. Премахнете съществуващите преки пътища и опитайте отново.</string>
   <!--
     Add-ons general availability nimbus message
 
@@ -1728,25 +1726,25 @@
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
   <string name="webcompat_reporter_label_description">Опишете проблема (по избор)</string>
   <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
-  <string name="webcompat_reporter_send_more_info" moz:removedIn="144" tools:ignore="UnusedResources">Изпратете повече информация</string>
-  <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
   <string name="webcompat_reporter_add_more_info">Добавяне на повече информация</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">Отказ</string>
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Изпращане</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Докладът ви е изпратен</string>
-  <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
   <string name="webcompat_reporter_success_snackbar_text_2">Докладът е изпратен</string>
-  <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Затваряне</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">Какво се случи? Какво трябваше да се случи?</string>
   <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
   <string name="webcompat_reporter_etp_checkbox_text">Изпращане на адреси, блокирани от защитата от проследяване</string>
   <!-- Description text for the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. It informs the user when checked, the report will include the list of URLs that were blocked by Enhanced Tracking Protection on the current page. -->
   <string name="webcompat_reporter_etp_checkbox_description">Подобрена защита от проследяване може да блокира проследяващите скриптове, от които някои уебсайтове се нуждаят, за да работят правилно.</string>
+  <!-- The button text for the preview report button to view a preview of the report. -->
+  <string name="webcompat_reporter_preview_report">Доклад за предварителните прегледи</string>
+  <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
+  <string name="webcompat_reporter_preview_bottom_sheet_header">Преглед на доклад</string>
+  <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
+  <string name="webcompat_reporter_preview_bottom_sheet_send">Изпращане</string>
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
@@ -2055,11 +2053,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d раздел избран</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Колекция запазена!</string>
-  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection_2">Списъкът е запазен</string>
-  <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Разделът е запазен!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
   <string name="create_collection_tab_saved_2">Разделът е запазен</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
@@ -2198,8 +2192,6 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Затворени раздели: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">Отметки, запазени в „%s“!</string>
-  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
   <string name="snackbar_message_bookmarks_saved_in_2">Отметки, запазени в „%s“</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Добавено към преки пътища!</string>
@@ -2209,8 +2201,6 @@
   <string name="snackbar_private_data_deleted">Поверителните данни за сърфиране са изтрити</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">ОТМЕНЯНЕ</string>
-  <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">Страницата е премахната</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -2314,11 +2304,7 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Разделите са изпратени!</string>
-  <!-- Text shown in snackbar when multiple tabs have been sent to device -->
   <string name="sync_sent_tabs_snackbar_2">Разделите са изпратени</string>
-  <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Разделът е изпратен!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
   <string name="sync_sent_tab_snackbar_2">Разделът е изпратен</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
@@ -2370,9 +2356,19 @@
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">По-силна защита от проследяване и по-бърза производителност, но някои сайтове може да не работят правилно.</string>
   <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline">Разрешаване на %1$s автоматично да прилага изключения, необходими за избягване на сериозна повреда на уебсайта.</string>
+  <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">Разрешаване на %1$s автоматично да прилага изключения, необходими за избягване на сериозна повреда на уебсайта.</string>
   <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience">Също така автоматично прилага изключения, които са необходими само за отстраняване на незначителни проблеми и за предоставяне на удобни функции.</string>
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">Също така автоматично прилага изключения, които са необходими само за отстраняване на незначителни проблеми и за предоставяне на удобни функции.</string>
+  <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Поправяне на големи проблеми със сайта (препоръчително)</string>
+  <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience_label">Поправяне на незначителни проблеми със сайта</string>
+  <!-- Preference description for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience_description">Трябва да се използва с корекции на големи проблеми.</string>
+  <!-- Preference sub header for the enhanced tracking protection options to fix issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_subheader">Поправяне на проблеми със сайта</string>
+  <!-- Learn more text for the enhanced tracking protection options to fix issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_learn_more">Научете повече</string>
   <!--
     Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
 
@@ -2761,14 +2757,16 @@
   <string name="preferences_addresses_sync_addresses_across_devices">Синхронизиране на адреси между устройства</string>
   <!-- Preference option for syncing addresses across devices. This is displayed when the user is signed into sync -->
   <string name="preferences_addresses_sync_addresses">Синхронизиране на адреси</string>
+  <!-- Content description navigating back from autofill settings screen. -->
+  <string name="autofill_settings_navigate_back_button_content_description">Назад</string>
   <!-- Title of the "Add card" screen -->
   <string name="credit_cards_add_card">Добавяне на карта</string>
+  <!-- Content description for the "credit card feature" top bar back button -->
+  <string name="credit_cards_navigate_back_button_content_description">Връщане назад</string>
   <!-- Title of the "Edit card" screen -->
   <string name="credit_cards_edit_card">Редактиране на карта</string>
   <!-- The header for the card number of a credit card -->
   <string name="credit_cards_card_number">Номер на карта</string>
-  <!-- The header for the expiration date of a credit card -->
-  <string name="credit_cards_expiration_date">Дата на валидност</string>
   <!-- The label for the expiration date month of a credit card to be used by a11y services -->
   <string name="credit_cards_expiration_date_month">Месец на валидност</string>
   <!-- The label for the expiration date year of a credit card to be used by a11y services -->
@@ -3483,8 +3481,6 @@
   <string name="clear_site_data_dialog_positive_button_text">Изчистване</string>
   <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
   <string name="clear_site_data_dialog_negative_button_text">Отказ</string>
-  <!-- Snackbar title shown when the site data has been cleared. -->
-  <string name="clear_site_data_snackbar" moz:removedIn="144" tools:ignore="UnusedResources">Бисквитките и данните на сайта са премахнати</string>
   <!-- Text for the connection security panel when the site is secure. -->
   <string name="connection_security_panel_secure">Защитена връзка</string>
   <!-- Text for the connection security panel when the site is not secure. -->
@@ -3610,6 +3606,8 @@
   <string name="microsurvey_close_handle_content_description">Затваряне на анкетата</string>
   <!-- Content description for "X" button that is closing microsurvey. -->
   <string name="microsurvey_close_button_content_description">Затваряне</string>
+  <!-- The title of the autofill tab in the Debug Drawer. -->
+  <string name="debug_drawer_autofill_title">Инструменти за автоматично попълване</string>
   <!--
     Debug drawer logins
 
@@ -3679,9 +3677,9 @@
   <!-- The text field label for overriding current region. -->
   <string name="debug_drawer_override_current_region_label">Замяна на текущия регион</string>
   <!-- The title of the button for overriding home and current region. -->
-  <string name="debug_drawer_override_region">Заменяне на начало и текущ регион</string>
+  <string name="debug_drawer_override_region">Заменяне на адреса и текущия регион</string>
   <!-- The title of the button for overriding home region permanently. -->
-  <string name="debug_drawer_override_home_region_permanently">Заместване на началния регион за постоянно</string>
+  <string name="debug_drawer_override_home_region_permanently">Заменяне на началния регион за постоянно</string>
   <!--
     Add-ons debug tools
 
@@ -3765,7 +3763,7 @@
   <!-- Subtitle for a setup checklist with 3 steps when the first task is completed. -->
   <string name="setup_checklist_subtitle_3_steps_first_step">Страхотно начало! Завършихте 1 от общо 3 стъпки.</string>
   <!-- Subtitle for a setup checklist with 3 steps when two of the tasks are completed. -->
-  <string name="setup_checklist_subtitle_3_steps_second_step">Почти е готов! Две стъпки са завършени и остава 1 до края.</string>
+  <string name="setup_checklist_subtitle_3_steps_second_step">Почти е готово! Две стъпки са завършени и остава 1 до края.</string>
   <!-- Subtitle for a setup checklist with 3 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_subtitle_3_steps_completed_state">Завършихте всичките 3 стъпки. Насладете се на скоростта, поверителността и сигурността на %1$s.</string>
   <!--
@@ -3882,6 +3880,28 @@
   <string name="review_prompt_feedback_header">Съжаляваме, че имате проблеми. Кажете ни как можем да подобрим %1$s.</string>
   <!-- Label for a button opening a feedback forum -->
   <string name="review_prompt_feedback_button">Оставете обратна връзка</string>
+  <!--
+    Settings Search Strings
+
+    Title of Settings Search. "Search" is a verb here
+  -->
+  <string name="settings_search_title">Настройки за търсене</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to clear the search field for settings search -->
+  <string name="content_description_settings_search_clear_search">Изчистване</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to navigate back to the Settings page from the Settings Search screen. -->
+  <string name="content_description_settings_search_navigate_back">Придвижване назад</string>
+  <!-- Message displayed when the search field in the Settings Search screen is empty -->
+  <string name="settings_search_empty_query_placeholder">Няма скорошни търсения</string>
+  <!-- Message when error happens with Settings Search -->
+  <string name="settings_search_error_message">Възникна грешка</string>
+  <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
+  <string name="settings_search_clear_recent_searches_message">Изчистване на всички</string>
+  <!-- Section header for recent search results -->
+  <string name="settings_search_recent_searches_section_header">Скорошни резултати от търсенето</string>
+  <!-- Message displayed when the search field is not empty but search results is empty. -->
+  <string name="settings_search_no_results_title">Нищо не се оказа</string>
+  <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
+  <string name="settings_search_no_results_message">Може би да опитате различно търсене?</string>
   <!--
     Terms of use pop up prompt
 

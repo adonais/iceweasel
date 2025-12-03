@@ -66,7 +66,7 @@ void JSValidatorParent::OnDataAvailable(const nsACString& aData) {
           if (NS_FAILED(rv)) {
             return;
           }
-          Unused << self->SendOnDataAvailable(std::move(sharedData));
+          (void)self->SendOnDataAvailable(std::move(sharedData));
         }
       });
 }
@@ -84,16 +84,16 @@ void JSValidatorParent::OnStopRequest(nsresult aResult, nsIRequest& aRequest) {
           MOZ_ASSERT(httpBaseChannel);
 
           nsAutoCString contentCharset;
-          Unused << httpBaseChannel->GetContentCharset(contentCharset);
+          (void)httpBaseChannel->GetContentCharset(contentCharset);
 
           nsAutoString hintCharset;
-          Unused << httpBaseChannel->GetClassicScriptHintCharset(hintCharset);
+          (void)httpBaseChannel->GetClassicScriptHintCharset(hintCharset);
 
           nsAutoString documentCharset;
-          Unused << httpBaseChannel->GetDocumentCharacterSet(documentCharset);
+          (void)httpBaseChannel->GetDocumentCharacterSet(documentCharset);
 
-          Unused << self->SendOnStopRequest(aResult, contentCharset,
-                                            hintCharset, documentCharset);
+          (void)self->SendOnStopRequest(aResult, contentCharset, hintCharset,
+                                        documentCharset);
         }
       });
 }

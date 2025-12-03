@@ -2,32 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from mach.config import ConfigType
 from mach.decorators import SettingsProvider
-
-
-class NullableBooleanType(ConfigType):
-    """ConfigType for nullable boolean: True, False, or None."""
-
-    @staticmethod
-    def validate(value):
-        if value is not None and not isinstance(value, bool):
-            raise TypeError()
-
-    @staticmethod
-    def from_config(config, section, option):
-        value = config.get(section, option).lower()
-        if value == "true":
-            return True
-        elif value == "false":
-            return False
-        return None
-
-    @staticmethod
-    def to_config(value):
-        if value is None:
-            return "unknown"
-        return "true" if value else "false"
 
 
 @SettingsProvider
@@ -57,7 +32,7 @@ class MachSettings:
                 ),
                 (
                     "mach_telemetry.is_employee",
-                    NullableBooleanType,
+                    "nullable_boolean",
                     "Cached value for whether the user is a Mozilla employee "
                     "(None=unknown, True=employee, False=not an employee)",
                     None,

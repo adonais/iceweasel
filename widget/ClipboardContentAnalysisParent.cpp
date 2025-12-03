@@ -11,7 +11,6 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/Variant.h"
 #include "nsBaseClipboard.h"
 #include "nsIClipboard.h"
 #include "nsID.h"

@@ -14,13 +14,37 @@ import rust
 import typescript
 from buildconfig import topsrcdir
 from glean_parser import lint, metrics, parser, translate, util
-from glean_parser.lint import CheckType, GlinterNit
+from glean_parser.lint import METRIC_CHECKS, CheckType, GlinterNit
 from glean_parser.pings import Ping
 from metrics_header_names import convert_yaml_path_to_header_name
 from mozbuild.util import FileAvoidWrite, memoize
 from util import generate_metric_ids
 
 import js
+
+
+def lint_gifft_non_ping_lifetime(metric, parser_config):
+    """
+    We only support mirrors for lifetime: ping
+    If you understand and are okay with how Legacy Telemetry has no
+    mechanism to which to mirror non-ping lifetimes,
+    you may use `no_lint: [GIFFT_NON_PING_LIFETIME]`
+    """
+
+    if not hasattr(metric, "telemetry_mirror") or metric.telemetry_mirror is None:
+        return
+
+    if metric.lifetime != metrics.Lifetime.ping:
+        yield (
+            f"Glean lifetime semantics are not mirrored. The lifetime of {metric.lifetime} is not supported."
+        )
+
+
+# Add to the built-in lints
+METRIC_CHECKS["GIFFT_NON_PING_LIFETIME"] = (
+    lint_gifft_non_ping_lifetime,
+    CheckType.warning,
+)
 
 
 @memoize
@@ -357,19 +381,6 @@ def output_gifft_map(output_fd, probe_type, all_objs, cpp_fd, options):
                     print(
                         f"Glean metric {category_name}.{metric.name} is of type {metric.type}"
                         " which can't be mirrored (we don't know how).",
-                        file=sys.stderr,
-                    )
-                    sys.exit(1)
-                # We only support mirrors for lifetime: ping
-                # If you understand and are okay with how Legacy Telemetry has no
-                # mechanism to which to mirror non-ping lifetimes,
-                # you may use `no_lint: [GIFFT_NON_PING_LIFETIME]`
-                elif (
-                    metric.lifetime != metrics.Lifetime.ping
-                    and "GIFFT_NON_PING_LIFETIME" not in metric.no_lint
-                ):
-                    print(
-                        f"Glean lifetime semantics are not mirrored. {category_name}.{metric.name}'s lifetime of {metric.lifetime} is not supported.",
                         file=sys.stderr,
                     )
                     sys.exit(1)

@@ -12,7 +12,6 @@
 #ifndef TestHarness_h__
 #define TestHarness_h__
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 
 #include "prenv.h"

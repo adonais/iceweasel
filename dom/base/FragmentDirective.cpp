@@ -141,7 +141,7 @@ void FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragment(
   if (!hasRemovedFragmentDirective) {
     return;
   }
-  Unused << NS_MutateURI(aURI).SetRef(hash).Finalize(aURI);
+  (void)NS_MutateURI(aURI).SetRef(hash).Finalize(aURI);
   TEXT_FRAGMENT_LOG("Updated hash of the URL. New URL: {}",
                     aURI->GetSpecOrDefault());
 }

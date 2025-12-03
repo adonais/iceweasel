@@ -9,7 +9,6 @@
 #ifndef nsCanvasFrame_h___
 #define nsCanvasFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "nsContainerFrame.h"
 #include "nsDisplayList.h"

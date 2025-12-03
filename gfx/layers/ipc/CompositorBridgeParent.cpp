@@ -72,10 +72,8 @@
 #ifdef XP_WIN
 #  include "mozilla/layers/CompositorD3D11.h"
 #  include "mozilla/widget/WinCompositorWidget.h"
-#  include "mozilla/WindowsVersion.h"
 #endif
 #include "mozilla/ipc/ProtocolTypes.h"
-#include "mozilla/Unused.h"
 #include "mozilla/Hal.h"
 #include "mozilla/HalTypes.h"
 #include "mozilla/StaticPtr.h"
@@ -138,7 +136,7 @@ void CompositorBridgeParentBase::NotifyNotUsed(PTextureParent* aTexture,
 
 void CompositorBridgeParentBase::SendAsyncMessage(
     const nsTArray<AsyncParentMessageData>& aMessage) {
-  Unused << SendParentAsyncMessages(aMessage);
+  (void)SendParentAsyncMessages(aMessage);
 }
 
 bool CompositorBridgeParentBase::AllocShmem(size_t aSize, ipc::Shmem* aShmem) {
@@ -756,7 +754,7 @@ void CompositorBridgeParent::NotifyJankedAnimations(
     const nsTArray<uint64_t>& animations = entry.second;
     if (layersId == mRootLayerTreeID) {
       if (mWrBridge) {
-        Unused << SendNotifyJankedAnimations(LayersId{0}, animations);
+        (void)SendNotifyJankedAnimations(LayersId{0}, animations);
       }
       // It unlikely happens multiple processes have janked animations at same
       // time, so it should be fine with enumerating sIndirectLayerTrees every
@@ -764,7 +762,7 @@ void CompositorBridgeParent::NotifyJankedAnimations(
     } else if (const LayerTreeState* state = GetIndirectShadowTree(layersId)) {
       if (ContentCompositorBridgeParent* cpcp =
               state->mContentCompositorBridgeParent) {
-        Unused << cpcp->SendNotifyJankedAnimations(layersId, animations);
+        (void)cpcp->SendNotifyJankedAnimations(layersId, animations);
       }
     }
   }
@@ -1045,7 +1043,7 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvAdoptChild(
     mApzUpdater->NotifyLayerTreeAdopted(child, oldApzUpdater);
   }
   if (apzEnablementChanged) {
-    Unused << SendCompositorOptionsChanged(child, mOptions);
+    (void)SendCompositorOptionsChanged(child, mOptions);
   }
   return IPC_OK();
 }
@@ -1497,7 +1495,7 @@ void CompositorBridgeParent::NotifyDidRender(const VsyncId& aCompositeStartId,
   nsTArray<ImageCompositeNotificationInfo> notifications;
   mWrBridge->ExtractImageCompositeNotifications(&notifications);
   if (!notifications.IsEmpty()) {
-    Unused << ImageBridgeParent::NotifyImageComposites(notifications);
+    (void)ImageBridgeParent::NotifyImageComposites(notifications);
   }
 }
 
@@ -1545,7 +1543,7 @@ void CompositorBridgeParent::MaybeDeclareStable() {
           } else {
             gfx::GPUParent* gpu = gfx::GPUParent::GetSingleton();
             if (gpu && gpu->CanSend()) {
-              Unused << gpu->SendDeclareStable();
+              (void)gpu->SendDeclareStable();
             }
           }
         }));
@@ -1597,11 +1595,11 @@ void CompositorBridgeParent::NotifyPipelineRendered(
   MaybeDeclareStable();
 
   LayersId layersId = isRoot ? LayersId{0} : wrBridge->GetLayersId();
-  Unused << compBridge->SendDidComposite(layersId, transactions,
-                                         aCompositeStart, aCompositeEnd);
+  (void)compBridge->SendDidComposite(layersId, transactions, aCompositeStart,
+                                     aCompositeEnd);
 
   if (!stats.IsEmpty()) {
-    Unused << SendNotifyFrameStats(stats);
+    (void)SendNotifyFrameStats(stats);
   }
 }
 

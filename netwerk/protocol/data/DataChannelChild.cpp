@@ -6,7 +6,6 @@
 
 #include "DataChannelChild.h"
 
-#include "mozilla/Unused.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/net/NeckoChild.h"
 
@@ -44,7 +43,7 @@ DataChannelChild::CompleteRedirectSetup(nsIStreamListener* aListener) {
   }
 
   if (mIPCOpen) {
-    Unused << Send__delete__(this);
+    (void)Send__delete__(this);
   }
   return NS_OK;
 }

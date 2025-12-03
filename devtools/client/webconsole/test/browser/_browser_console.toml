@@ -21,7 +21,6 @@ support-files = [
 
 ["browser_console.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1829298
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 
@@ -33,7 +32,6 @@ skip-if = [
 
 ["browser_console_clear_method.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1437843
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1437843
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1437843
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1437843
@@ -67,7 +65,6 @@ skip-if = ["verify"]
 ["browser_console_enable_network_monitoring.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1829298
   "verify",
 ]
 
@@ -84,6 +81,7 @@ skip-if = [
 ["browser_console_many_toggles.js"]
 skip-if = [
   "verify",
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug", # Bug 1812593
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt", # Bug 1812593
 ]
 

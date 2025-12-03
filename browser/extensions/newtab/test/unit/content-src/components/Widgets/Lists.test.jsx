@@ -496,18 +496,70 @@ describe("<Lists>", () => {
   });
 
   it("should cancel creating a new list when Escape key is pressed", () => {
-    const editList = wrapper.find("panel-item").at(0);
-    editList.props().onClick();
-    wrapper.update();
+    const newListId = "new-list-id";
 
-    let editableInput = wrapper.find("input.edit-list");
+    // Provide a fallback list so CHANGE_SELECTED has somewhere to go after delete
+    const stateWithEmptyAndFallback = {
+      ...mockState,
+      ListsWidget: {
+        selected: newListId,
+        lists: {
+          [newListId]: { label: "", tasks: [], completed: [] }, // empty "new" list
+          "test-list": { label: "test", tasks: [], completed: [] }, // fallback
+        },
+      },
+    };
+
+    const localWrapper = mount(
+      <WrapWithProvider state={stateWithEmptyAndFallback}>
+        <Lists
+          dispatch={dispatch}
+          handleUserInteraction={handleUserInteraction}
+        />
+      </WrapWithProvider>
+    );
+
+    const editableText = localWrapper.find("EditableText").at(0);
+
+    assert.ok(editableText.exists());
+    editableText.props().setIsEditing(true);
+    localWrapper.update();
+
+    let editableInput = localWrapper.find("input.edit-list");
     assert.ok(editableInput.exists());
 
+    // Press Escape to cancel new-list creation
     editableInput.simulate("keyDown", { key: "Escape" });
-    wrapper.update();
+    localWrapper.update();
 
-    // after cancelling, the input should be gone (list creation cancelled)
-    editableInput = wrapper.find("input.edit-list");
+    // Test dispatches from handleCancelNewList
+    const types = dispatch.getCalls().map(call => call.args[0].type);
+    assert.include(
+      types,
+      at.WIDGETS_LISTS_UPDATE,
+      "Expected update dispatch on cancel"
+    );
+    assert.include(
+      types,
+      at.WIDGETS_LISTS_CHANGE_SELECTED,
+      "Expected selected list to change after cancel"
+    );
+    assert.include(
+      types,
+      at.WIDGETS_LISTS_USER_EVENT,
+      "Expected telemetry event on cancel"
+    );
+
+    const listsState = localWrapper.find("Provider").prop("store").getState()
+      .ListsWidget.lists;
+    assert.strictEqual(
+      Object.keys(listsState).length,
+      2,
+      "expected total lists count to remain as 2 (no new list created on cancel)"
+    );
+
+    // After cancelling, the input should be gone (editing ended / list removed)
+    editableInput = localWrapper.find("input.edit-list");
     assert.strictEqual(editableInput.exists(), false);
   });
 });

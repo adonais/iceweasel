@@ -56,10 +56,10 @@ class RequestTest {
         assertEquals(Request.Method.POST, request.method)
 
         assertEquals(10, request.connectTimeout!!.first)
-        assertEquals(TimeUnit.SECONDS, request.connectTimeout!!.second)
+        assertEquals(TimeUnit.SECONDS, request.connectTimeout.second)
 
         assertEquals(1, request.readTimeout!!.first)
-        assertEquals(TimeUnit.MINUTES, request.readTimeout!!.second)
+        assertEquals(TimeUnit.MINUTES, request.readTimeout.second)
 
         assertEquals("Hello World!", request.body!!.useStream { it.bufferedReader().readText() })
         assertEquals(Request.Redirect.MANUAL, request.redirect)

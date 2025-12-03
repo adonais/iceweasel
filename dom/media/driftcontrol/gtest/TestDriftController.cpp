@@ -5,7 +5,6 @@
 
 #include "DriftController.h"
 #include "gtest/gtest.h"
-#include "mozilla/Maybe.h"
 
 using namespace mozilla;
 using TimeUnit = media::TimeUnit;

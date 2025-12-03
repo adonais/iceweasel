@@ -11,54 +11,6 @@ const WORKER_URL = "resource://gre/modules/translations/cld-worker.js";
  */
 
 /**
- * The options used for when detecting a language.
- *
- * @typedef {object} DetectionOptions
- *
- * @property {string} text - The text to analyze.
- * @property {boolean} [isHTML] - A boolean, indicating whether the text should be analyzed as
- *     HTML rather than plain text.
- * @property {string} [language] - A string indicating the expected language. For text
- *     extracted from HTTP documents, this is expected to come from the Content-Language
- *     header.
- * @property {string} [tld] - A string indicating the top-level domain of the document the
- *     text was extracted from.
- * @property {string} [encoding] - A string describing the encoding of the document the
- *     string was extracted from. Note that, regardless of the value of this property,
- *     the 'text' property must be a UTF-16 JavaScript string.
- */
-
-/**
- * The length of the substring to pull from the document's text for language
- * identification.
- *
- * This value should ideally be one that is large enough to yield a confident
- * identification result without being too large or expensive to extract.
- *
- * At this time, this value is not driven by statistical data or analysis.
- */
-const DOC_TEXT_TO_IDENTIFY_LENGTH = 1024;
-
-/**
- * The shorter the text, the less confidence we should have in the result of the language
- * identification. Add another heuristic to report the ID as not confident if the length
- * of the code points of the text is less than this threshold.
- *
- * This was determined by plotting a kernel density estimation of the number of times the
- * source language had to be changed in the SelectTranslationsPanel vs. the code units in
- * the source text.
- *
- * 0013 code units or less - 49.5% of language changes
- * 0036 code units or less - 74.9% of language changes
- * 0153 code units or less - 90.0% of language changes
- * 0200 code units or less - 91.5% of language changes
- * 0427 code units or less - 95.0% of language changes
- * 1382 code units or less - 98.0% of language changes
- * 3506 code units or less - 99.0% of language changes
- */
-const DOC_CONFIDENCE_THRESHOLD = 200;
-
-/**
  * An internal class to manage communicating to the worker, and managing its lifecycle.
  * It's initialized once below statically to the module.
  */
@@ -184,7 +136,8 @@ class WorkerManager {
 export const workerManager = new WorkerManager();
 
 /**
- *
+ * This class provides the ability to identify the language of text using
+ * the CLD2 language-detection algorithm.
  */
 export class LanguageDetector {
   /**
@@ -200,30 +153,5 @@ export class LanguageDetector {
     }
 
     return workerManager.detectLanguage(options);
-  }
-
-  /**
-   * Attempts to determine the language in which the document's content is written.
-   *
-   * @param {Document} document
-   * @returns {Promise<DetectionResult>}
-   */
-  static async detectLanguageFromDocument(document) {
-    // Grab a selection of text.
-    let encoder = Cu.createDocumentEncoder("text/plain");
-    encoder.init(document, "text/plain", encoder.SkipInvisibleContent);
-    let text = encoder
-      .encodeToStringWithMaxLength(DOC_TEXT_TO_IDENTIFY_LENGTH)
-      .replaceAll("\r", "")
-      .replaceAll("\n", " ");
-
-    const result = await workerManager.detectLanguage({
-      text,
-    });
-
-    if (text.length < DOC_CONFIDENCE_THRESHOLD) {
-      result.confident = false;
-    }
-    return result;
   }
 }

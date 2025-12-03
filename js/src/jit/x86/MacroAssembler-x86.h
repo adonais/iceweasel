@@ -1062,7 +1062,13 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
                      FloatRegister dest);
   void vmulpdSimd128(const SimdConstant& v, FloatRegister lhs,
                      FloatRegister dest);
+  void vandpsSimd128(const SimdConstant& v, FloatRegister lhs,
+                     FloatRegister dest);
   void vandpdSimd128(const SimdConstant& v, FloatRegister lhs,
+                     FloatRegister dest);
+  void vxorpsSimd128(const SimdConstant& v, FloatRegister lhs,
+                     FloatRegister dest);
+  void vxorpdSimd128(const SimdConstant& v, FloatRegister lhs,
                      FloatRegister dest);
   void vminpdSimd128(const SimdConstant& v, FloatRegister lhs,
                      FloatRegister dest);

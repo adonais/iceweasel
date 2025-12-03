@@ -792,8 +792,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
 
   // If the load has any special remote type handling, do so at this point.
   if (behavior != IsolationBehavior::WebContent) {
-    MOZ_TRY_VAR(
-        options.mRemoteType,
+    options.mRemoteType = MOZ_TRY(
         SpecialBehaviorRemoteType(behavior, aCurrentRemoteType, aParentWindow));
 
     if (options.mRemoteType != aCurrentRemoteType &&
@@ -1035,8 +1034,7 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
   }
 
   if (behavior != IsolationBehavior::WebContent) {
-    MOZ_TRY_VAR(
-        options.mRemoteType,
+    options.mRemoteType = MOZ_TRY(
         SpecialBehaviorRemoteType(behavior, preferredRemoteType, nullptr));
 
     MOZ_LOG(
@@ -1125,7 +1123,7 @@ void AddHighValuePermission(nsIPrincipal* aResultPrincipal,
   // unix epoch from `TimeStamp`.
   int64_t expirationTime =
       (PR_Now() / PR_USEC_PER_MSEC) + (int64_t(expiration) * PR_MSEC_PER_SEC);
-  Unused << perms->AddFromPrincipal(
+  (void)perms->AddFromPrincipal(
       sitePrincipal, aPermissionType, nsIPermissionManager::ALLOW_ACTION,
       nsIPermissionManager::EXPIRE_TIME, expirationTime);
 }

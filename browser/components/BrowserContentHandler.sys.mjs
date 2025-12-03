@@ -26,9 +26,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
-  UpdateManager: ["@mozilla.org/updates/update-manager;1", "nsIUpdateManager"],
-  WinTaskbar: ["@mozilla.org/windows-taskbar;1", "nsIWinTaskbar"],
-  WindowsUIUtils: ["@mozilla.org/windows-ui-utils;1", "nsIWindowsUIUtils"],
+  UpdateManager: ["@mozilla.org/updates/update-manager;1", Ci.nsIUpdateManager],
+  WinTaskbar: ["@mozilla.org/windows-taskbar;1", Ci.nsIWinTaskbar],
+  WindowsUIUtils: ["@mozilla.org/windows-ui-utils;1", Ci.nsIWindowsUIUtils],
 });
 
 ChromeUtils.defineLazyGetter(lazy, "gSystemPrincipal", () =>
@@ -826,12 +826,14 @@ nsBrowserContentHandler.prototype = {
               overridePage = null;
             }
 
-            /** If the override URL is provided by an experiment, is a valid
+            /**
+             * If the override URL is provided by an experiment, is a valid
              * Firefox What's New Page URL, and the update version is less than
              * or equal to the maxVersion set by the experiment, we'll try to use
              * the experiment override URL instead of the default or the
              * update-provided URL. Additional policy checks are done in
-             * @see getPostUpdateOverridePage */
+             * @see getPostUpdateOverridePage
+             */
             const nimbusOverrideUrl = Services.urlFormatter.formatURLPref(
               "startup.homepage_override_url_nimbus"
             );

@@ -21,7 +21,6 @@ import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputContentInfo
 import androidx.core.net.toUri
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.not
@@ -929,7 +928,6 @@ class TextInputDelegateTest : BaseSessionTest() {
         )
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N_MR1)
     @WithDisplay(width = 512, height = 512)
     // Child process updates require having a display.
     @Test

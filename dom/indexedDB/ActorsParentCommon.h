@@ -18,7 +18,6 @@
 #include "ErrorList.h"
 #include "mozilla/Result.h"
 #include "mozilla/Span.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/dom/indexedDB/Key.h"
 #include "nsISupports.h"

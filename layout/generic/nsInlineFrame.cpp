@@ -372,7 +372,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext,
   if (mFrames.IsEmpty()) {
     // Try to pull over one frame before starting so that we know
     // whether we have an anonymous block or not.
-    Unused << PullOneFrame(aPresContext, irs);
+    (void)PullOneFrame(aPresContext, irs);
   }
 
   ReflowFrames(aPresContext, aReflowInput, irs, aReflowOutput, aStatus);

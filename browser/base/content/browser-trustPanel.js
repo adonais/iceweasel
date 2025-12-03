@@ -298,7 +298,9 @@ class TrustPanel {
       { host }
     );
 
-    document.getElementById("trustpanel-popup-host").textContent = host;
+    let hostElement = document.getElementById("trustpanel-popup-host");
+    hostElement.textContent = host;
+    hostElement.setAttribute("tooltiptext", host);
 
     document.l10n.setAttributes(
       document.getElementById("trustpanel-etp-label"),
@@ -497,6 +499,7 @@ class TrustPanel {
 
     let children = blockers.map(async blocker => {
       let button = document.createElement("moz-button");
+      button.classList.add("moz-button-subviewbutton-nav");
       button.setAttribute("iconsrc", blocker.iconSrc);
       button.setAttribute("type", "ghost icon");
       document.l10n.setAttributes(

@@ -8,7 +8,6 @@
 #define DOM_SVG_SVGANIMATEDLENGTHLIST_H_
 
 #include "SVGLengthList.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 

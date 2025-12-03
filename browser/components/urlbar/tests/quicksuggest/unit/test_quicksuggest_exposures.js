@@ -113,7 +113,7 @@ add_setup(async function () {
         "quicksuggest.dynamicSuggestionTypes",
         "test-exposure-aaa,test-exposure-bbb",
       ],
-      ["suggest.quicksuggest.nonsponsored", true],
+      ["suggest.quicksuggest.all", true],
       ["quicksuggest.ampTopPickCharThreshold", 0],
     ],
   });
@@ -458,11 +458,11 @@ async function doMaxResultsTest({
   await QuickSuggestTestUtils.forceSync();
 }
 
-// Exposure suggestions are neither sponsored nor nonsponsored, so they should
-// be added even when sponsored and nonsponsored are disabled.
-add_task(async function sponsoredAndNonsponsoredDisabled() {
+// Exposure suggestions should automatically bypass the usual `all` and
+// sponsored prefs.
+add_task(async function bypassPrefs() {
+  UrlbarPrefs.set("suggest.quicksuggest.all", false);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
 
   await withSuggestionTypesPref("test-exposure-aaa", async () => {
     await doQueries([
@@ -485,8 +485,8 @@ add_task(async function sponsoredAndNonsponsoredDisabled() {
     ]);
   });
 
+  UrlbarPrefs.set("suggest.quicksuggest.all", true);
   UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   await QuickSuggestTestUtils.forceSync();
 });
 

@@ -43,6 +43,8 @@ class DebugDrawerNavigationMiddleware(
                     navController.navigate(route = DebugDrawerRoute.Addresses.route)
                 is DebugDrawerAction.NavigateTo.CreditCards ->
                     navController.navigate(route = DebugDrawerRoute.CreditCards.route)
+                is DebugDrawerAction.NavigateTo.Autofill ->
+                    navController.navigate(route = DebugDrawerRoute.Autofill.route)
                 is DebugDrawerAction.NavigateTo.CfrTools ->
                     navController.navigate(route = DebugDrawerRoute.CfrTools.route)
                 is DebugDrawerAction.NavigateTo.GleanDebugTools ->

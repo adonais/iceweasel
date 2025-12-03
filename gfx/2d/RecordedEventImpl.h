@@ -1,4 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+
 /* vim: set ts=8 sts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -18,7 +18,6 @@
 #include "SFNTData.h"
 
 #include "mozilla/dom/CanvasRenderingContextHelper.h"
-#include "mozilla/IntegerRange.h"
 #include "mozilla/layers/BuildConstants.h"
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/ipc/SerializeToBytesUtil.h"
@@ -424,11 +423,8 @@ class RecordedDrawGlyphs : public RecordedEventDerived<Derived> {
         mPattern(),
         mOptions(aOptions) {
     this->StorePattern(mPattern, aPattern);
-    mNumGlyphs = aNumGlyphs;
-    mGlyphs = new Glyph[aNumGlyphs];
-    memcpy(mGlyphs, aGlyphs, sizeof(Glyph) * aNumGlyphs);
+    mGlyphs.Assign(aGlyphs, aNumGlyphs);
   }
-  virtual ~RecordedDrawGlyphs();
 
   bool PlayEvent(Translator* aTranslator) const override;
 
@@ -449,8 +445,7 @@ class RecordedDrawGlyphs : public RecordedEventDerived<Derived> {
   ReferencePtr mScaledFont;
   PatternStorage mPattern;
   DrawOptions mOptions;
-  Glyph* mGlyphs = nullptr;
-  uint32_t mNumGlyphs = 0;
+  RecordedEventArray<Glyph, uint32_t> mGlyphs;
 };
 
 class RecordedFillGlyphs : public RecordedDrawGlyphs<RecordedFillGlyphs> {
@@ -1093,18 +1088,11 @@ class RecordedPathDestruction
 class RecordedSourceSurfaceCreation
     : public RecordedEventDerived<RecordedSourceSurfaceCreation> {
  public:
-  RecordedSourceSurfaceCreation(ReferencePtr aRefPtr, uint8_t* aData,
-                                int32_t aStride, const IntSize& aSize,
-                                SurfaceFormat aFormat)
+  RecordedSourceSurfaceCreation(ReferencePtr aRefPtr,
+                                const RefPtr<DataSourceSurface>& aDataSurface)
       : RecordedEventDerived(SOURCESURFACECREATION),
         mRefPtr(aRefPtr),
-        mData(aData),
-        mStride(aStride),
-        mSize(aSize),
-        mFormat(aFormat),
-        mDataOwned(false) {}
-
-  ~RecordedSourceSurfaceCreation();
+        mDataSurface(aDataSurface) {}
 
   bool PlayEvent(Translator* aTranslator) const override;
 
@@ -1118,11 +1106,7 @@ class RecordedSourceSurfaceCreation
   friend class RecordedEvent;
 
   ReferencePtr mRefPtr;
-  uint8_t* mData = nullptr;
-  int32_t mStride;
-  IntSize mSize;
-  SurfaceFormat mFormat;
-  mutable bool mDataOwned;
+  RefPtr<DataSourceSurface> mDataSurface;
 
   template <class S>
   MOZ_IMPLICIT RecordedSourceSurfaceCreation(S& aStream);
@@ -1496,11 +1480,10 @@ class RecordedFontData : public RecordedEventDerived<RecordedFontData> {
       : RecordedEventDerived(FONTDATA),
         mType(aUnscaledFont->GetType()),
         mFontDetails() {
-    mGetFontFileDataSucceeded =
-        aUnscaledFont->GetFontFileData(&FontDataProc, this) && mData;
+    if (!aUnscaledFont->GetFontFileData(&FontDataProc, this)) {
+      mGetFontFileDataSucceeded = false;
+    }
   }
-
-  virtual ~RecordedFontData();
 
   bool IsValid() const { return mGetFontFileDataSucceeded; }
 
@@ -1520,10 +1503,10 @@ class RecordedFontData : public RecordedEventDerived<RecordedFontData> {
   friend class RecordedEvent;
 
   FontType mType;
-  uint8_t* mData = nullptr;
+  RecordedEventArray<uint8_t, uint32_t> mData;
   RecordedFontDetails mFontDetails;
 
-  bool mGetFontFileDataSucceeded;
+  bool mGetFontFileDataSucceeded = true;
 
   template <class S>
   MOZ_IMPLICIT RecordedFontData(S& aStream);
@@ -1759,13 +1742,23 @@ class RecordedFilterNodeSetAttribute
   };
 
   template <typename T>
+  void WritePayload(const T& aValue) {
+    mPayload.Assign(reinterpret_cast<const uint8_t*>(&aValue), sizeof(T));
+  }
+
+  void WritePayload(const bool& aValue) {
+    uint8_t data = aValue ? 1 : 0;
+    mPayload.Assign(&data, 1);
+  }
+
+  template <typename T>
   RecordedFilterNodeSetAttribute(FilterNode* aNode, uint32_t aIndex,
                                  T aArgument, ArgType aArgType)
       : RecordedEventDerived(FILTERNODESETATTRIBUTE),
         mNode(aNode),
         mIndex(aIndex),
         mArgType(aArgType) {
-    mPayload.Assign(reinterpret_cast<const uint8_t*>(&aArgument), sizeof(T));
+    WritePayload(aArgument);
   }
 
   RecordedFilterNodeSetAttribute(FilterNode* aNode, uint32_t aIndex,
@@ -1890,8 +1883,6 @@ static std::string NameFromBackend(BackendType aType) {
   switch (aType) {
     case BackendType::NONE:
       return "None";
-    case BackendType::DIRECT2D:
-      return "Direct2D";
     default:
       return "Unknown";
   }
@@ -2775,17 +2766,7 @@ inline void RecordedFillCircle::OutputSimpleEventInfo(
 }
 
 template <class T>
-inline RecordedDrawGlyphs<T>::~RecordedDrawGlyphs() {
-  delete[] mGlyphs;
-}
-
-template <class T>
 inline bool RecordedDrawGlyphs<T>::PlayEvent(Translator* aTranslator) const {
-  if (mNumGlyphs > 0 && !mGlyphs) {
-    // Glyph allocation failed
-    return false;
-  }
-
   DrawTarget* dt = aTranslator->GetCurrentDrawTarget();
   if (!dt) {
     return false;
@@ -2797,8 +2778,8 @@ inline bool RecordedDrawGlyphs<T>::PlayEvent(Translator* aTranslator) const {
   }
 
   GlyphBuffer buffer;
-  buffer.mGlyphs = mGlyphs;
-  buffer.mNumGlyphs = mNumGlyphs;
+  buffer.mGlyphs = mGlyphs.data();
+  buffer.mNumGlyphs = mGlyphs.size();
   DrawGlyphs(dt, scaledFont, buffer, *GenericPattern(mPattern, aTranslator));
   return true;
 }
@@ -2811,18 +2792,16 @@ RecordedDrawGlyphs<T>::RecordedDrawGlyphs(RecordedEvent::EventType aType,
   ReadElement(aStream, mScaledFont);
   ReadDrawOptions(aStream, mOptions);
   this->ReadPatternData(aStream, mPattern);
-  ReadElement(aStream, mNumGlyphs);
-  if (!aStream.good() || mNumGlyphs <= 0) {
+  uint32_t numGlyphs = 0;
+  ReadElement(aStream, numGlyphs);
+  if (!aStream.good() || numGlyphs <= 0) {
     return;
   }
 
-  mGlyphs = new (fallible) Glyph[mNumGlyphs];
-  if (!mGlyphs) {
+  if (!mGlyphs.Read(aStream, numGlyphs)) {
     gfxCriticalNote << "RecordedDrawGlyphs failed to allocate glyphs of size "
-                    << mNumGlyphs;
+                    << numGlyphs;
     aStream.SetIsBad();
-  } else {
-    aStream.read((char*)mGlyphs, sizeof(Glyph) * mNumGlyphs);
   }
 }
 
@@ -2832,8 +2811,8 @@ void RecordedDrawGlyphs<T>::Record(S& aStream) const {
   WriteElement(aStream, mScaledFont);
   WriteElement(aStream, mOptions);
   this->RecordPatternData(aStream, mPattern);
-  WriteElement(aStream, mNumGlyphs);
-  aStream.write((char*)mGlyphs, sizeof(Glyph) * mNumGlyphs);
+  WriteElement(aStream, mGlyphs.size());
+  mGlyphs.Write(aStream);
 }
 
 template <class T>
@@ -3603,58 +3582,59 @@ inline void RecordedPathDestruction::OutputSimpleEventInfo(
   aStringStream << "[" << mRefPtr << "] Path Destroyed";
 }
 
-inline RecordedSourceSurfaceCreation::~RecordedSourceSurfaceCreation() {
-  if (mDataOwned) {
-    delete[] mData;
-  }
-}
-
 inline bool RecordedSourceSurfaceCreation::PlayEvent(
     Translator* aTranslator) const {
-  if (!mData) {
+  if (!mDataSurface) {
     return false;
   }
 
-  CheckedInt32 stride = CheckedInt32(mSize.width) * BytesPerPixel(mFormat);
-  RefPtr<SourceSurface> src;
-  if (!mSize.IsEmpty() && stride.isValid() && stride.value() > 0) {
-    src = Factory::CreateWrappingDataSourceSurface(
-        mData, stride.value(), mSize, mFormat,
-        [](void* aClosure) { delete[] static_cast<uint8_t*>(aClosure); },
-        mData);
-  }
-  if (src) {
-    mDataOwned = false;
-  }
-
-  aTranslator->AddSourceSurface(mRefPtr, src);
+  aTranslator->AddSourceSurface(mRefPtr, mDataSurface);
   return true;
 }
 
 template <class S>
 void RecordedSourceSurfaceCreation::Record(S& aStream) const {
+  MOZ_ASSERT(mDataSurface);
+  IntSize size = mDataSurface->GetSize();
+  SurfaceFormat format = mDataSurface->GetFormat();
   WriteElement(aStream, mRefPtr);
-  WriteElement(aStream, mSize);
-  WriteElement(aStream, mFormat);
-  MOZ_ASSERT(mData);
-  size_t dataFormatWidth = BytesPerPixel(mFormat) * mSize.width;
-  const char* endSrc = (const char*)(mData + (mSize.height * mStride));
-  for (const char* src = (const char*)mData; src < endSrc; src += mStride) {
-    aStream.write(src, dataFormatWidth);
+  DataSourceSurface::ScopedMap map(mDataSurface, DataSourceSurface::READ);
+  if (map.IsMapped()) {
+    WriteElement(aStream, size);
+    WriteElement(aStream, format);
+
+    size_t dataFormatWidth = BytesPerPixel(format) * size.width;
+    size_t stride = map.GetStride();
+    const char* src = (const char*)map.GetData();
+    const char* endSrc = src + stride * size.height;
+    while (src < endSrc) {
+      aStream.write(src, dataFormatWidth);
+      src += stride;
+    }
+  } else {
+    gfxWarning()
+        << "RecordedSourceSurfaceCreation::Record failed to map surface";
+    WriteElement(aStream, IntSize(1, 1));
+    int bpp = BytesPerPixel(format);
+    WriteElement(aStream, bpp <= 4 ? format : SurfaceFormat::B8G8R8A8);
+    static const char zeroData[4] = {0, 0, 0, 0};
+    aStream.write(zeroData, BytesPerPixel(format));
   }
 }
 
 template <class S>
 RecordedSourceSurfaceCreation::RecordedSourceSurfaceCreation(S& aStream)
-    : RecordedEventDerived(SOURCESURFACECREATION), mDataOwned(true) {
+    : RecordedEventDerived(SOURCESURFACECREATION) {
   ReadElement(aStream, mRefPtr);
-  ReadElement(aStream, mSize);
-  ReadElementConstrained(aStream, mFormat, SurfaceFormat::B8G8R8A8,
+  IntSize size;
+  ReadElement(aStream, size);
+  SurfaceFormat format = SurfaceFormat::UNKNOWN;
+  ReadElementConstrained(aStream, format, SurfaceFormat::B8G8R8A8,
                          SurfaceFormat::UNKNOWN);
 
-  if (!Factory::AllowedSurfaceSize(mSize)) {
+  if (!Factory::AllowedSurfaceSize(size)) {
     gfxCriticalNote << "RecordedSourceSurfaceCreation read invalid size "
-                    << mSize;
+                    << size;
     aStream.SetIsBad();
   }
 
@@ -3662,31 +3642,43 @@ RecordedSourceSurfaceCreation::RecordedSourceSurfaceCreation(S& aStream)
     return;
   }
 
-  CheckedInt<size_t> size;
-  if (mSize.width >= 0 && mSize.height >= 0) {
-    CheckedInt32 stride = CheckedInt32(mSize.width) * BytesPerPixel(mFormat);
-    if (stride.isValid() && stride.value() >= 0) {
-      size = CheckedInt<size_t>(stride.value()) * size_t(mSize.height);
-      if (size.isValid()) {
-        mData = new (fallible) uint8_t[size.value()];
+  mDataSurface = Factory::CreateDataSourceSurface(size, format);
+  if (mDataSurface) {
+    DataSourceSurface::ScopedMap map(mDataSurface, DataSourceSurface::WRITE);
+    if (!map.IsMapped()) {
+      mDataSurface = nullptr;
+    } else {
+      char* data = (char*)map.GetData();
+      size_t stride = map.GetStride();
+      size_t dataFormatWidth = BytesPerPixel(format) * size.width;
+      if (stride == dataFormatWidth) {
+        aStream.read(data, stride * size.height);
+      } else {
+        for (int y = 0; y < size.height; y++) {
+          aStream.read(data, dataFormatWidth);
+          data += stride;
+        }
       }
     }
   }
-  if (!mData) {
+  if (!mDataSurface) {
     gfxCriticalNote
         << "RecordedSourceSurfaceCreation failed to allocate data of size "
-        << (size.isValid() ? size.value() : 0);
+        << size.width << " x " << size.height;
     aStream.SetIsBad();
-  } else {
-    aStream.read((char*)mData, size.value());
   }
 }
 
 inline void RecordedSourceSurfaceCreation::OutputSimpleEventInfo(
     std::stringstream& aStringStream) const {
-  aStringStream << "[" << mRefPtr
-                << "] SourceSurface created (Size: " << mSize.width << "x"
-                << mSize.height << ")";
+  if (mDataSurface) {
+    IntSize size = mDataSurface->GetSize();
+    aStringStream << "[" << mRefPtr
+                  << "] SourceSurface created (Size: " << size.width << "x"
+                  << size.height << ")";
+  } else {
+    aStringStream << "[" << mRefPtr << "] SourceSurface created (no data)";
+  }
 }
 
 inline bool RecordedSourceSurfaceDestruction::PlayEvent(
@@ -4115,15 +4107,13 @@ inline void RecordedSnapshot::OutputSimpleEventInfo(
   aStringStream << "[" << mRefPtr << "] Snapshot Created";
 }
 
-inline RecordedFontData::~RecordedFontData() { delete[] mData; }
-
 inline bool RecordedFontData::PlayEvent(Translator* aTranslator) const {
-  if (!mData) {
+  if (mData.empty()) {
     return false;
   }
 
   RefPtr<NativeFontResource> fontResource = Factory::CreateNativeFontResource(
-      mData, mFontDetails.size, mType, aTranslator->GetFontContext());
+      mData.data(), mData.size(), mType, aTranslator->GetFontContext());
   if (!fontResource) {
     return false;
   }
@@ -4138,31 +4128,24 @@ void RecordedFontData::Record(S& aStream) const {
 
   WriteElement(aStream, mType);
   WriteElement(aStream, mFontDetails.fontDataKey);
-  if (!mData) {
-    WriteElement(aStream, 0);
-  } else {
-    WriteElement(aStream, mFontDetails.size);
-    aStream.write((const char*)mData, mFontDetails.size);
-  }
+  WriteElement(aStream, mData.size());
+  mData.Write(aStream);
 }
 
 inline void RecordedFontData::OutputSimpleEventInfo(
     std::stringstream& aStringStream) const {
-  aStringStream << "Font Data of size " << mFontDetails.size;
+  aStringStream << "Font Data of size " << mData.size();
 }
 
 inline void RecordedFontData::SetFontData(const uint8_t* aData, uint32_t aSize,
                                           uint32_t aIndex) {
-  mData = new (fallible) uint8_t[aSize];
-  if (!mData) {
+  if (!mData.TryAssign(aData, aSize)) {
+    mGetFontFileDataSucceeded = false;
     gfxCriticalNote
         << "RecordedFontData failed to allocate data for recording of size "
         << aSize;
-  } else {
-    memcpy(mData, aData, aSize);
   }
   mFontDetails.fontDataKey = SFNTData::GetUniqueKey(aData, aSize, 0, nullptr);
-  mFontDetails.size = aSize;
   mFontDetails.index = aIndex;
 }
 
@@ -4172,7 +4155,6 @@ inline bool RecordedFontData::GetFontDetails(RecordedFontDetails& fontDetails) {
   }
 
   fontDetails.fontDataKey = mFontDetails.fontDataKey;
-  fontDetails.size = mFontDetails.size;
   fontDetails.index = mFontDetails.index;
   return true;
 }
@@ -4182,19 +4164,17 @@ RecordedFontData::RecordedFontData(S& aStream)
     : RecordedEventDerived(FONTDATA), mType(FontType::UNKNOWN) {
   ReadElementConstrained(aStream, mType, FontType::DWRITE, FontType::UNKNOWN);
   ReadElement(aStream, mFontDetails.fontDataKey);
-  ReadElement(aStream, mFontDetails.size);
-  if (!mFontDetails.size || !aStream.good()) {
+  uint32_t dataSize = 0;
+  ReadElement(aStream, dataSize);
+  if (!dataSize || !aStream.good()) {
     return;
   }
 
-  mData = new (fallible) uint8_t[mFontDetails.size];
-  if (!mData) {
+  if (!mData.Read(aStream, dataSize)) {
     gfxCriticalNote
         << "RecordedFontData failed to allocate data for playback of size "
-        << mFontDetails.size;
+        << dataSize;
     aStream.SetIsBad();
-  } else {
-    aStream.read((char*)mData, mFontDetails.size);
   }
 }
 
@@ -4467,11 +4447,6 @@ inline void RecordedMaskSurface::OutputSimpleEventInfo(
   OutputSimplePatternInfo(mPattern, aStringStream);
 }
 
-template <typename T>
-void ReplaySetAttribute(FilterNode* aNode, uint32_t aIndex, T aValue) {
-  aNode->SetAttribute(aIndex, aValue);
-}
-
 inline bool RecordedFilterNodeSetAttribute::PlayEvent(
     Translator* aTranslator) const {
   FilterNode* node = aTranslator->LookupFilterNode(mNode);
@@ -4479,16 +4454,18 @@ inline bool RecordedFilterNodeSetAttribute::PlayEvent(
     return false;
   }
 
-#define REPLAY_SET_ATTRIBUTE(type, argtype)                    \
+#define REPLAY_SET_ATTRIBUTE_CAST(type, cast, argtype)         \
   case ARGTYPE_##argtype:                                      \
     if (mPayload.size() < sizeof(type)) {                      \
       return false;                                            \
     }                                                          \
-    ReplaySetAttribute(node, mIndex, *(type*)mPayload.data()); \
+    node->SetAttribute(mIndex, cast(*(type*)mPayload.data())); \
     break
+#define REPLAY_SET_ATTRIBUTE(type, argtype) \
+  REPLAY_SET_ATTRIBUTE_CAST(type, , argtype)
 
   switch (mArgType) {
-    REPLAY_SET_ATTRIBUTE(bool, BOOL);
+    REPLAY_SET_ATTRIBUTE_CAST(uint8_t, bool, BOOL);
     REPLAY_SET_ATTRIBUTE(uint32_t, UINT32);
     REPLAY_SET_ATTRIBUTE(Float, FLOAT);
     REPLAY_SET_ATTRIBUTE(Size, SIZE);

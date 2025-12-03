@@ -20,6 +20,7 @@ kind-dependencies:
     - shippable-l10n-mac-notarization
 
 task-defaults:
+    run-on-repo-type: [hg]
     name: eme-free-repack
     description: Release Promotion eme-free repacks
     run-on-projects: []  # to make sure this never runs as part of CI

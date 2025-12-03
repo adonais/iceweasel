@@ -23,7 +23,6 @@
 #include "ErrorList.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/GeckoTrace.h"
-#include "mozilla/MacroForEach.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"

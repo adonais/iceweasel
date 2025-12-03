@@ -135,8 +135,8 @@ static inline void CheckedUnsafePtrStackCallback(uint32_t aFrameNumber,
   MozCodeAddressDetails details;
   MozDescribeCodeAddress(aPC, &details);
   char buf[1025];
-  Unused << MozFormatCodeAddressDetails(buf, sizeof(buf), aFrameNumber, aPC,
-                                        &details);
+  (void)MozFormatCodeAddressDetails(buf, sizeof(buf), aFrameNumber, aPC,
+                                    &details);
   stack->Append(buf);
   stack->Append("\n");
 }

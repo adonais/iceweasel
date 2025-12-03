@@ -85,7 +85,7 @@ bool WinPointerEvents::GetPointerType(uint32_t aPointerId,
 POINTER_INPUT_TYPE
 WinPointerEvents::GetPointerType(uint32_t aPointerId) {
   POINTER_INPUT_TYPE pointerType = PT_POINTER;
-  Unused << GetPointerType(aPointerId, &pointerType);
+  (void)GetPointerType(aPointerId, &pointerType);
   return pointerType;
 }
 

@@ -10,17 +10,6 @@ import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 
 /**
- * The 'surface' that the prompt was displayed on, e.g. the homepage or the browser.
- */
-enum class Surface {
-    HOMEPAGE_NEW_TAB,
-    BROWSER,
-    ;
-
-    val metricLabel = name.lowercase()
-}
-
-/**
  * [State] for the terms of use prompt.
  */
 data object TermsOfUsePromptState : State

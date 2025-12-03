@@ -45,6 +45,7 @@ user_pref("browser.safebrowsing.provider.google5.gethashURL", "http://{server}/s
 user_pref("browser.safebrowsing.provider.google5.updateURL", "http://{server}/safebrowsing5-dummy/update");
 user_pref("browser.safebrowsing.provider.mozilla.gethashURL", "http://{server}/safebrowsing-dummy/gethash");
 user_pref("browser.safebrowsing.provider.mozilla.updateURL", "http://{server}/safebrowsing-dummy/update");
+user_pref("browser.ipProtection.guardian.endpoint", "http://{server}/vpn-dummy");
 user_pref("browser.search.suggest.timeout", 10000); // use a 10s suggestion timeout in tests
 user_pref("browser.shell.checkDefaultBrowser", false);
 user_pref("browser.startup.page", 0); // use about:blank, not browser.startup.homepage

@@ -15,7 +15,6 @@
 
 #include "ScopedNSSTypes.h"
 #include "js/StructuredClone.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/CryptoBuffer.h"
 #include "mozilla/fallible.h"

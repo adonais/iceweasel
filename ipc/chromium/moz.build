@@ -104,7 +104,6 @@ if CONFIG["TARGET_KERNEL"] == "Darwin":
 if CONFIG["TARGET_OS"] == "OSX":
     UNIFIED_SOURCES += [
         "src/base/chrome_application_mac.mm",
-        "src/base/mac_util.mm",
         "src/base/process_util_mac.mm",
     ]
 

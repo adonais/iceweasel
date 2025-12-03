@@ -408,7 +408,7 @@ newtab-wallpaper-abstract-purple-green = Фіолетовий і зелений 
 newtab-wallpaper-abstract-blue-purple-waves = Сині та фіолетові хвилясті форми
 newtab-wallpaper-abstract-black-waves = Чорні хвилясті форми
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Фотографії
 newtab-wallpaper-beach-at-sunrise = Пляж на сході сонця
@@ -437,6 +437,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -479,8 +483,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Перемкнути �
 newtab-weather-menu-change-temperature-units-celsius = Перемкнути на градуси Цельсія
 newtab-weather-menu-hide-weather = Сховати погоду на новій вкладці
 newtab-weather-menu-learn-more = Докладніше
+newtab-weather-menu-detect-my-location = Визначити моє розташування
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Дані про погоду зараз недоступні.
+newtab-weather-opt-in-see-weather = Хочете бачити погоду для вашого розташування?
+newtab-weather-opt-in-not-now =
+    .label = Не зараз
+newtab-weather-opt-in-yes =
+    .label = Так
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = Нью-Йорк
 
 ## Topic Labels
 
@@ -647,6 +659,9 @@ newtab-widget-lists-input-menu-move-up = Посунути вгору
 newtab-widget-lists-input-menu-move-down = Посунути вниз
 newtab-widget-lists-input-menu-delete = Видалити
 newtab-widget-lists-input-menu-edit = Редагувати
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Створити новий список
 newtab-widget-lists-name-label-default =
     .label = Список завдань
 newtab-widget-lists-name-placeholder-default =
@@ -666,10 +681,6 @@ newtab-widget-timer-mode-focus =
     .label = Зосередження
 newtab-widget-timer-mode-break =
     .label = Перерва
-newtab-widget-timer-play =
-    .title = Відтворити
-newtab-widget-timer-pause =
-    .title = Призупинити
 newtab-widget-timer-label-play =
     .label = Відтворити
 newtab-widget-timer-label-pause =

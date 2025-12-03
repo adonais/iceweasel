@@ -9,7 +9,7 @@
 
 #include "AndroidGraphics.h"
 #include "mozilla/layers/CompositorScrollUpdate.h"
-#include "nsBaseWidget.h"
+#include "nsIWidget.h"
 #include "gfxPoint.h"
 #include "nsIUserIdleServiceInternal.h"
 #include "nsTArray.h"
@@ -21,12 +21,12 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TextRange.h"
-#include "mozilla/UniquePtr.h"
 
 struct ANPEvent;
 
 namespace mozilla {
 class WidgetTouchEvent;
+class MouseInput;
 
 namespace layers {
 class CompositorBridgeChild;
@@ -53,16 +53,16 @@ class SessionAccessibility;
 }  // namespace a11y
 }  // namespace mozilla
 
-class nsWindow final : public nsBaseWidget {
+class nsWindow final : public nsIWidget {
  private:
   virtual ~nsWindow();
 
  public:
-  using nsBaseWidget::GetWindowRenderer;
+  using nsIWidget::GetWindowRenderer;
 
   nsWindow();
 
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(nsWindow, nsBaseWidget)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(nsWindow, nsIWidget)
 
   static void InitNatives();
   void OnGeckoViewReady();
@@ -78,6 +78,7 @@ class nsWindow final : public nsBaseWidget {
   mozilla::widget::PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate =
       nullptr;
   mozilla::Mutex mDestroyMutex{"nsWindow::mDestroyMutex"};
+  LayoutDeviceIntRect mBounds;
 
   // Unique ID given to each widget, used to map Surfaces to widgets
   // in the CompositorSurfaceManager.
@@ -154,10 +155,9 @@ class nsWindow final : public nsBaseWidget {
   // nsIWidget
   //
 
-  using nsBaseWidget::Create;  // for Create signature not overridden here
-  [[nodiscard]] nsresult Create(nsIWidget* aParent,
-                                const LayoutDeviceIntRect& aRect,
-                                InitData* aInitData) override;
+  using nsIWidget::Create;  // for Create signature not overridden here
+  [[nodiscard]] nsresult Create(nsIWidget* aParent, const LayoutDeviceIntRect&,
+                                const InitData&) override;
   void Destroy() override;
   void DidClearParent(nsIWidget*) override;
   float GetDPI() override;
@@ -165,10 +165,9 @@ class nsWindow final : public nsBaseWidget {
   void Show(bool aState) override;
   bool IsVisible() const override;
   void ConstrainPosition(DesktopIntPoint&) override;
-  void Move(double aX, double aY) override;
-  void Resize(double aWidth, double aHeight, bool aRepaint) override;
-  void Resize(double aX, double aY, double aWidth, double aHeight,
-              bool aRepaint) override;
+  void Move(const DesktopPoint&) override;
+  void Resize(const DesktopSize&, bool aRepaint) override;
+  void Resize(const DesktopRect&, bool aRepaint) override;
   nsSizeMode SizeMode() override { return mSizeMode; }
   void SetSizeMode(nsSizeMode aMode) override;
   void Enable(bool aState) override;
@@ -176,6 +175,7 @@ class nsWindow final : public nsBaseWidget {
   void Invalidate(const LayoutDeviceIntRect& aRect) override;
   void SetFocus(Raise, mozilla::dom::CallerType aCallerType) override;
   LayoutDeviceIntRect GetScreenBounds() override;
+  LayoutDeviceIntRect GetBounds() override { return mBounds; }
   LayoutDeviceIntPoint WidgetToScreenOffset() override;
   nsresult DispatchEvent(mozilla::WidgetGUIEvent* aEvent,
                          nsEventStatus& aStatus) override;
@@ -261,6 +261,9 @@ class nsWindow final : public nsBaseWidget {
 
   mozilla::jni::NativeWeakPtr<mozilla::widget::NPZCSupport>
   GetNPZCSupportWeakPtr();
+
+  void DoResize(double aX, double aY, double aWidth, double aHeight,
+                bool aRepaint);
 
  protected:
   void BringToFront();

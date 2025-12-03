@@ -17,7 +17,6 @@
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_toolkit.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/Unused.h"
 #include "nsITimer.h"
 #include "nsThreadUtils.h"
 
@@ -276,27 +275,24 @@ static void SendAccumulatedData(TActor* ipcActor) {
   // Send the accumulated data to the parent process.
   MOZ_ASSERT(ipcActor);
   if (histogramsToSend.Length()) {
-    mozilla::Unused << NS_WARN_IF(
+    (void)NS_WARN_IF(
         !ipcActor->SendAccumulateChildHistograms(histogramsToSend));
   }
   if (keyedHistogramsToSend.Length()) {
-    mozilla::Unused << NS_WARN_IF(
+    (void)NS_WARN_IF(
         !ipcActor->SendAccumulateChildKeyedHistograms(keyedHistogramsToSend));
   }
   if (scalarsToSend.Length()) {
-    mozilla::Unused << NS_WARN_IF(
-        !ipcActor->SendUpdateChildScalars(scalarsToSend));
+    (void)NS_WARN_IF(!ipcActor->SendUpdateChildScalars(scalarsToSend));
   }
   if (keyedScalarsToSend.Length()) {
-    mozilla::Unused << NS_WARN_IF(
+    (void)NS_WARN_IF(
         !ipcActor->SendUpdateChildKeyedScalars(keyedScalarsToSend));
   }
   if (eventsToSend.Length()) {
-    mozilla::Unused << NS_WARN_IF(
-        !ipcActor->SendRecordChildEvents(eventsToSend));
+    (void)NS_WARN_IF(!ipcActor->SendRecordChildEvents(eventsToSend));
   }
-  mozilla::Unused << NS_WARN_IF(
-      !ipcActor->SendRecordDiscardedData(discardedData));
+  (void)NS_WARN_IF(!ipcActor->SendRecordDiscardedData(discardedData));
 }
 
 // To ensure we don't loop IPCTimerFired->AccumulateChild->arm timer, we don't

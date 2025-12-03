@@ -15,7 +15,6 @@
 #include "XiphExtradata.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/PodOperations.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/SharedThreadPool.h"
@@ -820,7 +819,7 @@ ogg_packet* OggDemuxer::GetNextPacket(TrackInfo::TrackType aType) {
 
   while (true) {
     if (packet) {
-      Unused << state->PacketOut();
+      (void)state->PacketOut();
     }
     DemuxUntilPacketAvailable(aType, state);
 
@@ -1136,7 +1135,7 @@ nsresult OggDemuxer::SeekInternal(TrackInfo::TrackType aType,
       tempPackets.Append(state->PacketOut());
     } else {
       // Discard media packets before the first keyframe.
-      Unused << state->PacketOut();
+      (void)state->PacketOut();
     }
   }
   // Re-add all packet into the codec state in order.

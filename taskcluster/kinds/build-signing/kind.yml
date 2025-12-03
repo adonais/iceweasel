@@ -27,6 +27,9 @@ not-for-build-platforms:
     - macosx64/debug
     - macosx64-aarch64/debug
 
+task-defaults:
+    run-on-repo-type: [hg]
+
 tasks:
     build-signing:
         from-deps:

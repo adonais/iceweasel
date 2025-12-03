@@ -13,7 +13,6 @@
 #  include "WMF.h"
 #  include "WMFDecoderModule.h"
 #  include "WMFMediaDataDecoder.h"
-#  include "mozilla/Atomics.h"
 #  include "mozilla/RefPtr.h"
 #  include "mozilla/gfx/Rect.h"
 

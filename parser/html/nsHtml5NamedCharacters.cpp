@@ -22,7 +22,6 @@
 
 #define nsHtml5NamedCharacters_cpp_
 #include "jArray.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Logging.h"
 #include "nsDebug.h"
 #include "nscore.h"

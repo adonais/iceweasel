@@ -87,7 +87,6 @@
 #include "nsIArray.h"
 #include "nsJSPrincipals.h"
 #include "nsRefreshDriver.h"
-#include "nsViewManager.h"
 #include "prthread.h"
 #include "xpcpublic.h"
 #if defined(MOZ_MEMORY)
@@ -1377,16 +1376,6 @@ void nsJSContext::MaybeRunNextCollectorSlice(nsIDocShell* aDocShell,
   if (!rootDocument ||
       rootDocument->GetReadyStateEnum() != Document::READYSTATE_COMPLETE ||
       rootDocument->IsInBackgroundWindow()) {
-    return;
-  }
-
-  PresShell* presShell = rootDocument->GetPresShell();
-  if (!presShell) {
-    return;
-  }
-
-  nsViewManager* vm = presShell->GetViewManager();
-  if (!vm) {
     return;
   }
 

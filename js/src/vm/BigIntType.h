@@ -9,7 +9,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/Range.h"
 #include "mozilla/Span.h"
 
@@ -254,8 +253,6 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   static bool equal(const BigInt* lhs, double rhs);
   static JS::Result<bool> equal(JSContext* cx, Handle<BigInt*> lhs,
                                 HandleString rhs);
-  static JS::Result<bool> looselyEqual(JSContext* cx, Handle<BigInt*> lhs,
-                                       HandleValue rhs);
 
   static bool lessThan(const BigInt* x, const BigInt* y);
   // These methods return Nothing when the non-BigInt operand is NaN

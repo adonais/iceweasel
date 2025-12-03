@@ -39,6 +39,12 @@ loader.lazyRequireGetter(
   "resource://devtools/client/definitions.js",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "PluralForm",
+  "resource://devtools/shared/plural-form.js",
+  true
+);
 
 const STYLE_INSPECTOR_PROPERTIES =
   "devtools/shared/locales/styleinspector.properties";
@@ -52,6 +58,7 @@ loader.lazyGetter(this, "NEW_PROPERTY_NAME_INPUT_LABEL", function () {
   return STYLE_INSPECTOR_L10N.getStr("rule.newPropertyName.label");
 });
 
+const UNUSED_CSS_PROPERTIES_HIDE_THRESHOLD = 10;
 const INDENT_SIZE = 2;
 const INDENT_STR = " ".repeat(INDENT_SIZE);
 
@@ -67,6 +74,8 @@ const INDENT_STR = " ".repeat(INDENT_SIZE);
  *        The Rule object we're editing.
  * @param {Object} options
  * @param {Set} options.elementsWithPendingClicks
+ * @param {Function} options.onShowUnusedCustomCssProperties
+ * @param {Boolean} options.shouldHideUnusedCustomCssProperties
  */
 function RuleEditor(ruleView, rule, options = {}) {
   EventEmitter.decorate(this);
@@ -91,6 +100,8 @@ function RuleEditor(ruleView, rule, options = {}) {
   this._onToolChanged = this._onToolChanged.bind(this);
   this._updateLocation = this._updateLocation.bind(this);
   this._onSourceClick = this._onSourceClick.bind(this);
+  this._onShowUnusedCustomCssPropertiesButtonClick =
+    this._onShowUnusedCustomCssPropertiesButtonClick.bind(this);
 
   this.rule.domRule.on("location-changed", this._locationChanged);
   this.toolbox.on("tool-registered", this._onToolChanged);
@@ -103,6 +114,12 @@ RuleEditor.prototype = {
   destroy() {
     for (const prop of this.rule.textProps) {
       prop.editor?.destroy();
+    }
+
+    this._unusedCssVariableDeclarations = null;
+
+    if (this._showUnusedCustomCssPropertiesButton) {
+      this._nullifyShowUnusedCustomCssProperties({ removeFromDom: false });
     }
 
     this.rule.domRule.off("location-changed");
@@ -136,7 +153,9 @@ RuleEditor.prototype = {
 
   _create() {
     this.element = this.doc.createElement("div");
-    this.element.className = "ruleview-rule devtools-monospace";
+    this.element.className =
+      "ruleview-rule devtools-monospace" +
+      (this.rule.inherited ? " ruleview-rule-inherited" : "");
     this.element.dataset.ruleId = this.rule.domRule.actorID;
     this.element.setAttribute("uneditable", !this.isEditable);
     this.element.setAttribute("unmatched", this.rule.isUnmatched);
@@ -322,11 +341,11 @@ RuleEditor.prototype = {
       this.ancestorDataEl.append(ancestorsFrag);
     }
 
-    const code = createChild(this.element, "div", {
+    this.ruleviewCodeEl = createChild(this.element, "div", {
       class: "ruleview-code",
     });
 
-    const header = createChild(code, "div", {});
+    const header = createChild(this.ruleviewCodeEl, "div", {});
 
     createChild(header, "span", {
       class: "ruleview-rule-indent",
@@ -397,14 +416,14 @@ RuleEditor.prototype = {
 
     // We can't use a proper "ol" as it will mess with selection copy text,
     // adding spaces on list item instead of the one we craft (.ruleview-rule-indent)
-    this.propertyList = createChild(code, "div", {
+    this.propertyList = createChild(this.ruleviewCodeEl, "div", {
       class: "ruleview-propertylist",
       role: "list",
     });
 
     this.populate();
 
-    this.closeBrace = createChild(code, "div", {
+    this.closeBrace = createChild(this.ruleviewCodeEl, "div", {
       class: "ruleview-ruleclose",
       tabindex: this.isEditable ? "0" : "-1",
     });
@@ -425,7 +444,7 @@ RuleEditor.prototype = {
         }
         closingBracketsText += "}\n";
       }
-      createChild(code, "div", {
+      createChild(this.ruleviewCodeEl, "div", {
         class: "ruleview-ancestor-ruleclose",
         textContent: closingBracketsText,
       });
@@ -437,11 +456,11 @@ RuleEditor.prototype = {
       // check this.ruleview.isEditing on mousedown
       this._ruleViewIsEditing = false;
 
-      code.addEventListener("mousedown", () => {
+      this.ruleviewCodeEl.addEventListener("mousedown", () => {
         this._ruleViewIsEditing = this.ruleView.isEditing;
       });
 
-      code.addEventListener("click", () => {
+      this.ruleviewCodeEl.addEventListener("click", () => {
         const selection = this.doc.defaultView.getSelection();
         if (selection.isCollapsed && !this._ruleViewIsEditing) {
           this.newProperty();
@@ -662,7 +681,27 @@ RuleEditor.prototype = {
       this.propertyList.replaceChildren();
     }
 
+    this._unusedCssVariableDeclarations =
+      this._getUnusedCssVariableDeclarations();
+    const hideUnusedCssVariableDeclarations =
+      this._unusedCssVariableDeclarations.size >=
+      // If the button was already displayed, hide unused variables if we have at least
+      // one, even if it's less than the threshold
+      (this._showUnusedCustomCssPropertiesButton
+        ? 1
+        : UNUSED_CSS_PROPERTIES_HIDE_THRESHOLD);
+
+    // If we won't hide any variable, clear the Set of unused variables as it's used in
+    // updateUnusedCssVariables and we might do unnecessary computation if we still
+    // track variables which are actually visible.
+    if (!hideUnusedCssVariableDeclarations) {
+      this._unusedCssVariableDeclarations.clear();
+    }
+
     for (const prop of this.rule.textProps) {
+      if (hideUnusedCssVariableDeclarations && prop.isUnusedVariable) {
+        continue;
+      }
       if (!prop.editor && !prop.invisible) {
         const editor = new TextPropertyEditor(this, prop, {
           elementsWithPendingClicks: this.options.elementsWithPendingClicks,
@@ -673,6 +712,29 @@ RuleEditor.prototype = {
         // order of editors in the DOM follow the order of the rule's properties.
         this.propertyList.appendChild(prop.editor.element);
       }
+    }
+
+    if (hideUnusedCssVariableDeclarations) {
+      if (!this._showUnusedCustomCssPropertiesButton) {
+        this._showUnusedCustomCssPropertiesButton =
+          this.doc.createElement("button");
+        this._showUnusedCustomCssPropertiesButton.classList.add(
+          "devtools-button",
+          "devtools-button-standalone",
+          "ruleview-show-unused-custom-css-properties"
+        );
+        this._showUnusedCustomCssPropertiesButton.addEventListener(
+          "click",
+          this._onShowUnusedCustomCssPropertiesButtonClick
+        );
+      }
+      this.ruleviewCodeEl.insertBefore(
+        this._showUnusedCustomCssPropertiesButton,
+        this.closeBrace
+      );
+      this._updateShowUnusedCustomCssPropertiesButtonText();
+    } else if (this._showUnusedCustomCssPropertiesButton) {
+      this._nullifyShowUnusedCustomCssProperties();
     }
 
     // Set focus if the focus is still in the current document (avoid stealing
@@ -687,6 +749,175 @@ RuleEditor.prototype = {
         }, 0);
       }
     }
+  },
+
+  updateUnusedCssVariables() {
+    if (
+      !this._unusedCssVariableDeclarations ||
+      !this._unusedCssVariableDeclarations.size
+    ) {
+      return;
+    }
+
+    // Store the list of what used to be unused
+    const previouslyUnused = Array.from(this._unusedCssVariableDeclarations);
+    // Then compute the list of unused variables again
+    this._unusedCssVariableDeclarations =
+      this._getUnusedCssVariableDeclarations();
+
+    for (const prop of previouslyUnused) {
+      if (this._unusedCssVariableDeclarations.has(prop)) {
+        continue;
+      }
+
+      // The prop wasn't used, but now is, so let's show it
+      this.showUnusedCssVariable(prop, {
+        updateButton: false,
+      });
+    }
+
+    this._updateShowUnusedCustomCssPropertiesButtonText();
+  },
+
+  /**
+   * Create a TextPropertyEditor for TextProperty representing an unused CSS variable.
+   *
+   * @param {TextProperty} prop
+   * @param {object} options
+   * @param {boolean} options.updateButton
+   * @returns {TextPropertyEditor|null} Returns null if passed TextProperty isn't found
+   *          in the list of unused css variables
+   */
+  showUnusedCssVariable(prop, { updateButton = true } = {}) {
+    if (prop.editor) {
+      return null;
+    }
+
+    this._unusedCssVariableDeclarations.delete(prop);
+
+    const editor = new TextPropertyEditor(this, prop, {
+      elementsWithPendingClicks: this.options.elementsWithPendingClicks,
+    });
+    const declarationIndex = this.rule.textProps.indexOf(prop);
+    // We need to insert the editor according to its index in the list of declarations.
+    // So let's try to find the prop which is placed higher and is visible
+    let nextSibling;
+    for (let i = declarationIndex + 1; i < this.rule.textProps.length; i++) {
+      const currentProp = this.rule.textProps[i];
+      if (currentProp.editor) {
+        nextSibling = currentProp.editor.element;
+        break;
+      }
+    }
+    // If we couldn't find nextSibling, that means that no declaration with higher index
+    // is visible, so we can put the newly visible property at the end
+    this.propertyList.insertBefore(editor.element, nextSibling || null);
+
+    if (updateButton) {
+      this._updateShowUnusedCustomCssPropertiesButtonText();
+    }
+
+    return editor;
+  },
+
+  /**
+   * Returns a Set containing the list of unused CSS variable TextProperty which shouldn't
+   * be visible.
+   *
+   * @returns {Set<TextProperty>}
+   */
+  _getUnusedCssVariableDeclarations() {
+    const unusedCssVariableDeclarations = new Set();
+
+    // No need to go through the declarations if we shouldn't hide unused custom properties
+    if (!this.options.shouldHideUnusedCustomCssProperties) {
+      return unusedCssVariableDeclarations;
+    }
+
+    // Compute a list of variables that will be visible, as there might be unused variables
+    // that will be visible (e.g. if the user added one in the rules view)
+    for (const prop of this.rule.textProps) {
+      if (prop.isUnusedVariable) {
+        unusedCssVariableDeclarations.add(prop);
+      }
+    }
+
+    return unusedCssVariableDeclarations;
+  },
+
+  /**
+   * Handle click on "Show X unused custom CSS properties" button
+   *
+   * @param {Event} e
+   */
+  _onShowUnusedCustomCssPropertiesButtonClick(e) {
+    e.stopPropagation();
+
+    this._nullifyShowUnusedCustomCssProperties();
+
+    for (const prop of this._unusedCssVariableDeclarations) {
+      if (!prop.invisible) {
+        const editor = new TextPropertyEditor(this, prop, {
+          elementsWithPendingClicks: this.options.elementsWithPendingClicks,
+        });
+        // Insert at the original declaration index
+        this.propertyList.insertBefore(
+          editor.element,
+          this.propertyList.childNodes[this.rule.textProps.indexOf(prop)] ||
+            null
+        );
+      }
+    }
+    if (typeof this.options.onShowUnusedCustomCssProperties === "function") {
+      this.options.onShowUnusedCustomCssProperties();
+    }
+  },
+
+  /**
+   * Update the text for the "Show X unused custom CSS properties" button, or remove it
+   * if there's no hidden custom properties anymore
+   */
+  _updateShowUnusedCustomCssPropertiesButtonText() {
+    if (!this._showUnusedCustomCssPropertiesButton) {
+      return;
+    }
+
+    const unusedVariablesCount = this._unusedCssVariableDeclarations.size;
+    if (!unusedVariablesCount) {
+      this._nullifyShowUnusedCustomCssProperties();
+      return;
+    }
+
+    const label = PluralForm.get(
+      unusedVariablesCount,
+      STYLE_INSPECTOR_L10N.getStr("rule.showUnusedCssVariable")
+    ).replace("#1", unusedVariablesCount);
+
+    this._showUnusedCustomCssPropertiesButton.replaceChildren(label);
+  },
+
+  /**
+   * Nullify this._showUnusedCustomCssPropertiesButton, remove its click event handler
+   * and remove it from the DOM if `removeFromDom` is set to true.
+   *
+   * @param {object} [options]
+   * @param {boolean} [options.removeFromDom]
+   *        Should the button be removed from the DOM (defaults to true)
+   */
+  _nullifyShowUnusedCustomCssProperties({ removeFromDom = true } = {}) {
+    if (!this._showUnusedCustomCssPropertiesButton) {
+      return;
+    }
+
+    this._showUnusedCustomCssPropertiesButton.removeEventListener(
+      "click",
+      this._onShowUnusedCustomCssPropertiesButtonClick
+    );
+
+    if (removeFromDom) {
+      this._showUnusedCustomCssPropertiesButton.remove();
+    }
+    this._showUnusedCustomCssPropertiesButton = null;
   },
 
   /**
@@ -868,10 +1099,15 @@ RuleEditor.prototype = {
       return;
     }
 
-    // While we're editing a new property, it doesn't make sense to
-    // start a second new property editor, so disable focusing the
-    // close brace for now.
+    // While we're editing a new property, it doesn't make sense to start a second new
+    // property editor, so disable focusing the close brace for now.
     this.closeBrace.removeAttribute("tabindex");
+    // We also need to make the "Show Unused Variables" button non-focusable so hitting
+    // Tab while focused in the new property editor will move the focus to the next rule
+    // selector editor.
+    if (this._showUnusedCustomCssPropertiesButton) {
+      this._showUnusedCustomCssPropertiesButton.setAttribute("tabindex", "-1");
+    }
 
     this.newPropItem = createChild(this.propertyList, "div", {
       class: "ruleview-property ruleview-newproperty",
@@ -944,8 +1180,11 @@ RuleEditor.prototype = {
    * event has been fired to keep consistent UI state.
    */
   _newPropertyDestroy() {
-    // We're done, make the close brace focusable again.
+    // We're done, make the close brace and "Show unused variable" button focusable again.
     this.closeBrace.setAttribute("tabindex", "0");
+    if (this._showUnusedCustomCssPropertiesButton) {
+      this._showUnusedCustomCssPropertiesButton.removeAttribute("tabindex");
+    }
 
     this.propertyList.removeChild(this.newPropItem);
     delete this.newPropItem;

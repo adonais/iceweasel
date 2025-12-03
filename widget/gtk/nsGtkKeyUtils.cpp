@@ -31,8 +31,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsWindow.h"
 
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TextEventDispatcher.h"
@@ -342,9 +340,7 @@ KeymapWrapper* KeymapWrapper::GetInstance() {
 #ifdef MOZ_WAYLAND
 void KeymapWrapper::EnsureInstance() { (void)GetInstance(); }
 
-void KeymapWrapper::InitBySystemSettingsWayland() {
-  MOZ_UNUSED(WaylandDisplayGet());
-}
+void KeymapWrapper::InitBySystemSettingsWayland() { (void)WaylandDisplayGet(); }
 #endif
 
 /* static */

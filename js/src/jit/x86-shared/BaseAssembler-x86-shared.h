@@ -3731,6 +3731,10 @@ class BaseAssembler : public GenericAssembler {
     twoByteOpSimd("vxorpd", VEX_PD, OP2_XORPD_VpdWpd, src1, src0, dst);
   }
 
+  void vxorpd_mr(const void* address, XMMRegisterID src0, XMMRegisterID dst) {
+    twoByteOpSimd("vxorpd", VEX_PD, OP2_XORPD_VpdWpd, address, src0, dst);
+  }
+
   void vorpd_rr(XMMRegisterID src1, XMMRegisterID src0, XMMRegisterID dst) {
     twoByteOpSimd("vorpd", VEX_PD, OP2_ORPD_VpdWpd, src1, src0, dst);
   }
@@ -5996,6 +6000,14 @@ class BaseAssembler : public GenericAssembler {
       emitRexW(reg, index, base);
       m_buffer.putByteUnchecked(opcode);
       memoryModRM(offset, base, index, scale, reg);
+    }
+
+    void oneByteOp64_disp32(OneByteOpcodeID opcode, int32_t offset,
+                            RegisterID index, int scale, int reg) {
+      m_buffer.ensureSpace(MaxInstructionSize);
+      emitRexW(reg, index, 0);
+      m_buffer.putByteUnchecked(opcode);
+      memoryModRM_disp32(offset, index, scale, reg);
     }
 
     void oneByteOp64(OneByteOpcodeID opcode, const void* address, int reg) {

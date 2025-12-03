@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -46,7 +53,7 @@
   -->
   <string name="menu_open_with_a_browser2">Открыть в…</string>
   <!-- Menu item: Add the current page as a shortcut to the device's home screen (launcher). -->
-  <string name="menu_add_to_home_screen">Добавить на домашний экран</string>
+  <string name="menu_add_to_home_screen">На домашний экран</string>
   <!-- Menu item: Add the current site as a shortcut on the Home screen -->
   <string name="menu_add_to_shortcuts">Добавить в ярлыки</string>
   <!-- Menu item: Remove the current site as a shortcut from the Home screen -->
@@ -149,7 +156,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s даёт вам контроль.</p> <p>Используйте его как приватный браузер: <ul> <li>Ищите и просматривайте сеть</li> <li>Блокируйте трекеры (или измените настройки, чтобы разрешить их)</li> <li>Стирайте и удаляйте куки, историю поиска и просмотра</li> </ul> </p> <p>%1$s создан Mozilla. Наша миссия способствовать здоровому, открытому Интернету.<br/> <a href=\"%2$s\">Узнать больше</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s даёт вам контроль.</p>\n<p>Используйте его как приватный браузер:\n<ul>\n<li>Ищите и просматривайте сеть</li>\n<li>Блокируйте трекеры (или измените настройки, чтобы разрешить их)</li>\n<li>Стирайте и удаляйте куки, историю поиска и просмотра</li>\n</ul> </p>\n<p>%1$s создан Mozilla. Наша миссия способствовать здоровому, открытому Интернету.<br/>\n<a href=\"%2$s\">Узнать больше</a></p>]]></string>
   <!-- A link to SUMO at the bottom of About Focus screen. -->
   <string name="about_screen_learn_more">Подробнее</string>
   <!-- Header for the Privacy and Security settings menu -->
@@ -458,27 +465,27 @@
   -->
   <string name="onboarding_first_screen_title">Добро пожаловать в %1$s</string>
   <!-- New Onboarding flow first screen subtitle the one that appears under title -->
-  <string name="onboarding_first_screen_subtitle">Быстро. Приватный. Никаких отвлечений.</string>
+  <string name="onboarding_first_screen_subtitle">Быстрый. Приватный. Никаких отвлечений.</string>
   <!--
     New Onboarding flow first screen 'terms of use' text
 
     %1$s will be replaced by a link using onboarding_first_screen_terms_of_use_link as text
   -->
-  <string name="onboarding_first_screen_terms_of_use_text_2" tools:ignore="UnusedResources">Продолжая, вы соглашаетесь с %1$s.</string>
+  <string name="onboarding_first_screen_terms_of_use_text_2" tools:ignore="UnusedResources">Продолжая, вы соглашаетесь с «%1$s».</string>
   <!--
     New Onboarding flow first screen 'terms of use link'
 
     Text for the link used in onboarding_first_screen_terms_of_use_text
   -->
-  <string name="onboarding_first_screen_terms_of_use_link_2" tools:ignore="BrandUsage">Условия использования Firefox</string>
+  <string name="onboarding_first_screen_terms_of_use_link_2" tools:ignore="BrandUsage">Условиями использования Firefox</string>
   <!--
     New Onboarding flow first screen 'privacy notice' text
 
     %1$s will be replaced by a link using onboarding_first_screen_privacy_notice_link as text
   -->
-  <string name="onboarding_first_screen_privacy_notice_text_2" tools:ignore="BrandUsage">Firefox заботится о вашей конфиденциальности. Узнайте больше в нашем %1$s.</string>
+  <string name="onboarding_first_screen_privacy_notice_text_2" tools:ignore="BrandUsage">Firefox заботится о вашей конфиденциальности. Узнайте больше в нашей «%1$s».</string>
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
-  <string name="onboarding_first_screen_privacy_notice_link_2">Политика приватности</string>
+  <string name="onboarding_first_screen_privacy_notice_link_2">Политике приватности</string>
   <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">Продолжить</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
@@ -512,12 +519,12 @@
   <!-- First run tour (Shortcut): Title -->
   <string name="firstrun_shortcut_title">Добавьте ярлыки на домашний экран</string>
   <!-- First run tour (Shortcut): Text. %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
-  <string name="firstrun_shortcut_text">С %1$s вы сможете быстро вернуться к любимым сайтам. Просто выберите «Добавить на домашний экран» из меню %1$s.</string>
+  <string name="firstrun_shortcut_text">С %1$s вы сможете быстро вернуться к любимым сайтам. Просто выберите «На домашний экран» из меню %1$s.</string>
   <!-- First run tour (Privacy): Title -->
   <string name="firstrun_privacy_title">Сделайте приватность своей привычкой</string>
   <!-- First run tour (Privacy): Text. %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
   <string name="firstrun_privacy_text">Установите %1$s своим браузером по умолчанию и получите преимущества приватного веб-сёрфинга, когда вы открываете веб-страницы из других приложений.</string>
-  <string name="firstrun_close_button">ОК, понятно!</string>
+  <string name="firstrun_close_button">Хорошо, понятно!</string>
   <string name="firstrun_skip_button">Пропустить</string>
   <string name="firstrun_next_button">Далее</string>
   <!-- Indicator that no trackers are being blocked because content blocking is disabled; normally shows the number of blocked trackers -->
@@ -751,7 +758,7 @@
     Tip displayed on home view explaining how to add sites to homescreen
     %1$s is replaced with a line break in the application.
   -->
-  <string name="tip_add_to_homescreen">Получайте доступ к нужным сайтам в одно касание%1$s Меню &gt; Добавить на домашний экран</string>
+  <string name="tip_add_to_homescreen">Получайте доступ к нужным сайтам в одно касание%1$s «Меню» &gt; «На домашний экран»</string>
   <!--
     Tip displayed on home view explaining how to make Focus the default browser
     %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
@@ -797,7 +804,7 @@
   <!-- Message for Preference screen for cookie blocking for exceptions tracking protection -->
   <string name="preference_category_block_cookies">Хотите заблокировать куки?</string>
   <!-- Title for the tab crash report screen -->
-  <string name="tab_crash_report_title">Вкладка упала</string>
+  <string name="tab_crash_report_title">Падение вкладки</string>
   <!-- Headline for the tab crash report screen -->
   <string name="tab_crash_report_headline">Извините. С этой вкладкой возникли проблемы.</string>
   <!-- Subtitle for the tab crash report screen -->
@@ -875,7 +882,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Это может быть проблемой с конфигурацией сервера или же кто-то пытается подменить нужный вам сервер другим. <br/><br/> Если в прошлом вы успешно соединялись с этим сервером, то, возможно, эта ошибка является временной.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Возможно, кто-то пытается подменить нужный вам сайт другим, поэтому продолжение может быть рискованным.</label> <br><br> <label>%1$s не может доверять <b>%2$s</b>, потому что издатель его сертификата неизвестен, сертификат подписан самим сайтом или его сервер не отправляет правильные промежуточные сертификаты.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Возможно, кто-то пытается подменить нужный вам сайт другим, поэтому продолжение может быть рискованным.</label> <br><br>\n<label>%1$s не может доверять <b>%2$s</b>, потому что издатель его сертификата неизвестен, сертификат подписан самим сайтом или его сервер не отправляет правильные промежуточные сертификаты.</label>]]></string>
   <!--
     Sessions List
 
@@ -927,7 +934,7 @@
     This is te text from add search widget to home screen button .The button is located on
     promote search widget dialog.
   -->
-  <string name="promote_search_widget_button_text">Добавить виджет на домашний экран</string>
+  <string name="promote_search_widget_button_text">Виджет на домашний экран</string>
   <!--
     This is te text of the snackbar that appears after the search widget was added successfully
     to the home screen.

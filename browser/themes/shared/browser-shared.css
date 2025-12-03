@@ -215,8 +215,7 @@ body {
     border-bottom-style: none;
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
-  @media (-moz-platform: macos) and -moz-pref("browser.theme.native-theme") {
+  @media (-moz-platform: macos) and (-moz-native-theme) {
     /* This is conceptually a background, but putting this on a pseudo-element
      * avoids it from suppressing the chrome-content separator border, etc.
      *
@@ -596,7 +595,7 @@ menupopup::part(drop-indicator) {
 /* Back / Forward buttons context menu */
 
 .unified-nav-current {
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
 }
 
 .unified-nav-back,
@@ -749,7 +748,7 @@ menupopup::part(drop-indicator) {
 
       &::part(button) {
         font-size: var(--font-size-large);
-        font-weight: var(--font-weight);
+        font-weight: normal;
         justify-content: flex-start;
         padding-inline: calc((var(--button-size-icon) - var(--icon-size)) / 2 - var(--border-width));
       }
@@ -779,7 +778,7 @@ menupopup::part(drop-indicator) {
 
 #cfr-notification-header-label {
   margin: 9px;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 #cfr-notification-header-link {
@@ -863,7 +862,7 @@ menupopup::part(drop-indicator) {
     }
 
     description {
-      font-weight: 400;
+      font-weight: normal;
       margin: unset;
       margin-inline: 12px;
     }
@@ -975,7 +974,7 @@ menupopup::part(drop-indicator) {
     }
 
     .popup-notification-description {
-      font-weight: 600;
+      font-weight: var(--font-weight-semibold);
       margin-bottom: 15px;
     }
 
@@ -1151,7 +1150,7 @@ popupnotificationcontent {
 }
 
 .popup-notification-description {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   margin-top: 0;
 
   > b {
@@ -1227,7 +1226,7 @@ popupnotificationcontent {
     margin-inline: 8px;
 
     > span:first-of-type {
-      font-weight: bold;
+      font-weight: var(--font-weight-bold);
     }
 
     > span:last-of-type {
@@ -1239,7 +1238,7 @@ popupnotificationcontent {
 .relay-integration-header-variation {
   display: flex;
   align-items: center;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--heading-font-weight);
   font-size: 1.5em;
   margin: auto;
 

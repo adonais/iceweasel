@@ -11,7 +11,9 @@ use wgt::{
 };
 
 use crate::command::{
-    encoder::EncodingState, pass, pass_base, pass_try, validate_and_begin_occlusion_query,
+    encoder::EncodingState,
+    pass::{self, flush_bindings_helper},
+    pass_base, pass_try, validate_and_begin_occlusion_query,
     validate_and_begin_pipeline_statistics_query, ArcCommand, DebugGroupError, EncoderStateError,
     InnerCommandEncoder, PassStateError, TimestampWritesError,
 };
@@ -571,6 +573,15 @@ impl<'scope, 'snatch_guard, 'cmd_enc> State<'scope, 'snatch_guard, 'cmd_enc> {
         }
     }
 
+    /// Flush binding state in preparation for a draw call.
+    ///
+    /// See the compute pass version for an explanation of some ways that
+    /// `flush_bindings` differs between the two types of passes.
+    fn flush_bindings(&mut self) -> Result<(), RenderPassErrorInner> {
+        flush_bindings_helper(&mut self.pass)?;
+        Ok(())
+    }
+
     /// Reset the `RenderBundle`-related states.
     fn reset_bundle(&mut self) {
         self.pass.binder.reset();
@@ -629,6 +640,8 @@ pub enum ColorAttachmentError {
         mip_level: u32,
         depth_or_array_layer: u32,
     },
+    #[error("Color attachment's usage contains {0:?}. This can only be used with StoreOp::{1:?}, but StoreOp::{2:?} was provided")]
+    InvalidUsageForStoreOp(TextureUsages, StoreOp, StoreOp),
 }
 
 impl WebGpuError for ColorAttachmentError {
@@ -1239,8 +1252,11 @@ impl RenderPassInfo {
             ) -> Result<(), ColorAttachmentError> {
                 let mut insert = |slice| {
                     let mip_level = view.desc.range.base_mip_level;
-                    if attachment_set.insert((view.tracking_data.tracker_index(), mip_level, slice))
-                    {
+                    if attachment_set.insert((
+                        view.parent.tracking_data.tracker_index(),
+                        mip_level,
+                        slice,
+                    )) {
                         Ok(())
                     } else {
                         Err(ColorAttachmentError::SubresourceOverlap {
@@ -1584,6 +1600,18 @@ impl Global {
                 {
                     let view = texture_views.get(*view_id).get()?;
                     view.same_device(device)?;
+
+                    if view.desc.usage.contains(TextureUsages::TRANSIENT)
+                        && *store_op != StoreOp::Discard
+                    {
+                        return Err(RenderPassErrorInner::ColorAttachment(
+                            ColorAttachmentError::InvalidUsageForStoreOp(
+                                TextureUsages::TRANSIENT,
+                                StoreOp::Discard,
+                                *store_op,
+                            ),
+                        ));
+                    }
 
                     let resolve_target = if let Some(resolve_target_id) = resolve_target {
                         let rt_arc = texture_views.get(*resolve_target_id).get()?;
@@ -2359,7 +2387,7 @@ fn set_pipeline(
     }
 
     // Rebind resource
-    pass::rebind_resources::<RenderPassErrorInner, _>(
+    pass::change_pipeline_layout::<RenderPassErrorInner, _>(
         &mut state.pass,
         &pipeline.layout,
         &pipeline.late_sized_buffer_groups,
@@ -2593,10 +2621,11 @@ fn draw(
     instance_count: u32,
     first_vertex: u32,
     first_instance: u32,
-) -> Result<(), DrawError> {
+) -> Result<(), RenderPassErrorInner> {
     api_log!("RenderPass::draw {vertex_count} {instance_count} {first_vertex} {first_instance}");
 
     state.is_ready(DrawCommandFamily::Draw)?;
+    state.flush_bindings()?;
 
     state
         .vertex
@@ -2627,10 +2656,11 @@ fn draw_indexed(
     first_index: u32,
     base_vertex: i32,
     first_instance: u32,
-) -> Result<(), DrawError> {
+) -> Result<(), RenderPassErrorInner> {
     api_log!("RenderPass::draw_indexed {index_count} {instance_count} {first_index} {base_vertex} {first_instance}");
 
     state.is_ready(DrawCommandFamily::DrawIndexed)?;
+    state.flush_bindings()?;
 
     let last_index = first_index as u64 + index_count as u64;
     let index_limit = state.index.limit;
@@ -2638,7 +2668,8 @@ fn draw_indexed(
         return Err(DrawError::IndexBeyondLimit {
             last_index,
             index_limit,
-        });
+        }
+        .into());
     }
     state
         .vertex
@@ -2664,10 +2695,11 @@ fn draw_mesh_tasks(
     group_count_x: u32,
     group_count_y: u32,
     group_count_z: u32,
-) -> Result<(), DrawError> {
+) -> Result<(), RenderPassErrorInner> {
     api_log!("RenderPass::draw_mesh_tasks {group_count_x} {group_count_y} {group_count_z}");
 
     state.is_ready(DrawCommandFamily::DrawMeshTasks)?;
+    state.flush_bindings()?;
 
     let groups_size_limit = state
         .pass
@@ -2685,7 +2717,8 @@ fn draw_mesh_tasks(
             current: [group_count_x, group_count_y, group_count_z],
             limit: groups_size_limit,
             max_total: max_groups,
-        });
+        }
+        .into());
     }
 
     unsafe {
@@ -2715,6 +2748,7 @@ fn multi_draw_indirect(
     );
 
     state.is_ready(family)?;
+    state.flush_bindings()?;
 
     state
         .pass
@@ -2896,6 +2930,7 @@ fn multi_draw_indirect_count(
     );
 
     state.is_ready(family)?;
+    state.flush_bindings()?;
 
     let stride = get_stride_of_indirect_args(family);
 

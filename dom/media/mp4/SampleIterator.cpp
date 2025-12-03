@@ -431,7 +431,7 @@ Result<Sample*, nsresult> SampleIterator::Get() {
 
 void SampleIterator::Next() { ++mCurrentSample; }
 
-void SampleIterator::Seek(const TimeUnit& aTime) {
+void SampleIterator::Seek(const TimeUnit& aTime, SyncSampleMode aMode) {
   size_t syncMoof = 0;
   size_t syncSample = 0;
   mCurrentMoof = 0;
@@ -443,6 +443,9 @@ void SampleIterator::Seek(const TimeUnit& aTime) {
     if (sample->mSync) {
       syncMoof = mCurrentMoof;
       syncSample = mCurrentSample;
+      if (aMode == SyncSampleMode::First) {
+        break;
+      }
     }
     if (sample->mCompositionRange.start == aTime) {
       break;

@@ -923,7 +923,7 @@ bool EffectCompositor::PreTraverseInSubtree(ServoTraversalFlags aFlags,
 
 void EffectCompositor::NoteElementForReducing(
     const NonOwningAnimationTarget& aTarget) {
-  Unused << mElementsToReduce.put(
+  (void)mElementsToReduce.put(
       OwningAnimationTarget{aTarget.mElement, aTarget.mPseudoRequest});
 }
 

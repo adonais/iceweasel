@@ -303,7 +303,19 @@ export default [
       "uriloader/**",
       "widget/tests/window_composition_text_querycontent.xhtml",
     ],
-    rules: mozilla.turnOff(mozilla.configs["flat/valid-jsdoc"].rules),
+    ignores: ["devtools/shared/css/parsing-utils.js", "devtools/startup/**"],
+    rules: {
+      "jsdoc/check-access": "off",
+      "jsdoc/check-param-names": "off",
+      "jsdoc/check-property-names": "off",
+      "jsdoc/check-tag-names": "off",
+      "jsdoc/check-types": "off",
+      "jsdoc/empty-tags": "off",
+      "jsdoc/require-param-type": "off",
+      "jsdoc/require-returns-type": "off",
+      "jsdoc/tag-lines": ["off", "any", { startLines: 1 }],
+      "jsdoc/valid-types": "off",
+    },
   },
   {
     name: "rollout-require-jsdoc",
@@ -466,7 +478,27 @@ export default [
       "widget/tests/file*.js",
       "widget/tests/window_composition_text_querycontent.xhtml",
     ],
+    ignores: ["devtools/shared/css/parsing-utils.js", "devtools/startup/**"],
     rules: mozilla.turnOff(mozilla.configs["flat/require-jsdoc"].rules),
+  },
+  {
+    // TODO: Bug 1997306. Fix these instances after the jsdoc 60.8.0 upgrade.
+    name: "rollout-jsdoc-valid-types-updates",
+    files: [
+      "browser/components/ipprotection/IPPNetworkErrorObserver.sys.mjs",
+      "browser/components/ipprotection/IPProtectionService.sys.mjs",
+      "browser/components/uitour/UITour-lib.js",
+      "remote/shared/AppInfo.sys.mjs",
+      "remote/shared/NavigationManager.sys.mjs",
+      "remote/shared/UserContextManager.sys.mjs",
+      "remote/shared/listeners/CachedResourceListener.sys.mjs",
+      "remote/shared/listeners/DataChannelListener.sys.mjs",
+      "remote/shared/listeners/DownloadListener.sys.mjs",
+      "remote/shared/listeners/NetworkListener.sys.mjs",
+    ],
+    rules: {
+      "jsdoc/valid-types": "off",
+    },
   },
   {
     name: "rollout-layout",

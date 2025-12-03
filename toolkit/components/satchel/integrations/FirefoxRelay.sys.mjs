@@ -503,9 +503,67 @@ async function getListCollection({
   return cache();
 }
 
+/**
+ * Checks if the origin matches a record in the list according to Relay rules:
+ * using flexible normalization and PSL via Services.uriFixup.
+  +---------------------------+-----------------------------------+--------+
+  |        list               |           origin                  | Result |
+  +---------------------------+-----------------------------------+--------+
+  | google.com                | https://google.com                | True   |
+  | google.com                | https://www.google.com            | True   |
+  | www.google.com            | https://www.google.com            | True   |
+  | google.com.ar             | https://accounts.google.com.ar    | True   |
+  | google.com.ar             | https://google.com                | False  |
+  | google.com                | https://google.com.ar             | False  |
+  | mozilla.org               | https://vpn.mozilla.org           | True   |
+  | vpn.mozilla.org           | https://vpn.mozilla.org           | True   |
+  | substack.com              | https://hunterharris.substack.com | True   |
+  | hunterharris.substack.com | https://hunterharris.substack.com | True   |
+  | hunterharris.substack.com | https://other.substack.com        | False  |
+  | example.co.uk             | https://foo.example.co.uk         | True   |
+  | localhost                 | http://localhost                  | True   |
+  | google.com.ar             | https://mail.google.com.br        | False  |
+  +---------------------------+-----------------------------------+--------+
+ *
+ * Note: Cross-TLD matching (e.g., google.com matching google.com.ar) requires
+ * explicit list entries or Related Realms integration. See bug 1996332.
+ *
+ * @param {Array} list   Array of {domain: ...} records. Each domain is a string.
+ * @param {string} origin Origin URL (e.g., https://www.google.com.ar).
+ * @returns {boolean}
+ */
 function isOriginInList(list, origin) {
-  const originHost = new URL(origin).host;
-  return list.some(record => record.domain == originHost);
+  let host;
+  try {
+    // PSL-aware, normalized results via uriFixup
+    const { fixedURI } = Services.uriFixup.getFixupURIInfo(origin);
+    if (!fixedURI) {
+      return false;
+    }
+    host = fixedURI.host;
+  } catch {
+    return false;
+  }
+
+  // 1. Exact host match (e.g. 'www.foo.com' in list)
+  if (list.some(record => record.domain === host)) {
+    return true;
+  }
+
+  // 2. PSL-aware subdomain/root match
+  if (
+    list.some(record => {
+      try {
+        return Services.eTLD.hasRootDomain(host, record.domain);
+      } catch {
+        return false;
+      }
+    })
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 async function shouldNotShowRelay(origin) {
@@ -559,14 +617,21 @@ class RelayOffered {
       return;
     }
     const hasFxA = await hasFirefoxAccountAsync();
+    const showToAllBrowsersPrefEnabled = Services.prefs.getBoolPref(
+      gConfig.showToAllBrowsersPref,
+      false
+    );
+    const relayShouldShow = await shouldShowRelay(origin);
     const showRelayOnAllowlistSiteToAllUsers =
-      Services.prefs.getBoolPref(gConfig.showToAllBrowsersPref, false) &&
-      (await shouldShowRelay(origin));
+      showToAllBrowsersPrefEnabled && relayShouldShow;
+    const relayFeaturePrefUnlocked = !Services.prefs.prefIsLocked(
+      gConfig.relayFeaturePref
+    );
     if (
       !hasInput &&
       isSignup(scenarioName) &&
-      !Services.prefs.prefIsLocked(gConfig.relayFeaturePref) &&
-      (hasFxA || showRelayOnAllowlistSiteToAllUsers)
+      relayFeaturePrefUnlocked &&
+      (showRelayOnAllowlistSiteToAllUsers || relayShouldShow)
     ) {
       const nimbusRelayAutocompleteFeature =
         lazy.NimbusFeatures["email-autocomplete-relay"];
@@ -1004,4 +1069,5 @@ class RelayFeature extends OptInFeature {
   }
 }
 
+export { isOriginInList };
 export const FirefoxRelay = new RelayFeature();

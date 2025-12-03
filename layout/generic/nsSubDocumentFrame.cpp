@@ -18,7 +18,6 @@
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLFrameElement.h"
@@ -73,7 +72,7 @@ static void PropagateIsUnderHiddenEmbedderElement(nsFrameLoader* aFrameLoader,
 
   if (BrowsingContext* bc = aFrameLoader->GetExtantBrowsingContext()) {
     if (bc->IsUnderHiddenEmbedderElement() != aValue) {
-      Unused << bc->SetIsUnderHiddenEmbedderElement(aValue);
+      (void)bc->SetIsUnderHiddenEmbedderElement(aValue);
     }
   }
 }
@@ -805,7 +804,7 @@ void nsSubDocumentFrame::MaybeUpdateEmbedderColorScheme() {
     return;
   }
 
-  Unused << bc->SetEmbedderColorSchemes(schemes);
+  (void)bc->SetEmbedderColorSchemes(schemes);
 }
 
 void nsSubDocumentFrame::MaybeUpdateEmbedderZoom() {
@@ -835,7 +834,7 @@ void nsSubDocumentFrame::MaybeUpdateEmbedderZoom() {
   if (bc->GetFullZoom() == newZoom) {
     return;
   }
-  Unused << bc->SetFullZoom(newZoom);
+  (void)bc->SetFullZoom(newZoom);
 }
 
 void nsSubDocumentFrame::MaybeUpdateRemoteStyle(

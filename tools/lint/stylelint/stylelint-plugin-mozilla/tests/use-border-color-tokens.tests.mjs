@@ -123,6 +123,12 @@ testRule({
       code: "outline: var(--focus-outline);",
       description: "Using a focus-outline token in outline is valid.",
     },
+    {
+      code: `
+        :root { --custom-token: var(--border-width) solid var(--border-color); }
+        .a { border: var(--custom-token); }
+      `,
+    },
   ],
 
   reject: [

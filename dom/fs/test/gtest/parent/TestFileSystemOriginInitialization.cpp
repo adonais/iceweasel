@@ -111,8 +111,11 @@ class TestFileSystemOriginInitialization : public FileSystemParentTest {
     FileSystemQuotaClientFactory::SetCustomFactory(nullptr);
   }
 
-  MOZ_RUNINIT static inline RefPtr<MockFileSystemQuotaClient> sQuotaClient;
+  static RefPtr<MockFileSystemQuotaClient> sQuotaClient;
 };
+
+MOZ_CONSTINIT RefPtr<MockFileSystemQuotaClient>
+    TestFileSystemOriginInitialization::sQuotaClient;
 
 TEST_F(TestFileSystemOriginInitialization, EmptyOriginDirectory) {
   ASSERT_NO_FATAL_FAILURE(ShutdownStorage());

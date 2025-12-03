@@ -44,6 +44,7 @@ from .data import (
     InstallationTarget,
     IPDLCollection,
     JARManifest,
+    LegacyRunTests,
     Library,
     Linkable,
     LocalInclude,
@@ -1601,6 +1602,9 @@ class TreeMetadataEmitter(LoggingMixin):
                     "chrome.manifest",
                     Manifest("components", mozpath.basename(c)),
                 )
+
+        if run_tests := context.get("LEGACY_RUN_TESTS", []):
+            yield LegacyRunTests(context, run_tests)
 
         rust_tests = context.get("RUST_TESTS", [])
         if rust_tests:

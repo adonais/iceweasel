@@ -1178,8 +1178,7 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
   }
 
   // Start building shared library info starting from the current process.
-  mProfileGenerationAdditionalInformation.emplace(
-      SharedLibraryInfo::GetInfoForSelf());
+  mProfileGenerationAdditionalInformation.emplace();
 
   // Request profiles from the other processes. This will trigger asynchronous
   // calls to ProfileGatherer::GatheredOOPProfile as the profiles arrive.
@@ -1215,6 +1214,8 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
     ResetGathering(NS_ERROR_NOT_AVAILABLE);
     return GatheringPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
   }
+
+  mProfileGenerationAdditionalInformation->Append(rv.unwrap());
 
   LogEvent([&](Json::Value& aEvent) {
     aEvent.append(
@@ -1287,7 +1288,7 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
       childTimeoutS = cMaxChildTimeoutS;
     }
     const uint32_t childTimeoutMs = childTimeoutS * PR_MSEC_PER_SEC;
-    Unused << NS_NewTimerWithFuncCallback(
+    (void)NS_NewTimerWithFuncCallback(
         getter_AddRefs(mGatheringTimer), GatheringTimerCallback, this,
         childTimeoutMs, nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
         "nsProfilerGatheringTimer"_ns, GetMainThreadSerialEventTarget());

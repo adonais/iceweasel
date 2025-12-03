@@ -77,7 +77,8 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
   ~Sanitizer() = default;
 
   void CanonicalizeConfiguration(const SanitizerConfig& aConfig,
-                                 bool aAllowCommentsAndDataAttributes);
+                                 bool aAllowCommentsAndDataAttributes,
+                                 ErrorResult& aRv);
   void IsValid(ErrorResult& aRv);
 
   void SetDefaultConfig();
@@ -86,13 +87,13 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
 
   void MaybeMaterializeDefaultConfig();
 
-  bool RemoveElementCanonical(sanitizer::CanonicalName&& aElement);
-  bool RemoveAttributeCanonical(sanitizer::CanonicalName&& aAttribute);
+  bool RemoveElementCanonical(sanitizer::CanonicalElement&& aElement);
+  bool RemoveAttributeCanonical(sanitizer::CanonicalAttribute&& aAttribute);
 
   template <bool IsDefaultConfig>
   void SanitizeChildren(nsINode* aNode, bool aSafe);
   void SanitizeAttributes(Element* aChild,
-                          const sanitizer::CanonicalName& aElementName,
+                          const sanitizer::CanonicalElement& aElementName,
                           bool aSafe);
   void SanitizeDefaultConfigAttributes(Element* aChild,
                                        StaticAtomSet* aElementAttributes,
@@ -129,14 +130,12 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
 
   RefPtr<nsIGlobalObject> mGlobal;
 
-  Maybe<sanitizer::ListSet<sanitizer::CanonicalElementWithAttributes>>
-      mElements;
-  Maybe<sanitizer::ListSet<sanitizer::CanonicalName>> mRemoveElements;
-  Maybe<sanitizer::ListSet<sanitizer::CanonicalName>>
-      mReplaceWithChildrenElements;
+  Maybe<sanitizer::CanonicalElementMap> mElements;
+  Maybe<sanitizer::CanonicalElementSet> mRemoveElements;
+  Maybe<sanitizer::CanonicalElementSet> mReplaceWithChildrenElements;
 
-  Maybe<sanitizer::ListSet<sanitizer::CanonicalName>> mAttributes;
-  Maybe<sanitizer::ListSet<sanitizer::CanonicalName>> mRemoveAttributes;
+  Maybe<sanitizer::CanonicalAttributeSet> mAttributes;
+  Maybe<sanitizer::CanonicalAttributeSet> mRemoveAttributes;
 
   bool mComments = false;
   // mDataAttributes always exists when mAttributes exists after

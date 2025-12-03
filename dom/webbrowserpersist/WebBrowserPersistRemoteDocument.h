@@ -7,7 +7,6 @@
 #ifndef WebBrowserPersistRemoteDocument_h__
 #define WebBrowserPersistRemoteDocument_h__
 
-#include "mozilla/Maybe.h"
 #include "mozilla/PWebBrowserPersistDocumentParent.h"
 #include "nsCOMPtr.h"
 #include "nsIInputStream.h"

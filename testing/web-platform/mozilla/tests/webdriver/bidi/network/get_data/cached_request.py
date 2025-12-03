@@ -9,6 +9,10 @@ from tests.bidi.network import (
 from webdriver.bidi import error
 
 
+@pytest.mark.parametrize(
+    "use_collector",
+    [True, False],
+)
 @pytest.mark.asyncio
 async def test_cached_stylesheet(
     bidi_session,
@@ -17,6 +21,7 @@ async def test_cached_stylesheet(
     setup_network_test,
     top_context,
     add_data_collector,
+    use_collector,
 ):
     network_events = await setup_network_test(
         events=[
@@ -63,8 +68,13 @@ async def test_cached_stylesheet(
     # Based on the current spec Firefox behavior is correct, but we didn't
     # discuss the behavior for cached responses previously.
     with pytest.raises(error.NoSuchNetworkDataException):
-        await bidi_session.network.get_data(
-            request=cached_css_event["request"]["request"],
-            data_type="response",
-            collector=collector,
-        )
+        if use_collector:
+            await bidi_session.network.get_data(
+                request=cached_css_event["request"]["request"],
+                data_type="response",
+                collector=collector,
+            )
+        else:
+            await bidi_session.network.get_data(
+                request=cached_css_event["request"]["request"], data_type="response"
+            )

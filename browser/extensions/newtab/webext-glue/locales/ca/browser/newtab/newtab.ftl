@@ -397,7 +397,7 @@ newtab-wallpaper-abstract-orange = Formes taronges
 newtab-wallpaper-gradient-orange = Degradat taronja i rosa
 newtab-wallpaper-abstract-blue-purple = Formes blaves i porpres
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotografies
 newtab-wallpaper-beach-at-sunrise = Platja a l'alba

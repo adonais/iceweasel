@@ -921,7 +921,8 @@ class DebuggerScript::GetPossibleBreakpointsMatcher {
       return false;
     }
 
-    for (BytecodeRangeWithPosition r(cx_, script); !r.empty(); r.popFront()) {
+    for (BytecodeRangeWithPosition r(cx_, script, SkipPrologueOps::Yes);
+         !r.empty(); r.popFront()) {
       if (!r.frontIsBreakablePoint()) {
         continue;
       }
@@ -1023,10 +1024,14 @@ class DebuggerScript::GetOffsetMetadataMatcher {
       return false;
     }
 
-    BytecodeRangeWithPosition r(cx_, script);
+    // Use SkipPrologueOps::No to ensure we return isBreakpoint = false and
+    // isStepStart = false for prologue ops, instead of the metadata for the
+    // first 'main' op.
+    BytecodeRangeWithPosition r(cx_, script, SkipPrologueOps::No);
     while (!r.empty() && r.frontOffset() < offset_) {
       r.popFront();
     }
+    MOZ_ASSERT(r.frontOffset() == offset_);
 
     RootedValue value(cx_, NumberValue(r.frontLineNumber()));
     if (!DefineDataProperty(cx_, result_, cx_->names().lineNumber, value)) {
@@ -1215,7 +1220,8 @@ class FlowGraphSummary {
     uint32_t prevLineno = script->lineno();
     uint32_t prevColumn = 1;
     JSOp prevOp = JSOp::Nop;
-    for (BytecodeRangeWithPosition r(cx, script); !r.empty(); r.popFront()) {
+    for (BytecodeRangeWithPosition r(cx, script, SkipPrologueOps::Yes);
+         !r.empty(); r.popFront()) {
       uint32_t lineno = prevLineno;
       uint32_t column = prevColumn;
       JSOp op = r.frontOpcode();
@@ -1336,12 +1342,14 @@ class DebuggerScript::GetOffsetLocationMatcher {
       return false;
     }
 
-    BytecodeRangeWithPosition r(cx_, script);
+    // Use SkipPrologueOps::No to ensure we return isEntryPoint = false for
+    // prologue ops, instead of the value for the first 'main' op.
+    BytecodeRangeWithPosition r(cx_, script, SkipPrologueOps::No);
     while (!r.empty() && r.frontOffset() < offset_) {
       r.popFront();
     }
+    MOZ_ASSERT(r.frontOffset() == offset_);
 
-    size_t offset = r.frontOffset();
     bool isEntryPoint = r.frontIsEntryPoint();
 
     // Line numbers are only correctly defined on entry points. Thus looks
@@ -1378,9 +1386,9 @@ class DebuggerScript::GetOffsetLocationMatcher {
     }
 
     // The same entry point test that is used by getAllColumnOffsets.
-    isEntryPoint = (isEntryPoint && !flowData[offset].hasNoEdges() &&
-                    (flowData[offset].lineno() != r.frontLineNumber() ||
-                     flowData[offset].columnOrSentinel() !=
+    isEntryPoint = (isEntryPoint && !flowData[offset_].hasNoEdges() &&
+                    (flowData[offset_].lineno() != r.frontLineNumber() ||
+                     flowData[offset_].columnOrSentinel() !=
                          r.frontColumnNumber().oneOriginValue()));
     value.setBoolean(isEntryPoint);
     if (!DefineDataProperty(cx_, result_, cx_->names().isEntryPoint, value)) {
@@ -1772,7 +1780,8 @@ bool DebuggerScript::CallData::getAllOffsets() {
   if (!result) {
     return false;
   }
-  for (BytecodeRangeWithPosition r(cx, script); !r.empty(); r.popFront()) {
+  for (BytecodeRangeWithPosition r(cx, script, SkipPrologueOps::Yes);
+       !r.empty(); r.popFront()) {
     if (!r.frontIsEntryPoint()) {
       continue;
     }
@@ -1881,7 +1890,8 @@ class DebuggerScript::GetAllColumnOffsetsMatcher {
       return false;
     }
 
-    for (BytecodeRangeWithPosition r(cx_, script); !r.empty(); r.popFront()) {
+    for (BytecodeRangeWithPosition r(cx_, script, SkipPrologueOps::Yes);
+         !r.empty(); r.popFront()) {
       uint32_t lineno = r.frontLineNumber();
       JS::LimitedColumnNumberOneOrigin column = r.frontColumnNumber();
       size_t offset = r.frontOffset();
@@ -1964,7 +1974,8 @@ class DebuggerScript::GetLineOffsetsMatcher {
     }
 
     // Second pass: build the result array.
-    for (BytecodeRangeWithPosition r(cx_, script); !r.empty(); r.popFront()) {
+    for (BytecodeRangeWithPosition r(cx_, script, SkipPrologueOps::Yes);
+         !r.empty(); r.popFront()) {
       if (!r.frontIsEntryPoint()) {
         continue;
       }
@@ -2424,7 +2435,8 @@ bool DebuggerScript::CallData::getOffsetsCoverage() {
   RootedValue countValue(cx);
 
   // Iterate linearly over the bytecode.
-  for (BytecodeRangeWithPosition r(cx, script); !r.empty(); r.popFront()) {
+  for (BytecodeRangeWithPosition r(cx, script, SkipPrologueOps::Yes);
+       !r.empty(); r.popFront()) {
     size_t offset = r.frontOffset();
 
     // The beginning of each non-branching sequences of instruction set the

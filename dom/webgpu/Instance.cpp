@@ -105,6 +105,15 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
     return nullptr;
   }
 
+  if (NS_IsMainThread()) {
+    JSObject* obj = mOwner->GetGlobalJSObject();
+    if (obj) {
+      dom::SetUseCounter(obj, eUseCounter_custom_WebgpuRequestAdapter);
+    }
+  } else {
+    dom::SetUseCounter(UseCounterWorker::Custom_WebgpuRequestAdapter);
+  }
+
   // -
   // Check if we should allow the request.
 

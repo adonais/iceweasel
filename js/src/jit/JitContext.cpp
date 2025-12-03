@@ -114,6 +114,11 @@ bool jit::InitializeJit() {
   ARM64Flags::Init();
 #endif
 
+#ifdef JS_CODEGEN_MIPS64
+  // Compute flags.
+  MIPSFlags::Init();
+#endif
+
 #ifndef JS_CODEGEN_NONE
   MOZ_ASSERT(js::jit::CPUFlagsHaveBeenComputed());
 #endif

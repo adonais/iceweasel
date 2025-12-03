@@ -8,7 +8,6 @@
 #define mozilla_dom_SpeechRecognitionAlternative_h
 
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsString.h"
 #include "nsWrapperCache.h"

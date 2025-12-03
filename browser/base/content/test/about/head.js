@@ -169,3 +169,12 @@ function isBookmarksToolbarVisible(win = window) {
   let toolbar = win.document.getElementById("PersonalToolbar");
   return !toolbar.collapsed;
 }
+
+const setSecurityCertErrorsFeltPrivacyToTrue = async () =>
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.certerrors.felt-privacy-v1", true]],
+  });
+const setSecurityCertErrorsFeltPrivacyToFalse = async () =>
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.certerrors.felt-privacy-v1", false]],
+  });

@@ -2,6 +2,8 @@
 firefox-appdir = "browser"
 subprocess = true
 
+["test_proc_info.js"]
+
 ["test_process_kill.js"]
 skip-if = ["os == 'android'"]
 

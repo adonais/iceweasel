@@ -862,6 +862,9 @@
         "ImproveSuggest": {
           "type": "boolean"
         },
+        "OnlineEnabled": {
+          "type": "boolean"
+        },
         "Locked": {
           "type": "boolean"
         }
@@ -1022,6 +1025,12 @@
         },
         "EnablePrompting": {
           "type": "boolean"
+        },
+        "SkipDomains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "Locked": {
           "type": "boolean"

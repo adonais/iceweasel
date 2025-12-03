@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -149,7 +156,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s daje ti kontrolu.</p> <p>Koristi ga kao privatni pretraživač: <ul> <li>traži i pretražuj direktno u aplikaciji</li> <li>blokiraj programe za praćenje (ili ih omogući u postavkama)</li> <li>izbriši sve kolačiće kao i povijest pretraživanja i pregledavanja</li> </ul> </p> <p>%1$s je kreirala Mozilla. Naša misija je njegovanje zdravog i otvorenog interneta.<br/> <a href=\"%2$s\">Saznaj više</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s daje ti kontrolu.</p>\n<p>Koristi ga kao privatni pretraživač:\n<ul>\n<li>traži i pretražuj direktno u aplikaciji</li>\n<li>blokiraj programe za praćenje (ili ih omogući u postavkama)</li>\n<li>izbriši sve kolačiće kao i povijest pretraživanja i pregledavanja</li>\n</ul> </p>\n<p>%1$s je kreirala Mozilla. Naša misija je njegovanje zdravog i otvorenog interneta.<br/>\n<a href=\"%2$s\">Saznaj više</a></p>]]></string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">Privatnost i sigurnost</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -871,9 +878,9 @@
   <!-- The document title and heading of the error page shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_title">Veza nije sigurna</string>
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Možda se radi o problemu s postavkama na poslužitelju ili možda netko pokušava oponašati ovaj poslužitelj.. <br/><br/> Ako si se na ovaj poslužitelj u prošlosti bez problema spajao/la, moguće je da se radi o\u00a0privremenoj grešci.]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Možda se radi o problemu s postavkama na poslužitelju ili možda netko pokušava oponašati ovaj poslužitelj.. <br/><br/>\nAko si se na ovaj poslužitelj u prošlosti bez problema spajao/la, moguće je da se radi o\u00a0privremenoj grešci.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Netko možda pokušava imitirati web stranicu i nastavljanje može biti rizično.</label> <br><br> <label>%1$s ne vjeruje web stranici <b>%2$s</b> jer je izdavatelj certifikata nepoznat, certifikat je samopotpisan ili poslužitelj ne šalje ispravne međucertifikate.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Netko možda pokušava imitirati web stranicu i nastavljanje može biti rizično.</label> <br><br>\n<label>%1$s ne vjeruje web stranici <b>%2$s</b> jer je izdavatelj certifikata nepoznat, certifikat je samopotpisan ili poslužitelj ne šalje ispravne međucertifikate.</label>]]></string>
   <!--
     Sessions List
 

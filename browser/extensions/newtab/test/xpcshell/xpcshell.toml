@@ -8,8 +8,6 @@ prefs = [
   "browser.startup.homepage.abouthome_cache.testing=true",
 ]
 
-["test_AboutHomeStartupCacheChild.js"]
-
 ["test_AboutHomeStartupCacheWorker.js"]
 support-files = ["topstories.json"]
 
@@ -22,6 +20,8 @@ support-files = ["topstories.json"]
 ["test_ListsFeed.js"]
 
 ["test_LocalInferredRanking.js"]
+
+["test_NewTabAttributionFeed.js"]
 
 ["test_NewTabAttributionService.js"]
 

@@ -15,6 +15,7 @@ ChromeUtils.defineESModuleGetters(this, {
   MockRegistrar: "resource://testing-common/MockRegistrar.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
 const HISTORY_ENABLED_PREF = "places.history.enabled";
@@ -47,6 +48,10 @@ add_setup(async () => {
     await OSKeyStoreTestUtils.cleanup();
     MockRegistrar.unregister(osKeyStoreCID);
   });
+
+  // This will set gDirServiceProvider, which doesn't happen automatically
+  // in xpcshell tests, but is needed by BackupService.
+  Cc["@mozilla.org/xre/directory-provider;1"].getService(Ci.nsIXREDirProvider);
 });
 
 const BYTES_IN_KB = 1000;
@@ -198,21 +203,62 @@ async function assertFilesExist(parentPath, testFilesArray) {
 }
 
 /**
+ * Perform removalFn, potentially a few times, with special consideration for
+ * Windows, which has issues with file removal.  Sometimes remove() throws
+ * ERROR_LOCK_VIOLATION when the file is not unlocked soon enough.  This can
+ * happen because kernel operations still hold a handle to it, or because e.g.
+ * Windows Defender started a scan, or whatever.  Some applications (for
+ * example SQLite) retry deletes with a delay on Windows.  We emulate that
+ * here, since this happens very frequently in tests.
+ *
+ * This registers a test failure if it does not succeed.
+ *
+ * @param {Function} removalFn  Async function to (potentially repeatedly)
+ *                              call.
+ * @throws The resultant file system exception if removal fails, despite the
+ *         special considerations.
+ */
+async function doFileRemovalOperation(removalFn) {
+  const kMaxRetries = 5;
+  let nRetries = 0;
+  let lastException;
+  while (nRetries < kMaxRetries) {
+    nRetries++;
+    try {
+      await removalFn();
+      // Success!
+      return;
+    } catch (error) {
+      if (
+        AppConstants.platform !== "win" ||
+        !/NS_ERROR_FILE_IS_LOCKED/.test(error.message)
+      ) {
+        throw error;
+      }
+      lastException = error;
+    }
+    await new Promise(res => setTimeout(res, 100));
+  }
+
+  // All retries failed.  Re-throw last exception.
+  Assert.ok(false, `doRemovalOperation failed after ${nRetries} attempts`);
+  throw lastException;
+}
+
+/**
  * Remove a file or directory at a path if it exists and files are unlocked.
+ * Prefer this to IOUtils.remove in tests to avoid intermittent failures
+ * because of the Windows-ism mentioned in doFileRemovalOperation.
  *
  * @param {string} path path to remove.
  */
 async function maybeRemovePath(path) {
-  try {
+  let nAttempts = 0;
+  await doFileRemovalOperation(async () => {
+    nAttempts++;
     await IOUtils.remove(path, { ignoreAbsent: true, recursive: true });
-  } catch (error) {
-    // Sometimes remove() throws when the file is not unlocked soon
-    // enough.
-    if (error.name != "NS_ERROR_FILE_IS_LOCKED") {
-      // Ignoring any errors, as the temp folder will be cleaned up.
-      console.error(error);
-    }
-  }
+    Assert.ok(true, `Removed ${path} on attempt #${nAttempts}`);
+  });
 }
 
 /**

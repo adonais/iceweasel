@@ -28,7 +28,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "AlertsService",
   "@mozilla.org/alerts-service;1",
-  "nsIAlertsService"
+  Ci.nsIAlertsService
 );
 
 ChromeUtils.defineLazyGetter(

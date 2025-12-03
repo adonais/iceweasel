@@ -28,13 +28,6 @@ async def can_scroll(client):
 
 @pytest.mark.skip_platforms("android")
 @pytest.mark.asyncio
-@pytest.mark.with_interventions
-async def test_enabled(client):
-    assert await can_scroll(client)
-
-
-@pytest.mark.skip_platforms("android")
-@pytest.mark.asyncio
 @pytest.mark.without_interventions
-async def test_disabled(client):
-    assert not await can_scroll(client)
+async def test_regression(client):
+    assert await can_scroll(client)

@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">گیزلی %s</string>
@@ -64,7 +71,7 @@
     %1$s is the name of the app (for example "Firefox").
     %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
   -->
-  <string name="felt_privacy_info_card_subtitle_2">%1$s بوتون گیزلی تاغ‌لارینیزی باغلادیغینیز زامان، کوکی‌لری، گئچمیش‌لری و سایت بیلگی‌لرینیزی سیلیر. %2$s</string>
+  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s بوتون گیزلی تاغ‌لارینیزی باغلادیغینیز زامان، کوکی‌لری، گئچمیش‌لری و سایت بیلگی‌لرینیزی سیلیر. %2$s</string>
   <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
@@ -632,10 +639,6 @@
     Content description for various wallpapers. %1$s is the name of the wallpaper.
   -->
   <string name="wallpapers_item_name_content_description">دال پرده: %1$s</string>
-  <!-- Snackbar message for when wallpaper is selected -->
-  <string name="wallpaper_updated_snackbar_message" tools:ignore="UnusedResources" moz:removedIn="144">دال پرده گونجللندی!</string>
-  <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">گؤستر</string>
   <!-- Snackbar message for when wallpaper couldn't be downloaded -->
   <string name="wallpaper_download_error_snackbar_message">دال پرده یئندیریلنمه‌دی</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
@@ -1226,10 +1229,6 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d تاغ سئچیلدی</string>
-  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">مجموعه ساخلاندیْ!</string>
-  <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">تاغ ساخلاندیْ!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">باغلا</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1367,8 +1366,6 @@
   <string name="snackbar_private_data_deleted">اؤزل باخیش دیتالاریْ سیلیندی</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">لغو</string>
-  <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">سایت قالدیریلدیْ</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -1465,14 +1462,6 @@
     text to display in the snackbar once account is signed-in
   -->
   <string name="onboarding_firefox_account_sync_is_on">دؤنگل آچیق</string>
-  <!--
-    Onboarding theme
-
-    Text shown in snackbar when multiple tabs have been sent to device
-  -->
-  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">تاغلار گؤندریلدی</string>
-  <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">تاغ گؤندریلدی!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">گؤندری‌لنمه‌دی</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -1789,8 +1778,6 @@
   <string name="credit_cards_edit_card">کارت دوزه‌لیشی</string>
   <!-- The header for the card number of a credit card -->
   <string name="credit_cards_card_number">کارت شماره‌سی</string>
-  <!-- The header for the expiration date of a credit card -->
-  <string name="credit_cards_expiration_date">مدتی قوتولما تاریخی</string>
   <!-- The label for the expiration date month of a credit card to be used by a11y services -->
   <string name="credit_cards_expiration_date_month">مدتی قوتولما آییْ</string>
   <!-- The label for the expiration date year of a credit card to be used by a11y services -->

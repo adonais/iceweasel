@@ -14,6 +14,7 @@ prefs = ["security.allow_parent_unrestricted_js_loads=true"]
 ["fetch.js"]
 
 ["large-pipeto.js"]
+requesttimeoutfactor = 6  # Slow and high CPU on Linux and Windows
 run-sequentially = ["os == 'mac'"] # almost perma timeout on Mac
 
 ["proper-realm-cancel.js"]

@@ -709,7 +709,7 @@ add_task(async function test_tabContextMenu_addTabsToGroup() {
   info("create and save a group");
   let savedGroup = await makeTabGroup();
   let savedGroupId = savedGroup.id;
-  await saveAndCloseGroup(savedGroup);
+  await TabGroupTestUtils.saveAndCloseTabGroup(savedGroup);
 
   info("create 8 ungrouped tabs to test with");
   let moreTabs = Array.from({ length: 8 }).map(() =>
@@ -740,12 +740,16 @@ add_task(async function test_tabContextMenu_addTabsToGroup() {
   }, "Wait for a Glean event to be recorded");
 
   info("Collapse the tab group and add another tab to it");
-  group.collapsed = true;
+  await TabGroupTestUtils.toggleCollapsed(group, true);
 
   menu = await getContextMenu(win.gBrowser.tabs.at(-1), "tabContextMenu");
   moveTabToGroupItem = win.document.getElementById("context_moveTabToGroup");
   tabGroupButton = moveTabToGroupItem.querySelector(
     `[tab-group-id="${groupId}"]`
+  );
+  Assert.ok(
+    tabGroupButton,
+    "the open tab group should be available in 'move tab to group'"
   );
   tabGroupButton.click();
   await closeContextMenu(menu);
@@ -755,16 +759,16 @@ add_task(async function test_tabContextMenu_addTabsToGroup() {
   }, "Wait for a Glean event to be recorded");
 
   info("Add a tab to the saved tab group");
-  // TODO bug1983054 saved group does not appear in context menu on first open
-  menu = await getContextMenu(win.gBrowser.tabs.at(-1), "tabContextMenu");
-  await closeContextMenu(menu);
-
   menu = await getContextMenu(win.gBrowser.tabs.at(-1), "tabContextMenu");
   moveTabToGroupItem = win.document.getElementById(
     "context_moveTabToSavedGroup"
   );
   tabGroupButton = moveTabToGroupItem.querySelector(
     `[tab-group-id="${savedGroupId}"]`
+  );
+  Assert.ok(
+    tabGroupButton,
+    "the saved tab group should be available in 'move tab to saved group'"
   );
   tabGroupButton.click();
   await closeContextMenu(menu);
@@ -946,6 +950,7 @@ add_task(async function test_groupInteractions() {
   group = SessionStore.openSavedTabGroup(groupId, win, {
     source: "tab_overflow",
   });
+  let groupTabs = group.tabs;
   Assert.equal(
     Glean.tabgroup.groupInteractions.open_tabmenu.testGetValue(),
     1,
@@ -977,6 +982,10 @@ add_task(async function test_groupInteractions() {
     "ungroup event should have come from the tab group context menu"
   );
 
+  for (const tab of groupTabs) {
+    BrowserTestUtils.removeTab(tab);
+  }
+
   await resetTelemetry();
 });
 
@@ -984,6 +993,7 @@ add_task(async function test_cancelTabGroupCreation_ungroupTabsEvent() {
   await resetTelemetry();
 
   let tab = BrowserTestUtils.addTab(win.gBrowser, "https://example.com");
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   let tabGroupCreateByUser = BrowserTestUtils.waitForEvent(
     win.gBrowser.tabContainer,

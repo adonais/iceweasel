@@ -7,14 +7,13 @@
 #ifndef js_friend_MicroTask_h
 #define js_friend_MicroTask_h
 
-#include "mozilla/Attributes.h"
-
 #include "jstypes.h"
 
 #include "js/GCPolicyAPI.h"
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
 #include "js/UniquePtr.h"
+#include "js/Value.h"
 #include "js/ValueArray.h"
 
 namespace JS {
@@ -61,12 +60,12 @@ namespace JS {
 // sees fit.
 using MicroTask = JS::Value;
 
-JS_PUBLIC_API bool IsJSMicroTask(Handle<JS::Value> hv);
+JS_PUBLIC_API bool IsJSMicroTask(const JS::Value& hv);
 
 // Run a MicroTask that is known to be a JS MicroTask. This will crash
 // if provided an invalid task kind.
 //
-// This will return true except on OOM.
+// This will return false if an exception is thrown while processing.
 JS_PUBLIC_API bool RunJSMicroTask(JSContext* cx, Handle<MicroTask> entry);
 
 // Queue Management. This is done per-JSContext.
@@ -81,6 +80,8 @@ JS_PUBLIC_API bool RunJSMicroTask(JSContext* cx, Handle<MicroTask> entry);
 // In general, we highly recommend that most embeddings use only the regular
 // microtask queue. The debugger microtask queue mostly exists to support
 // patterns used by Gecko.
+//
+// These methods only fail for OOM.
 JS_PUBLIC_API bool EnqueueMicroTask(JSContext* cx, const MicroTask& entry);
 JS_PUBLIC_API bool EnqueueDebugMicroTask(JSContext* cx, const MicroTask& entry);
 JS_PUBLIC_API bool PrependMicroTask(JSContext* cx, const MicroTask& entry);
@@ -158,5 +159,12 @@ JS_PUBLIC_API JSObject* MaybeGetHostDefinedGlobalFromJSMicroTask(
 
 JS_PUBLIC_API JSObject* MaybeGetPromiseFromJSMicroTask(const MicroTask& entry);
 
+// Get the flow ID from a JS microtask for profiler markers.
+// This only returns false if entry has become a dead wrapper,
+// in which case the microtask doesn't run anyhow.
+JS_PUBLIC_API bool GetFlowIdFromJSMicroTask(const MicroTask& entry,
+                                            uint64_t* uid);
+
 }  // namespace JS
+
 #endif /* js_friend_MicroTask_h */

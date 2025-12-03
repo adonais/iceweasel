@@ -97,7 +97,9 @@ impl Boolean for LabeledBooleanMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<bool> for LabeledBooleanMetric {
+impl glean::TestGetValue for LabeledBooleanMetric {
+    type Output = bool;
+
     pub fn test_get_value(&self, ping_name: Option<String>) -> Option<bool> {
         match self {
             LabeledBooleanMetric::Parent(p) => p.test_get_value(ping_name),

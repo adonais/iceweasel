@@ -13,7 +13,6 @@
 #include "js/TypeDecls.h"
 #include "js/Value.h"
 #include "mozilla/IntegerRange.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SimpleGlobalObject.h"
 #include "mozilla/dom/indexedDB/Key.h"
@@ -418,7 +417,7 @@ TEST(DOM_IndexedDB_Key, ToLocaleAwareKey_Bug_1641598)
     // 1641598.
     res.AppendLiteral("\x90\x01\x01\x01\x01\x00\x40");
     for (const size_t unused : IntegerRange<size_t>(256)) {
-      Unused << unused;
+      (void)unused;
       res.AppendLiteral("\x01\x01\x80\x03\x43");
     }
     return res;

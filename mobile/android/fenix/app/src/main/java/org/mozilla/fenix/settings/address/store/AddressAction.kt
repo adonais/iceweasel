@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.settings.address.store
 
+import mozilla.components.concept.engine.autofill.AddressStructure
 import mozilla.components.lib.state.Action
 
 /**
@@ -21,24 +22,34 @@ sealed class FormChange : AddressAction {
     data class Name(val updatedText: String) : FormChange()
 
     /**
+     * Organization field has been changed.
+     */
+    data class Organization(val updatedText: String) : FormChange()
+
+    /**
      * Street Address field has changed.
      */
     data class StreetAddress(val updatedText: String) : FormChange()
 
     /**
+     * Sub region (i.e. state or province) field has changed.
+     */
+    data class AddressLevel1(val updatedText: String) : FormChange()
+
+    /**
      * City field has changed.
      */
-    data class City(val updatedText: String) : FormChange()
+    data class AddressLevel2(val updatedText: String) : FormChange()
+
+    /**
+     * Address Level3 field has changed, used to narrow down an address in some countries.
+     */
+    data class AddressLevel3(val updatedText: String) : FormChange()
 
     /**
      * Postal code field has changed.
      */
     data class PostalCode(val updatedText: String) : FormChange()
-
-    /**
-     * Sub region (i.e. state or province) field has changed.
-     */
-    data class SubRegion(val subRegion: String) : FormChange()
 
     /**
      * Country field has changed.
@@ -48,7 +59,7 @@ sealed class FormChange : AddressAction {
     /**
      * Telephone field has changed.
      */
-    data class Phone(val updatedText: String) : FormChange()
+    data class Tel(val updatedText: String) : FormChange()
 
     /**
      * Email field has changed.
@@ -100,3 +111,11 @@ data object SaveTapped : AddressAction
  * Delete button was tapped.
  */
 data object DeleteTapped : AddressAction
+
+/**
+ * The Address Structure was loaded.
+ */
+data class AddressStructureLoaded(
+    val structure: AddressStructure,
+    val initialLoad: Boolean,
+) : AddressAction

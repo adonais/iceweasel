@@ -24,7 +24,6 @@
 #include "mozilla/FStream.h"
 #include "mozilla/GetKnownFolderPath.h"
 #include "mozilla/HashFunctions.h"
-#include "mozilla/HelperMacros.h"
 #include "mozilla/glue/Debug.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/mscom/ProcessRuntime.h"
@@ -33,7 +32,6 @@
 #include "mozilla/Try.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
-#include "mozilla/Unused.h"
 #include "mozilla/WindowsDpiAwareness.h"
 #include "mozilla/WindowsProcessMitigations.h"
 
@@ -274,8 +272,7 @@ static Result<Ok, PreXULSkeletonUIError> GetSkeletonUILock() {
   // get quite the same robustness that `GetInstallHash` might provide, but
   // we already don't have that with how we key our registry values, so it
   // probably makes sense to just match those.
-  UniquePtr<wchar_t[]> binPath;
-  MOZ_TRY_VAR(binPath, GetBinaryPath());
+  UniquePtr<wchar_t[]> binPath = MOZ_TRY(GetBinaryPath());
 
   // Lowercase the binpath to match how we look for remote instances.
   MutateStringToLowercase(binPath.get());
@@ -523,7 +520,7 @@ void RasterizeColorRect(const ColorRect& colorRect) {
   // have a border, we draw a stroke-only rect first, and then draw the smaller
   // inner rect on top of it.
   Vector<DrawRect, 2> drawRects;
-  Unused << drawRects.reserve(2);
+  (void)drawRects.reserve(2);
   if (colorRect.borderWidth == 0) {
     DrawRect rect = {};
     rect.color = colorRect.color;
@@ -1010,7 +1007,7 @@ Result<Ok, PreXULSkeletonUIError> DrawSkeletonUI(
   }
 
   Vector<DevPixelSpan, 2> spansToAdd;
-  Unused << spansToAdd.reserve(2);
+  (void)spansToAdd.reserve(2);
   spansToAdd.infallibleAppend(urlbarSpan);
   if (hasSearchbar) {
     spansToAdd.infallibleAppend(searchbarSpan);
@@ -1425,10 +1422,11 @@ Result<Ok, PreXULSkeletonUIError> LoadGdi32AndUser32Procedures() {
                                    DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE)) {
     // EnableNonClientDpiScaling is first available in Win10 Build 1607, but
     // it's optional - we can handle not having it.
-    Unused << [&]() -> Result<Ok, PreXULSkeletonUIError> {
+    (void)[&]()->Result<Ok, PreXULSkeletonUIError> {
       MOZ_LOAD_OR_FAIL(user32Dll, EnableNonClientDpiScaling);
       return Ok{};
-    }();
+    }
+    ();
   }
 
   MOZ_LOAD_OR_FAIL(user32Dll, GetSystemMetricsForDpi);
@@ -1716,8 +1714,7 @@ static Result<uint32_t, PreXULSkeletonUIError> ReadRegUint(
 
 static Result<bool, PreXULSkeletonUIError> ReadRegBool(
     HKEY regKey, const std::wstring& valueName) {
-  uint32_t value;
-  MOZ_TRY_VAR(value, ReadRegUint(regKey, valueName));
+  uint32_t value = MOZ_TRY(ReadRegUint(regKey, valueName));
   return !!value;
 }
 
@@ -1800,12 +1797,10 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
 
   const TimeStamp skeletonStart = TimeStamp::Now();
 
-  HKEY regKey;
-  MOZ_TRY_VAR(regKey, OpenPreXULSkeletonUIRegKey());
+  HKEY regKey = MOZ_TRY(OpenPreXULSkeletonUIRegKey());
   AutoCloseRegKey closeKey(regKey);
 
-  UniquePtr<wchar_t[]> binPath;
-  MOZ_TRY_VAR(binPath, GetBinaryPath());
+  UniquePtr<wchar_t[]> binPath = MOZ_TRY(GetBinaryPath());
 
   std::wstring regProgressName =
       GetRegValueName(binPath.get(), sProgressSuffix);
@@ -1820,7 +1815,7 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
       WriteRegUint(regKey, regProgressName,
                    static_cast<uint32_t>(PreXULSkeletonUIProgress::Started)));
   auto writeCompletion = MakeScopeExit([&] {
-    Unused << WriteRegUint(
+    (void)WriteRegUint(
         regKey, regProgressName,
         static_cast<uint32_t>(PreXULSkeletonUIProgress::Completed));
   });
@@ -1868,48 +1863,32 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
     return Err(PreXULSkeletonUIError::FailedRegisteringWindowClass);
   }
 
-  uint32_t screenX;
-  MOZ_TRY_VAR(screenX, ReadRegUint(regKey, GetRegValueName(binPath.get(),
-                                                           sScreenXRegSuffix)));
-  uint32_t screenY;
-  MOZ_TRY_VAR(screenY, ReadRegUint(regKey, GetRegValueName(binPath.get(),
-                                                           sScreenYRegSuffix)));
-  uint32_t windowWidth;
-  MOZ_TRY_VAR(
-      windowWidth,
+  uint32_t screenX = MOZ_TRY(
+      ReadRegUint(regKey, GetRegValueName(binPath.get(), sScreenXRegSuffix)));
+  uint32_t screenY = MOZ_TRY(
+      ReadRegUint(regKey, GetRegValueName(binPath.get(), sScreenYRegSuffix)));
+  uint32_t windowWidth = MOZ_TRY(
       ReadRegUint(regKey, GetRegValueName(binPath.get(), sWidthRegSuffix)));
-  uint32_t windowHeight;
-  MOZ_TRY_VAR(
-      windowHeight,
+  uint32_t windowHeight = MOZ_TRY(
       ReadRegUint(regKey, GetRegValueName(binPath.get(), sHeightRegSuffix)));
-  MOZ_TRY_VAR(
-      sMaximized,
+  sMaximized = MOZ_TRY(
       ReadRegBool(regKey, GetRegValueName(binPath.get(), sMaximizedRegSuffix)));
-  MOZ_TRY_VAR(
-      sCSSToDevPixelScaling,
-      ReadRegDouble(regKey, GetRegValueName(binPath.get(),
-                                            sCssToDevPixelScalingRegSuffix)));
-  Vector<CSSPixelSpan> urlbar;
-  MOZ_TRY_VAR(urlbar,
-              ReadRegCSSPixelSpans(
-                  regKey, GetRegValueName(binPath.get(), sUrlbarCSSRegSuffix)));
-  Vector<CSSPixelSpan> searchbar;
-  MOZ_TRY_VAR(searchbar,
-              ReadRegCSSPixelSpans(
-                  regKey, GetRegValueName(binPath.get(), sSearchbarRegSuffix)));
-  Vector<CSSPixelSpan> springs;
-  MOZ_TRY_VAR(springs, ReadRegCSSPixelSpans(
-                           regKey, GetRegValueName(binPath.get(),
-                                                   sSpringsCSSRegSuffix)));
+  sCSSToDevPixelScaling = MOZ_TRY(ReadRegDouble(
+      regKey, GetRegValueName(binPath.get(), sCssToDevPixelScalingRegSuffix)));
+  Vector<CSSPixelSpan> urlbar = MOZ_TRY(ReadRegCSSPixelSpans(
+      regKey, GetRegValueName(binPath.get(), sUrlbarCSSRegSuffix)));
+  Vector<CSSPixelSpan> searchbar = MOZ_TRY(ReadRegCSSPixelSpans(
+      regKey, GetRegValueName(binPath.get(), sSearchbarRegSuffix)));
+  Vector<CSSPixelSpan> springs = MOZ_TRY(ReadRegCSSPixelSpans(
+      regKey, GetRegValueName(binPath.get(), sSpringsCSSRegSuffix)));
 
   if (urlbar.empty() || searchbar.empty()) {
     return Err(PreXULSkeletonUIError::CorruptData);
   }
 
   EnumSet<SkeletonUIFlag, uint32_t> flags;
-  uint32_t flagsUint;
-  MOZ_TRY_VAR(flagsUint, ReadRegUint(regKey, GetRegValueName(binPath.get(),
-                                                             sFlagsRegSuffix)));
+  uint32_t flagsUint = MOZ_TRY(
+      ReadRegUint(regKey, GetRegValueName(binPath.get(), sFlagsRegSuffix)));
   flags.deserialize(flagsUint);
 
   if (flags.contains(SkeletonUIFlag::TouchDensity) ||
@@ -1917,9 +1896,8 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
     return Err(PreXULSkeletonUIError::BadUIDensity);
   }
 
-  uint32_t theme;
-  MOZ_TRY_VAR(theme, ReadRegUint(regKey, GetRegValueName(binPath.get(),
-                                                         sThemeRegSuffix)));
+  uint32_t theme = MOZ_TRY(
+      ReadRegUint(regKey, GetRegValueName(binPath.get(), sThemeRegSuffix)));
   ThemeMode themeMode = static_cast<ThemeMode>(theme);
   if (themeMode == ThemeMode::Default) {
     if (IsSystemDarkThemeEnabled()) {
@@ -2096,12 +2074,10 @@ Result<Ok, PreXULSkeletonUIError> PersistPreXULSkeletonUIValues(
     return Err(PreXULSkeletonUIError::Disabled);
   }
 
-  HKEY regKey;
-  MOZ_TRY_VAR(regKey, OpenPreXULSkeletonUIRegKey());
+  HKEY regKey = MOZ_TRY(OpenPreXULSkeletonUIRegKey());
   AutoCloseRegKey closeKey(regKey);
 
-  UniquePtr<wchar_t[]> binPath;
-  MOZ_TRY_VAR(binPath, GetBinaryPath());
+  UniquePtr<wchar_t[]> binPath = MOZ_TRY(GetBinaryPath());
 
   MOZ_TRY(WriteRegUint(regKey,
                        GetRegValueName(binPath.get(), sScreenXRegSuffix),
@@ -2176,12 +2152,10 @@ MFBT_API Result<Ok, PreXULSkeletonUIError> SetPreXULSkeletonUIEnabledIfAllowed(
     return Err(PreXULSkeletonUIError::Disabled);
   }
 
-  HKEY regKey;
-  MOZ_TRY_VAR(regKey, OpenPreXULSkeletonUIRegKey());
+  HKEY regKey = MOZ_TRY(OpenPreXULSkeletonUIRegKey());
   AutoCloseRegKey closeKey(regKey);
 
-  UniquePtr<wchar_t[]> binPath;
-  MOZ_TRY_VAR(binPath, GetBinaryPath());
+  UniquePtr<wchar_t[]> binPath = MOZ_TRY(GetBinaryPath());
   MOZ_TRY(WriteRegBool(
       regKey, GetRegValueName(binPath.get(), sEnabledRegSuffix), value));
 
@@ -2190,7 +2164,7 @@ MFBT_API Result<Ok, PreXULSkeletonUIError> SetPreXULSkeletonUIEnabledIfAllowed(
     // do our best effort to lock it so that future instances don't create
     // skeleton UIs while we're still running, since they will immediately exit
     // and tell us to open a new window.
-    Unused << GetSkeletonUILock();
+    (void)GetSkeletonUILock();
   }
 
   sPreXULSkeletonUIEnabled = value;
@@ -2208,12 +2182,10 @@ MFBT_API Result<Ok, PreXULSkeletonUIError> SetPreXULSkeletonUIThemeId(
   // If we fail below, invalidate sTheme
   auto invalidateTheme = MakeScopeExit([] { sTheme = ThemeMode::Invalid; });
 
-  HKEY regKey;
-  MOZ_TRY_VAR(regKey, OpenPreXULSkeletonUIRegKey());
+  HKEY regKey = MOZ_TRY(OpenPreXULSkeletonUIRegKey());
   AutoCloseRegKey closeKey(regKey);
 
-  UniquePtr<wchar_t[]> binPath;
-  MOZ_TRY_VAR(binPath, GetBinaryPath());
+  UniquePtr<wchar_t[]> binPath = MOZ_TRY(GetBinaryPath());
   MOZ_TRY(WriteRegUint(regKey, GetRegValueName(binPath.get(), sThemeRegSuffix),
                        static_cast<uint32_t>(theme)));
 

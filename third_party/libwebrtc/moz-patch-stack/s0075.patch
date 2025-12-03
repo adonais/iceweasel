@@ -12,7 +12,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/237d19fe96dd7d25b
  1 file changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-index d9162b5837..0bf5c10852 100644
+index d97eed6457..5828014a4e 100644
 --- a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
 +++ b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
 @@ -424,7 +424,9 @@ bool SharedScreenCastStreamPrivate::StartScreenCastStream(
@@ -36,7 +36,7 @@ index d9162b5837..0bf5c10852 100644
          modifiers_ = egl_dmabuf_->QueryDmaBufModifiers(format);
  
          if (!modifiers_.empty()) {
-@@ -960,7 +963,7 @@ bool SharedScreenCastStreamPrivate::ProcessDMABuffer(
+@@ -959,7 +962,7 @@ bool SharedScreenCastStreamPrivate::ProcessDMABuffer(
  
    const uint n_planes = spa_buffer->n_datas;
  

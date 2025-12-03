@@ -61,10 +61,10 @@ class SearchConfigIconsParserTest {
 
         assertNotNull(result.attachment)
         assertEquals("icon.png", result.attachment!!.filename)
-        assertEquals("image/png", result.attachment!!.mimetype)
-        assertEquals("location/path", result.attachment!!.location)
-        assertEquals("abc123hash", result.attachment!!.hash)
-        assertEquals(1024u, result.attachment!!.size)
+        assertEquals("image/png", result.attachment.mimetype)
+        assertEquals("location/path", result.attachment.location)
+        assertEquals("abc123hash", result.attachment.hash)
+        assertEquals(1024u, result.attachment.size)
     }
 
     @Test

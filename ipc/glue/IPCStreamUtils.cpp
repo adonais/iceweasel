@@ -18,7 +18,6 @@
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/InputStreamLengthHelper.h"
 #include "mozilla/RemoteLazyInputStreamParent.h"
-#include "mozilla/Unused.h"
 #include "nsIMIMEInputStream.h"
 #include "nsNetCID.h"
 

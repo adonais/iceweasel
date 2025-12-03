@@ -613,7 +613,7 @@ void BodyConsumer::DispatchContinueConsumeBlobBody(
   RefPtr<AbortConsumeBlobBodyControlRunnable> r =
       new AbortConsumeBlobBodyControlRunnable(this, aWorkerRef->Private());
 
-  Unused << NS_WARN_IF(!r->Dispatch(aWorkerRef->Private()));
+  (void)NS_WARN_IF(!r->Dispatch(aWorkerRef->Private()));
 }
 
 /*

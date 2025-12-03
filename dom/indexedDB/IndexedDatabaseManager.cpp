@@ -24,7 +24,6 @@
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/ErrorEvent.h"
 #include "mozilla/dom/ErrorEventBinding.h"
@@ -35,6 +34,7 @@
 #include "mozilla/dom/quota/PromiseUtils.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/intl/LocaleCanonicalizer.h"
+#include "mozilla/intl/LocaleService.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "nsCharSeparatedTokenizer.h"
@@ -779,7 +779,7 @@ nsresult IndexedDatabaseManager::EnsureLocale() {
   }
 
   nsAutoCString acceptLang;
-  Preferences::GetLocalizedCString("intl.accept_languages", acceptLang);
+  intl::LocaleService::GetInstance()->GetAcceptLanguages(acceptLang);
 
   // Split values on commas.
   for (const auto& lang :

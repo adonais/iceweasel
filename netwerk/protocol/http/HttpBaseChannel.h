@@ -211,7 +211,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
   NS_IMETHOD SetRedirectionLimit(uint32_t value) override;
   NS_IMETHOD IsNoStoreResponse(bool* value) override;
   NS_IMETHOD IsNoCacheResponse(bool* value) override;
-  NS_IMETHOD IsPrivateResponse(bool* value) override;
   NS_IMETHOD GetResponseStatus(uint32_t* aValue) override;
   NS_IMETHOD GetResponseStatusText(nsACString& aValue) override;
   NS_IMETHOD GetRequestSucceeded(bool* aValue) override;

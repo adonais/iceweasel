@@ -158,22 +158,19 @@ https_first_disabled = true
 ["browser_bug388121-2.js"]
 
 ["browser_bug420605.js"]
-skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt"] # Bug 1775923
+skip-if = [
+  "verify-standalone",
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1775923
+]
 
 ["browser_bug422543.js"]
 https_first_disabled = true
-skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && asan", # Bug 1933429
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1933429
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug", # Bug 1933429
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && asan", # Bug 1933429
-  "os == 'win' && os_version == '11.2009' && processor == 'x86_64' && asan", # Bug 1933429
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && asan", # Bug 1933429
-]
+skip-if = ["asan"] # Bug 1933429
 
 ["browser_bug441169.js"]
 
 ["browser_bug503832.js"]
+skip-if = ["os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && msix && verify-standalone"]
 
 ["browser_bug554155.js"]
 
@@ -182,7 +179,10 @@ skip-if = [
 ["browser_bug655273.js"]
 
 ["browser_bug670318.js"]
-skip-if = ["os == 'linux' && (debug || asan || tsan)"]  # Bug 1717403
+skip-if = [
+  "os == 'linux' && (debug || asan || tsan)", # Bug 1717403
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && asan", # Bug 1717403
+]  
 
 ["browser_bug673087-1.js"]
 
@@ -244,6 +244,7 @@ https_first_disabled = true
 ["browser_bug1705872.js"]
 
 ["browser_bug1716290-1.js"]
+skip-if = ["verify-standalone"]
 
 ["browser_bug1716290-2.js"]
 
@@ -304,10 +305,10 @@ https_first_disabled = true
 ["browser_isInitialDocument.js"]
 https_first_disabled = true
 
-["browser_loadURI_postdata.js"]
-
 ["browser_loadURI_forceMediaDocument.js"]
 support-files = ["file_image_header.sjs"]
+
+["browser_loadURI_postdata.js"]
 
 ["browser_multiple_pushState.js"]
 https_first_disabled = true

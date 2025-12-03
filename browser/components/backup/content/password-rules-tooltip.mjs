@@ -13,6 +13,7 @@ export default class PasswordRulesTooltip extends MozLitElement {
   static properties = {
     hasEmail: { type: Boolean },
     tooShort: { type: Boolean },
+    open: { type: Boolean },
   };
 
   static get queries() {
@@ -25,6 +26,63 @@ export default class PasswordRulesTooltip extends MozLitElement {
     super();
     this.hasEmail = false;
     this.tooShort = false;
+    this._onResize = null;
+  }
+
+  _debounce(fn, delay) {
+    let timeout;
+    return (...args) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  _handleResize() {
+    if (this.open) {
+      this.positionPopover();
+    }
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this._onResize = this._debounce(() => this._handleResize(), 200);
+    window.addEventListener("resize", this._onResize);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this._onResize) {
+      window.removeEventListener("resize", this._onResize);
+    }
+  }
+
+  show() {
+    this.passwordRulesEl.showPopover();
+    this.positionPopover();
+  }
+
+  hide() {
+    this.passwordRulesEl.hidePopover();
+  }
+
+  positionPopover() {
+    const anchorRect = this.getBoundingClientRect();
+    const popover = this.passwordRulesEl;
+    const isWideViewport = window.innerWidth >= 1200;
+    const isRTL = document.dir === "rtl";
+
+    // Calculate top position
+    const topPos = isWideViewport
+      ? anchorRect.top + anchorRect.height / 2
+      : anchorRect.bottom;
+
+    popover.style.top = `${topPos}px`;
+    popover.style.right = isRTL ? "auto" : "inherit";
+    popover.style.left = isRTL ? "inherit" : "auto";
+  }
+
+  _onBeforeToggle(e) {
+    this.open = e.newState == "open";
   }
 
   render() {
@@ -33,7 +91,13 @@ export default class PasswordRulesTooltip extends MozLitElement {
         rel="stylesheet"
         href="chrome://browser/content/backup/password-rules-tooltip.css"
       />
-      <div id="password-rules-wrapper" aria-live="polite">
+      <div
+        id="password-rules-wrapper"
+        role="tooltip"
+        aria-describedby="password-rules-header"
+        popover="manual"
+        @beforetoggle=${this._onBeforeToggle}
+      >
         <h2
           id="password-rules-header"
           data-l10n-id="password-rules-header"
@@ -43,12 +107,14 @@ export default class PasswordRulesTooltip extends MozLitElement {
             <span
               data-l10n-id="password-rules-length-description"
               class="rule-description"
+              aria-labelledby="password-rules-header"
             ></span>
           </li>
           <li class=${this.hasEmail && "warning"}>
             <span
               data-l10n-id="password-rules-email-description"
               class="rule-description"
+              aria-labelledby="password-rules-header"
             ></span>
           </li>
         </ul>

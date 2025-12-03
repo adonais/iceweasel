@@ -129,7 +129,7 @@ class DoublyLinkedList final {
   }
 
  public:
-  DoublyLinkedList() : mHead(nullptr), mTail(nullptr) {}
+  constexpr DoublyLinkedList() : mHead(nullptr), mTail(nullptr) {}
 
   class Iterator final {
     T* mCurrent;

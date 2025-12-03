@@ -9,15 +9,15 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/3e8ac168ee3db089d
  1 file changed, 2 insertions(+)
 
 diff --git a/rtc_base/system_time.cc b/rtc_base/system_time.cc
-index 83a08f64f4..36d95447e0 100644
+index d5076431d3..e6ce4b2a74 100644
 --- a/rtc_base/system_time.cc
 +++ b/rtc_base/system_time.cc
-@@ -12,6 +12,8 @@
- // webrtc::SystemTimeNanos() must be provided externally.
+@@ -13,6 +13,8 @@
  #ifndef WEBRTC_EXCLUDE_SYSTEM_TIME
+ #include "rtc_base/system_time.h"
  
 +#error Mozilla: Must not use the built-in libwebrtc clock
 +
- #include <stdint.h>
+ #include <time.h>
  
- #include <limits>
+ #include <cstdint>

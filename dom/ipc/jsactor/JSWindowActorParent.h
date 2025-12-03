@@ -8,7 +8,6 @@
 #define mozilla_dom_JSWindowActorParent_h
 
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/JSActor.h"

@@ -9,7 +9,6 @@
 
 #include "AudioSegment.h"
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"

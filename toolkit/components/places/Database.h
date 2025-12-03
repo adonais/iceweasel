@@ -11,7 +11,6 @@
 #include "nsIObserver.h"
 #include "mozilla/storage.h"
 #include "mozilla/storage/StatementCache.h"
-#include "mozilla/Attributes.h"
 #include "nsIEventTarget.h"
 #include "Shutdown.h"
 #include "nsCategoryCache.h"
@@ -119,7 +118,7 @@ class Database final : public nsIObserver, public nsSupportsWeakReference {
    * @return one of the nsINavHistoryService::DATABASE_STATUS_* constants.
    */
   uint16_t GetDatabaseStatus() {
-    mozilla::Unused << EnsureConnection();
+    (void)EnsureConnection();
     return mDatabaseStatus;
   }
 
@@ -129,7 +128,7 @@ class Database final : public nsIObserver, public nsSupportsWeakReference {
    * @return The connection handle.
    */
   mozIStorageConnection* MainConn() {
-    mozilla::Unused << EnsureConnection();
+    (void)EnsureConnection();
     return mMainConn;
   }
 
@@ -217,7 +216,7 @@ class Database final : public nsIObserver, public nsSupportsWeakReference {
       const nsACString& aQuery);
 
   int64_t GetTagsFolderId() {
-    mozilla::Unused << EnsureConnection();
+    (void)EnsureConnection();
     return mTagsRootId;
   }
 

@@ -53,7 +53,7 @@ pref("extensions.recommendations.themeRecommendationUrl", "https://color.firefox
 pref("extensions.update.autoUpdateDefault", true);
 
 // Check AUS for system add-on updates.
-pref("extensions.systemAddon.update.url", "");
+pref("extensions.systemAddon.update.url", "https://aus5.mozilla.org/update/3/SystemAddons/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml");
 pref("extensions.systemAddon.update.enabled", false);
 
 // Disable add-ons that are not installed by the user in all scopes by default.
@@ -244,26 +244,6 @@ pref("browser.uitour.url", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/t
 // How long to show a Hearbeat survey (two hours, in seconds)
 pref("browser.uitour.surveyDuration", 7200);
 
-pref("keyword.enabled", true);
-
-// Fixup whitelists, the urlbar won't try to search for these words, but will
-// instead consider them valid TLDs. Don't check these directly, use
-// Services.uriFixup.isDomainKnown() instead.
-pref("browser.fixup.domainwhitelist.localhost", true);
-// https://tools.ietf.org/html/rfc2606
-pref("browser.fixup.domainsuffixwhitelist.test", true);
-pref("browser.fixup.domainsuffixwhitelist.example", true);
-pref("browser.fixup.domainsuffixwhitelist.invalid", true);
-pref("browser.fixup.domainsuffixwhitelist.localhost", true);
-// https://tools.ietf.org/html/draft-wkumari-dnsop-internal-00
-pref("browser.fixup.domainsuffixwhitelist.internal", true);
-// https://tools.ietf.org/html/rfc6762
-pref("browser.fixup.domainsuffixwhitelist.local", true);
-
-// Whether to always go through the DNS server before sending a single word
-// search string, that may contain a valid host, to a search engine.
-pref("browser.fixup.dns_first_for_single_words", false);
-
 #ifdef UNIX_BUT_NOT_MAC
   pref("general.autoScroll", false);
 #else
@@ -373,12 +353,6 @@ pref("browser.overlink-delay", 80);
   pref("browser.taskbarTabs.enabled", true);
 #else
   pref("browser.taskbarTabs.enabled", false);
-#endif
-
-#if defined(MOZ_WIDGET_GTK)
-  pref("browser.theme.native-theme", true);
-#else
-  pref("browser.theme.native-theme", false);
 #endif
 
 // Whether using `ctrl` when hitting return/enter in the URL bar
@@ -493,6 +467,13 @@ pref("browser.urlbar.suggest.weather", true);
 // trending suggestions are turned on.
 pref("browser.urlbar.suggest.trending", false);
 
+// Whether results that are part of the Firefox Suggest brand are shown in the
+// urlbar. This pref is exposed to the user in the UI, and it's sticky so that
+// its user-branch value persists regardless of whatever Firefox Suggest
+// scenarios, with their various default-branch values, the user is enrolled in
+// over time.
+pref("browser.urlbar.suggest.quicksuggest.all", false, sticky);
+
 // Whether non-sponsored quick suggest results are shown in the urlbar. This
 // pref is exposed to the user in the UI, and it's sticky so that its
 // user-branch value persists regardless of whatever Firefox Suggest scenarios,
@@ -505,20 +486,36 @@ pref("browser.urlbar.suggest.quicksuggest.nonsponsored", false, sticky);
 // default-branch values, the user is enrolled in over time.
 pref("browser.urlbar.suggest.quicksuggest.sponsored", false, sticky);
 
+// TODO: Remove this pref, which is the old opt-in pref for online Firefox
+// Suggest. We need to keep it for now because some live Nimbus experiments use
+// a targeting filter that depends on it. Original comment below.
+//
 // Whether data collection is enabled for quick suggest results in the urlbar.
 // This pref is exposed to the user in the UI, and it's sticky so that its
 // user-branch value persists regardless of whatever Firefox Suggest scenarios,
 // with their various default-branch values, the user is enrolled in over time.
 pref("browser.urlbar.quicksuggest.dataCollection.enabled", false, sticky);
 
-// Whether quick suggest retrives online suggestions from Merino via Oblivious
-// HTTP (OHTTP). This functionality is being enabled in a future release. Note,
-// that even if this is preference enabled, the feature may not be available
-// - there are other prefs that control if the feature is available or not.
-// When the feature is enabled, the pref will also be exposed to the user in the
-// UI and it's sticky so that its user-branch value persists regardless of
-// whatever Firefox Suggest scenarios, with their various default-brnch values,
-// the user is enrolled in over time.
+// Whether online Firefox Suggest is available to the user. This is only
+// relevant when Suggest overall is enabled [1]. When true, a checkbox will be
+// shown in the settings UI allowing to the user to toggle online Suggest.
+//
+// [1] browser.urlbar.quicksuggest.enabled
+pref("browser.urlbar.quicksuggest.online.available", false);
+
+// Whether Firefox Suggest retrieves online suggestions from Merino. This pref
+// is only relevant when Suggest overall is enabled [1] and online Suggest is
+// available to the user [2]; otherwise online suggestions are disabled. In
+// addition, when the relevant Oblivious HTTP (OHTTP) prefs [3, 4] are set,
+// online suggestions will be fetched over OHTTP.
+//
+// This pref corresponds to the online Suggest checkbox in the settings UI. It's
+// sticky so that user choice is preserved regardless of its default value.
+//
+// [1] browser.urlbar.quicksuggest.enabled
+// [2] browser.urlbar.quicksuggest.online.available
+// [3] browser.urlbar.merino.ohttpConfigURL
+// [4] browser.urlbar.merino.ohttpRelayURL
 pref("browser.urlbar.quicksuggest.online.enabled", true, sticky);
 
 // Whether the Firefox Suggest contextual opt-in result is enabled.
@@ -593,9 +590,9 @@ pref("browser.urlbar.quicksuggest.mlEnabled", false);
 // backend.
 pref("browser.urlbar.quicksuggest.mlInitDelaySeconds", 0);
 
-// Which Suggest settings to show in the settings UI. See
-// `QuickSuggest.SETTINGS_UI` for values.
-pref("browser.urlbar.quicksuggest.settingsUi", 0);
+// Which Suggest settings to show in the settings UI, when Suggest is enabled.
+// See `QuickSuggest.SETTINGS_UI` for values.
+pref("browser.urlbar.quicksuggest.settingsUi", 1);
 
 // Whether unit conversion is enabled.
 pref("browser.urlbar.unitConversion.enabled", true);
@@ -762,9 +759,6 @@ pref("browser.urlbar.wikipedia.featureGate", false);
 // Wikipedia suggestions are turned on.
 pref("browser.urlbar.suggest.wikipedia", true);
 
-// Enable creating and editing user defined search engines.
-pref("browser.urlbar.update2.engineAliasRefresh", true);
-
 // Controls whether realtime opt-in suggestions are turned on.
 pref("browser.urlbar.suggest.realtimeOptIn", true);
 
@@ -794,6 +788,16 @@ pref("browser.urlbar.suggest.yelpRealtime", true);
 // the suggestion. 0 means the min length should be taken from Nimbus or remote
 // settings.
 pref("browser.urlbar.yelpRealtime.minKeywordLength", 0);
+
+// Feature gate pref for flight status suggestions in the urlbar.
+pref("browser.urlbar.flightStatus.featureGate", false);
+
+// Feature gate pref for sports suggestions in the urlbar.
+pref("browser.urlbar.sports.featureGate", false);
+
+// If `browser.urlbar.sports.featureGate` is true, this controls whether sports
+// suggestions are turned on.
+pref("browser.urlbar.suggest.sports", true);
 
 // Timestamp of the time the user last performed a search via the urlbar
 // so that experiments can target users who have / have not performed
@@ -882,6 +886,8 @@ pref("browser.search.serpMetricsRecordedCounter", 0);
 // days
 pref("browser.search.widget.removeAfterDaysUnused", 120);
 
+pref("browser.search.widget.new", false);
+
 // The number of times the search function in the URL bar has been used,
 // capped at 100.
 pref("browser.search.totalSearches", 0);
@@ -907,6 +913,10 @@ pref("browser.dataFeatureRecommendations.enabled", false);
 // Use dark theme variant for PBM windows. This is only supported if the theme
 // sets darkTheme data.
 pref("browser.theme.dark-private-windows", true);
+
+// Whether to override themes in forced-colors mode and just use the
+// system theme and forced-colors palette to style the chrome.
+pref("browser.theme.forced-colors-override.enabled", true);
 
 // Pref to control whether or not Private Browsing windows show up
 // as separate icons in the Windows taskbar.
@@ -1055,6 +1065,12 @@ pref("browser.tabs.groups.hoverPreview.enabled", true);
 
 pref("browser.tabs.groups.smart.enabled", true);
 
+#ifdef NIGHTLY_BUILD
+pref("browser.tabs.notes.enabled", true);
+#else
+pref("browser.tabs.notes.enabled", false);
+#endif
+
 // KMEANS_WITH_ANCHOR or NEAREST_NEIGHBOR or LOGISTIC_REGRESSION
 pref("browser.tabs.groups.smart.suggestOtherTabsMethod", "NEAREST_NEIGHBOR");
 pref("browser.tabs.groups.smart.topicModelRevision", "latest");
@@ -1068,6 +1084,11 @@ pref("browser.tabs.dragDrop.expandGroup.delayMS", 350);
 pref("browser.tabs.dragDrop.selectTab.delayMS", 350);
 pref("browser.tabs.dragDrop.pinInteractionCue.delayMS", 500);
 pref("browser.tabs.dragDrop.moveOverThresholdPercent", 80);
+#ifdef NIGHTLY_BUILD
+pref("browser.tabs.dragDrop.multiselectStacking", true);
+#else
+pref("browser.tabs.dragDrop.multiselectStacking", false);
+#endif
 
 pref("browser.tabs.firefox-view.logLevel", "Warn");
 
@@ -1346,8 +1367,6 @@ pref("accessibility.typeaheadfind.timeout", 5000);
 pref("accessibility.typeaheadfind.linksonly", false);
 pref("accessibility.typeaheadfind.flashBar", 1);
 
-// Whether we can show the "Firefox Labs" section.
-pref("browser.preferences.experimental", true);
 // Whether we had to hide the "Firefox Labs" section because it would be empty.
 pref("browser.preferences.experimental.hidden", false);
 // Whether we show the "More from Mozilla" section.
@@ -1555,7 +1574,11 @@ pref("browser.bookmarks.editDialog.maxRecentFolders", 7);
   // On windows these levels are:
   // See - security/sandbox/win/src/sandboxbroker/sandboxBroker.cpp
   // SetSecurityLevelForContentProcess() for what the different settings mean.
+#if defined(NIGHTLY_BUILD)
+  pref("security.sandbox.content.level", 9);
+#else
   pref("security.sandbox.content.level", 8);
+#endif
 
   // Pref controlling if messages relevant to sandbox violations are logged.
   pref("security.sandbox.logging.enabled", false);
@@ -1659,7 +1682,6 @@ pref("services.sync.prefs.sync.browser.contentblocking.category", true);
 pref("services.sync.prefs.sync.browser.contentblocking.features.strict", true);
 pref("services.sync.prefs.sync.browser.crashReports.unsubmittedCheck.autoSubmit2", true);
 pref("services.sync.prefs.sync.browser.ctrlTab.sortByRecentlyUsed", true);
-pref("services.sync.prefs.sync.browser.discovery.enabled", true);
 pref("services.sync.prefs.sync.browser.download.useDownloadDir", true);
 pref("services.sync.prefs.sync.browser.firefox-view.feature-tour", true);
 pref("services.sync.prefs.sync.browser.formfill.enable", true);
@@ -1788,10 +1810,6 @@ pref("services.sync.syncedTabs.showRemoteIcons", true);
 // Anything <= 0 means disabled
 pref("services.sync.syncedTabs.syncDelayAfterTabChange", 5000);
 
-// Whether the character encoding menu is under the main Firefox button. This
-// preference is a string so that localizers can alter it.
-pref("browser.menu.showCharacterEncoding", "chrome://browser/locale/browser.properties");
-
 // Whether prompts should be content modal (1) tab modal (2) or window modal(3) by default
 // This is a fallback value for when prompt callers do not specify a modalType.
 pref("prompts.defaultModalType", 3);
@@ -1826,11 +1844,14 @@ pref("browser.newtab.preload", true);
 pref("termsofuse.acceptedVersion", 4);
 // Stringified timestamp of when the user last accepted the TOU
 pref("termsofuse.acceptedDate", "9999999999999");
+// Stringified timestamp of when the user first accepted the TOU, only set if
+// they have accepted more than one version.
+pref("termsofuse.firstAcceptedDate", "0");
 // The most up-to-date version of the TOU, we set the minimum and current
 // version as 4 to distinguish it from version numbers used in previous TOU
 // experiments and rollouts
 pref("termsofuse.currentVersion", 4);
-// The minimum version fo the TOU that a user must have accepted to not be
+// The minimum version of the TOU that a user must have accepted to not be
 // presented with the TOU modal
 pref("termsofuse.minimumVersion", 4);
 // Should we bypass the TOU modal notification completely, currently only true
@@ -1995,15 +2016,10 @@ pref("browser.newtabpage.activity-stream.discoverystream.topicLabels.region-topi
 pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.locale-topics-config", "en-US, en-GB, en-CA");
 pref("browser.newtabpage.activity-stream.discoverystream.topicLabels.locale-topic-label-config", "en-US, en-GB, en-CA");
 
-// List of locales that get contextual content by default
-pref("browser.newtabpage.activity-stream.discoverystream.contextualContent.locale-content-config", "en-US,en-GB,en-CA,de");
-// List of regions that get contextual content by default- TODO: update once development is closer to being finished
-pref("browser.newtabpage.activity-stream.discoverystream.contextualContent.region-content-config", "");
-
 // List of locales that get section layout by default
 pref("browser.newtabpage.activity-stream.discoverystream.sections.locale-content-config", "en-US,en-CA");
 // List of regions that get section layout by default
-pref("browser.newtabpage.activity-stream.discoverystream.sections.region-content-config", "");
+pref("browser.newtabpage.activity-stream.discoverystream.sections.region-content-config", "US");
 
 pref("browser.newtabpage.activity-stream.discoverystream.sections.cards.enabled", true);
 
@@ -2222,16 +2238,17 @@ pref("browser.ml.chat.sidebar", true);
 pref("browser.ml.linkPreview.allowedLanguages", "en");
 pref("browser.ml.linkPreview.blockListEnabled", true);
 pref("browser.ml.linkPreview.collapsed", false);
-pref("browser.ml.linkPreview.enabled", false);
+pref("browser.ml.linkPreview.enabled", true);
 pref("browser.ml.linkPreview.ignoreMs", 2000);
 pref("browser.ml.linkPreview.longPress", true);
 pref("browser.ml.linkPreview.longPressMs", 1000);
-pref("browser.ml.linkPreview.noKeyPointsRegions", "AD,AT,BE,BG,CH,CY,CZ,DE,DK,EE,ES,FI,FR,GR,HR,HU,IE,IS,IT,LI,LT,LU,LV,MT,NL,NO,PL,PT,RO,SE,SI,SK");
+pref("browser.ml.linkPreview.noKeyPointsRegions", "");
 pref("browser.ml.linkPreview.optin", false);
 pref("browser.ml.linkPreview.outputSentences", 3);
 pref("browser.ml.linkPreview.recentTypingMs", 1000);
 pref("browser.ml.linkPreview.shift", false);
 pref("browser.ml.linkPreview.shiftAlt", false);
+pref("browser.ml.linkPreview.supportedLocales", "en");
 
 pref("browser.ml.pageAssist.enabled", false);
 pref("browser.ml.smartAssist.apiKey", "");
@@ -2494,8 +2511,11 @@ pref("browser.contentblocking.reject-and-isolate-cookies.preferences.ui.enabled"
 //   Bounce Tracking Protection:
 //     "btp": BTP enabled
 //     "-btp": BTP disabled
+//   Local Network Access Restrictions:
+//     "lna": LNA enabled
+//     "-lna": LNA disabled
 // One value from each section must be included in the browser.contentblocking.features.strict pref.
-pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cryptoTP,fp,stp,emailTP,emailTPPrivate,-consentmanagerSkip,-consentmanagerSkipPrivate,lvl2,rp,rpTop,ocsp,qps,qpsPBM,fpp,fppPrivate,btp");
+pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cryptoTP,fp,stp,emailTP,emailTPPrivate,-consentmanagerSkip,-consentmanagerSkipPrivate,lvl2,rp,rpTop,ocsp,qps,qpsPBM,fpp,fppPrivate,btp,lna");
 
 // Enable Protections report's Lockwise card by default.
 pref("browser.contentblocking.report.lockwise.enabled", true);
@@ -2654,6 +2674,9 @@ pref("browser.tabs.fadeOutExplicitlyUnloadedTabs", true);
 // they are explicitly unloaded) are faded out in the tab bar.
 pref("browser.tabs.fadeOutUnloadedTabs", false);
 
+// Whether tabs can be "split" or displayed side by side at once.
+pref("browser.tabs.splitView.enabled", false);
+
 // If true, unprivileged extensions may use experimental APIs on
 // nightly and developer edition.
 pref("extensions.experiments.enabled", false);
@@ -2706,7 +2729,7 @@ pref("browser.migrate.chromium-edge.enabled", true);
 pref("browser.migrate.chromium-edge-beta.enabled", true);
 pref("browser.migrate.edge.enabled", true);
 pref("browser.migrate.firefox.enabled", true);
-pref("browser.migrate.ie.enabled", true);
+pref("browser.migrate.ie.enabled", false);
 pref("browser.migrate.opera.enabled", true);
 pref("browser.migrate.opera-gx.enabled", true);
 pref("browser.migrate.safari.enabled", true);
@@ -3441,10 +3464,16 @@ pref("browser.mailto.dualPrompt.dismissXClickMinutes", 1440); // one day
 pref("browser.backup.enabled", true);
 // Pref to control whether scheduled backups run or not.
 pref("browser.backup.scheduled.enabled", false);
-// Pref to control visibility and usability of the create backup feature.
-pref("browser.backup.archive.enabled", false);
-// Pref to control visibility and usability of the restore from backup feature.
-pref("browser.backup.restore.enabled", false);
+
+// Prefs to control visibility and usability of the create backup and restore from backup features.
+#ifdef XP_WIN
+  pref("browser.backup.archive.enabled", true);
+  pref("browser.backup.restore.enabled", true);
+#else
+  pref("browser.backup.archive.enabled", false);
+  pref("browser.backup.restore.enabled", false);
+#endif
+
 // The number of SQLite database pages to backup per step.
 pref("browser.backup.sqlite.pages_per_step", 50);
 // The delay between SQLite database backup steps in milliseconds.
@@ -3465,6 +3494,9 @@ pref("browser.backup.disabled-on-idle-backup-retry", false);
 // removing for any reason.
 pref("browser.backup.max-num-unremovable-staging-items", 5);
 pref("browser.backup.scheduled.user-disabled", false);
+// How many milliseconds to wait for tab state to flush before continuing the
+// backup process.
+pref("browser.backup.tab-flush-timeout", 5000);
 
 #ifdef NIGHTLY_BUILD
   // Pref to enable the new profiles
@@ -3499,12 +3531,25 @@ pref("browser.contextual-services.contextId.rust-component.enabled", true);
 
 // Pref to enable the IP protection feature
 pref("browser.ipProtection.enabled", false);
+// Pref to enable the autoStart feature
+pref("browser.ipProtection.features.autoStart", false);
+// Prefs to track the user turning on autostart preference
+pref("browser.ipProtection.autoStartEnabled", false);
+pref("browser.ipProtection.autoStartPrivateEnabled", false);
+// Pref to track whether the user has turned IP protection on
 pref("browser.ipProtection.userEnabled", false);
+// Pref to track which experiment version the user is enrolled in
 pref("browser.ipProtection.variant", "");
+// Pref to track number of times the VPN panel is opened
+pref("browser.ipProtection.panelOpenCount", 0);
+// Pref to enable support for site exceptions
+pref("browser.ipProtection.features.siteExceptions", false);
 pref("browser.ipProtection.exceptionsMode", "all");
 pref("browser.ipProtection.domainExclusions", "");
+pref("browser.ipProtection.domainInclusions", "");
 pref("browser.ipProtection.log", false);
 pref("browser.ipProtection.guardian.endpoint", "https://vpn.mozilla.org/");
+pref("browser.ipProtection.added", false);
 
 // Pref to enable aboug:glean redesign.
 pref("about.glean.redesign.enabled", false);

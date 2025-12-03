@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { DSEmptyState } from "../DSEmptyState/DSEmptyState";
 import { DSCard, PlaceholderDSCard } from "../DSCard/DSCard";
 import { useSelector } from "react-redux";
@@ -10,6 +10,7 @@ import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import {
   selectWeatherPlacement,
   useIntersectionObserver,
+  getActiveColumnLayout,
 } from "../../../lib/utils";
 import { SectionContextMenu } from "../SectionContextMenu/SectionContextMenu";
 import { InterestPicker } from "../InterestPicker/InterestPicker";
@@ -160,6 +161,66 @@ function CardSection({
     state => state.DiscoveryStream
   );
   const { isForStartupCache } = useSelector(state => state.App);
+
+  const [focusedIndex, setFocusedIndex] = useState(0);
+
+  const onCardFocus = index => {
+    setFocusedIndex(index);
+  };
+
+  const handleCardKeyDown = e => {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      e.preventDefault();
+
+      const currentCardEl = e.target.closest("article.ds-card");
+      if (!currentCardEl) {
+        return;
+      }
+
+      const activeColumn = getActiveColumnLayout(window.innerWidth);
+
+      // Arrow direction should match visual navigation direction in RTL
+      const isRTL = document.dir === "rtl";
+      const navigateToPrevious = isRTL
+        ? e.key === "ArrowRight"
+        : e.key === "ArrowLeft";
+
+      // Extract current position from classList
+      let currentPosition = null;
+      const positionPrefix = `${activeColumn}-position-`;
+      for (let className of currentCardEl.classList) {
+        if (className.startsWith(positionPrefix)) {
+          currentPosition = parseInt(
+            className.substring(positionPrefix.length),
+            10
+          );
+          break;
+        }
+      }
+
+      if (currentPosition === null) {
+        return;
+      }
+
+      const targetPosition = navigateToPrevious
+        ? currentPosition - 1
+        : currentPosition + 1;
+
+      // Find card with target position
+      const parentEl = currentCardEl.parentElement;
+      if (parentEl) {
+        const targetSelector = `article.ds-card.${activeColumn}-position-${targetPosition}`;
+        const targetCardEl = parentEl.querySelector(targetSelector);
+
+        if (targetCardEl) {
+          const link = targetCardEl.querySelector("a.ds-card-link");
+          if (link) {
+            link.focus();
+          }
+        }
+      }
+    }
+  };
 
   const showTopics = prefs[PREF_TOPICS_ENABLED];
   const mayHaveSectionsCards = prefs[PREF_SECTIONS_CARDS_ENABLED];
@@ -359,7 +420,10 @@ function CardSection({
         </div>
         {mayHaveSectionsPersonalization ? sectionContextWrapper : null}
       </div>
-      <div className={`ds-section-grid ds-card-grid`}>
+      <div
+        className={`ds-section-grid ds-card-grid`}
+        onKeyDown={handleCardKeyDown}
+      >
         {section.data.slice(0, maxTile).map((rec, index) => {
           const layoutData = getLayoutData(
             responsiveLayouts,
@@ -434,6 +498,8 @@ function CardSection({
               sectionFollowed={following}
               sectionLayoutName={layoutName}
               isTimeSensitive={rec.isTimeSensitive}
+              tabIndex={index === focusedIndex ? 0 : -1}
+              onFocus={() => onCardFocus(index)}
             />
           );
           return index === 0 &&

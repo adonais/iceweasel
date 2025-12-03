@@ -18,7 +18,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_geo.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/XREAppData.h"
 #include "mozilla/dom/GeolocationPosition.h"

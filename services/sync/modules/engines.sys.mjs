@@ -2120,7 +2120,7 @@ SyncEngine.prototype = {
     return changes;
   },
 
-  /*
+  /**
    * Returns a changeset containing entries for all currently tracked items.
    * The default implementation returns a changeset with timestamps indicating
    * when the item was added to the tracker.

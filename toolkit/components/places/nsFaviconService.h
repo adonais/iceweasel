@@ -11,7 +11,6 @@
 #include "Database.h"
 #include "FaviconHelpers.h"
 #include "imgITools.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/storage.h"
 #include "nsCOMPtr.h"

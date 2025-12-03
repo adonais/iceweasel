@@ -7,7 +7,6 @@
 #define GFX_DWRITEFONTLIST_H
 
 #include "mozilla/FontPropertyTypes.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryReporting.h"
 #include "gfxDWriteCommon.h"
 #include "dwrite_3.h"

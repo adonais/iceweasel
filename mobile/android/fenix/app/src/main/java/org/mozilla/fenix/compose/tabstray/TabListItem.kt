@@ -259,7 +259,7 @@ private fun Thumbnail(
     Box {
         TabThumbnail(
             tab = tab,
-            size = size,
+            thumbnailSizePx = size,
             modifier = Modifier
                 .size(width = 92.dp, height = 72.dp)
                 .testTag(TabsTrayTestTag.TAB_ITEM_THUMBNAIL),

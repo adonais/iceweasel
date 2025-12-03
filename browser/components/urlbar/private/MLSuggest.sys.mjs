@@ -6,15 +6,17 @@
  * MLSuggest helps with ML based suggestions around intents and location.
  */
 
-const lazy = {};
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   createEngine: "chrome://global/content/ml/EngineProcess.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
 });
 
 /**
- * @typedef {Awaited<ReturnType<import("chrome://global/content/ml/EngineProcess.sys.mjs").createEngine>>} MLEngine
+ * @import {EngineRunRequest, EngineRunResponse, MLEntry} from "moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs"
+ * @typedef {Parameters<typeof lazy.createEngine>[0]} MLEngineOptions
+ * @typedef {Awaited<ReturnType<typeof lazy.createEngine>>} MLEngine
  */
 
 // List of prepositions used in subject cleaning.
@@ -70,9 +72,8 @@ class _MLSuggest {
   /**
    * Helper to wrap createEngine for testing purposes.
    *
-   * @param {object} options
+   * @param {MLEngineOptions} options
    *   Configuration options for the ML engine.
-   * @returns {MLEngine}
    */
   createEngine(options) {
     return lazy.createEngine(options);
@@ -92,35 +93,37 @@ class _MLSuggest {
   }
 
   /**
+   * @typedef {object} MLSuggestResult
+   * @property {string} intent
+   *   The predicted intent label of the query. Possible values include:
+   *   - 'information_intent': For queries seeking general information.
+   *   - 'yelp_intent': For queries related to local businesses or services.
+   *   - 'navigation_intent': For queries with navigation-related actions.
+   *   - 'travel_intent': For queries showing travel-related interests.
+   *   - 'purchase_intent': For queries with purchase or shopping intent.
+   *   - 'weather_intent': For queries asking about weather or forecasts.
+   *   - 'translation_intent': For queries seeking translations.
+   *   - 'unknown': When the intent cannot be classified with confidence.
+   *   - '' (empty string): Returned when model probabilities for all intents
+   *     are below the intent threshold.
+   * @property {?{city: ?string, state: ?string}} location
+   *   The detected location from the query.
+   * @property {string} subject
+   *   The subject of the query after location is removed.
+   * @property {{intent: object, ner: object}} metrics
+   *   The combined metrics from NER model results, representing additional
+   *   information about the model's performance.
+   */
+
+  /**
    * Generates ML-based suggestions by finding intent, detecting entities, and
    * combining locations.
    *
    * @param {string} query
    *   The user's input query.
-   * @returns {object | null}
+   * @returns {Promise<?MLSuggestResult>}
    *   The suggestion result including intent, location, and subject, or null if
    *   an error occurs or query length > MAX_QUERY_LENGTH
-   *   {string} intent
-   *     The predicted intent label of the query. Possible values include:
-   *       - 'information_intent': For queries seeking general information.
-   *       - 'yelp_intent': For queries related to local businesses or services.
-   *       - 'navigation_intent': For queries with navigation-related actions.
-   *       - 'travel_intent': For queries showing travel-related interests.
-   *       - 'purchase_intent': For queries with purchase or shopping intent.
-   *       - 'weather_intent': For queries asking about weather or forecasts.
-   *       - 'translation_intent': For queries seeking translations.
-   *       - 'unknown': When the intent cannot be classified with confidence.
-   *       - '' (empty string): Returned when model probabilities for all intents
-   *         are below the intent threshold.
-   *   - {object|null} location: The detected location from the query, which is
-   *     an object with `city` and `state` fields:
-   *     - {string|null} city: The detected city, or `null` if no city is found.
-   *     - {string|null} state: The detected state, or `null` if no state is found.
-   *   {string} subject
-   *     The subject of the query after location is removed.
-   *   {object} metrics
-   *     The combined metrics from NER model results, representing additional
-   *     information about the model's performance.
    */
   async makeSuggestions(query) {
     // avoid bunch of work for very long strings
@@ -174,6 +177,14 @@ class _MLSuggest {
     }
   }
 
+  /**
+   * Initializes a engine model.
+   *
+   * @param {MLEngineOptions} options
+   *   Configuration options for the ML engine.
+   * @param {MLEngineOptions} [fallbackOptions]
+   *   Fallback options if creating with the main options fails.
+   */
   async #initializeModelEngine(options, fallbackOptions = null) {
     const featureId = options.featureId;
 
@@ -205,10 +216,8 @@ class _MLSuggest {
    *
    * @param {string} query
    *   The user's input query.
-   * @param {object} options
+   * @param {Omit<EngineRunRequest, "args">} [options]
    *   The options for the engine pipeline
-   * @returns {object[] | null}
-   *   The intent results or null if the model is not initialized.
    */
   async _findIntent(query, options = {}) {
     const engineIntentClassifier = this.#modelEngines.get(
@@ -218,6 +227,7 @@ class _MLSuggest {
       return null;
     }
 
+    /** @type {EngineRunResponse} */
     let res;
     try {
       res = await engineIntentClassifier.run({
@@ -243,10 +253,8 @@ class _MLSuggest {
    *
    * @param {string} query
    *   The user's input query.
-   * @param {object} options
+   * @param {Omit<EngineRunRequest, "args">} options
    *   The options for the engine pipeline
-   * @returns {object[] | null}
-   *   The NER results or null if the model is not initialized.
    */
   async _findNER(query, options = {}) {
     const engineNER = this.#modelEngines.get(this.NER_OPTIONS.featureId);
@@ -267,7 +275,7 @@ class _MLSuggest {
    * If the highest-scoring intent in the result exceeds the threshold, its label
    * is returned; otherwise, the label defaults to 'unknown'.
    *
-   * @param {object[]} intentResult
+   * @param {EngineRunResponse} intentResult
    *   The result of the intent classification model, where each item includes
    *   a `label` and `score`.
    * @param {number} intentThreshold
@@ -292,7 +300,7 @@ class _MLSuggest {
    * - B-CITYSTATE, I-CITYSTATE: Identifies tokens that represent a combined
    *   city and state.
    *
-   * @param {object[]} nerResult
+   * @param {EngineRunResponse} nerResult
    *   The NER results containing tokens and their corresponding entity labels.
    * @param {number} nerThreshold
    *   The confidence threshold for including entities. Tokens with a confidence
@@ -349,7 +357,7 @@ class _MLSuggest {
    * - Handles punctuation tokens like ".", "-", or "'".
    * - Ensures continuity for entities split across multiple tokens.
    *
-   * @param {object} res
+   * @param {MLEntry} res
    *   The NER result token to process. Should include:
    *   - {string} word: The word or token from the NER output.
    *   - {number} score: The confidence score for the token.
@@ -408,6 +416,12 @@ class _MLSuggest {
     }
   }
 
+  /**
+   * Finds the subject from the query, removing the city and location words.
+   *
+   * @param {string} query
+   * @param {{city: ?string, state: ?string}} location
+   */
   #findSubjectFromQuery(query, location) {
     // If location is null or no city/state, return the entire query
     if (!location || (!location.city && !location.state)) {
@@ -435,8 +449,12 @@ class _MLSuggest {
     return subjectWords.join(" ");
   }
 
+  /**
+   * Remove trailing prepositions from the list of words
+   *
+   * @param {string[]} words
+   */
   #cleanSubject(words) {
-    // Remove trailing prepositions from the list of words
     while (words.length && PREPOSITIONS.includes(words[words.length - 1])) {
       words.pop();
     }

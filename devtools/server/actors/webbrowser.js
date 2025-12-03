@@ -469,7 +469,7 @@ BrowserTabList.prototype._checkListening = function () {
   );
 };
 
-/*
+/**
  * Add or remove event listeners for all XUL windows.
  *
  * @param shouldListen boolean

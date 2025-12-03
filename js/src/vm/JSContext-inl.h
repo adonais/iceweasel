@@ -95,13 +95,22 @@ class ContextChecks {
     static_assert(std::is_same_v<T, JSAtom> || std::is_same_v<T, JS::Symbol>,
                   "Should only be called with JSAtom* or JS::Symbol* argument");
 
+    JS::AssertCellIsNotGray(thing);
+
 #ifdef DEBUG
-    // Atoms which move across zone boundaries need to be marked in the new
-    // zone, see JS_MarkCrossZoneId.
-    if (zone()) {
-      if (!cx->runtime()->gc.atomMarking.atomIsMarked(zone(), thing)) {
+    // Atoms which move across zone boundaries need to be marked in the atom
+    // marking bitmap for the new zone, see JS_MarkCrossZoneId.
+    // Note that the atom marking state may not be up-to-date if incremental
+    // marking is taking place.
+    gc::GCRuntime* gc = &cx->runtime()->gc;
+    bool isGCMarking =
+        gc->state() >= gc::State::Prepare && gc->state() <= gc::State::Sweep;
+    if (zone() && !isGCMarking) {
+      gc::CellColor color = gc->atomMarking.getAtomMarkColor(zone(), thing);
+      if (color != gc::CellColor::Black) {
         MOZ_CRASH_UNSAFE_PRINTF(
-            "*** Atom not marked for zone %p at argument %d", zone(), argIndex);
+            "*** Atom is marked %s for zone %p at argument %d",
+            gc::CellColorName(color), zone(), argIndex);
       }
     }
 #endif

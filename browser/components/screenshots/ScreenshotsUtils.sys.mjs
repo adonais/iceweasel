@@ -23,7 +23,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
-  AlertsService: ["@mozilla.org/alerts-service;1", "nsIAlertsService"],
+  AlertsService: ["@mozilla.org/alerts-service;1", Ci.nsIAlertsService],
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(

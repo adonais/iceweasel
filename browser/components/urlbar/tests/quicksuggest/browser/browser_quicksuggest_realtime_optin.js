@@ -55,7 +55,7 @@ add_setup(async function () {
 
   registerCleanupFunction(async () => {
     UrlbarPrefs.clear("suggest.realtimeOptIn");
-    UrlbarPrefs.clear("quicksuggest.dataCollection.enabled");
+    UrlbarPrefs.clear("quicksuggest.online.enabled");
 
     // Make sure all ingest is done before finishing.
     await QuickSuggestTestUtils.forceSync();
@@ -82,7 +82,7 @@ add_task(async function messages() {
 });
 
 async function doMessagesTest({ input, expected }) {
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("quicksuggest.online.enabled", false);
 
   let { element } = await openRealtimeSuggestion({ input });
   let title = element.row.querySelector(".urlbarView-title");
@@ -93,7 +93,7 @@ async function doMessagesTest({ input, expected }) {
   Assert.equal(description.textContent, expected.description);
 
   await UrlbarTestUtils.promisePopupClose(window);
-  UrlbarPrefs.clear("quicksuggest.dataCollection.enabled");
+  UrlbarPrefs.clear("quicksuggest.online.enabled");
 }
 
 add_task(async function optIn_mouse() {
@@ -110,11 +110,11 @@ async function doOptInTest(useKeyboard) {
     "Sanity check: MarketSuggestions is enabled initially"
   );
 
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("quicksuggest.online.enabled", false);
 
   Assert.ok(
     QuickSuggest.getFeature("MarketSuggestions").isEnabled,
-    "MarketSuggestions remains enabled after disabling quicksuggest.dataCollection.enabled"
+    "MarketSuggestions remains enabled after disabling quicksuggest.online.enabled"
   );
 
   let { element, result } = await openRealtimeSuggestion({ input: "stock" });
@@ -162,10 +162,10 @@ async function doOptInTest(useKeyboard) {
     window,
     1
   );
-  Assert.ok(UrlbarPrefs.get("quicksuggest.dataCollection.enabled"));
+  Assert.ok(UrlbarPrefs.get("quicksuggest.online.enabled"));
   Assert.equal(merinoResult.payload.source, "merino");
   Assert.equal(merinoResult.payload.provider, "polygon");
-  Assert.equal(merinoResult.payload.dynamicType, "market");
+  Assert.equal(merinoResult.payload.dynamicType, "realtime-market");
   info("Allow button works");
 
   await UrlbarTestUtils.promisePopupClose(window);
@@ -175,11 +175,11 @@ async function doOptInTest(useKeyboard) {
     "MarketSuggestions remains enabled opting in"
   );
 
-  UrlbarPrefs.clear("quicksuggest.dataCollection.enabled");
+  UrlbarPrefs.clear("quicksuggest.online.enabled");
 
   Assert.ok(
     QuickSuggest.getFeature("MarketSuggestions").isEnabled,
-    "MarketSuggestions remains enabled after clearing quicksuggest.dataCollection.enabled"
+    "MarketSuggestions remains enabled after clearing quicksuggest.online.enabled"
   );
 }
 
@@ -189,7 +189,7 @@ add_task(async function dismiss() {
     "Sanity check: MarketSuggestions is enabled initially"
   );
 
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("quicksuggest.online.enabled", false);
   UrlbarPrefs.clear("quicksuggest.realtimeOptIn.notNowTimeSeconds");
   UrlbarPrefs.clear("quicksuggest.realtimeOptIn.notNowTypes");
   UrlbarPrefs.clear("quicksuggest.realtimeOptIn.dismissTypes");
@@ -308,7 +308,7 @@ add_task(async function dismiss() {
     "MarketSuggestions remains disabled simulating passage of 1000 days"
   );
 
-  UrlbarPrefs.clear("quicksuggest.dataCollection.enabled");
+  UrlbarPrefs.clear("quicksuggest.online.enabled");
   UrlbarPrefs.clear("quicksuggest.realtimeOptIn.notNowTimeSeconds");
   UrlbarPrefs.clear("quicksuggest.realtimeOptIn.notNowTypes");
   UrlbarPrefs.clear("quicksuggest.realtimeOptIn.dismissTypes");
@@ -330,7 +330,7 @@ add_task(async function dismiss_with_another_type() {
     "Sanity check: MarketSuggestions is enabled initially"
   );
 
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("quicksuggest.online.enabled", false);
   UrlbarPrefs.clear("quicksuggest.realtimeOptIn.notNowTimeSeconds");
   UrlbarPrefs.clear("quicksuggest.realtimeOptIn.notNowTypes");
   UrlbarPrefs.clear("quicksuggest.realtimeOptIn.dismissTypes");
@@ -405,7 +405,7 @@ add_task(async function dismiss_with_another_type() {
 
   await assertOptInVisibility({ input: "stock", expectedVisibility: true });
 
-  UrlbarPrefs.clear("quicksuggest.dataCollection.enabled");
+  UrlbarPrefs.clear("quicksuggest.online.enabled");
   UrlbarPrefs.clear("quicksuggest.realtimeOptIn.notNowTimeSeconds");
   UrlbarPrefs.clear("quicksuggest.realtimeOptIn.notNowTypes");
   UrlbarPrefs.clear("quicksuggest.realtimeOptIn.dismissTypes");
@@ -423,7 +423,7 @@ add_task(async function not_interested() {
     "Sanity check: MarketSuggestions is enabled initially"
   );
 
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("quicksuggest.online.enabled", false);
   UrlbarPrefs.set("suggest.realtimeOptIn", true);
 
   info("Click on dropdown button");
@@ -461,7 +461,7 @@ add_task(async function not_interested() {
   info("Any realtime type suggestion never be shown");
   await assertOptInVisibility({ input: "stock", expectedVisibility: false });
 
-  UrlbarPrefs.clear("quicksuggest.dataCollection.enabled");
+  UrlbarPrefs.clear("quicksuggest.online.enabled");
   UrlbarPrefs.clear("suggest.realtimeOptIn");
 
   Assert.ok(

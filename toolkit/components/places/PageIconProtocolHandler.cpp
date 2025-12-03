@@ -255,7 +255,7 @@ nsresult PageIconProtocolHandler::NewChannelInternal(nsIURI* aURI,
           // favicon before giving up.
           channel->SetContentType(nsLiteralCString(FAVICON_DEFAULT_MIMETYPE));
           channel->SetContentLength(-1);
-          Unused << StreamDefaultFavicon(uri, loadInfo, pipeOut);
+          (void)StreamDefaultFavicon(uri, loadInfo, pipeOut);
         }
       });
 
@@ -336,7 +336,7 @@ RefPtr<RemoteStreamPromise> PageIconProtocolHandler::NewStream(
 
           RemoteStreamInfo info(pipeIn,
                                 nsLiteralCString(FAVICON_DEFAULT_MIMETYPE), -1);
-          Unused << StreamDefaultFavicon(uri, loadInfo, pipeOut);
+          (void)StreamDefaultFavicon(uri, loadInfo, pipeOut);
           outerPromise->Resolve(std::move(info), __func__);
         }
       });

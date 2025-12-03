@@ -186,6 +186,9 @@ class TabPanel extends Panel {
   /** @type {DOMElement|null} */
   #thumbnailElement;
 
+  /** @type {TabHoverPanelSet} */
+  #panelSet;
+
   constructor(panel, panelSet) {
     super();
 
@@ -208,7 +211,7 @@ class TabPanel extends Panel {
     );
 
     this.panelElement = panel;
-    this.panelSet = panelSet;
+    this.#panelSet = panelSet;
 
     this.win = this.panelElement.ownerGlobal;
 
@@ -250,13 +253,12 @@ class TabPanel extends Panel {
     ) {
       this.#updatePreview();
     }
-    this.panelSet.panelOpener.execute(() => {
-      if (!this.panelSet.shouldActivate() ||
-         (!this.officialtips && !this._prefDisplayThumbnail)) {
+    this.#panelSet.panelOpener.execute(() => {
+      if (!this.#panelSet.shouldActivate() || (!this.officialtips && !this._prefDisplayThumbnail)) {
         return;
       }
       this.panelElement.openPopup(this.#tab, this.popupOptions);
-    });
+    }, this);
     this.win.addEventListener("TabSelect", this);
     this.panelElement.addEventListener("popupshowing", this);
     this.#tab.addEventListener("TabAttrModified", this);
@@ -280,7 +282,8 @@ class TabPanel extends Panel {
     this.panelElement.removeEventListener("popupshowing", this);
     this.win.removeEventListener("TabSelect", this);
     this.panelElement.hidePopup();
-    this.panelSet.panelOpener.setZeroDelay();
+    this.#panelSet.panelOpener.clear(this);
+    this.#panelSet.panelOpener.setZeroDelay();
   }
 
   getPrettyURI(uri) {
@@ -510,7 +513,7 @@ class TabGroupPanel extends Panel {
         return;
       }
       this.#doOpenPanel();
-    });
+    }, this);
   }
 
   /**
@@ -557,6 +560,7 @@ class TabGroupPanel extends Panel {
     }
 
     this.panelElement.hidePopup();
+    this.#panelSet.panelOpener.clear(this);
     this.#panelSet.panelOpener.setZeroDelay();
   }
 
@@ -611,6 +615,33 @@ class TabGroupPanel extends Panel {
 
   handleEvent(event) {
     if (event.type == "command") {
+      if (this.win.gBrowser.selectedTab == event.target.tab) {
+        this.deactivate({ force: true });
+        return;
+      }
+
+      // bug1984732: temporarily disable CSS transitions while tabs are
+      // switching to prevent an unsightly "slide" animation when switching
+      // tabs within a collapsed group
+      let switchingTabs = [this.win.gBrowser.selectedTab, event.target.tab];
+      if (switchingTabs.every(tab => tab.group == this.#group)) {
+        for (let tab of switchingTabs) {
+          tab.animationsEnabled = false;
+        }
+
+        this.win.addEventListener(
+          "TabSwitchDone",
+          () => {
+            this.win.requestAnimationFrame(() => {
+              for (let tab of switchingTabs) {
+                tab.animationsEnabled = true;
+              }
+            });
+          },
+          { once: true }
+        );
+      }
+
       this.win.gBrowser.selectedTab = event.target.tab;
       this.deactivate({ force: true });
     } else if (event.type == "mouseout" && event.target == this.panelElement) {
@@ -676,6 +707,12 @@ class TabPreviewPanelTimedFunction {
   /** @type {boolean} */
   #useZeroDelay;
 
+  /** @type {function(): void | null} */
+  #target;
+
+  /** @type {TabPanel} */
+  #from;
+
   constructor(zeroDelayTime, win) {
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
@@ -688,9 +725,38 @@ class TabPreviewPanelTimedFunction {
 
     this.#timer = null;
     this.#useZeroDelay = false;
+
+    this.#target = null;
+    this.#from = null;
   }
 
-  execute(target) {
+  /**
+   * Execute a function after a delay, according to the following rules:
+   * - By default, execute the function after the time specified by `ui.tooltip.delay_ms`.
+   * - If a timer is already active, the timer will not be restarted, but the
+   *   function to be executed will be set to the one from the most recent
+   *   call (see notes below)
+   * - If the zero delay has been set with `setZeroDelay`, the function will
+   *   invoke immediately
+   *
+   * Multiple calls to `execute` within the delay will not invoke the function
+   * each time. The original delay will be preserved (i.e. the function will
+   * execute after `ui.tooltip.delay_ms` from the first call) but the function
+   * that is executed may be updated by subsequent calls to execute. This
+   * ensures that if the panel we want to open changes (e.g. if a user hovers
+   * over a tab, then quickly switches to a tab group before the delay
+   * expires), the delay is not restarted, which would cause a longer than
+   * usual time to open.
+   *
+   * @param {function(): void | null} target
+   *   The function to execute
+   * @param {TabPanel} from
+   *   The calling panel
+   */
+  execute(target, from) {
+    this.#target = target;
+    this.#from = from;
+
     if (this.delayActive) {
       return;
     }
@@ -701,22 +767,39 @@ class TabPreviewPanelTimedFunction {
     this.#timer = this.#win.setTimeout(
       () => {
         this.#timer = null;
-        target();
+        this.#target();
       },
       this.#useZeroDelay ? 0 : this._prefPreviewDelay
     );
   }
 
-  clear() {
-    if (this.#timer) {
+  /**
+   * Clear the timer, if it is active, for example when a user moves off a panel.
+   * This has the effect of suppressing the delayed function execution.
+   *
+   * @param {TabPanel} from
+   *   The calling panel. This must be the same as the panel that most recently
+   *   called `execute`. If it is not, the call will be ignored. This is
+   *   necessary to prevent, e.g., the tab hover panel from inadvertently
+   *   cancelling the opening of the tab group hover panel in cases where the
+   *   user quickly hovers between tabs and tab groups before the panel fully
+   *   opens.
+   */
+  clear(from) {
+    if (from == this.#from && this.#timer) {
       this.#win.clearTimeout(this.#timer);
       this.#timer = null;
+      this.#from = null;
     }
   }
 
+  /**
+   * Temporarily suppress the delay mechanism.
+   *
+   * The delay will automatically reactivate after a set interval, which is
+   * configured by the constructor.
+   */
   setZeroDelay() {
-    this.clear();
-
     if (this.#useZeroDelay) {
       return;
     }

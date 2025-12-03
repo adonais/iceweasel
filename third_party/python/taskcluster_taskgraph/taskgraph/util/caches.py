@@ -3,13 +3,13 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import hashlib
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from taskgraph.transforms.base import TransformConfig
 
 
-def get_checkout_dir(task: Dict[str, Any]) -> str:
+def get_checkout_dir(task: dict[str, Any]) -> str:
     worker = task["worker"]
     if worker["os"] == "windows":
         return "build"
@@ -19,7 +19,7 @@ def get_checkout_dir(task: Dict[str, Any]) -> str:
         return "checkouts"
 
 
-def get_checkout_cache_name(config: "TransformConfig", task: Dict[str, Any]) -> str:
+def get_checkout_cache_name(config: "TransformConfig", task: dict[str, Any]) -> str:
     repo_configs = config.repo_configs
     cache_name = "checkouts"
 

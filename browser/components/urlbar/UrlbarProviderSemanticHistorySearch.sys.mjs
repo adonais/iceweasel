@@ -111,12 +111,11 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
   }
 
   /**
-   * Starts a semantic search query.
+   * Starts querying.
    *
-   * @param {object} queryContext
-   *   The query context, including the search string.
-   * @param {Function} addCallback
-   *   Callback to add results to the URL bar.
+   * @param {UrlbarQueryContext} queryContext
+   * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
+   *   Callback invoked by the provider to add a new result.
    */
   async startQuery(queryContext, addCallback) {
     let instance = this.queryInstance;

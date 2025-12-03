@@ -12,7 +12,6 @@
 #ifndef mozilla_ViewportFrame_h
 #define mozilla_ViewportFrame_h
 
-#include "mozilla/Attributes.h"
 #include "nsContainerFrame.h"
 
 class nsPresContext;
@@ -68,16 +67,9 @@ class ViewportFrame : public nsContainerFrame {
   bool ComputeCustomOverflow(mozilla::OverflowAreas&) override { return false; }
 
   /**
-   * Adjust aReflowInput to account for scrollbars and pres shell
-   * GetVisualViewportSizeSet and
-   * GetContentDocumentFixedPositionMargins adjustments.
-   * @return the rect to use as containing block rect
-   */
-  nsRect AdjustReflowInputAsContainingBlock(ReflowInput& aReflowInput) const;
-
-  /*
-   * This is similar to AdjustReflowInputAsContainingBlock, but it doesn't
-   * change the input ReflowInput. Only return the containing block rect.
+   * Get the containing block rect when ViewportFrame serves as a containing
+   * block. This method accounts for scrollbars, visual viewport, and dynamic
+   * toolbar sizes.
    */
   nsRect GetContainingBlockAdjustedForScrollbars(
       const ReflowInput& aReflowInput) const;
@@ -100,15 +92,6 @@ class ViewportFrame : public nsContainerFrame {
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif
-
-  /**
-   * Calculate how much room is available for fixed frames. That means
-   * determining if the viewport is scrollable and whether the vertical and/or
-   * horizontal scrollbars are visible. Adjust the computed isize/bsize and
-   * available isize for aReflowInput accordingly.
-   * @return the current scroll position, or (0,0) if not scrollable.
-   */
-  nsPoint AdjustReflowInputForScrollbars(ReflowInput& aReflowInput) const;
 
  protected:
   ViewportFrame(ComputedStyle* aStyle, nsPresContext* aPresContext, ClassID aID)

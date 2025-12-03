@@ -28,13 +28,13 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "externalProtocolService",
   "@mozilla.org/uriloader/external-protocol-service;1",
-  "nsIExternalProtocolService"
+  Ci.nsIExternalProtocolService
 );
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "MIMEService",
   "@mozilla.org/mime;1",
-  "nsIMIMEService"
+  Ci.nsIMIMEService
 );
 
 export function HandlerService() {

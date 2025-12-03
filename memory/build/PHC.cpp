@@ -110,6 +110,7 @@
 #endif
 
 #include "mozjemalloc.h"
+#include "Chunk.h"
 #include "FdPrintf.h"
 #include "Mutex.h"
 #include "mozilla/Assertions.h"
@@ -609,29 +610,14 @@ class PHCRegion {
     // The memory allocated here is never freed, because it would happen at
     // process termination when it would be of little use.
 
-    // We can rely on jemalloc's behaviour that when it allocates memory aligned
-    // with its own chunk size it will over-allocate and guarantee that the
-    // memory after the end of our allocation, but before the next chunk, is
-    // decommitted and inaccessible. Elsewhere in PHC we assume that we own
-    // that page (so that memory errors in it get caught by PHC).  But in this
-    // function we subtract one page from the end.
-    size_t jemalloc_allocation = kPhcVirtualReservation - kPageSize;
-    void* pages = MozJemalloc::memalign(kPhcAlign, jemalloc_allocation);
+    // On Windows in particular we want to control how the memory is initially
+    // reserved.  Windows pages memory in immediately which creates performance
+    // problems and could affect stability.
+    void* pages =
+        pages_mmap_aligned(kPhcVirtualReservation, kPhcAlign, ReserveOnly);
     if (!pages) {
       return false;
     }
-
-    // Make the pages inaccessible.
-#ifdef XP_WIN
-    if (!VirtualFree(pages, jemalloc_allocation, MEM_DECOMMIT)) {
-      return false;
-    }
-#else
-    if (mmap(pages, jemalloc_allocation, PROT_NONE,
-             MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1, 0) == MAP_FAILED) {
-      return false;
-    }
-#endif
 
     mPagesStart = static_cast<uint8_t*>(pages);
     mPagesLimit = mPagesStart + kPhcVirtualReservation;
@@ -2013,16 +1999,13 @@ inline void MozJemallocPHC::jemalloc_stats_internal(
     return;
   }
 
-  // We allocate our memory from jemalloc so it has already counted our memory
-  // usage within "mapped" and "allocated", we must subtract the memory we
-  // allocated from jemalloc from allocated before adding in only the parts that
-  // we have allocated out to Firefox.
-  // Don't count the final guard page which jemalloc added.
-  aStats->allocated -= PHC::sRegion.ReservedBytes();
-
+  // Add PHC's memory usage to the allocator's.
   phc::MemoryUsage mem_info;
   PHC::sPHC->GetMemoryUsage(mem_info);
   aStats->allocated += mem_info.mAllocatedBytes;
+  aStats->waste += mem_info.mFragmentationBytes;
+  aStats->mapped += PHC::sRegion.ReservedBytes() - mem_info.mAllocatedBytes -
+                    mem_info.mFragmentationBytes;
 
   // guards is the gap between `allocated` and `mapped`. In some ways this
   // almost fits into aStats->wasted since it feels like wasted memory. However

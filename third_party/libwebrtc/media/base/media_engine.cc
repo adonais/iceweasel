@@ -10,8 +10,7 @@
 
 #include "media/base/media_engine.h"
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -322,19 +321,19 @@ bool CompositeMediaEngine::Init() {
 }
 
 VoiceEngineInterface& CompositeMediaEngine::voice() {
-  return *voice_engine_.get();
+  return *voice_engine_;
 }
 
 VideoEngineInterface& CompositeMediaEngine::video() {
-  return *video_engine_.get();
+  return *video_engine_;
 }
 
 const VoiceEngineInterface& CompositeMediaEngine::voice() const {
-  return *voice_engine_.get();
+  return *voice_engine_;
 }
 
 const VideoEngineInterface& CompositeMediaEngine::video() const {
-  return *video_engine_.get();
+  return *video_engine_;
 }
 
 }  // namespace webrtc

@@ -6,7 +6,6 @@
 #include "HalLog.h"
 
 #include "mozilla/Sprintf.h"
-#include "mozilla/Unused.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -71,8 +70,8 @@ void SetProcessPriority(int aPid, ProcessPriority aPriority) {
     return;
   }
   const size_t len = strlen(oomScoreAdjStr);
-  Unused << write(fd, oomScoreAdjStr, len);
-  Unused << close(fd);
+  [[maybe_unused]] ssize_t _ = write(fd, oomScoreAdjStr, len);
+  (void)close(fd);
 }
 
 }  // namespace mozilla::hal_impl

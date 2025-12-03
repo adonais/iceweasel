@@ -15,7 +15,6 @@
 #include "mozilla/Omnijar.h"
 #include "mozilla/ProcessType.h"
 #include "mozilla/ipc/FileDescriptor.h"
-#include "mozilla/ipc/IPDLParamTraits.h"
 #include "mozilla/ipc/ProcessUtils.h"
 #include "mozilla/ipc/ProtocolMessageUtils.h"
 #include "mozilla/ipc/SetProcessTitle.h"
@@ -286,7 +285,7 @@ bool ForkServer::HandleForkNewSubprocess(UniquePtr<IPC::Message> aMessage) {
 
   IPC::Message reply(MSG_ROUTING_CONTROL, Reply_ForkNewSubprocess__ID);
   IPC::MessageWriter writer(reply);
-  WriteIPDLParam(&writer, nullptr, pid);
+  WriteParam(&writer, pid);
   mTcver->SendInfallible(reply, "failed to send a reply message");
 
   return false;

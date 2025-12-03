@@ -26,14 +26,11 @@ typedef double Double;
 
 enum class SurfaceType : int8_t {
   DATA,                   /* Data surface - bitmap in memory */
-  D2D1_BITMAP,            /* Surface wrapping a ID2D1Bitmap */
-  D2D1_DRAWTARGET,        /* Surface made from a D2D draw target */
   CAIRO,                  /* Surface wrapping a cairo surface */
   CAIRO_IMAGE,            /* Data surface wrapping a cairo image surface */
   COREGRAPHICS_IMAGE,     /* Surface wrapping a CoreGraphics Image */
   COREGRAPHICS_CGCONTEXT, /* Surface wrapping a CG context */
   SKIA,                   /* Surface wrapping a Skia bitmap */
-  D2D1_1_IMAGE,           /* A D2D 1.1 ID2D1Image SourceSurface */
   RECORDING,              /* Surface used for recording */
   DATA_SHARED,            /* Data surface using shared memory */
   DATA_RECYCLING_SHARED,  /* Data surface using shared memory */
@@ -43,6 +40,7 @@ enum class SurfaceType : int8_t {
   BLOB_IMAGE,             /* Recorded blob image */
   DATA_MAPPED,            /* Data surface wrapping a ScopedMap */
   WEBGL,                  /* Surface wrapping a DrawTargetWebgl texture */
+  D3D11_TEXTURE,          /* Surface wrapping a D3D11Texture */
 };
 
 enum class SurfaceFormat : int8_t {
@@ -120,6 +118,14 @@ enum class SurfaceFormat : int8_t {
   // can make this use R8B8G8A8 and R8B8G8X8 for non-Windows platforms.
   OS_RGBA = A8R8G8B8_UINT32,
   OS_RGBX = X8R8G8B8_UINT32
+};
+
+enum class SubpixelOrder : uint8_t {
+  UNKNOWN,
+  RGB,
+  BGR,
+  VRGB,
+  VBGR,
 };
 
 struct SurfaceFormatInfo {
@@ -758,11 +764,9 @@ enum class DrawTargetType : int8_t {
 
 enum class BackendType : int8_t {
   NONE = 0,
-  DIRECT2D,  // Used for version independent D2D objects.
   CAIRO,
   SKIA,
   RECORDING,
-  DIRECT2D1_1,
   WEBRENDER_TEXT,
   WEBGL,
 
@@ -869,9 +873,9 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE(PatternType, int8_t, (
 enum class JoinStyle : int8_t {
   BEVEL,
   ROUND,
-  MITER,  //!< Mitered if within the miter limit, else, if the backed supports
-          //!< it (D2D), the miter is clamped. If the backend does not support
-          //!< miter clamping the behavior is as for MITER_OR_BEVEL.
+  MITER,  //!< Mitered if within the miter limit, else, if the backend supports
+          //!< it, the miter is clamped. If the backend does not support miter
+          //!< clamping the behavior is as for MITER_OR_BEVEL.
   MITER_OR_BEVEL  //!< Mitered if within the miter limit, else beveled.
 };
 

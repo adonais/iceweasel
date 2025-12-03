@@ -107,14 +107,20 @@ class FailedPlatform:
         This function gets all available test variants for the given build type
         and negates them to create a skip-if that handle tasks without test variants
         """
-        variants = [
-            tv
-            for tv in self.get_possible_test_variants(build_type)
-            if tv != "no_variant"
-        ]
-        return_str = ""
-        for tv in variants:
-            return_str += and_str + self.get_negated_variant(tv)
+        variants_to_negate = []
+        for tv in self.get_possible_test_variants(build_type):
+            if tv != "no_variant":
+                variants_to_negate.extend(tv.split("+"))
+        negated = []
+        for tv in variants_to_negate:
+            ntv = self.get_negated_variant(tv)
+            if not ntv in variants_to_negate:
+                negated.append(ntv)  # ignore mutually exclusive variants
+        return_str = reduce(
+            (lambda rs, npv: rs + and_str + npv),
+            negated,
+            "",
+        )
         return return_str
 
     def get_test_variant_condition(

@@ -1,6 +1,7 @@
 {
   "global": {
     "queryParams": [
+      "_gl",
       "li_fat_id",
       "utm_ad",
       "utm_affiliate",
@@ -144,5 +145,27 @@
   "facebook": {
     "queryParams": ["__cft__[0]", "__cft__%5B0%5D", "__tn__"],
     "topLevelSites": ["www.facebook.com"]
+  },
+  "wikimedia": {
+    "queryParams": ["wprov"],
+    "topLevelSites": [
+      "en.wikipedia.org",
+      "ja.wikipedia.org",
+      "de.wikipedia.org",
+      "ru.wikipedia.org",
+      "es.wikipedia.org",
+      "fr.wikipedia.org",
+      "zh.wikipedia.org",
+      "it.wikipedia.org",
+      "fa.wikipedia.org",
+      "pt.wikipedia.org",
+      "www.mediawiki.org",
+      "w.wiki",
+      "www.wikidata.org",
+      "test.wikidata.org",
+      "www.wikifunctions.org",
+      "meta.wikimedia.org",
+      "commons.wikimedia.org"
+    ]
   }
 }

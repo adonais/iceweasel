@@ -306,15 +306,15 @@ XPCOMUtils.defineLazyScriptGetter(
 XPCOMUtils.defineLazyServiceGetters(this, {
   ContentPrefService2: [
     "@mozilla.org/content-pref/service;1",
-    "nsIContentPrefService2",
+    Ci.nsIContentPrefService2,
   ],
   classifierService: [
     "@mozilla.org/url-classifier/dbservice;1",
-    "nsIURIClassifier",
+    Ci.nsIURIClassifier,
   ],
-  Favicons: ["@mozilla.org/browser/favicon-service;1", "nsIFaviconService"],
-  WindowsUIUtils: ["@mozilla.org/windows-ui-utils;1", "nsIWindowsUIUtils"],
-  BrowserHandler: ["@mozilla.org/browser/clh;1", "nsIBrowserHandler"],
+  Favicons: ["@mozilla.org/browser/favicon-service;1", Ci.nsIFaviconService],
+  WindowsUIUtils: ["@mozilla.org/windows-ui-utils;1", Ci.nsIWindowsUIUtils],
+  BrowserHandler: ["@mozilla.org/browser/clh;1", Ci.nsIBrowserHandler],
 });
 
 if (AppConstants.ENABLE_WEBDRIVER) {
@@ -322,14 +322,14 @@ if (AppConstants.ENABLE_WEBDRIVER) {
     this,
     "Marionette",
     "@mozilla.org/remote/marionette;1",
-    "nsIMarionette"
+    Ci.nsIMarionette
   );
 
   XPCOMUtils.defineLazyServiceGetter(
     this,
     "RemoteAgent",
     "@mozilla.org/remote/agent;1",
-    "nsIRemoteAgent"
+    Ci.nsIRemoteAgent
   );
 } else {
   this.Marionette = { running: false };
@@ -370,8 +370,7 @@ ChromeUtils.defineLazyGetter(this, "gNavToolbox", () => {
 ChromeUtils.defineLazyGetter(this, "gURLBar", () => {
   let urlbar = new UrlbarInput({
     textbox: document.getElementById("urlbar"),
-    isAddressbar: true,
-    eventTelemetryCategory: "urlbar",
+    sapName: "urlbar",
   });
 
   let beforeFocusOrSelect = event => {

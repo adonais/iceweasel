@@ -12,6 +12,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/shared/messagehandler/MessageHandler.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
+  NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   OwnershipModel: "chrome://remote/content/webdriver-bidi/RemoteValue.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
   processExtraData:
@@ -21,7 +22,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
   setDefaultAndAssertSerializationOptions:
     "chrome://remote/content/webdriver-bidi/RemoteValue.sys.mjs",
-  TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
   UserContextManager:
     "chrome://remote/content/shared/UserContextManager.sys.mjs",
   WindowGlobalMessageHandler:
@@ -208,7 +208,7 @@ class ScriptModule extends RootBiDiModule {
       navigables = new Set();
 
       for (const contextId of contextIds) {
-        const context = this.#getBrowsingContext(contextId);
+        const context = this._getNavigable(contextId);
 
         lazy.assert.topLevel(
           context,
@@ -644,7 +644,7 @@ class ScriptModule extends RootBiDiModule {
         contextId,
         lazy.pprint`Expected "context" to be a string, got ${contextId}`
       );
-      destination.id = this.#getBrowsingContext(contextId).id;
+      destination.id = this._getNavigable(contextId).id;
     } else {
       destination.contextDescriptor = {
         type: lazy.ContextDescriptorType.All,
@@ -855,26 +855,9 @@ class ScriptModule extends RootBiDiModule {
     return rv;
   }
 
-  #getBrowsingContext(contextId) {
-    const context = lazy.TabManager.getBrowsingContextById(contextId);
-    if (context === null) {
-      throw new lazy.error.NoSuchFrameError(
-        `Browsing Context with id ${contextId} not found`
-      );
-    }
-
-    if (!context.currentWindowGlobal) {
-      throw new lazy.error.NoSuchFrameError(
-        `No window found for BrowsingContext with id ${contextId}`
-      );
-    }
-
-    return context;
-  }
-
   async #getContextFromTarget({ contextId, realmId }) {
     if (contextId !== null) {
-      return this.#getBrowsingContext(contextId);
+      return this._getNavigable(contextId);
     }
 
     const destination = {
@@ -886,7 +869,7 @@ class ScriptModule extends RootBiDiModule {
     const realm = realms.find(el => el.realm == realmId);
 
     if (realm && realm.context !== null) {
-      return this.#getBrowsingContext(realm.context);
+      return this._getNavigable(realm.context);
     }
 
     throw new lazy.error.NoSuchFrameError(`Realm with id ${realmId} not found`);
@@ -912,7 +895,9 @@ class ScriptModule extends RootBiDiModule {
       .flat()
       .map(realm => {
         // Resolve browsing context to a TabManager id.
-        realm.context = lazy.TabManager.getIdForBrowsingContext(realm.context);
+        realm.context = lazy.NavigableManager.getIdForBrowsingContext(
+          realm.context
+        );
         return realm;
       })
       .filter(realm => realm.context !== null);
@@ -920,7 +905,9 @@ class ScriptModule extends RootBiDiModule {
 
   #onRealmCreated = (eventName, { realmInfo }) => {
     // Resolve browsing context to a TabManager id.
-    const context = lazy.TabManager.getIdForBrowsingContext(realmInfo.context);
+    const context = lazy.NavigableManager.getIdForBrowsingContext(
+      realmInfo.context
+    );
     const browsingContextId = realmInfo.context.id;
 
     // Do not emit the event, if the browsing context is gone.

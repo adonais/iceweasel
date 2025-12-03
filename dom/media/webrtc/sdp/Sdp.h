@@ -67,8 +67,6 @@
 #include <sstream>
 #include <vector>
 
-#include "mozilla/Maybe.h"
-#include "mozilla/UniquePtr.h"
 #include "sdp/SdpAttributeList.h"
 #include "sdp/SdpEnum.h"
 #include "sdp/SdpMediaSection.h"

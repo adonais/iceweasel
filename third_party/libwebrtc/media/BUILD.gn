@@ -371,6 +371,7 @@ rtc_source_set("media_channel") {
     "../rtc_base/network:sent_packet",
     "../video/config:encoder_config",
     "//third_party/abseil-cpp/absl/functional:any_invocable",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }
@@ -760,8 +761,8 @@ if (rtc_build_dcsctp) {
       "../api:rtc_error",
       "../api:sequence_checker",
       "../api/environment",
+      "../api/task_queue",
       "../api/task_queue:pending_task_safety_flag",
-      "../api/task_queue:task_queue",
       "../api/transport:datagram_transport_interface",
       "../net/dcsctp/public:factory",
       "../net/dcsctp/public:socket",
@@ -770,6 +771,7 @@ if (rtc_build_dcsctp) {
       "../net/dcsctp/timer:task_queue_timeout",
       "../p2p:dtls_transport_internal",
       "../p2p:packet_transport_internal",
+      "../rtc_base:async_packet_socket",
       "../rtc_base:checks",
       "../rtc_base:copy_on_write_buffer",
       "../rtc_base:event_tracer",
@@ -781,9 +783,9 @@ if (rtc_build_dcsctp) {
       "../rtc_base:threading",
       "../rtc_base/containers:flat_map",
       "../rtc_base/network:received_packet",
-      "../rtc_base/third_party/sigslot:sigslot",
+      "../rtc_base/third_party/sigslot",
       "../system_wrappers",
-      "//third_party/abseil-cpp/absl/strings:strings",
+      "//third_party/abseil-cpp/absl/strings",
     ]
   }
 }

@@ -217,6 +217,7 @@ CacheEntry::CacheEntry(const nsACString& aStorageID, const nsACString& aURI,
       mPreventCallbacks(false),
       mHasData(false),
       mPinningKnown(false),
+      mBypassWriterLock(false),
       mCacheEntryId(GetNextId()) {
   LOG(("CacheEntry::CacheEntry [this=%p]", this));
 
@@ -644,8 +645,11 @@ bool CacheEntry::InvokeCallbacks(bool aReadOnly) MOZ_REQUIRES(mLock) {
     }
 
     if (!mIsDoomed && (mState == WRITING || mState == REVALIDATING)) {
-      LOG(("  entry is being written/revalidated"));
-      return false;
+      if (!mBypassWriterLock) {
+        LOG(("  entry is being written/revalidated"));
+        return false;
+      }
+      LOG(("  entry is being written/revalidated but bypassing writer lock"));
     }
 
     bool recreate;
@@ -717,12 +721,15 @@ bool CacheEntry::InvokeCallback(Callback& aCallback) MOZ_REQUIRES(mLock) {
     MOZ_ASSERT(mState > LOADING);
 
     if (mState == WRITING || mState == REVALIDATING) {
-      // Prevent invoking other callbacks since one of them is now writing
-      // or revalidating this entry.  No consumers should get this entry
-      // until metadata are filled with values downloaded from the server
-      // or the entry revalidated and output stream has been opened.
-      LOG(("  entry is being written/revalidated, callback bypassed"));
-      return false;
+      if (!mBypassWriterLock) {
+        // Prevent invoking other callbacks since one of them is now writing
+        // or revalidating this entry.  No consumers should get this entry
+        // until metadata are filled with values downloaded from the server
+        // or the entry revalidated and output stream has been opened.
+        LOG(("  entry is being written/revalidated, callback bypassed"));
+        return false;
+      }
+      LOG(("  entry is being written/revalidated but bypassing writer lock"));
     }
 
     // mRecheckAfterWrite flag already set means the callback has already passed
@@ -982,6 +989,12 @@ void CacheEntry::OnHandleClosed(CacheEntryHandle const* aHandle) {
 
   mWriter = nullptr;
 
+  // Reset bypass flag when writer is cleared
+  if (mBypassWriterLock) {
+    mBypassWriterLock = false;
+    LOG(("  reset bypass writer lock flag due to writer cleared"));
+  }
+
   if (mState == WRITING) {
     LOG(("  reverting to state EMPTY - write failed"));
     mState = EMPTY;
@@ -1021,6 +1034,17 @@ bool CacheEntry::IsReferenced() const {
   // Increasing this counter from 0 to non-null and this check both happen only
   // under the service lock.
   return mHandlesCount > 0;
+}
+
+void CacheEntry::SetBypassWriterLock(bool aBypass) {
+  mozilla::MutexAutoLock lock(mLock);
+  LOG(("CacheEntry::SetBypassWriterLock [this=%p, bypass=%d]", this, aBypass));
+  mBypassWriterLock = aBypass;
+
+  if (aBypass) {
+    // Invoke callbacks that were blocked by writer state
+    InvokeCallbacks();
+  }
 }
 
 bool CacheEntry::IsFileDoomed() {
@@ -1463,6 +1487,11 @@ nsresult CacheEntry::SetMetaDataElement(const char* aKey, const char* aValue) {
   return mFile->SetElement(aKey, aValue);
 }
 
+nsresult CacheEntry::GetIsEmpty(bool* aEmpty) {
+  *aEmpty = GetMetadataMemoryConsumption() == 0;
+  return NS_OK;
+}
+
 nsresult CacheEntry::VisitMetaData(nsICacheEntryMetaDataVisitor* aVisitor) {
   NS_ENSURE_SUCCESS(mFileStatus, NS_ERROR_NOT_AVAILABLE);
 
@@ -1477,7 +1506,15 @@ nsresult CacheEntry::MetaDataReady() {
 
   MOZ_ASSERT(mState > EMPTY);
 
-  if (mState == WRITING) mState = READY;
+  if (mState == WRITING) {
+    mState = READY;
+
+    // Reset bypass flag when transitioning to READY state
+    if (mBypassWriterLock) {
+      mBypassWriterLock = false;
+      LOG(("  reset bypass writer lock flag due to state transition to READY"));
+    }
+  }
 
   InvokeCallbacks();
 
@@ -1496,6 +1533,12 @@ nsresult CacheEntry::SetValid() {
 
     mState = READY;
     mHasData = true;
+
+    // Reset bypass flag when transitioning to READY state
+    if (mBypassWriterLock) {
+      mBypassWriterLock = false;
+      LOG(("  reset bypass writer lock flag due to state transition to READY"));
+    }
 
     InvokeCallbacks();
 
@@ -1731,6 +1774,15 @@ void CacheEntry::DoomAlreadyRemoved() {
   RemoveForcedValidity();
 
   mIsDoomed = true;
+
+  // Remove from DictionaryCache immediately, to ensure the removal is
+  // synchronous
+  LOG(("DoomAlreadyRemoved [entry=%p removed]", this));
+  if (mEnhanceID.EqualsLiteral("dict:")) {
+    DictionaryCache::RemoveOriginFor(mURI);
+  } else {
+    DictionaryCache::RemoveDictionaryFor(mURI);
+  }
 
   // Pretend pinning is know.  This entry is now doomed for good, so don't
   // bother with defering doom because of unknown pinning state any more.

@@ -12,12 +12,9 @@
 #include "mozilla/AbstractThread.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/Poison.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/TaskController.h"
-#include "mozilla/Unused.h"
 #include "mozilla/XPCOM.h"
 #include "mozJSModuleLoader.h"
 #include "nsXULAppAPI.h"
@@ -95,7 +92,6 @@
 #ifdef MOZ_PHC
 #  include "mozilla/PHCManager.h"
 #endif
-#include "mozilla/UniquePtr.h"
 #include "mozilla/ServoStyleConsts.h"
 
 #include "mozilla/ipc/GeckoChildProcessHost.h"
@@ -622,7 +618,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
     // We want the service manager to be the subject of notifications
     nsCOMPtr<nsIServiceManager> mgr;
-    Unused << NS_GetServiceManager(getter_AddRefs(mgr));
+    (void)NS_GetServiceManager(getter_AddRefs(mgr));
     MOZ_DIAGNOSTIC_ASSERT(mgr != nullptr, "Service manager not present!");
     mozilla::AppShutdown::AdvanceShutdownPhase(
         mozilla::ShutdownPhase::XPCOMShutdown, nullptr, do_QueryInterface(mgr));

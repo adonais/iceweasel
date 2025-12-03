@@ -122,3 +122,12 @@ if CONFIG["ENABLE_TESTS"] or CONFIG["JS_STANDALONE"]:
             "/config/check_js_opcode.py",
         ],
     )
+
+if CONFIG["NM"]:
+    # check_vanilla_allocations.py is tailored to Linux, so only run it there.
+    # That should be enough to catch any problems.
+    LegacyTest(
+        f"%{CONFIG['PYTHON3']}",
+        "/config/check_vanilla_allocations.py",
+        f"!lib{STATIC_LIBRARY_NAME}.a",
+    )

@@ -417,3 +417,90 @@ add_task(async function test_local_network_access_policy_enforcement() {
     "Preference should still be locked"
   );
 });
+
+add_task(async function test_local_network_access_skip_domains() {
+  // Test SkipDomains policy
+  await setupPolicyEngineWithJson({
+    policies: {
+      LocalNetworkAccess: {
+        SkipDomains: ["example.com", "*.local", "localhost"],
+      },
+    },
+  });
+
+  equal(
+    Services.prefs.getCharPref("network.lna.skip-domains"),
+    "example.com,*.local,localhost",
+    "network.lna.skip-domains should be set correctly"
+  );
+
+  equal(
+    Services.prefs.prefIsLocked("network.lna.skip-domains"),
+    false,
+    "network.lna.skip-domains should not be locked when Locked is not specified"
+  );
+});
+
+add_task(async function test_local_network_access_skip_domains_locked() {
+  // Test SkipDomains policy with locking
+  await setupPolicyEngineWithJson({
+    policies: {
+      LocalNetworkAccess: {
+        SkipDomains: ["*.example.com", "server.local"],
+        Locked: true,
+      },
+    },
+  });
+
+  equal(
+    Services.prefs.getCharPref("network.lna.skip-domains"),
+    "*.example.com,server.local",
+    "network.lna.skip-domains should be set correctly"
+  );
+
+  equal(
+    Services.prefs.prefIsLocked("network.lna.skip-domains"),
+    true,
+    "network.lna.skip-domains should be locked when Locked: true is specified"
+  );
+});
+
+add_task(async function test_local_network_access_enabled_with_skip_domains() {
+  // Test combining Enabled with SkipDomains
+  await setupPolicyEngineWithJson({
+    policies: {
+      LocalNetworkAccess: {
+        Enabled: true,
+        SkipDomains: ["*"],
+      },
+    },
+  });
+
+  equal(
+    Services.prefs.getBoolPref("network.lna.enabled"),
+    true,
+    "network.lna.enabled should be true"
+  );
+  equal(
+    Services.prefs.getCharPref("network.lna.skip-domains"),
+    "*",
+    'network.lna.skip-domains should be "*" to skip all domains'
+  );
+});
+
+add_task(async function test_local_network_access_skip_domains_empty_array() {
+  // Test SkipDomains with empty array
+  await setupPolicyEngineWithJson({
+    policies: {
+      LocalNetworkAccess: {
+        SkipDomains: [],
+      },
+    },
+  });
+
+  equal(
+    Services.prefs.getCharPref("network.lna.skip-domains"),
+    "",
+    "network.lna.skip-domains should be empty string for empty array"
+  );
+});

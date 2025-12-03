@@ -10,7 +10,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/9e64a965e26c83792
  1 file changed, 3 insertions(+)
 
 diff --git a/rtc_base/platform_thread.cc b/rtc_base/platform_thread.cc
-index ebde0b3865..732181d210 100644
+index 3f33fa406f..1369a108d3 100644
 --- a/rtc_base/platform_thread.cc
 +++ b/rtc_base/platform_thread.cc
 @@ -58,6 +58,9 @@ bool SetPriority(ThreadPriority priority) {

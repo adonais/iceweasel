@@ -644,16 +644,19 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
     auto isoDateTime = ISODateTime{temporalDate.date(), {}};
 
     // Step 8.b.
-    auto isoDateTimeOther = ISODateTime{other.date(), {}};
+    auto originEpochNs = GetUTCEpochNanoseconds(isoDateTime);
 
     // Step 8.c.
-    auto destEpochNs = GetUTCEpochNanoseconds(isoDateTimeOther);
+    auto isoDateTimeOther = ISODateTime{other.date(), {}};
 
     // Step 8.d.
+    auto destEpochNs = GetUTCEpochNanoseconds(isoDateTimeOther);
+
+    // Step 8.e.
     Rooted<TimeZoneValue> timeZone(cx, TimeZoneValue{});
-    if (!RoundRelativeDuration(cx, duration, destEpochNs, isoDateTime, timeZone,
-                               temporalDate.calendar(), settings.largestUnit,
-                               settings.roundingIncrement,
+    if (!RoundRelativeDuration(cx, duration, originEpochNs, destEpochNs,
+                               isoDateTime, timeZone, temporalDate.calendar(),
+                               settings.largestUnit, settings.roundingIncrement,
                                settings.smallestUnit, settings.roundingMode,
                                &duration)) {
       return false;

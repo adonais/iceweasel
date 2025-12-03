@@ -20,7 +20,6 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "api/candidate.h"
 #include "api/jsep.h"
 
 namespace webrtc {
@@ -60,9 +59,7 @@ class JsepSessionDescription : public SessionDescriptionInterface {
   // Allows changing the type. Used for testing.
   virtual bool AddCandidate(const IceCandidate* candidate);
   virtual bool RemoveCandidate(const IceCandidate* candidate);
-  // TODO: https://issues.webrtc.org/42233526 - Remove this method in favor of
-  // the IceCandidate version.
-  virtual size_t RemoveCandidates(const std::vector<Candidate>& candidates);
+
   virtual size_t number_of_mediasections() const;
   virtual const IceCandidateCollection* candidates(
       size_t mediasection_index) const;
@@ -75,8 +72,9 @@ class JsepSessionDescription : public SessionDescriptionInterface {
   SdpType type_;
   std::vector<JsepCandidateCollection> candidate_collection_;
 
-  bool GetMediasectionIndex(const IceCandidate* candidate, size_t* index);
-  int GetMediasectionIndex(const Candidate& candidate);
+  bool IsValidMLineIndex(int index) const;
+  bool GetMediasectionIndex(const IceCandidate* candidate, size_t* index) const;
+  int GetMediasectionIndex(absl::string_view mid) const;
 };
 
 }  // namespace webrtc

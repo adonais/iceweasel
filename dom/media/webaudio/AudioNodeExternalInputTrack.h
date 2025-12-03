@@ -8,7 +8,6 @@
 
 #include "AudioNodeTrack.h"
 #include "MediaTrackGraph.h"
-#include "mozilla/Atomics.h"
 
 namespace mozilla {
 

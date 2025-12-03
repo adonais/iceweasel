@@ -6,9 +6,11 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
-const lazy = {};
+/**
+ * @import {UrlbarSearchOneOffs} from "moz-src:///browser/components/urlbar/UrlbarSearchOneOffs.sys.mjs"
+ */
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   BrowserSearchTelemetry:
     "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
@@ -50,39 +52,21 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
   UrlbarSearchTermsPersistence:
     "moz-src:///browser/components/urlbar/UrlbarSearchTermsPersistence.sys.mjs",
+  UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
+  ClipboardHelper: {
+    service: "@mozilla.org/widget/clipboardhelper;1",
+    iid: Ci.nsIClipboardHelper,
+  },
+  QueryStringStripper: {
+    service: "@mozilla.org/url-query-string-stripper;1",
+    iid: Ci.nsIURLQueryStringStripper,
+  },
+  QUERY_STRIPPING_STRIP_ON_SHARE: {
+    pref: "privacy.query_stripping.strip_on_share.enabled",
+    default: false,
+  },
+  logger: () => lazy.UrlbarUtils.getLogger({ prefix: "Input" }),
 });
-
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
-  "ClipboardHelper",
-  "@mozilla.org/widget/clipboardhelper;1",
-  "nsIClipboardHelper"
-);
-
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
-  "QueryStringStripper",
-  "@mozilla.org/url-query-string-stripper;1",
-  "nsIURLQueryStringStripper"
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "QUERY_STRIPPING_STRIP_ON_SHARE",
-  "privacy.query_stripping.strip_on_share.enabled",
-  false
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "STRIP_ON_SHARE_CAN_DISABLE",
-  "privacy.query_stripping.strip_on_share.canDisable",
-  false
-);
-
-ChromeUtils.defineLazyGetter(lazy, "logger", () =>
-  lazy.UrlbarUtils.getLogger({ prefix: "Input" })
-);
 
 const DEFAULT_FORM_HISTORY_NAME = "searchbar-history";
 
@@ -98,7 +82,8 @@ let px = number => number.toFixed(2) + "px";
 export class UrlbarInput {
   #allowBreakout = false;
   #breakoutBlockerCount = 0;
-  #eventTelemetryCategory;
+  #isAddressbar;
+  #sapName;
   #userTypedValue;
 
   /**
@@ -106,22 +91,20 @@ export class UrlbarInput {
    *   The initial options for UrlbarInput.
    * @param {HTMLDivElement} options.textbox
    *   The container element.
-   * @param {string} options.eventTelemetryCategory
-   * @param {boolean} [options.isAddressbar]
-   *   Whether this instance is meant to display the browser's current address,
-   *   as opposed to being just a search input.
+   * @param {string} options.sapName
+   *   The search access point name of the UrlbarInput for use with telemetry or
+   *   logging, e.g. `urlbar`, `searchbar`.
    */
-  constructor({ textbox, eventTelemetryCategory, isAddressbar = false }) {
+  constructor({ textbox, sapName }) {
     this.textbox = textbox;
-    this.isAddressbar = !!isAddressbar;
+    this.#isAddressbar = sapName == "urlbar";
     this.window = this.textbox.ownerGlobal;
     this.document = this.window.document;
     this.isPrivate = lazy.PrivateBrowsingUtils.isWindowPrivate(this.window);
     this.panel = this.textbox.querySelector(".urlbarView");
     this.controller = new lazy.UrlbarController({
       input: this,
-      eventTelemetryCategory,
-      manager: isAddressbar ? null : lazy.SearchbarProvidersManager,
+      manager: this.#isAddressbar ? null : lazy.SearchbarProvidersManager,
     });
     this.view = new lazy.UrlbarView(this);
     this.valueIsTyped = false;
@@ -136,7 +119,7 @@ export class UrlbarInput {
     this._suppressStartQuery = false;
     this._suppressPrimaryAdjustment = false;
     this._untrimmedValue = "";
-    this.#eventTelemetryCategory = eventTelemetryCategory;
+    this.#sapName = sapName;
 
     this.QueryInterface = ChromeUtils.generateQI([
       "nsIObserver",
@@ -316,7 +299,7 @@ export class UrlbarInput {
     this.editor.newlineHandling =
       Ci.nsIEditor.eNewlinesStripSurroundingWhitespace;
 
-    if (isAddressbar) {
+    if (this.#isAddressbar) {
       let searchContainersPref = lazy.UrlbarPrefs.get(
         "switchTabs.searchAllContainers"
       );
@@ -334,6 +317,14 @@ export class UrlbarInput {
    */
   get addSearchEngineHelper() {
     return this.#lazy.addSearchEngineHelper;
+  }
+
+  /**
+   * The search access point name of the UrlbarInput for use with telemetry or
+   * logging, e.g. `urlbar`, `searchbar`.
+   */
+  get sapName() {
+    return this.#sapName;
   }
 
   /**
@@ -423,7 +414,7 @@ export class UrlbarInput {
    */
   formatValue() {
     // The editor may not exist if the toolbar is not visible.
-    if (this.isAddressbar && this.editor) {
+    if (this.#isAddressbar && this.editor) {
       this.#lazy.valueFormatter.update();
     }
   }
@@ -530,7 +521,7 @@ export class UrlbarInput {
     hideSearchTerms = false,
     isSameDocument = false
   ) {
-    if (!this.isAddressbar) {
+    if (!this.#isAddressbar) {
       throw new Error(
         "Cannot set URI for UrlbarInput that is not an address bar"
       );
@@ -785,7 +776,7 @@ export class UrlbarInput {
    * @param {Event} [event] The event triggering the open.
    */
   handleCommand(event = null) {
-    let isMouseEvent = this.window.MouseEvent.isInstance(event);
+    let isMouseEvent = MouseEvent.isInstance(event);
     if (isMouseEvent && event.button == 2) {
       // Do nothing for right clicks.
       return;
@@ -1066,7 +1057,7 @@ export class UrlbarInput {
     this.userTypedValue = null;
     // Nullify search mode before setURI so it won't try to restore it.
     this.searchMode = null;
-    if (this.isAddressbar) {
+    if (this.#isAddressbar) {
       this.setURI(null, true, false, true);
     } else {
       this.value = "";
@@ -1094,7 +1085,7 @@ export class UrlbarInput {
    * @param {nsISearchEngine} [searchEngine]
    *   Optional. If included and the right prefs are set, we will enter search
    *   mode when handing `searchString` from the fake input to the Urlbar.
-   * @param {string} newtabSessionId
+   * @param {string} [newtabSessionId]
    *   Optional. The id of the newtab session that handed off this search.
    */
   handoff(searchString, searchEngine, newtabSessionId) {
@@ -1209,7 +1200,7 @@ export class UrlbarInput {
     let openParams = {
       allowInheritPrincipal: false,
       globalHistoryOptions: {
-        triggeringSource: this.#eventTelemetryCategory,
+        triggeringSource: this.#sapName,
         triggeringSearchEngine: result.payload?.engine,
         triggeringSponsoredURL: result.payload?.isSponsored
           ? result.payload.url
@@ -1560,7 +1551,7 @@ export class UrlbarInput {
     if (result.payload.sendAttributionRequest) {
       lazy.PartnerLinkAttribution.makeRequest({
         targetURL: result.payload.url,
-        source: this.#eventTelemetryCategory,
+        source: this.#sapName,
         campaignID: Services.prefs.getStringPref(
           "browser.partnerlink.campaign.topsites"
         ),
@@ -1929,7 +1920,7 @@ export class UrlbarInput {
       this.focus();
     }
     let trimmedValue = value.trim();
-    let end = trimmedValue.search(lazy.UrlbarTokenizer.REGEXP_SPACES);
+    let end = trimmedValue.search(lazy.UrlUtils.REGEXP_SPACES);
     let firstToken = end == -1 ? trimmedValue : trimmedValue.substring(0, end);
     // Enter search mode if the string starts with a restriction token.
     let searchMode = this.searchModeForToken(firstToken);
@@ -1947,7 +1938,7 @@ export class UrlbarInput {
         // in search mode.
         value = value.replace(firstToken, "");
       }
-      if (lazy.UrlbarTokenizer.REGEXP_SPACES.test(value[0])) {
+      if (lazy.UrlUtils.REGEXP_SPACES.test(value[0])) {
         // If there was a trailing space after the restriction token/alias,
         // remove it.
         value = value.slice(1);
@@ -2001,9 +1992,9 @@ export class UrlbarInput {
       };
     }
 
-    let mode = lazy.UrlbarUtils.LOCAL_SEARCH_MODES.find(
-      m => m.restrict == token
-    );
+    let mode =
+      this.#isAddressbar &&
+      lazy.UrlbarUtils.LOCAL_SEARCH_MODES.find(m => m.restrict == token);
     if (mode) {
       // Return a copy so callers don't modify the object in LOCAL_SEARCH_MODES.
       return { ...mode };
@@ -2033,10 +2024,7 @@ export class UrlbarInput {
       // TODO: record SAP telemetry, see Bug 1961789.
     } else {
       url = searchEngine.searchForm;
-      lazy.BrowserSearchTelemetry.recordSearchForm(
-        searchEngine,
-        this.#eventTelemetryCategory
-      );
+      lazy.BrowserSearchTelemetry.recordSearchForm(searchEngine, this.#sapName);
     }
 
     this._lastSearchString = "";
@@ -2292,13 +2280,13 @@ export class UrlbarInput {
   }
 
   get userTypedValue() {
-    return this.isAddressbar
+    return this.#isAddressbar
       ? this.window.gBrowser.userTypedValue
       : this.#userTypedValue;
   }
 
   set userTypedValue(val) {
-    if (this.isAddressbar) {
+    if (this.#isAddressbar) {
       this.window.gBrowser.userTypedValue = val;
     } else {
       this.#userTypedValue = val;
@@ -2447,8 +2435,9 @@ export class UrlbarInput {
    *
    * @param {object} options
    *   Options object.
-   * @param {string} options.entry
-   *   The search mode entry point. See setSearchMode documentation for details.
+   * @param {string} [options.entry]
+   *   If provided, this will be recorded as the entry point into search mode.
+   *   See setSearchMode documentation for details.
    * @param {UrlbarResult} [options.result]
    *   The result to confirm. Defaults to the currently selected result.
    * @param {boolean} [options.checkValue]
@@ -2530,7 +2519,7 @@ export class UrlbarInput {
    *   The source name.
    */
   getSearchSource(event) {
-    if (this.isAddressbar) {
+    if (this.#isAddressbar) {
       if (this._isHandoffSession) {
         return "urlbar-handoff";
       }
@@ -2555,7 +2544,7 @@ export class UrlbarInput {
         return "urlbar-persisted";
       }
     }
-    return this.#eventTelemetryCategory;
+    return this.#sapName;
   }
 
   // Private methods below.
@@ -2807,7 +2796,7 @@ export class UrlbarInput {
    * @param {string} [options.urlOverride]
    *   For results normally returning a url string, this allows to override
    *   it. A blank string may passed-in to clear the input.
-   * @param {Element} [options.element]
+   * @param {HTMLElement} [options.element]
    *   The element that was selected or picked, if available. For results that
    *   have multiple selectable children, the value may be taken from a child
    *   element rather than the result.
@@ -2830,6 +2819,7 @@ export class UrlbarInput {
       case lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC:
         return (
           element?.dataset.query ||
+          element?.dataset.url ||
           result.payload.input ||
           result.payload.query ||
           ""
@@ -2853,13 +2843,13 @@ export class UrlbarInput {
       return url ? losslessDecodeURI(url.URI) : "";
     }
 
-    let url = URL.parse(result.payload.url);
+    let parsedUrl = URL.parse(result.payload.url);
     // If the url is not parsable, just return an empty string;
-    if (!url) {
+    if (!parsedUrl) {
       return "";
     }
 
-    url = losslessDecodeURI(url.URI);
+    let url = losslessDecodeURI(parsedUrl.URI);
     // If the user didn't originally type a protocol, and we generated one,
     // trim the http protocol from the input value, as https-first may upgrade
     // it to https, breaking user expectations.
@@ -3190,7 +3180,7 @@ export class UrlbarInput {
    *   True if this query was initiated from a form history result.
    * @param {string} [searchActionDetails.url]
    *   The url this query was triggered with.
-   * @param {XULBrowserElement} [browser]
+   * @param {MozBrowser} [browser]
    *   The browser where the search is being opened.
    *   Defaults to the window's selected browser.
    */
@@ -3244,7 +3234,7 @@ export class UrlbarInput {
    *   The trimmed string
    */
   _trimValue(val) {
-    if (!this.isAddressbar) {
+    if (!this.#isAddressbar) {
       return val;
     }
     let trimmedValue = lazy.UrlbarPrefs.get("trimURLs")
@@ -3261,8 +3251,10 @@ export class UrlbarInput {
   /**
    * Returns whether the passed-in event may represents a canonization request.
    *
-   * @param {DOMEvent} event a KeyboardEvent to examine.
-   * @returns {boolean} Whether the event is a canonization one.
+   * @param {Event} event
+   *   An Event to examine.
+   * @returns {boolean}
+   *   Whether the event is a KeyboardEvent that triggers canonization.
    */
   #isCanonizeKeyboardEvent(event) {
     return (
@@ -3346,7 +3338,7 @@ export class UrlbarInput {
    * @param {string} options.adaptiveHistoryInput
    *   If the autofill type is "adaptive", this is the matching `input` value
    *   from adaptive history.
-   * @param {string} options.untrimmedValue
+   * @param {string} [options.untrimmedValue]
    *   Untrimmed value including a protocol.
    */
   _autofillValue({
@@ -3436,7 +3428,7 @@ export class UrlbarInput {
    * @param {object} params
    *   The parameters related to how and where the result will be opened.
    *   Further supported paramters are listed in _loadURL.
-   * @param {object} params.triggeringPrincipal
+   * @param {object} [params.triggeringPrincipal]
    *   The principal that the action was triggered from.
    * @param {object} [resultDetails]
    *   Details of the selected result, if any.
@@ -3452,7 +3444,7 @@ export class UrlbarInput {
     resultDetails = null,
     browser
   ) {
-    if (!this.isAddressbar) {
+    if (!this.#isAddressbar) {
       throw new Error(
         "Can't prepare addressbar load when this isn't an addressbar input"
       );
@@ -3525,22 +3517,22 @@ export class UrlbarInput {
    *   Where we expect the result to be opened.
    * @param {object} params
    *   The parameters related to how and where the result will be opened.
-   *   Further supported paramters are listed in utilityOverlay.js#openUILinkIn.
-   * @param {object} params.triggeringPrincipal
+   *   Further supported parameters are listed in utilityOverlay.js#openUILinkIn.
+   * @param {object} [params.triggeringPrincipal]
    *   The principal that the action was triggered from.
    * @param {nsIInputStream} [params.postData]
    *   The POST data associated with a search submission.
    * @param {boolean} [params.allowInheritPrincipal]
    *   Whether the principal can be inherited.
-   * @param {SchemelessInputType} [params.schemelessInput]
+   * @param {nsILoadInfo.SchemelessInputType} [params.schemelessInput]
    *   Whether the search/URL term was without an explicit scheme.
    * @param {object} [resultDetails]
    *   Details of the selected result, if any.
-   * @param {UrlbarUtils.RESULT_TYPE} [resultDetails.type]
+   * @param {Values<typeof lazy.UrlbarUtils.RESULT_TYPE>} [resultDetails.type]
    *   Details of the result type, if any.
    * @param {string} [resultDetails.searchTerm]
    *   Search term of the result source, if any.
-   * @param {UrlbarUtils.RESULT_SOURCE} [resultDetails.source]
+   * @param {Values<typeof lazy.UrlbarUtils.RESULT_SOURCE>} [resultDetails.source]
    *   Details of the result source, if any.
    * @param {object} browser [optional] the browser to use for the load.
    */
@@ -3552,7 +3544,7 @@ export class UrlbarInput {
     resultDetails = null,
     browser = this.window.gBrowser.selectedBrowser
   ) {
-    if (this.isAddressbar) {
+    if (this.#isAddressbar) {
       this.#prepareAddressbarLoad(
         url,
         openUILinkWhere,
@@ -3679,7 +3671,7 @@ export class UrlbarInput {
    *
    * @param {string} menuItemCommand
    *    The command to search for.
-   * @returns {string}
+   * @returns {HTMLElement}
    *    Html element that matches the command or
    *    the last element if we could not find the command.
    */
@@ -3878,24 +3870,18 @@ export class UrlbarInput {
       }
       let controller =
         this.document.commandDispatcher.getControllerForCommand("cmd_copy");
-      // url bar is empty
-      if (!controller.isCommandEnabled("cmd_copy")) {
+      if (
+        !controller.isCommandEnabled("cmd_copy") ||
+        !this.#isClipboardURIValid()
+      ) {
         stripOnShare.setAttribute("hidden", true);
         return;
-      }
-      // selection is not a valid url
-      if (!this.#isClipboardURIValid()) {
-        stripOnShare.setAttribute("hidden", true);
-        return;
-      }
-      if (lazy.STRIP_ON_SHARE_CAN_DISABLE) {
-        if (!this.#canStrip()) {
-          stripOnShare.removeAttribute("hidden");
-          stripOnShare.setAttribute("disabled", true);
-          return;
-        }
       }
       stripOnShare.removeAttribute("hidden");
+      if (!this.#canStrip()) {
+        stripOnShare.setAttribute("disabled", true);
+        return;
+      }
       stripOnShare.removeAttribute("disabled");
     });
   }
@@ -3956,7 +3942,7 @@ export class UrlbarInput {
    *   Details of the result that was selected, if any.
    */
   #notifyStartNavigation(result) {
-    if (this.isAddressbar) {
+    if (this.#isAddressbar) {
       Services.obs.notifyObservers({ result }, "urlbar-user-start-navigation");
     }
   }
@@ -4143,9 +4129,10 @@ export class UrlbarInput {
 
     let cachedUriDidChange =
       state.persist?.originalURI &&
-      !state.persist.originalURI.equals(
-        this.window.gBrowser.selectedBrowser.originalURI
-      );
+      (!this.window.gBrowser.selectedBrowser.originalURI ||
+        !state.persist.originalURI.equals(
+          this.window.gBrowser.selectedBrowser.originalURI
+        ));
 
     // Capture the shouldPersist property if it exists before
     // setPersistenceState potentially modifies it.
@@ -4204,7 +4191,7 @@ export class UrlbarInput {
    *                        without an engine name ("Search or enter address").
    */
   initPlaceHolder(force = false) {
-    if (!this.isAddressbar) {
+    if (!this.#isAddressbar) {
       return;
     }
 
@@ -4316,7 +4303,7 @@ export class UrlbarInput {
       throw new Error("Expected an engineName to be specified");
     }
 
-    if (this.searchMode || !this.isAddressbar) {
+    if (this.searchMode || !this.#isAddressbar) {
       return;
     }
 
@@ -4338,7 +4325,7 @@ export class UrlbarInput {
    * The name of the engine or an empty string to use the default placeholder.
    */
   _setPlaceholder(name) {
-    if (!this.isAddressbar) {
+    if (!this.#isAddressbar) {
       return;
     }
 
@@ -4924,10 +4911,14 @@ export class UrlbarInput {
   /**
    * Generate a UrlbarQueryContext from the current context.
    *
-   * @param {object} [options]               Optional params
-   * @param {boolean} options.allowAutofill  Whether autofill is enabled.
-   * @param {string}  options.searchString   The string being searched.
-   * @param {object}  options.event          The event triggering the query.
+   * @param {object} [options]
+   *   Optional params
+   * @param {boolean} [options.allowAutofill]
+   *   Whether autofill is enabled.
+   * @param {string} [options.searchString]
+   *   The string being searched.
+   * @param {object} [options.event]
+   *   The event triggering the query.
    * @returns {UrlbarQueryContext}
    *   The queryContext object.
    */
@@ -4945,6 +4936,7 @@ export class UrlbarInput {
     let options = {
       allowAutofill,
       isPrivate: this.isPrivate,
+      sapName: this.sapName,
       maxResults,
       searchString,
       userContextId: parseInt(
@@ -5205,12 +5197,22 @@ export class UrlbarInput {
     event.stopPropagation();
   }
 
+  /**
+   * Handles dragover events for the input.
+   *
+   * @param {DragEvent} event
+   */
   _on_dragover(event) {
     if (!getDroppableData(event)) {
       event.dataTransfer.dropEffect = "none";
     }
   }
 
+  /**
+   * Handles dropping of data on the input.
+   *
+   * @param {DragEvent} event
+   */
   _on_drop(event) {
     let droppedItem = getDroppableData(event);
     let droppedURL = URL.isInstance(droppedItem)
@@ -5227,7 +5229,7 @@ export class UrlbarInput {
       this.controller.setLastQueryContextCache(queryContext);
       this.controller.engagementEvent.start(event, queryContext);
       this.handleNavigation({ triggeringPrincipal: principal });
-      if (this.isAddressbar) {
+      if (this.#isAddressbar) {
         // For safety reasons, in the drop case we don't want to immediately show
         // the dropped value, instead we want to keep showing the current page
         // url until an onLocationChange happens.
@@ -5299,13 +5301,13 @@ export class UrlbarInput {
   }
 
   /**
-   * @param {string} value A untrimmed address bar input.
-   * @returns {SchemelessInputType}
-   *          Returns `Ci.nsILoadInfo.SchemelessInputTypeSchemeless` if the
-   *          input doesn't start with a scheme relevant for
-   *          schemeless HTTPS-First (http://, https:// and file://).
-   *          Returns `Ci.nsILoadInfo.SchemelessInputTypeSchemeful` if it does
-   *          have a scheme.
+   * @param {string} value
+   *   A untrimmed address bar input.
+   * @returns {nsILoadInfo.SchemelessInputType}
+   *   Returns `Ci.nsILoadInfo.SchemelessInputTypeSchemeless` if the input
+   *   doesn't start with a scheme relevant for schemeless HTTPS-First
+   *   (http://, https:// and file://).
+   *   Returns `Ci.nsILoadInfo.SchemelessInputTypeSchemeful` if it does have a scheme.
    */
   #getSchemelessInput(value) {
     return ["http://", "https://", "file://"].every(
@@ -5356,7 +5358,7 @@ export class UrlbarInput {
   /**
    * Check whether a key event has a similar effect as the Home key.
    *
-   * @param {nsIEvent} event A Keyboard event
+   * @param {KeyboardEvent} event A Keyboard event
    * @returns {boolean} Whether the even will act like the Home key.
    */
   #isHomeKeyUpEvent(event) {
@@ -5389,7 +5391,7 @@ export class UrlbarInput {
 /**
  * Tries to extract droppable data from a DND event.
  *
- * @param {Event} event The DND event to examine.
+ * @param {DragEvent} event The DND event to examine.
  * @returns {URL|string|null}
  *          null if there's a security reason for which we should do nothing.
  *          A URL object if it's a value we can load.

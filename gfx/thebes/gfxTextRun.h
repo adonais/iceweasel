@@ -242,8 +242,10 @@ class gfxTextRun : public gfxShapedText {
      * inside clusters. In other words, if character i is not
      * CLUSTER_START, then character i-1 must have zero after-spacing and
      * character i must have zero before-spacing.
+     * Returns true if there is (or may be) any custom spacing; false if we
+     * are sure that aSpacing contains only zero values.
      */
-    virtual void GetSpacing(Range aRange, Spacing* aSpacing) const = 0;
+    virtual bool GetSpacing(Range aRange, Spacing* aSpacing) const = 0;
 
     // Returns a gfxContext that can be used to measure the hyphen glyph.
     // Only called if the hyphen width is requested.

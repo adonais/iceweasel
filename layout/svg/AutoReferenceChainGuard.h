@@ -11,7 +11,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
-#include "mozilla/ReentrancyGuard.h"
 #include "mozilla/dom/Document.h"
 #include "nsDebug.h"
 #include "nsIFrame.h"

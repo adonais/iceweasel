@@ -598,7 +598,8 @@ const char* JSJitProfilingFrameIterator::baselineInterpreterLabel() const {
 }
 
 void JSJitProfilingFrameIterator::baselineInterpreterScriptPC(
-    JSScript** script, jsbytecode** pc, uint64_t* realmID) const {
+    JSScript** script, jsbytecode** pc, uint64_t* realmID,
+    uint32_t* sourceId) const {
   MOZ_ASSERT(type_ == FrameType::BaselineJS);
   BaselineFrame* blFrame = (BaselineFrame*)(fp_ - BaselineFrame::Size());
   *script = frameScript();
@@ -612,6 +613,7 @@ void JSJitProfilingFrameIterator::baselineInterpreterScriptPC(
     }
 
     *realmID = (*script)->realm()->creationOptions().profilerRealmID();
+    *sourceId = (*script)->scriptSource()->id();
   }
 }
 

@@ -298,7 +298,7 @@ class nsDisplaymtdBorder final : public nsDisplayBorder {
                                  ? PaintBorderFlags::SyncDecodeImages
                                  : PaintBorderFlags();
 
-    Unused << nsCSSRendering::PaintBorderWithStyleBorder(
+    (void)nsCSSRendering::PaintBorderWithStyleBorder(
         mFrame->PresContext(), *aCtx, mFrame, GetPaintRect(aBuilder, aCtx),
         bounds, styleBorder, mFrame->Style(), flags, mFrame->GetSkipSides());
   }

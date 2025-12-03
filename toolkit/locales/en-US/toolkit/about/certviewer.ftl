@@ -36,6 +36,9 @@ certificate-viewer-key-size = Key Size
 certificate-viewer-inc-locality = Inc. Locality
 certificate-viewer-locality = Locality
 certificate-viewer-location = Location
+# Log is a noun meaning a record of events.
+certificate-viewer-log-name = Log Name
+# Log is a noun meaning a record of events.
 certificate-viewer-logid = Log ID
 certificate-viewer-method = Method
 certificate-viewer-modulus = Modulus
@@ -121,4 +124,3 @@ certificate-viewer-tab-mine = Your Certificates
 certificate-viewer-tab-people = People
 certificate-viewer-tab-servers = Servers
 certificate-viewer-tab-ca = Authorities
-certificate-viewer-tab-unkonwn = Unknown

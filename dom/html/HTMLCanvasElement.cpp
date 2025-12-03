@@ -1117,10 +1117,8 @@ OffscreenCanvas* HTMLCanvasElement::TransferControlToOffscreen(
   }
 
   LayersBackend backend = LayersBackend::LAYERS_NONE;
-  nsIWidget* docWidget = nsContentUtils::WidgetForDocument(OwnerDoc());
-  if (docWidget) {
-    WindowRenderer* renderer = docWidget->GetWindowRenderer();
-    if (renderer) {
+  if (nsIWidget* docWidget = nsContentUtils::WidgetForDocument(OwnerDoc())) {
+    if (WindowRenderer* renderer = docWidget->GetWindowRenderer()) {
       backend = renderer->GetCompositorBackendType();
     }
   }
@@ -1425,30 +1423,23 @@ nsresult HTMLCanvasElement::RegisterFrameCaptureListener(
   }
 
   if (!mRequestedFrameRefreshObserver) {
-    Document* doc = OwnerDoc();
-    if (!doc) {
-      return NS_ERROR_FAILURE;
-    }
-
-    PresShell* shell = nsContentUtils::FindPresShellForDocument(doc);
-    if (!shell) {
+    PresShell* shell = nsContentUtils::FindPresShellForDocument(OwnerDoc());
+    if (NS_WARN_IF(!shell)) {
       return NS_ERROR_FAILURE;
     }
 
     nsPresContext* context = shell->GetPresContext();
-    if (!context) {
+    if (NS_WARN_IF(!context)) {
       return NS_ERROR_FAILURE;
     }
 
     context = context->GetRootPresContext();
-    if (!context) {
+    if (NS_WARN_IF(!context)) {
       return NS_ERROR_FAILURE;
     }
 
     nsRefreshDriver* driver = context->RefreshDriver();
-    if (!driver) {
-      return NS_ERROR_FAILURE;
-    }
+    MOZ_ASSERT(driver);
 
     mRequestedFrameRefreshObserver =
         new RequestedFrameRefreshObserver(this, driver, aReturnPlaceholderData);

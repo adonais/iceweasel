@@ -9,7 +9,6 @@
 #include <dlfcn.h>
 #include <string>
 #include <unistd.h>
-#include "mozilla/Unused.h"
 #include "third_party/curl/curl.h"
 
 #include "pingsender.h"
@@ -17,8 +16,6 @@
 namespace PingSender {
 
 using std::string;
-
-using mozilla::Unused;
 
 /**
  * A simple wrapper around libcurl "easy" functions. Provides RAII opening
@@ -161,10 +158,10 @@ bool CurlWrapper::Init() {
 
 static size_t DummyWriteCallback(char* ptr, size_t size, size_t nmemb,
                                  void* userdata) {
-  Unused << ptr;
-  Unused << size;
-  Unused << nmemb;
-  Unused << userdata;
+  (void)ptr;
+  (void)size;
+  (void)nmemb;
+  (void)userdata;
 
   return size * nmemb;
 }

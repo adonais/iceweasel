@@ -386,6 +386,7 @@ struct XPCOMInitData
     GfxVarUpdate[] gfxNonDefaultVarUpdates;
     ContentDeviceData contentDeviceData;
     GfxInfoFeatureStatus[] gfxFeatureStatus;
+    nsCString[] sysLocales;
     nsCString[] appLocales;
     nsCString[] requestedLocales;
     L10nFileSourceDescriptor[] l10nFileSources;
@@ -1056,6 +1057,10 @@ child:
     async DispatchBeforeUnloadToSubtree(MaybeDiscardedBrowsingContext aStartingAt, SessionHistoryInfo? info)
         returns (PermitUnloadResult result);
 
+    // Only dispatches "navigate" to the traversable. Used in case we don't want to dispatch beforeunload.
+    async DispatchNavigateToTraversable(MaybeDiscardedBrowsingContext aTraversable, SessionHistoryInfo? info)
+        returns (PermitUnloadResult result);
+
     // Update the cached list of codec supported in the given process.
     async UpdateMediaCodecsSupported(RemoteMediaIn aLocation, MediaCodecsSupported aSupported);
 
@@ -1098,6 +1103,9 @@ parent:
 
     async GetLoadingSessionHistoryInfoFromParent(MaybeDiscardedBrowsingContext aContext)
         returns (LoadingSessionHistoryInfo? aLoadingInfo);
+
+    async SynchronizeNavigationAPIState(MaybeDiscardedBrowsingContext aContext,
+        ClonedMessageData aState);
 
     async RemoveFromBFCache(MaybeDiscardedBrowsingContext aContext);
 
@@ -1976,6 +1984,11 @@ parent:
     // This can in particular be used to wait for a particular event in a
     // test document before taking the snapshot and starting e.g. IPC fuzzing.
     async SignalFuzzingReady();
+#endif
+
+#ifdef FUZZING
+    // Used by the child process to signal restarting the GPU process.
+    async KillGPUProcess();
 #endif
 
   async AttributionEvent(nsCString aSourceHost,

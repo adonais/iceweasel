@@ -11,7 +11,6 @@
 #include "OSReauthenticator.h"
 #include "PKCS11ModuleDB.h"
 #include "SecretDecoderRing.h"
-#include "mozilla/MacroArgs.h"
 #include "mozilla/ModuleUtils.h"
 #include "mozilla/SyncRunnable.h"
 #include "nsCertTree.h"

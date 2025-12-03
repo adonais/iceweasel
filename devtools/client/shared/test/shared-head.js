@@ -1527,7 +1527,7 @@ function createTestHTTPServer() {
   return server;
 }
 
-/*
+/**
  * Register an actor in the content process of the current tab.
  *
  * Calling ActorRegistry.registerModule only registers the actor in the current process.
@@ -2025,7 +2025,7 @@ async function waitForNextTopLevelDomCompleteResource(commands) {
  * early.
  *
  * @param {BrowsingContext} context
- **/
+ */
 function waitForPresShell(context) {
   return SpecialPowers.spawn(context, [], async () => {
     const winUtils = SpecialPowers.getDOMWindowUtils(content);
@@ -2537,7 +2537,7 @@ function getNetmonitorContextMenuItem(monitor, id) {
   return Menu.getMenuElementById(id, monitor.panelWin.document);
 }
 
-/*
+/**
  * Selects and clicks the context menu item of the netmonitor, it should
  * also wait for the popup to close.
  * @param {Object} monitor

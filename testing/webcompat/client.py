@@ -35,6 +35,17 @@ class Client:
 
         self._start_collecting_alerts()
 
+    async def set_page_zoom_level(self, level):
+        with self.using_context("chrome"):
+            self.execute_script(
+                r"""
+                    const [ level ] = arguments;
+                    const win = browser.ownerGlobal;
+                    win.ZoomManager.setZoomForBrowser(win.gBrowser.selectedTab.linkedBrowser, level);
+                    """,
+                level,
+            )
+
     async def maybe_override_platform(self):
         if hasattr(self, "_platform_override_checked"):
             return
@@ -897,12 +908,13 @@ class Client:
                 ChromeUtils.defineESModuleGetters(lazy, {
                   EventPromise: "chrome://remote/content/shared/Sync.sys.mjs",
                   modal: "chrome://remote/content/shared/Prompt.sys.mjs",
+                  NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
                   PromptListener: "chrome://remote/content/shared/listeners/PromptListener.sys.mjs",
                   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
                 });
 
                 async function tryClosePrompt(contextId) {
-                    const context = lazy.TabManager.getBrowsingContextById(contextId);
+                    const context = lazy.NavigableManager.getBrowsingContextById(contextId);
                     if (!context) {
                       return;
                     }
@@ -960,7 +972,7 @@ class Client:
                 promptListener.on("opened", async (eventName, data) => {
                     const { contentBrowser, prompt } = data;
                     const type = prompt.promptType;
-                    const context = lazy.TabManager.getIdForBrowser(contentBrowser);
+                    const context = lazy.NavigableManager.getIdForBrowser(contentBrowser);
                     const message = await prompt.getText();
                     alerts.push({type, context, message});
                     tryClosePrompt(context);
@@ -1530,6 +1542,38 @@ class Client:
             pass
         return self.execute_script("return window.fastclicked")
 
+    async def test_aceomni_pan_and_zoom_works(self, url):
+        await self.navigate(url, wait="none")
+        img = self.await_css("#imageZoom", is_displayed=True)
+        await self.stall(1)
+
+        def get_zoom_x():
+            return self.execute_script(
+                "return arguments[0].style.cssText.match(/--zoom-x:\\s?(\\d+(\\.\\d+)?)%/)?.[1]",
+                img,
+            )
+
+        if get_zoom_x() is not None:
+            return False
+
+        await self.stall(0.5)
+        coords = self.get_element_screen_position(img)
+        coords = [coords[0] + 50, coords[1] + 100]
+        await self.apz_move(coords=coords)
+        await self.stall(0.5)
+        old_x = float(get_zoom_x())
+
+        for i in range(20):
+            coords = [coords[0] + 10, coords[1]]
+            await self.apz_move(coords=coords)
+            await self.stall(0.01)
+            x = float(get_zoom_x())
+            if x < old_x:
+                return False
+            old_x = x
+
+        return True
+
     def is_displayed(self, element):
         if element is None:
             return False
@@ -1540,8 +1584,9 @@ class Client:
                   const e = arguments[0],
                   s = window.getComputedStyle(e),
                   v = s.visibility === "visible",
-                  o = Math.abs(parseFloat(s.opacity));
-                  return e.getClientRects().length > 0 && v && (isNaN(o) || o === 1.0);
+                  o = Math.abs(parseFloat(s.opacity)),
+                  d = s.display === "contents" || e.getClientRects().length > 0;
+                  return d && v && (isNaN(o) || o === 1.0);
               """,
                 args=[element],
             )

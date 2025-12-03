@@ -15,12 +15,6 @@ const { SearchUtils } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/search/SearchUtils.sys.mjs"
 );
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.update2.engineAliasRefresh", true]],
-  });
-});
-
 add_task(async function test_addEngineGet() {
   await openPreferencesViaOpenPreferencesAPI("search", {
     leaveOpen: true,

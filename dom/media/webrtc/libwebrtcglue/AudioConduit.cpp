@@ -47,7 +47,6 @@
 #include "media/base/media_constants.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/StateWatching.h"
 #include "nsCOMPtr.h"

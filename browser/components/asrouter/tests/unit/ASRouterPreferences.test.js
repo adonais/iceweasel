@@ -14,7 +14,8 @@ const CFR_USER_PREF_ADDONS =
 const CFR_USER_PREF_FEATURES =
   "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features";
 
-/** NUMBER_OF_PREFS_TO_OBSERVE includes:
+/**
+ * NUMBER_OF_PREFS_TO_OBSERVE includes:
  *  1. asrouter.providers. pref branch
  *  2. asrouter.devtoolsEnabled
  *  3. browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons (user preference - cfr)

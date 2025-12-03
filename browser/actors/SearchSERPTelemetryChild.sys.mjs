@@ -1285,7 +1285,8 @@ class DomainExtractor {
     }
   }
 
-  /* Given a list of elements, examine the text content for each element, which
+  /**
+   * Given a list of elements, examine the text content for each element, which
    * may be 1) a URL from which we can extract a domain or 2) text we can fix
    * up to create a best guess as to a URL. If either condition is met, we add
    * the domain to the result set.

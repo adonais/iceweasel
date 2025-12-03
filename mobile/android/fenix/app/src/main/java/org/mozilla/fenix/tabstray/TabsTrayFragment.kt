@@ -41,6 +41,7 @@ import mozilla.components.feature.downloads.ui.DownloadCancelDialogFragment
 import mozilla.components.feature.tabs.tabstray.TabsFeature
 import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
+import mozilla.components.support.ktx.android.util.AndroidDisplayUnitConverter
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.GleanMetrics.PrivateBrowsingLocked
@@ -474,7 +475,9 @@ class TabsTrayFragment : AppCompatDialogFragment() {
             } else {
                 EXPAND_AT_LIST_SIZE
             },
-            displayMetrics = requireContext().resources.displayMetrics,
+            displayUnitConverter = AndroidDisplayUnitConverter(
+                requireContext().resources.displayMetrics,
+            ),
         )
 
         setupBackgroundDismissalListener {

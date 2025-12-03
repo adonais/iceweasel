@@ -12,7 +12,8 @@ import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper
 import org.mozilla.fenix.helpers.RetryTestRule
-import org.mozilla.fenix.helpers.TestAssetHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.audioPageAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.videoPageAsset
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
 import org.mozilla.fenix.helpers.TestSetup
@@ -47,7 +48,7 @@ class MediaNotificationTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyVideoPlaybackSystemNotificationTest() {
-        val videoTestPage = TestAssetHelper.getVideoPageAsset(mockWebServer)
+        val videoTestPage = mockWebServer.videoPageAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(videoTestPage.url) {
@@ -82,7 +83,7 @@ class MediaNotificationTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyAudioPlaybackSystemNotificationTest() {
-        val audioTestPage = TestAssetHelper.getAudioPageAsset(mockWebServer)
+        val audioTestPage = mockWebServer.audioPageAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(audioTestPage.url) {
@@ -116,7 +117,7 @@ class MediaNotificationTest : TestSetup() {
     // TestRail: https://mozilla.testrail.io/index.php?/cases/view/903595
     @Test
     fun mediaSystemNotificationInPrivateModeTest() {
-        val audioTestPage = TestAssetHelper.getAudioPageAsset(mockWebServer)
+        val audioTestPage = mockWebServer.audioPageAsset
 
         homeScreen {
         }.openTabDrawer(composeTestRule) {

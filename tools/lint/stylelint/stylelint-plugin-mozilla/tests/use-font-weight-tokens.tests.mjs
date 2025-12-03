@@ -32,6 +32,10 @@ testRule({
       description: "Using font-weight token is valid.",
     },
     {
+      code: ".a { font-weight: var(--font-weight-semibold); }",
+      description: "Using font-weight-semibold token is valid.",
+    },
+    {
       code: ".a { font-weight: var(--font-weight-bold); }",
       description: "Using font-weight-bold token is valid.",
     },
@@ -57,13 +61,13 @@ testRule({
       description: "Using unset is valid.",
     },
     {
-      code: ".a { font-weight:var(--my-local, var(--font-weight-bold)); }",
+      code: ".a { font-weight:var(--my-local, var(--font-weight-semibold)); }",
       description:
         "Using a custom property with fallback to design token is valid.",
     },
     {
       code: `
-        :root { --custom-token: var(--font-weight-bold); }
+        :root { --custom-token: var(--font-weight-semibold); }
         .a { font-weight: var(--custom-token); }
       `,
       description:
@@ -175,9 +179,78 @@ testRule({
     },
     {
       code: ".a { font-weight: 600; }",
-      fixed: ".a { font-weight: var(--font-weight-bold); }",
+      fixed: ".a { font-weight: var(--font-weight-semibold); }",
       message: messages.rejected("600"),
       description: "Numeric value should be fixed to use design token.",
+    },
+    {
+      code: ".a { font-weight: 700; }",
+      fixed: ".a { font-weight: var(--font-weight-bold); }",
+      message: messages.rejected("700"),
+      description: "Numeric value should be fixed to use design token.",
+    },
+    {
+      code: ".a { font-weight: 200; }",
+      fixed: ".a { font-weight: var(--font-weight); }",
+      message: messages.rejected("200"),
+      description:
+        "Numeric values less than or equal to 400 should be fixed to use the base font-weight token.",
+    },
+    {
+      code: ".a { font-weight: 300; }",
+      fixed: ".a { font-weight: var(--font-weight); }",
+      message: messages.rejected("300"),
+      description:
+        "Numeric values less than or equal to 400 should be fixed to use the base font-weight token.",
+    },
+    {
+      code: ".a { font-weight: 400; }",
+      fixed: ".a { font-weight: var(--font-weight); }",
+      message: messages.rejected("400"),
+      description:
+        "Numeric values less than or equal to 400 should be fixed to use the base font-weight token.",
+    },
+    {
+      code: ".a { font-weight: lighter; }",
+      fixed: ".a { font-weight: var(--font-weight); }",
+      message: messages.rejected("lighter"),
+      description:
+        "The lighter keyword should be fixed to use the base font-weight token.",
+    },
+    {
+      code: ".a { font-weight: 500; }",
+      fixed: ".a { font-weight: var(--font-weight-semibold); }",
+      message: messages.rejected("500"),
+      description:
+        "Numeric values between 500 and 600 should be fixed to use the semibold font-weight token.",
+    },
+    {
+      code: ".a { font-weight: 510; }",
+      fixed: ".a { font-weight: var(--font-weight-semibold); }",
+      message: messages.rejected("510"),
+      description:
+        "Numeric values between 500 and 600 should be fixed to use the semibold font-weight token.",
+    },
+    {
+      code: ".a { font-weight: 800; }",
+      fixed: ".a { font-weight: var(--font-weight-bold); }",
+      message: messages.rejected("800"),
+      description:
+        "Numeric values greater than 700 should be fixed to use the bold font-weight token.",
+    },
+    {
+      code: ".a { font-weight: bold; }",
+      fixed: ".a { font-weight: var(--font-weight-bold); }",
+      message: messages.rejected("bold"),
+      description:
+        "The bold keyword should be fixed to use the bold font-weight token.",
+    },
+    {
+      code: ".a { font-weight: bolder; }",
+      fixed: ".a { font-weight: var(--font-weight-bold); }",
+      message: messages.rejected("bolder"),
+      description:
+        "The bolder keyword should be fixed to use the bold font-weight token.",
     },
   ],
 });

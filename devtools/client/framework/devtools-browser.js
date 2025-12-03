@@ -10,7 +10,7 @@
  *
  * This module is loaded lazily by devtools-clhandler.js, once the first
  * browser window is ready (i.e. fired browser-delayed-startup-finished event)
- **/
+ */
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {

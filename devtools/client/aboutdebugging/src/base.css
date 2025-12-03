@@ -88,18 +88,18 @@
   /* Typography from Photon */
   /* See https://firefox-dev.tools/photon/visuals/typography.html */
   --body-10-font-size: 13px;
-  --body-10-font-weight: 400;
+  --body-10-font-weight: normal;
   --body-20-font-size: 15px;
-  --body-20-font-weight: 400;
-  --body-20-font-weight-bold: 700;
+  --body-20-font-weight: normal;
+  --body-20-font-weight-bold: var(--font-weight-bold);
   --caption-10-font-size: 11px;
-  --caption-10-font-weight: 400;
+  --caption-10-font-weight: normal;
   --caption-20-font-size: 13px;
-  --caption-20-font-weight: 400;
+  --caption-20-font-weight: normal;
   --display-10-font-size: 28px;
-  --display-10-font-weight: 600;
+  --display-10-font-weight: var(--font-weight-semibold);
   --title-20-font-size: 17px;
-  --title-20-font-weight: 600;
+  --title-20-font-weight: var(--font-weight-semibold);
   --title-30-font-size: 22px;
 
   /* Global layout vars */
@@ -108,7 +108,7 @@
   /* Global styles */
   --base-font-style: message-box;
   --base-font-size: var(--body-10-font-size);
-  --base-font-weight: var(--body-10-font-weight);
+  --base-font-weight: normal;
   --base-line-height: 1.8;
   --icon-label-font-size: var(--body-10-font-size);
   --message-font-size: var(--body-10-font-size);
@@ -262,7 +262,7 @@ h1 {
 */
 .alt-subheading {
   margin-block-start: calc(var(--base-unit) * 4);
-  font-weight: 600;
+  font-weight: var(--heading-font-weight);
   font-size: 1.14em;
   line-height: 1.4em; /* odd value - from common.inc.css */
 

@@ -106,11 +106,9 @@
 #include "VerifySSLServerCertChild.h"
 #include "cert.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Casting.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
@@ -709,7 +707,7 @@ PRErrorCode AuthCertificateParseResults(
   if (NS_FAILED(rv)) {
     return aCertVerificationError;
   }
-  Unused << isTemporaryOverride;
+  (void)isTemporaryOverride;
   if (haveOverride) {
     uint32_t probeValue =
         MapOverridableErrorToProbeValue(aCertVerificationError);
@@ -792,7 +790,7 @@ SSLServerCertVerificationJob::Run() {
   if (!certVerifier) {
     // We can't release this off the STS thread because some parts of it
     // are not threadsafe. Just leak mResultTask.
-    Unused << mResultTask.forget();
+    mResultTask.forget().leak();
     return NS_ERROR_FAILURE;
   }
 
@@ -826,7 +824,7 @@ SSLServerCertVerificationJob::Run() {
     if (NS_FAILED(rv)) {
       // We can't release this off the STS thread because some parts of it
       // are not threadsafe. Just leak mResultTask.
-      Unused << mResultTask.forget();
+      mResultTask.forget().leak();
     }
     return rv;
   }
@@ -857,7 +855,7 @@ SSLServerCertVerificationJob::Run() {
   if (NS_FAILED(rv)) {
     // We can't release this off the STS thread because some parts of it
     // are not threadsafe. Just leak mResultTask.
-    Unused << mResultTask.forget();
+    mResultTask.forget().leak();
   }
   return rv;
 }
@@ -1128,7 +1126,7 @@ nsresult SSLServerCertVerificationResult::Dispatch(
   MOZ_ASSERT(stsTarget, "Failed to get socket transport service event target");
   if (!stsTarget) {
     // This has to be released on STS; just leak it
-    Unused << mSocketControl.forget();
+    mSocketControl.forget().leak();
     return NS_ERROR_FAILURE;
   }
   rv = stsTarget->Dispatch(this, NS_DISPATCH_NORMAL);
@@ -1168,13 +1166,13 @@ SSLServerCertVerificationResult::Run() {
     nsTArray<uint8_t> certBytes(mPeerCertChain.ElementAt(0).Clone());
     nsCOMPtr<nsIX509Cert> cert(new nsNSSCertificate(std::move(certBytes)));
     mSocketControl->SetServerCert(cert, EVStatus::NotEV);
-    mSocketControl->SetFailedCertChain(std::move(mPeerCertChain));
     if (mOverridableErrorCategory !=
         nsITransportSecurityInfo::OverridableErrorCategory::ERROR_UNSET) {
       mSocketControl->SetStatusErrorBits(mOverridableErrorCategory);
     }
   }
 
+  mSocketControl->SetHandshakeCertificates(std::move(mPeerCertChain));
   mSocketControl->SetCertVerificationResult(mFinalError);
   // Release this reference to the socket control so that it will be freed on
   // the socket thread.

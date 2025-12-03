@@ -31,7 +31,7 @@ interface nsIProxyInfo : nsISupports
    *   "socks"    SOCKS v5 proxy
    *   "socks4"   SOCKS v4 proxy
    *   "masque"   Similar to an HTTPS proxy, but supports
-  *               "connect-udp" and/or "connect-tcp" with pathTemplate
+  *               "connect-udp" and/or "connect-tcp" with masqueTemplate
    *   "direct"   no proxy
    *   "unknown"  unknown proxy (see nsIProtocolProxyService::resolve)
    *
@@ -96,7 +96,7 @@ interface nsIProxyInfo : nsISupports
   /**
    * Used when the type is "masque"
    */
-  attribute AUTF8String pathTemplate;
+  attribute AUTF8String masqueTemplate;
 
   /**
    * The following two constants can be used to compare against

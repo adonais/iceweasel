@@ -70,11 +70,11 @@ STEPS = {
         """
         echo foo > file1.txt
         jj desc -m "FIRST PATCH"
-        jj new 'description("BASE PATCH")'
+        jj new "description('BASE PATCH')"
         echo notfoo > file1.txt
         echo bar > anotherfile.txt
         jj desc -m "OTHER PATCH"
-        jj new 'description("FIRST PATCH")' @ -m "SECOND PATCH"
+        jj new "description('FIRST PATCH')" @ -m "SECOND PATCH"
         jj new -m "resolve conflict"
         echo merged > file1.txt
        """,
@@ -109,11 +109,17 @@ def test_diff_stream(repo):
                 files.add(m[1])
         return files
 
-    # Default: "uncommitted" changes (meaning @ in jj)
+    # Default: "uncommitted" changes (meaning @ in jj), except in hg
+    # (see bug 1993225)
     files = changed_files(vcs.diff_stream())
-    assert "file1.txt" in files
-    assert "anotherfile.txt" not in files
-    assert "constant.txt" not in files
+    if vcs.name != "hg":
+        assert "file1.txt" in files
+        assert "anotherfile.txt" not in files
+        assert "constant.txt" not in files
+    else:
+        assert "file1.txt" in files
+        assert "anotherfile.txt" in files
+        assert "constant.txt" not in files
 
     # Changes in selected revision ("BASE PATCH")
     files = changed_files(vcs.diff_stream(base_rev))

@@ -10,7 +10,6 @@ import android.content.res.Configuration;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.media.AudioManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -29,7 +28,6 @@ import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputContentInfo;
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -537,8 +535,8 @@ import org.mozilla.gecko.util.ThreadUtils;
       // changes, we gracefully fall back to using the regular Handler.
       if ("startInputInner".equals(frame.getMethodName())
           && "android.view.inputmethod.InputMethodManager".equals(frame.getClassName())) {
-        // Only return our own Handler to InputMethodManager and only prior to 24.
-        return Build.VERSION.SDK_INT < 24;
+        // Do not return our own Handler to InputMethodManager.
+        return false;
       }
       if (CUSTOM_HANDLER_TEST_METHOD.equals(frame.getMethodName())
           && CUSTOM_HANDLER_TEST_CLASS.equals(frame.getClassName())) {
@@ -609,7 +607,7 @@ import org.mozilla.gecko.util.ThreadUtils;
     }
 
     mIsPrivateBrowsing =
-        ((outAttrs.imeOptions & InputMethods.IME_FLAG_NO_PERSONALIZED_LEARNING) != 0);
+        ((outAttrs.imeOptions & EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING) != 0);
 
     if (DEBUG) {
       Log.d(
@@ -690,11 +688,6 @@ import org.mozilla.gecko.util.ThreadUtils;
       // text from the old composing span
       return replaceComposingSpanWithSelection()
           && mKeyInputConnection.commitText(text, newCursorPosition);
-    }
-
-    // Bug 1818268 - Unexpected crash on Galaxy J7
-    if (InputMethods.dontOverrideCommitText()) {
-      return super.commitText(text, newCursorPosition);
     }
 
     // Default implementation is
@@ -814,7 +807,6 @@ import org.mozilla.gecko.util.ThreadUtils;
     am.dispatchMediaKeyEvent(event);
   }
 
-  @RequiresApi(Build.VERSION_CODES.N_MR1)
   @Override
   public boolean commitContent(
       final InputContentInfo inputContentInfo, final int flags, final Bundle opts) {

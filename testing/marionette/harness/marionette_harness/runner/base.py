@@ -15,6 +15,7 @@ from argparse import ArgumentParser
 from collections import defaultdict
 from copy import deepcopy
 
+import mozdebug
 import mozinfo
 import moznetwork
 import mozprofile
@@ -411,6 +412,17 @@ class BaseMarionetteArguments(ArgumentParser):
             " Pass in the debugger you want to use, eg pdb or ipdb.",
         )
         self.add_argument(
+            "--debugger",
+            default=None,
+            help="Debugger binary to run tests in. Program name or path",
+        )
+        self.add_argument(
+            "--debugger-args",
+            dest="debugger_args",
+            default=None,
+            help="Arguments to pass to the debugger",
+        )
+        self.add_argument(
             "--disable-fission",
             action="store_true",
             dest="disable_fission",
@@ -530,6 +542,15 @@ class BaseMarionetteArguments(ArgumentParser):
             args.app_args.append("-jsdebugger")
             args.socket_timeout = None
 
+        if args.debugger_args and not args.debugger:
+            self.error("--debugger-args requires --debugger")
+
+        if args.debugger:
+            # Valgrind and some debuggers may cause Gecko to start slowly.
+            # Make sure to wait long enough to connect.
+            args.startup_timeout = 900
+            args.socket_timeout = None
+
         args.prefs = self._get_preferences(args.prefs_files, args.prefs_args)
 
         for container in self.argument_containers:
@@ -605,6 +626,8 @@ class BaseMarionetteTestRunner:
         address=None,
         app=None,
         app_args=None,
+        debugger=None,
+        debugger_args=None,
         binary=None,
         profile=None,
         logger=None,
@@ -644,6 +667,8 @@ class BaseMarionetteTestRunner:
         self.address = address
         self.app = app
         self.app_args = app_args or []
+        self.debugger = debugger
+        self.debugger_args = debugger_args
         self.bin = binary
         self.emulator = emulator
         self.profile = profile
@@ -831,12 +856,18 @@ class BaseMarionetteTestRunner:
             "symbols_path": self.symbols_path,
         }
         if self.bin or self.emulator:
+            debugger_info = None
+            if self.debugger:
+                debugger_info = mozdebug.get_debugger_info(
+                    self.debugger, self.debugger_args
+                )
             kwargs.update(
                 {
                     "host": "127.0.0.1",
                     "port": 2828,
                     "app": self.app,
                     "app_args": self.app_args,
+                    "debugger_info": debugger_info,
                     "profile": self.profile,
                     "addons": self.addons,
                     "gecko_log": self.gecko_log,

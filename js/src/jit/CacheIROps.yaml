@@ -280,6 +280,14 @@
   args:
     fuseWord: RealmFuseIndexImm
 
+# Guard on a runtime fuse.
+- name: GuardRuntimeFuse
+  shared: true
+  transpile: true
+  cost_estimate: 1
+  args:
+    fuseWord: RuntimeFuseIndexImm
+
 - name: GuardObjectFuseProperty
   shared: true
   transpile: true
@@ -1167,7 +1175,7 @@
     rhs: ValId
 
 - name: ArrayJoinResult
-  shared: false
+  shared: true
   transpile: true
   cost_estimate: 5
   args:
@@ -1196,7 +1204,7 @@
     array: ObjId
 
 - name: PackedArraySliceResult
-  shared: false
+  shared: true
   transpile: true
   cost_estimate: 5
   args:
@@ -1206,7 +1214,7 @@
     end: Int32Id
 
 - name: ArgumentsSliceResult
-  shared: false
+  shared: true
   transpile: true
   cost_estimate: 5
   args:
@@ -1680,7 +1688,7 @@
 # Because Baseline stub code is shared by all realms in the Zone, this
 # instruction loads a pointer to the RNG from a stub field.
 - name: MathRandomResult
-  shared: false
+  shared: true
   transpile: true
   cost_estimate: 3
   args:
@@ -2246,7 +2254,7 @@
     thisShape: ShapeField
 
 - name: BindFunctionResult
-  shared: false
+  shared: true
   transpile: true
   cost_estimate: 5
   args:
@@ -2255,7 +2263,7 @@
     templateObject: ObjectField
 
 - name: SpecializedBindFunctionResult
-  shared: false
+  shared: true
   transpile: true
   cost_estimate: 4
   args:

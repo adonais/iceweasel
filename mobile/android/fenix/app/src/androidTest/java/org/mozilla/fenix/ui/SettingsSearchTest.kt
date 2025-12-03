@@ -211,7 +211,7 @@ class SettingsSearchTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/361817
     @Test
     fun disableSearchBrowsingHistorySuggestionsToggleTest() {
-        val websiteURL = getGenericAsset(mockWebServer, 1).url.toString()
+        val websiteURL = mockWebServer.getGenericAsset(1).url.toString()
 
         createHistoryItem(websiteURL)
 
@@ -237,7 +237,7 @@ class SettingsSearchTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/412926
     @Test
     fun disableSearchBookmarksToggleTest() {
-        val website = getGenericAsset(mockWebServer, 1)
+        val website = mockWebServer.getGenericAsset(1)
 
         createBookmarkItem(website.url.toString(), website.title, 1u)
 
@@ -260,6 +260,8 @@ class SettingsSearchTest : TestSetup() {
                 "Firefox Suggest",
                 website.title,
             )
+        }.dismissSearchBar {
+            verifyHomeComponent(activityTestRule)
         }
     }
 

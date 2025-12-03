@@ -44,8 +44,6 @@ var gSyncPane = {
       .getElementById("weavePrefsDeck")
       .removeAttribute("data-hidden-from-search");
 
-    this.updateBackupUIVisibility();
-
     // If the Service hasn't finished initializing, wait for it.
     let xps = Cc["@mozilla.org/weave/service;1"].getService(
       Ci.nsISupports
@@ -55,8 +53,6 @@ var gSyncPane = {
       this._init();
       return;
     }
-
-    this._addPrefObservers();
 
     // it may take some time before all the promises we care about resolve, so
     // pre-load what we can from synchronous sources.
@@ -79,6 +75,26 @@ var gSyncPane = {
     window.addEventListener("unload", onUnload);
 
     xps.ensureLoaded();
+  },
+
+  /**
+   * This method allows us to override any hidden states that were set
+   * during preferences.js init(). Currently, this is used to hide the
+   * backup section if backup is disabled.
+   *
+   * Take caution when trying to flip the hidden state to true since the
+   * element might show up unexpectedly on different pages in about:preferences
+   * since this function will run at the end of preferences.js init().
+   *
+   * See Bug 1999032 to remove this in favor of config-based prefs.
+   */
+  handlePrefControlledSection() {
+    let bs = lazy.BackupService.init();
+
+    if (!bs.archiveEnabledStatus.enabled && !bs.restoreEnabledStatus.enabled) {
+      document.getElementById("backupCategory").hidden = true;
+      document.getElementById("dataBackupGroup").hidden = true;
+    }
   },
 
   _showLoadPage() {
@@ -297,44 +313,6 @@ var gSyncPane = {
     }
   },
 
-  updateBackupUIVisibility() {
-    let bs = lazy.BackupService.get();
-    let isBackupUIEnabled =
-      bs.archiveEnabledStatus.enabled || bs.restoreEnabledStatus.enabled;
-
-    let dataBackupSectionEl = document.getElementById("dataBackupSection");
-
-    dataBackupSectionEl.toggleAttribute(
-      "data-hidden-from-search",
-      !isBackupUIEnabled
-    );
-
-    let dataBackupGroupEl = document.getElementById("dataBackupGroup");
-    let backupGroupHeaderEl = document.getElementById("backupCategory");
-
-    dataBackupSectionEl.hidden = !isBackupUIEnabled;
-    dataBackupGroupEl.hidden = !isBackupUIEnabled;
-    backupGroupHeaderEl.hidden = !isBackupUIEnabled;
-  },
-
-  _addPrefObservers() {
-    Services.obs.addObserver(
-      this.updateBackupUIVisibility,
-      "backup-service-status-updated"
-    );
-
-    window.addEventListener(
-      "unload",
-      () => {
-        Services.obs.removeObserver(
-          this.updateBackupUIVisibility,
-          "backup-service-status-updated"
-        );
-      },
-      { once: true }
-    );
-  },
-
   async _chooseWhatToSync(isSyncConfigured, why = null) {
     // Record the user opening the choose what to sync menu.
     fxAccounts.telemetry.recordOpenCWTSMenu(why).catch(err => {
@@ -545,7 +523,7 @@ var gSyncPane = {
    * with the given entrypoint as a query parameter
    * @param entrypoint: An string appended to the query parameters, used in telemtry to differentiate
    * different entrypoints to accounts
-   * */
+   */
   async reSignIn(entrypoint) {
     const url = await FxAccounts.config.promiseConnectAccountURI(entrypoint);
     this.replaceTabWithUrl(url);

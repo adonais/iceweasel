@@ -7,7 +7,6 @@
 #ifndef DOM_SVG_SVGANIMATEDPRESERVEASPECTRATIO_H_
 #define DOM_SVG_SVGANIMATEDPRESERVEASPECTRATIO_H_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/SVGPreserveAspectRatio.h"
 #include "mozilla/UniquePtr.h"

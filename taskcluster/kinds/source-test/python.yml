@@ -36,6 +36,7 @@ task-defaults:
     treeherder:
         kind: test
         tier: 1
+    run-on-repo-type: [hg]
     run:
         using: mach
         use-caches: [checkout, pip, uv]
@@ -627,6 +628,23 @@ telemetry-python:
     when:
         files-changed:
             - 'toolkit/components/telemetry/**'
+
+verify-decision:
+    description: verifications on Decision task output
+    run-on-projects: ["autoland"]
+    treeherder:
+        platform: gecko-decision/opt
+        symbol: verify
+    run:
+        using: python-test
+        subsuite: decision
+    when:
+        files-changed:
+            - .cron.yml
+            - .taskcluster.yml
+            - 'taskcluster/**'
+            - 'third_party/python/taskcluster/**'
+            - 'third_party/python/taskcluster_taskgraph/**'
 
 webext:
     description: WebExtensions python utilities unit tests

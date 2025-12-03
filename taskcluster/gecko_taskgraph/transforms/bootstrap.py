@@ -7,6 +7,8 @@ from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import Schema
 from voluptuous import Any, Optional, Required
 
+from gecko_taskgraph.transforms.task import task_description_schema
+
 transforms = TransformSequence()
 
 bootstrap_schema = Schema(
@@ -21,6 +23,7 @@ bootstrap_schema = Schema(
         Required("pre-commands"): [str],
         # relative path (from config.path) to the file task was defined in
         Optional("task-from"): str,
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
     }
 )
 
@@ -100,6 +103,7 @@ def bootstrap_tasks(config, tasks):
                     "tier": 2,
                 },
                 "run-on-projects": ["trunk"],
+                "run-on-repo-type": task.get("run-on-repo-type", ["git", "hg"]),
                 "worker-type": "b-linux-gcp",
                 "worker": {
                     "implementation": "docker-worker",

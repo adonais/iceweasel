@@ -221,6 +221,11 @@ export class GeckoViewStartup {
           ],
         });
 
+        GeckoViewUtils.addLazyGetter(this, "GeckoViewAutofillRuntime", {
+          module: "resource://gre/modules/GeckoViewAutofill.sys.mjs",
+          ged: ["GeckoView:Autofill:GetAddressStructure"],
+        });
+
         GeckoViewUtils.addLazyGetter(this, "GeckoViewPreferences", {
           module: "resource://gre/modules/GeckoViewPreferences.sys.mjs",
           ged: [

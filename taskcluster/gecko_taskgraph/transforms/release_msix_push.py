@@ -28,6 +28,7 @@ push_msix_description_schema = Schema(
         Required("shipping-product"): task_description_schema["shipping-product"],
         Optional("extra"): task_description_schema["extra"],
         Optional("attributes"): task_description_schema["attributes"],
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
     }
 )
 

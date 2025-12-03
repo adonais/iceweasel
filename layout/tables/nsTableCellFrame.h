@@ -6,7 +6,6 @@
 #define nsTableCellFrame_h__
 
 #include "celldata.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/WritingModes.h"
 #include "nsContainerFrame.h"

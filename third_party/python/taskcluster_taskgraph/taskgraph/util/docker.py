@@ -205,7 +205,7 @@ def stream_context_tar(topsrcdir, context_dir, out_file, args=None):
     return writer.hexdigest()
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def image_paths(graph_config):
     """Return a map of image name to paths containing their Dockerfile."""
 
@@ -228,7 +228,7 @@ def image_path(name, graph_config):
     return os.path.join(graph_config.docker_dir, name)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def parse_volumes(image, graph_config):
     """Parse VOLUME entries from a Dockerfile for an image."""
     volumes = set()

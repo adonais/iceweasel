@@ -8,7 +8,6 @@
 #define nsIClassInfoImpl_h__
 
 #include "mozilla/Alignment.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/MacroArgs.h"
 #include "mozilla/MacroForEach.h"
 #include "nsIClassInfo.h"

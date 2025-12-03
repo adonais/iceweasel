@@ -688,29 +688,39 @@ static bool DifferenceZonedDateTime(JSContext* cx, const EpochNanoseconds& ns1,
   }
 
   // Step 4.
-  int32_t sign = (ns2 - ns1 < EpochDuration{}) ? -1 : 1;
+  if (CompareISODate(startDateTime.date, endDateTime.date) == 0) {
+    // Step 4.a.
+    auto timeDuration = TimeDurationFromEpochNanosecondsDifference(ns2, ns1);
+
+    // Step 4.b.
+    *result = {{}, timeDuration};
+    return true;
+  }
 
   // Step 5.
-  int32_t maxDayCorrection = 1 + (sign > 0);
+  int32_t sign = (ns2 - ns1 < EpochDuration{}) ? -1 : 1;
 
   // Step 6.
-  int32_t dayCorrection = 0;
+  int32_t maxDayCorrection = 1 + (sign > 0);
 
   // Step 7.
-  auto timeDuration = DifferenceTime(startDateTime.time, endDateTime.time);
+  int32_t dayCorrection = 0;
 
   // Step 8.
+  auto timeDuration = DifferenceTime(startDateTime.time, endDateTime.time);
+
+  // Step 9.
   if (TimeDurationSign(timeDuration) == -sign) {
     dayCorrection += 1;
   }
 
-  // Steps 9-10.
+  // Steps 10-11.
   while (dayCorrection <= maxDayCorrection) {
-    // Step 10.a.
+    // Step 11.a.
     auto intermediateDate =
         BalanceISODate(endDateTime.date, -dayCorrection * sign);
 
-    // Step 10.b.
+    // Step 11.b.
     auto intermediateDateTime =
         ISODateTime{intermediateDate, startDateTime.time};
     if (!ISODateTimeWithinLimits(intermediateDateTime)) {
@@ -719,7 +729,7 @@ static bool DifferenceZonedDateTime(JSContext* cx, const EpochNanoseconds& ns1,
       return false;
     }
 
-    // Step 10.c.
+    // Step 11.c.
     EpochNanoseconds intermediateNs;
     if (!GetEpochNanosecondsFor(cx, timeZone, intermediateDateTime,
                                 TemporalDisambiguation::Compatible,
@@ -727,26 +737,26 @@ static bool DifferenceZonedDateTime(JSContext* cx, const EpochNanoseconds& ns1,
       return false;
     }
 
-    // Step 10.d.
+    // Step 11.d.
     auto timeDuration =
         TimeDurationFromEpochNanosecondsDifference(ns2, intermediateNs);
 
-    // Step 10.e.
+    // Step 11.e.
     int32_t timeSign = TimeDurationSign(timeDuration);
 
-    // Step 10.f.
+    // Step 11.f.
     if (sign != -timeSign) {
-      // Step 12.
+      // Step 13.
       auto dateLargestUnit = std::min(largestUnit, TemporalUnit::Day);
 
-      // Step 13.
+      // Step 14.
       DateDuration dateDifference;
       if (!CalendarDateUntil(cx, calendar, startDateTime.date, intermediateDate,
                              dateLargestUnit, &dateDifference)) {
         return false;
       }
 
-      // Step 14.
+      // Step 15.
       MOZ_ASSERT(DateDurationSign(dateDifference) *
                      TimeDurationSign(timeDuration) >=
                  0);
@@ -754,11 +764,11 @@ static bool DifferenceZonedDateTime(JSContext* cx, const EpochNanoseconds& ns1,
       return true;
     }
 
-    // Step 10.g.
+    // Step 11.g.
     dayCorrection += 1;
   }
 
-  // Step 11.
+  // Step 12.
   JS_ReportErrorNumberASCII(
       cx, GetErrorMessage, nullptr,
       JSMSG_TEMPORAL_ZONED_DATE_TIME_INCONSISTENT_INSTANT);
@@ -813,9 +823,9 @@ bool js::temporal::DifferenceZonedDateTimeWithRounding(
 
   // Step 5.
   return RoundRelativeDuration(
-      cx, difference, ns2, dateTime, timeZone, calendar, settings.largestUnit,
-      settings.roundingIncrement, settings.smallestUnit, settings.roundingMode,
-      result);
+      cx, difference, ns1, ns2, dateTime, timeZone, calendar,
+      settings.largestUnit, settings.roundingIncrement, settings.smallestUnit,
+      settings.roundingMode, result);
 }
 
 /**
@@ -855,7 +865,7 @@ bool js::temporal::DifferenceZonedDateTimeWithTotal(
   }
 
   // Step 5.
-  return TotalRelativeDuration(cx, difference, ns2, dateTime, timeZone,
+  return TotalRelativeDuration(cx, difference, ns1, ns2, dateTime, timeZone,
                                calendar, unit, result);
 }
 

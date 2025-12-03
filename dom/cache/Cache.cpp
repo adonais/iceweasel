@@ -10,7 +10,6 @@
 #include "js/PropertyAndElement.h"  // JS_GetElement
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/CacheBinding.h"
 #include "mozilla/dom/Headers.h"
 #include "mozilla/dom/InternalResponse.h"

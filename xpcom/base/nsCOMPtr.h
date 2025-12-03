@@ -290,9 +290,9 @@ class MOZ_STACK_CLASS nsQueryReferent final {
 
 // Helper for assert_validity method
 template <class T>
-char (&TestForIID(decltype(&NS_GET_IID(T))))[2];
+constexpr std::true_type TestForIID(decltype(&NS_GET_IID(T)));
 template <class T>
-char TestForIID(...);
+constexpr std::false_type TestForIID(...);
 
 template <class T>
 class MOZ_IS_REFPTR nsCOMPtr final {
@@ -326,8 +326,8 @@ class MOZ_IS_REFPTR nsCOMPtr final {
  private:
   T* MOZ_OWNING_REF mRawPtr;
 
-  void assert_validity() {
-    static_assert(1 < sizeof(TestForIID<T>(nullptr)),
+  constexpr void assert_validity() {
+    static_assert(decltype(TestForIID<T>(nullptr))::value,
                   "nsCOMPtr only works "
                   "for types with IIDs.  Either use RefPtr; add an IID to "
                   "your type with NS_INLINE_DECL_STATIC_IID/ ;"
@@ -371,12 +371,11 @@ class MOZ_IS_REFPTR nsCOMPtr final {
 
   // Constructors
 
-  nsCOMPtr() : mRawPtr(nullptr) {
-    assert_validity();
+  constexpr nsCOMPtr() : mRawPtr(nullptr) {
     NSCAP_LOG_ASSIGNMENT(this, nullptr);
   }
 
-  MOZ_IMPLICIT nsCOMPtr(decltype(nullptr)) : mRawPtr(nullptr) {
+  MOZ_IMPLICIT nsCOMPtr(std::nullptr_t) : mRawPtr(nullptr) {
     assert_validity();
     NSCAP_LOG_ASSIGNMENT(this, nullptr);
   }

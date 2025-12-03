@@ -634,6 +634,11 @@ nsresult nsWebBrowserFind::SearchInFrame(nsPIDOMWindowOuter* aWindow,
 
   if (NS_SUCCEEDED(rv) && foundRange) {
     *aDidFind = true;
+    // Reveal hidden-until-found and closed details elements for the match.
+    // https://html.spec.whatwg.org/#interaction-with-details-and-hidden=until-found
+    if (RefPtr startNode = foundRange->GetStartContainer()) {
+      startNode->QueueAncestorRevealingAlgorithm();
+    }
     sel->RemoveAllRanges(IgnoreErrors());
     // Beware! This may flush notifications via synchronous
     // ScrollSelectionIntoView.

@@ -230,7 +230,7 @@ mozilla::ipc::IPCResult SocketProcessParent::RecvObserveHttpActivity(
       components::HttpActivityDistributor::Service();
   MOZ_ASSERT(activityDistributor);
 
-  Unused << activityDistributor->ObserveActivityWithArgs(
+  (void)activityDistributor->ObserveActivityWithArgs(
       aArgs, aActivityType, aActivitySubtype, aTimestamp, aExtraSizeData,
       aExtraStringData);
   return IPC_OK();

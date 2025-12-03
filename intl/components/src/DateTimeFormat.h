@@ -17,7 +17,6 @@
 #include "mozilla/Try.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Utf8.h"
-#include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
 
 /*

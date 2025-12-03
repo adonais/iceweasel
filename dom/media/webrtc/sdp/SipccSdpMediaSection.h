@@ -9,7 +9,6 @@
 
 #include <map>
 
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "sdp/SdpMediaSection.h"
 #include "sdp/SipccSdpAttributeList.h"

@@ -27,12 +27,16 @@ struct JS_PUBLIC_API TimeBudget {
       : budget(mozilla::TimeDuration::FromMilliseconds(milliseconds)) {}
 
   void setDeadlineFromNow();
+  double progress(mozilla::TimeStamp t) const {
+    return (t - (deadline - budget)) / budget;
+  }
 };
 
 struct JS_PUBLIC_API WorkBudget {
   const int64_t budget;
 
   explicit WorkBudget(int64_t work) : budget(work) {}
+  double progress(int64_t work) const { return double(work) / double(budget); }
 };
 
 struct UnlimitedBudget {};
@@ -82,6 +86,11 @@ class JS_PUBLIC_API SliceBudget {
   // the predicted idle time.
   bool extended = false;
 
+  // Temporarily allow going over budget. (isOverBudget() will return false,
+  // though step() will still have an effect and will matter once this is set
+  // back to false.)
+  bool keepGoing = false;
+
  private:
   explicit SliceBudget(InterruptRequestFlag* irqPtr)
       : counter(irqPtr ? StepsPerExpensiveCheck : UnlimitedCounter),
@@ -121,7 +130,21 @@ class JS_PUBLIC_API SliceBudget {
     }
   }
 
-  bool isOverBudget() { return counter <= 0 && checkOverBudget(); }
+  bool isOverBudget() {
+    return counter <= 0 && !keepGoing && checkOverBudget();
+  }
+
+  // Return the fraction of progress towards the deadline. Note that this can
+  // return values outside of the range [0,1].
+  double progress() const {
+    if (isUnlimited()) {
+      return 0.0;
+    }
+    if (isTimeBudget()) {
+      return budget.as<TimeBudget>().progress(mozilla::TimeStamp::Now());
+    }
+    return budget.as<WorkBudget>().progress(workBudget() - counter);
+  }
 
   bool isWorkBudget() const { return budget.is<WorkBudget>(); }
   bool isTimeBudget() const { return budget.is<TimeBudget>(); }

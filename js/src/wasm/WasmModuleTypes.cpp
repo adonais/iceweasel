@@ -18,8 +18,6 @@
 
 #include "wasm/WasmModuleTypes.h"
 
-#include "mozilla/Range.h"
-
 #include "vm/JSAtomUtils.h"  // AtomizeUTF8Chars
 #include "vm/MallocProvider.h"
 #include "wasm/WasmUtility.h"

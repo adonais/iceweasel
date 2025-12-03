@@ -16,6 +16,7 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
+    run-on-repo-type: [hg]
     index:
         product: firefox
     treeherder:
@@ -37,6 +38,38 @@ task-defaults:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
 
 tasks:
+    linux64-searchfox/opt:
+        description: "Linux64 opt Searchfox"
+        index:
+            job-name: linux64-searchfox-opt
+        treeherder:
+            platform: linux64/opt
+        worker:
+            max-run-time: 10800
+            env:
+                PERFHERDER_EXTRA_OPTIONS: searchfox
+                MOZSEARCH_PLATFORM: "linux"
+        run:
+            using: mozharness
+            actions: [build]
+            config:
+                - builds/releng_base_firefox.py
+                - builds/releng_sub_linux_configs/64_searchfox_and_opt.py
+            script: "mozharness/scripts/fx_desktop_build.py"
+            tooltool-downloads: public
+            keep-artifacts: false
+        fetches:
+            toolchain:
+                - linux64-clang
+                - linux64-nasm
+                - linux64-node
+                - linux64-rust
+                - linux64-cbindgen
+                - linux64-dump_syms
+                - linux64-pkgconf
+                - sysroot-x86_64-linux-gnu
+                - sysroot-wasm32-wasi
+
     linux64-searchfox/debug:
         description: "Linux64 Debug Searchfox"
         index:
@@ -88,6 +121,44 @@ tasks:
                 - builds/releng_base_mac_64_cross_builds.py
             script: "mozharness/scripts/fx_desktop_build.py"
             custom-build-variant-cfg: cross-debug-searchfox
+            secrets: true
+            keep-artifacts: false
+        fetches:
+            toolchain:
+                - linux64-clang
+                - linux64-hfsplus
+                - linux64-libdmg
+                - linux64-nasm
+                - linux64-node
+                - linux64-rust-cross
+                - linux64-cbindgen
+                - linux64-dump_syms
+                - macosx64-sdk
+                - sysroot-x86_64-linux-gnu
+                - sysroot-wasm32-wasi
+
+    macosx64-aarch64-searchfox/opt:
+        description: "MacOS X aarch64 Opt Cross-compile Searchfox"
+        index:
+            job-name: macosx64-aarch64-searchfox-opt
+        treeherder:
+            platform: osx-cross-aarch64/opt
+        worker:
+            max-run-time: 10800
+            env:
+                PERFHERDER_EXTRA_OPTIONS: searchfox
+                MOZSEARCH_PLATFORM: "macosx"
+        run:
+            using: mozharness
+            actions: [get-secrets, build]
+            config:
+                - builds/releng_base_firefox.py
+                - builds/releng_base_mac_64_cross_builds.py
+            extra-config:
+                extra_mozconfig_content:
+                    - ac_add_options --target=aarch64-apple-darwin
+            script: "mozharness/scripts/fx_desktop_build.py"
+            custom-build-variant-cfg: cross-opt-searchfox
             secrets: true
             keep-artifacts: false
         fetches:
@@ -181,6 +252,50 @@ tasks:
                 - ios-sdk
                 - sysroot-x86_64-linux-gnu
                 - sysroot-wasm32-wasi
+
+    win64-searchfox/opt:
+        description: "Win64 Searchfox Opt (clang-cl)"
+        index:
+            job-name: win64-searchfox-opt
+        treeherder:
+            platform: windows2012-64/opt
+        worker:
+            max-run-time: 10800
+            env:
+                PERFHERDER_EXTRA_OPTIONS: searchfox
+                MOZSEARCH_PLATFORM: "windows"
+        run:
+            using: mozharness
+            options: [append-env-variables-from-configs]
+            actions: [get-secrets, build]
+            script: mozharness/scripts/fx_desktop_build.py
+            secrets: true
+            config:
+                - builds/releng_base_firefox.py
+                - builds/releng_base_linux_64_builds.py
+                - builds/taskcluster_sub_win64/searchfox_opt.py
+            extra-config:
+                mozconfig_platform: win64
+        fetches:
+            toolchain:
+                - linux64-clang
+                - linux64-rust-cross
+                - linux64-rust-size
+                - linux64-nasm
+                - linux64-node
+                - linux64-cbindgen
+                - linux64-dump_syms
+                - linux64-wine
+                - linux64-winchecksec
+                - nsis
+                - sysroot-x86_64-linux-gnu
+                - sysroot-wasm32-wasi
+                - vs
+                - dxc-x86_64-pc-windows-msvc
+                - winappsdk-x86_64-pc-windows-msvc
+            fetch:
+                - upx-3.95-win
+                - windows-rs
 
     win64-searchfox/debug:
         description: "Win64 Searchfox Debug (clang-cl)"

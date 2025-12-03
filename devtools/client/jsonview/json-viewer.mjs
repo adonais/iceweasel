@@ -9,6 +9,7 @@ import { createFactories } from "resource://devtools/client/shared/react-utils.m
 
 import MainTabbedAreaClass from "resource://devtools/client/jsonview/components/MainTabbedArea.mjs";
 import TreeViewClass from "resource://devtools/client/shared/components/tree/TreeView.mjs";
+import { ObjectProvider } from "resource://devtools/client/shared/components/tree/ObjectProvider.mjs";
 import { JSON_NUMBER } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
 import { parseJsonLossless } from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
 
@@ -20,6 +21,7 @@ window.dispatchEvent(new CustomEvent("AppReadyStateChange"));
 
 const AUTO_EXPAND_MAX_SIZE = 100 * 1024;
 const AUTO_EXPAND_MAX_LEVEL = 7;
+const EXPAND_ALL_MAX_NODES = 100000;
 const TABS = {
   JSON: 0,
   RAW_DATA: 1,
@@ -38,6 +40,103 @@ const input = {
   prettified: false,
   expandedNodes: new Set(),
 };
+
+/**
+ * Recursively walk the tree and expand all nodes including buckets.
+ * Similar to TreeViewClass.getExpandedNodes but includes buckets.
+ */
+function expandAllNodes(data, { maxNodes = Infinity } = {}) {
+  const expandedNodes = new Set();
+
+  function walkTree(object, path = "") {
+    const children = ObjectProvider.getChildren(object, {
+      bucketLargeArrays: true,
+    });
+
+    // Check if adding these children would exceed the limit
+    if (expandedNodes.size + children.length > maxNodes) {
+      // Avoid having children half expanded
+      return;
+    }
+
+    for (const child of children) {
+      const key = ObjectProvider.getKey(child);
+      const childPath = TreeViewClass.subPath(path, key);
+
+      // Expand this node
+      expandedNodes.add(childPath);
+
+      // Recursively walk children
+      if (ObjectProvider.hasChildren(child)) {
+        walkTree(child, childPath);
+      }
+    }
+  }
+
+  // Start walking from the root if it's not a primitive
+  if (
+    data &&
+    typeof data === "object" &&
+    !(data instanceof Error) &&
+    data.type !== JSON_NUMBER
+  ) {
+    walkTree(data);
+  }
+
+  return expandedNodes;
+}
+
+/**
+ * Recursively walk the tree and expand buckets that contain matches.
+ */
+function expandBucketsWithMatches(data, searchFilter) {
+  const expandedNodes = new Set(input.expandedNodes);
+
+  function walkTree(object, path = "") {
+    const children = ObjectProvider.getChildren(object, {
+      bucketLargeArrays: true,
+    });
+
+    for (const child of children) {
+      const key = ObjectProvider.getKey(child);
+      const childPath = TreeViewClass.subPath(path, key);
+
+      // Check if this is a bucket
+      if (ObjectProvider.getType(child) === "bucket") {
+        // Check if any children in the bucket match the filter
+        const { object: array, startIndex, endIndex } = child;
+        let hasMatch = false;
+
+        for (let i = startIndex; i <= endIndex; i++) {
+          const childJson = JSON.stringify(array[i]);
+          if (childJson.toLowerCase().includes(searchFilter)) {
+            hasMatch = true;
+            break;
+          }
+        }
+
+        if (hasMatch) {
+          expandedNodes.add(childPath);
+        }
+      } else if (ObjectProvider.hasChildren(child)) {
+        // Recursively walk non-bucket nodes
+        walkTree(child, childPath);
+      }
+    }
+  }
+
+  // Start walking from the root if it's not a primitive
+  if (
+    data &&
+    typeof data === "object" &&
+    !(data instanceof Error) &&
+    data.type !== JSON_NUMBER
+  ) {
+    walkTree(data);
+  }
+
+  return expandedNodes;
+}
 
 /**
  * Application actions/commands. This list implements all commands
@@ -81,7 +180,10 @@ input.actions = {
   },
 
   onSearch(value) {
-    theApp.setState({ searchFilter: value });
+    const expandedNodes = value
+      ? expandBucketsWithMatches(input.json, value.toLowerCase())
+      : input.expandedNodes;
+    theApp.setState({ searchFilter: value, expandedNodes });
   },
 
   onPrettify() {
@@ -124,7 +226,9 @@ input.actions = {
   },
 
   onExpand() {
-    input.expandedNodes = TreeViewClass.getExpandedNodes(input.json);
+    input.expandedNodes = expandAllNodes(input.json, {
+      maxNodes: EXPAND_ALL_MAX_NODES,
+    });
     theApp.setState({ expandedNodes: input.expandedNodes });
   },
 };
@@ -194,6 +298,44 @@ const promise = (async function parseJSON() {
   const jsonString = input.jsonText.textContent;
   try {
     input.json = parseJsonLossless(jsonString);
+
+    // Expose a clean public API for accessing JSON data from the console
+    // This is not tied to internal implementation details
+    window.$json = {
+      // The parsed JSON data
+      get data() {
+        return input.json;
+      },
+      // The original JSON text
+      get text() {
+        return jsonString;
+      },
+      // HTTP headers
+      get headers() {
+        return JSONView.headers;
+      },
+    };
+
+    // Log a welcome message to the console
+    const intro = "font-size: 130%;";
+    const bold = "font-family: monospace; font-weight: bold;";
+    const reset = "";
+    console.log(
+      "%cData available from the console:%c\n\n" +
+        "%c$json.data%c - The parsed JSON object\n" +
+        "%c$json.text%c - The original JSON text\n" +
+        "%c$json.headers%c - HTTP request and response headers\n\n" +
+        "The JSON Viewer is documented here:\n" +
+        "https://firefox-source-docs.mozilla.org/devtools-user/json_viewer/",
+      intro,
+      reset,
+      bold,
+      reset,
+      bold,
+      reset,
+      bold,
+      reset
+    );
   } catch (err) {
     input.json = err;
     // Display the raw data tab for invalid json

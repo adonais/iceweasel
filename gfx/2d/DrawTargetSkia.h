@@ -140,11 +140,12 @@ class DrawTargetSkia : public DrawTarget {
   virtual already_AddRefed<FilterNode> CreateFilter(FilterType aType) override;
   virtual void SetTransform(const Matrix& aTransform) override;
   virtual void* GetNativeSurface(NativeSurfaceType aType) override;
-  virtual void DetachAllSnapshots() override { MarkChanged(); }
+  virtual void DetachAllSnapshots() override;
 
   bool Init(const IntSize& aSize, SurfaceFormat aFormat);
   bool Init(unsigned char* aData, const IntSize& aSize, int32_t aStride,
-            SurfaceFormat aFormat, bool aUninitialized = false);
+            SurfaceFormat aFormat, bool aUninitialized = false,
+            bool aIsClear = false);
   bool Init(SkCanvas* aCanvas);
   bool Init(RefPtr<DataSourceSurface>&& aSurface);
 
@@ -158,6 +159,7 @@ class DrawTargetSkia : public DrawTarget {
   }
 
   Maybe<IntRect> GetDeviceClipRect(bool aAllowComplex = false) const;
+  bool IsClipEmpty() const;
 
   Maybe<Rect> GetGlyphLocalBounds(ScaledFont* aFont, const GlyphBuffer& aBuffer,
                                   const Pattern& aPattern,
@@ -196,6 +198,7 @@ class DrawTargetSkia : public DrawTarget {
   RefPtr<DataSourceSurface> mBackingSurface;
   RefPtr<SourceSurfaceSkia> mSnapshot;
   Mutex mSnapshotLock MOZ_UNANNOTATED;
+  bool mIsClear = false;
 
 #ifdef XP_DARWIN
   friend class BorrowedCGContext;

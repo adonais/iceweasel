@@ -41,6 +41,7 @@ beetmover_description_schema = Schema(
         Optional("shipping-product"): task_description_schema["shipping-product"],
         Optional("attributes"): task_description_schema["attributes"],
         Optional("task-from"): task_description_schema["task-from"],
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
     }
 )
 
@@ -148,6 +149,7 @@ def make_task_description(config, jobs):
             "dependencies": job["dependencies"],
             "attributes": attributes,
             "run-on-projects": job["run-on-projects"],
+            "run-on-repo-type": job.get("run-on-repo-type", ["git", "hg"]),
             "treeherder": treeherder,
             "shipping-phase": job["shipping-phase"],
             "maven-package": package,

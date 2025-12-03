@@ -763,40 +763,6 @@ urlbar:
     send_in_pings:
       - urlbar-keyword-exposure
 
-  quick_suggest_contextual_opt_in:
-    type: event
-    description: >
-      Recorded when the contextual opt-in UI is shown or interacted with.
-    extra_keys:
-      interaction:
-        description: >
-          The type of interaction. Possible values: `impression`, `dismiss`,
-          `allow`, `learn_more`.
-        type: string
-      top_position:
-        description: >
-          Whether the opt-in result appeared at the very top of results or at
-          the bottom, after one-off buttons.
-        type: boolean
-      say_hello:
-        description: >
-          Whether the alternative copy was used for the opt-in result.
-        type: boolean
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852058
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1958147
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852058#c2
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1866204#c8
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1892377#c2
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1912174#c8
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1933863#c5
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    expires: 147
-
   pref_max_results:
     lifetime: application
     type: quantity
@@ -816,19 +782,17 @@ urlbar:
     send_in_pings:
       - events
 
-  pref_suggest_data_collection:
+  pref_suggest_all:
     lifetime: application
     type: boolean
     description: >
-      Whether the user has opted in to data collection for Firefox Suggest,
-      i.e., online suggestions served from Merino.
+      Whether Suggest results are shown in the urlbar.
       Corresponds to the value of the
-      `browser.urlbar.quicksuggest.dataCollection.enabled` pref.
+      `browser.urlbar.suggest.quicksuggest.all` pref.
     bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1847855
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1849726
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1995574
     data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1847855
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1995574
     data_sensitivity:
       - interaction
     notification_emails:
@@ -837,18 +801,41 @@ urlbar:
     send_in_pings:
       - events
 
-  pref_suggest_nonsponsored:
+  pref_suggest_online_available:
     lifetime: application
     type: boolean
     description: >
-      Whether non-sponsored quick suggest results are shown in the urlbar.
-      Corresponds to the value of the
-      `browser.urlbar.suggest.quicksuggest.nonsponsored` pref.
+      Whether online Suggest is available to the user.
+      Corresponds to the Nimbus variable `quickSuggestOnlineAvailable` and its
+      fallback pref `browser.urlbar.quicksuggest.online.available`.
+      NOTE: "Online Suggest" in this context means the new version of online
+      Suggest introduced in 146 with Terms of Use and OHTTP.
     bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1847855
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1849726
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1995362
     data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1847855
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1995362
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+    expires: never
+    send_in_pings:
+      - events
+
+  pref_suggest_online_enabled:
+    lifetime: application
+    type: boolean
+    description: >
+      This pref is true for all users by default! You probably want to use this
+      in conjunction with pref_suggest_online_available and/or restrict your
+      analysis to user populations where you know online Suggest is available.
+      Corresponds to `browser.urlbar.quicksuggest.online.enabled`.
+      NOTE: "Online Suggest" in this context means the new version of online
+      Suggest introduced in 146 with Terms of Use and OHTTP.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1995362
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1995362
     data_sensitivity:
       - interaction
     notification_emails:
@@ -1110,11 +1097,13 @@ quick_suggest:
   improve_suggest_experience:
     type: boolean
     description: >
-      Whether the "Improve Suggest Experience" checkbox is checked.
+      Whether online Suggest is available to the user and enabled.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836283
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1995362
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836283
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1995362
     data_sensitivity:
       - interaction
     notification_emails:
@@ -1326,7 +1315,7 @@ suggest_relevance:
     notification_emails:
       - disco-team@mozilla.com
       - najiang@mozilla.com
-    expires: 147
+    expires: 153
     data_sensitivity:
       - technical
   outcome:
@@ -1346,7 +1335,7 @@ suggest_relevance:
     notification_emails:
       - disco-team@mozilla.com
       - najiang@mozilla.com
-    expires: 147
+    expires: 153
     data_sensitivity:
       - technical
 

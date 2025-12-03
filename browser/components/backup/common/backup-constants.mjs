@@ -50,6 +50,15 @@ export const ERRORS = Object.freeze({
   UNSUPPORTED_APPLICATION: 14,
 });
 
+export function errorString(errorCodeToLookup) {
+  for (let [errorName, errorCode] of Object.entries(ERRORS)) {
+    if (errorCode == errorCodeToLookup) {
+      return errorName;
+    }
+  }
+  return "UNDEFINED_ERROR";
+}
+
 /**
  * These are steps that the BackupService or any of its subcomponents might
  * be going through during configuration, creation, deletion of or restoration

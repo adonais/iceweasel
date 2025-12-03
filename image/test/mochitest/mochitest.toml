@@ -183,8 +183,9 @@ skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"]  # 
 
 ["test_bug1180105.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && debug && verify-standalone",
 ]
 
 ["test_bug1217571.html"]

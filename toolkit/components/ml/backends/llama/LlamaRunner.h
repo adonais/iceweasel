@@ -33,7 +33,6 @@
 
 #include "nsThreadUtils.h"
 #include "mozilla/TaskQueue.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/RefPtr.h"
 #include "nsIThread.h"
 #include "nsError.h"

@@ -13,7 +13,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"

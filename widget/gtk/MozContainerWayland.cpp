@@ -295,9 +295,9 @@ struct wl_egl_window* moz_container_wayland_get_egl_window(
   // TODO: Get size from bounds instead of GdkWindow?
   // We may be in rendering/compositor thread here.
   GdkWindow* window = gtk_widget_get_window(GTK_WIDGET(container));
-  nsIntSize unscaledSize(gdk_window_get_width(window),
-                         gdk_window_get_height(window));
-  return MOZ_WL_SURFACE(container)->GetEGLWindow(unscaledSize);
+  DesktopIntSize size(gdk_window_get_width(window),
+                      gdk_window_get_height(window));
+  return MOZ_WL_SURFACE(container)->GetEGLWindow(size);
 }
 
 gboolean moz_container_wayland_can_draw(MozContainer* container) {

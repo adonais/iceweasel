@@ -16,7 +16,7 @@
       rel="stylesheet"
       href="chrome://global/skin/datetimeinputpickers.css"
     />
-    <link rel="localization" href="toolkit/global/datepicker.ftl" />
+    <link rel="localization" href="toolkit/global/datetimepicker.ftl" />
     <script src="chrome://global/content/bindings/datekeeper.js"></script>
     <script src="chrome://global/content/bindings/spinner.js"></script>
     <script src="chrome://global/content/bindings/calendar.js"></script>
@@ -56,13 +56,20 @@
         <button id="clear-button" data-l10n-id="date-picker-clear-button" />
       </div>
 
-      <div id="time-picker" hidden="true" class="picker"></div>
+      <div
+        id="time-picker"
+        hidden="true"
+        class="picker"
+        role="dialog"
+        aria-modal="true"
+        data-l10n-id="time-picker-label"
+      ></div>
     </div>
     <template id="spinner-template">
       <div class="spinner-container">
-        <button class="up" tabindex="-1" />
+        <button class="prev" tabindex="-1" />
         <div class="spinner"></div>
-        <button class="down" tabindex="-1" />
+        <button class="next" tabindex="-1" />
       </div>
     </template>
   </body>

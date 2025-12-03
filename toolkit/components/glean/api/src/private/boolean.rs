@@ -151,7 +151,9 @@ impl Boolean for BooleanMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<bool> for BooleanMetric {
+impl glean::TestGetValue for BooleanMetric {
+    type Output = bool;
+
     /// **Test-only API.**
     ///
     /// Get the currently stored value as a boolean.

@@ -509,7 +509,8 @@ export class FxAccounts {
     }
   }
 
-  /** Gets both the OAuth token and the users scoped keys for that token
+  /**
+   * Gets both the OAuth token and the users scoped keys for that token
    * and verifies that both operations were done for the same user,
    * preventing race conditions where a caller
    * can get the key for one user, and the id of another if the user
@@ -688,18 +689,19 @@ export class FxAccounts {
     });
   }
 
-  /** Returns a promise that resolves to true if we can currently connect (ie,
-   *  sign in, or re-connect after a password change) to a Firefox Account.
-   *  If this returns false, the caller can assume that some UI was shown
-   *  which tells the user why we could not connect.
+  /**
+   * Returns a promise that resolves to true if we can currently connect (ie,
+   * sign in, or re-connect after a password change) to a Firefox Account.
+   * If this returns false, the caller can assume that some UI was shown
+   * which tells the user why we could not connect.
    *
-   *  Currently, the primary password being locked is the only reason why
-   *  this returns false, and in this scenario, the primary password unlock
-   *  dialog will have been shown.
+   * Currently, the primary password being locked is the only reason why
+   * this returns false, and in this scenario, the primary password unlock
+   * dialog will have been shown.
    *
-   *  This currently doesn't need to return a promise, but does so that
-   *  future enhancements, such as other explanatory UI which requires
-   *  async can work without modification of the call-sites.
+   * This currently doesn't need to return a promise, but does so that
+   * future enhancements, such as other explanatory UI which requires
+   * async can work without modification of the call-sites.
    */
   static canConnectAccount() {
     return Promise.resolve(!lazy.mpLocked() || lazy.ensureMPUnlocked());
@@ -1150,9 +1152,12 @@ FxAccountsInternal.prototype = {
     return this.startPollEmailStatus(state, data.sessionToken, "push");
   },
 
-  /** Destroyes an OAuth Token by sending a request to the FxA server
-   * @param { Object } tokenData: The token's data, with `tokenData.token` being the token itself
-   **/
+  /**
+   * Destroyes an OAuth Token by sending a request to the FxA server
+   *
+   * @param {object} tokenData
+   *  The token's data, with `tokenData.token` being the token itself
+   */
   destroyOAuthToken(tokenData) {
     return this.fxAccountsClient.oauthDestroy(OAUTH_CLIENT_ID, tokenData.token);
   },
@@ -1546,9 +1551,10 @@ FxAccountsInternal.prototype = {
     });
   },
 
-  /** Sets the user to be verified in the account state,
+  /**
+   * Sets the user to be verified in the account state,
    * This prevents any polling for the user's verification state from the FxA server
-   **/
+   */
   async setUserVerified() {
     await this.withCurrentAccountState(async currentState => {
       // TODO: setting `verified` is unnecessary if oauthEnabled - it looks at our key state.

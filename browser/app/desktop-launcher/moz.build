@@ -19,35 +19,33 @@ else:
 
 SPHINX_TREES["/browser/desktop-launcher"] = "docs"
 
-# Only build on Windows. Don't build with MinGW, since it doesn't support WinHTTP
-if CONFIG["OS_ARCH"] == "WINNT" and CONFIG["CC_TYPE"] == "clang-cl":
-    UNIFIED_SOURCES += [
-        "download_firefox.cpp",
-        "file_sink.cpp",
-        "find_firefox.cpp",
-        "main.cpp",
-        "tempfile_name.cpp",
-    ]
+UNIFIED_SOURCES += [
+    "download_firefox.cpp",
+    "file_sink.cpp",
+    "find_firefox.cpp",
+    "main.cpp",
+    "tempfile_name.cpp",
+]
 
-    OS_LIBS += [
-        "advapi32",
-        "rpcrt4",
-        "shell32",
-        "winhttp",
-    ]
-    LOCAL_INCLUDES += [
-        "/toolkit/xre",
-    ]
-    DIST_SUBDIR = "desktop-launcher"
-    TEST_DIRS += ["tests/gtest", "tests/lib"]
-    LDFLAGS = ["-SUBSYSTEM:WINDOWS", "-ENTRY:wmainCRTStartup"]
-    USE_STATIC_MSVCRT = True
-    Program("desktop-launcher")
-    DisableStlWrapping()
-    DEFINES["FIREFOX_ICO"] = '"%s/%s/%s.ico"' % (
-        TOPSRCDIR,
-        CONFIG["MOZ_BRANDING_DIRECTORY"],
-        "firefox",
-    )
+OS_LIBS += [
+    "advapi32",
+    "rpcrt4",
+    "shell32",
+    "winhttp",
+]
+LOCAL_INCLUDES += [
+    "/toolkit/xre",
+]
+DIST_SUBDIR = "desktop-launcher"
+TEST_DIRS += ["tests/gtest", "tests/lib"]
+LDFLAGS = ["-SUBSYSTEM:WINDOWS", "-ENTRY:wmainCRTStartup"]
+USE_STATIC_MSVCRT = True
+Program("desktop-launcher")
+DisableStlWrapping()
+DEFINES["FIREFOX_ICO"] = '"%s/%s/%s.ico"' % (
+    TOPSRCDIR,
+    CONFIG["MOZ_BRANDING_DIRECTORY"],
+    "firefox",
+)
 
-    RCINCLUDE = "desktop-launcher.rc"
+RCINCLUDE = "desktop-launcher.rc"

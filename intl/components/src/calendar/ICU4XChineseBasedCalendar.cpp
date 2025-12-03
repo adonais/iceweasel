@@ -4,6 +4,8 @@
 
 #include "mozilla/intl/calendar/ICU4XChineseBasedCalendar.h"
 
+#include "mozilla/Assertions.h"
+
 namespace mozilla::intl::calendar {
 
 ICU4XChineseBasedCalendar::ICU4XChineseBasedCalendar(

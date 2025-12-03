@@ -26,7 +26,6 @@
 #include "js/friend/DOMProxy.h"       // JS::ExpandoAndGeneration
 #include "proxy/DeadObjectProxy.h"
 #include "proxy/Proxy.h"
-#include "util/DifferentialTesting.h"
 #include "util/Unicode.h"
 #include "vm/PortableBaselineInterpret.h"
 #include "vm/StaticStrings.h"
@@ -1041,152 +1040,6 @@ bool BaselineCacheIRCompiler::emitAllocateAndStoreDynamicSlot(
       newShapeOffset, mozilla::Some(numNewSlotsOffset), preserveWrapper);
 }
 
-bool BaselineCacheIRCompiler::emitArrayJoinResult(ObjOperandId objId,
-                                                  StringOperandId sepId) {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-
-  AutoOutputRegister output(*this);
-  Register obj = allocator.useRegister(masm, objId);
-  Register sep = allocator.useRegister(masm, sepId);
-  AutoScratchRegisterMaybeOutput scratch(allocator, masm, output);
-
-  allocator.discardStack(masm);
-
-  // Load obj->elements in scratch.
-  masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch);
-  Address lengthAddr(scratch, ObjectElements::offsetOfLength());
-
-  // If array length is 0, return empty string.
-  Label finished;
-
-  {
-    Label arrayNotEmpty;
-    masm.branch32(Assembler::NotEqual, lengthAddr, Imm32(0), &arrayNotEmpty);
-    masm.movePtr(ImmGCPtr(cx_->names().empty_), scratch);
-    masm.tagValue(JSVAL_TYPE_STRING, scratch, output.valueReg());
-    masm.jump(&finished);
-    masm.bind(&arrayNotEmpty);
-  }
-
-  Label vmCall;
-
-  // Otherwise, handle array length 1 case.
-  masm.branch32(Assembler::NotEqual, lengthAddr, Imm32(1), &vmCall);
-
-  // But only if initializedLength is also 1.
-  Address initLength(scratch, ObjectElements::offsetOfInitializedLength());
-  masm.branch32(Assembler::NotEqual, initLength, Imm32(1), &vmCall);
-
-  // And only if elem0 is a string.
-  Address elementAddr(scratch, 0);
-  masm.branchTestString(Assembler::NotEqual, elementAddr, &vmCall);
-
-  // Store the value.
-  masm.loadValue(elementAddr, output.valueReg());
-  masm.jump(&finished);
-
-  // Otherwise call into the VM.
-  {
-    masm.bind(&vmCall);
-
-    AutoStubFrame stubFrame(*this);
-    stubFrame.enter(masm, scratch);
-
-    masm.Push(sep);
-    masm.Push(obj);
-
-    using Fn = JSString* (*)(JSContext*, HandleObject, HandleString);
-    callVM<Fn, jit::ArrayJoin>(masm);
-
-    stubFrame.leave(masm);
-
-    masm.tagValue(JSVAL_TYPE_STRING, ReturnReg, output.valueReg());
-  }
-
-  masm.bind(&finished);
-
-  return true;
-}
-
-bool BaselineCacheIRCompiler::emitPackedArraySliceResult(
-    uint32_t templateObjectOffset, ObjOperandId arrayId, Int32OperandId beginId,
-    Int32OperandId endId) {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-
-  AutoOutputRegister output(*this);
-  AutoScratchRegisterMaybeOutput scratch1(allocator, masm, output);
-  AutoScratchRegisterMaybeOutputType scratch2(allocator, masm, output);
-
-  Register array = allocator.useRegister(masm, arrayId);
-  Register begin = allocator.useRegister(masm, beginId);
-  Register end = allocator.useRegister(masm, endId);
-
-  FailurePath* failure;
-  if (!addFailurePath(&failure)) {
-    return false;
-  }
-
-  masm.branchArrayIsNotPacked(array, scratch1, scratch2, failure->label());
-
-  allocator.discardStack(masm);
-
-  AutoStubFrame stubFrame(*this);
-  stubFrame.enter(masm, scratch1);
-
-  // Don't attempt to pre-allocate the object, instead always use the slow
-  // path.
-  ImmPtr result(nullptr);
-
-  masm.Push(result);
-  masm.Push(end);
-  masm.Push(begin);
-  masm.Push(array);
-
-  using Fn =
-      JSObject* (*)(JSContext*, HandleObject, int32_t, int32_t, HandleObject);
-  callVM<Fn, ArraySliceDense>(masm);
-
-  stubFrame.leave(masm);
-
-  masm.tagValue(JSVAL_TYPE_OBJECT, ReturnReg, output.valueReg());
-  return true;
-}
-
-bool BaselineCacheIRCompiler::emitArgumentsSliceResult(
-    uint32_t templateObjectOffset, ObjOperandId argsId, Int32OperandId beginId,
-    Int32OperandId endId) {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-
-  AutoOutputRegister output(*this);
-  AutoScratchRegisterMaybeOutput scratch(allocator, masm, output);
-
-  Register args = allocator.useRegister(masm, argsId);
-  Register begin = allocator.useRegister(masm, beginId);
-  Register end = allocator.useRegister(masm, endId);
-
-  allocator.discardStack(masm);
-
-  AutoStubFrame stubFrame(*this);
-  stubFrame.enter(masm, scratch);
-
-  // Don't attempt to pre-allocate the object, instead always use the slow path.
-  ImmPtr result(nullptr);
-
-  masm.Push(result);
-  masm.Push(end);
-  masm.Push(begin);
-  masm.Push(args);
-
-  using Fn =
-      JSObject* (*)(JSContext*, HandleObject, int32_t, int32_t, HandleObject);
-  callVM<Fn, ArgumentsSliceDense>(masm);
-
-  stubFrame.leave(masm);
-
-  masm.tagValue(JSVAL_TYPE_OBJECT, ReturnReg, output.valueReg());
-  return true;
-}
-
 bool BaselineCacheIRCompiler::emitIsArrayResult(ValOperandId inputId) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
 
@@ -1452,28 +1305,6 @@ bool BaselineCacheIRCompiler::emitStringFromCodePointResult(
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
 
   return emitStringFromCodeResult(codeId, StringCode::CodePoint);
-}
-
-bool BaselineCacheIRCompiler::emitMathRandomResult(uint32_t rngOffset) {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-
-  AutoOutputRegister output(*this);
-  AutoScratchRegister scratch1(allocator, masm);
-  AutoScratchRegister64 scratch2(allocator, masm);
-  AutoAvailableFloatRegister scratchFloat(*this, FloatReg0);
-
-  Address rngAddr(stubAddress(rngOffset));
-  masm.loadPtr(rngAddr, scratch1);
-
-  masm.randomDouble(scratch1, scratchFloat, scratch2,
-                    output.valueReg().toRegister64());
-
-  if (js::SupportDifferentialTesting()) {
-    masm.loadConstantDouble(0.0, scratchFloat);
-  }
-
-  masm.boxDouble(scratchFloat, output.valueReg(), scratchFloat);
-  return true;
 }
 
 bool BaselineCacheIRCompiler::emitReflectGetPrototypeOfResult(
@@ -4269,86 +4100,6 @@ bool BaselineCacheIRCompiler::emitNewFunctionCloneResult(
 
   masm.bind(&done);
   masm.tagValue(JSVAL_TYPE_OBJECT, result, output.valueReg());
-  return true;
-}
-
-bool BaselineCacheIRCompiler::emitBindFunctionResult(
-    ObjOperandId targetId, uint32_t argc, uint32_t templateObjectOffset) {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-
-  AutoOutputRegister output(*this);
-  AutoScratchRegister scratch(allocator, masm);
-
-  Register target = allocator.useRegister(masm, targetId);
-
-  allocator.discardStack(masm);
-
-  AutoStubFrame stubFrame(*this);
-  stubFrame.enter(masm, scratch);
-
-  // Push the arguments in reverse order.
-  for (uint32_t i = 0; i < argc; i++) {
-    Address argAddress(FramePointer,
-                       BaselineStubFrameLayout::Size() + i * sizeof(Value));
-    masm.pushValue(argAddress);
-  }
-  masm.moveStackPtrTo(scratch.get());
-
-  masm.Push(ImmWord(0));  // nullptr for maybeBound
-  masm.Push(Imm32(argc));
-  masm.Push(scratch);
-  masm.Push(target);
-
-  using Fn = BoundFunctionObject* (*)(JSContext*, Handle<JSObject*>, Value*,
-                                      uint32_t, Handle<BoundFunctionObject*>);
-  callVM<Fn, BoundFunctionObject::functionBindImpl>(masm);
-
-  stubFrame.leave(masm);
-  masm.storeCallPointerResult(scratch);
-
-  masm.tagValue(JSVAL_TYPE_OBJECT, scratch, output.valueReg());
-  return true;
-}
-
-bool BaselineCacheIRCompiler::emitSpecializedBindFunctionResult(
-    ObjOperandId targetId, uint32_t argc, uint32_t templateObjectOffset) {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-
-  AutoOutputRegister output(*this);
-  AutoScratchRegisterMaybeOutput scratch1(allocator, masm);
-  AutoScratchRegister scratch2(allocator, masm);
-
-  Register target = allocator.useRegister(masm, targetId);
-
-  StubFieldOffset objectField(templateObjectOffset, StubField::Type::JSObject);
-  emitLoadStubField(objectField, scratch2);
-
-  allocator.discardStack(masm);
-
-  AutoStubFrame stubFrame(*this);
-  stubFrame.enter(masm, scratch1);
-
-  // Push the arguments in reverse order.
-  for (uint32_t i = 0; i < argc; i++) {
-    Address argAddress(FramePointer,
-                       BaselineStubFrameLayout::Size() + i * sizeof(Value));
-    masm.pushValue(argAddress);
-  }
-  masm.moveStackPtrTo(scratch1.get());
-
-  masm.Push(scratch2);
-  masm.Push(Imm32(argc));
-  masm.Push(scratch1);
-  masm.Push(target);
-
-  using Fn = BoundFunctionObject* (*)(JSContext*, Handle<JSObject*>, Value*,
-                                      uint32_t, Handle<BoundFunctionObject*>);
-  callVM<Fn, BoundFunctionObject::functionBindSpecializedBaseline>(masm);
-
-  stubFrame.leave(masm);
-  masm.storeCallPointerResult(scratch1);
-
-  masm.tagValue(JSVAL_TYPE_OBJECT, scratch1, output.valueReg());
   return true;
 }
 

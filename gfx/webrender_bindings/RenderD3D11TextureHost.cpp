@@ -12,7 +12,6 @@
 #include "RenderCompositor.h"
 #include "RenderCompositorD3D11SWGL.h"
 #include "ScopedGLHelpers.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/gfx/CanvasManagerParent.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/gfx/Logging.h"

@@ -85,7 +85,7 @@ function getSuggestPref(type) {
   if (type == "sponsored") {
     return "suggest.quicksuggest.sponsored";
   } else if (type == "nonsponsored") {
-    return "suggest.quicksuggest.nonsponsored";
+    return "suggest.quicksuggest.all";
   } else if (type == "suggest") {
     return "quicksuggest.enabled";
   }

@@ -6,8 +6,6 @@
 
 #include "shell/ModuleLoader.h"
 
-#include "mozilla/DebugOnly.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/TextUtils.h"
 
 #include "jsapi.h"
@@ -72,7 +70,9 @@ bool ModuleLoader::LoadImportedModule(JSContext* cx,
                                       JS::Handle<JSScript*> referrer,
                                       JS::Handle<JSObject*> moduleRequest,
                                       JS::HandleValue hostDefined,
-                                      JS::HandleValue payload) {
+                                      JS::HandleValue payload,
+                                      uint32_t lineNumber,
+                                      JS::ColumnNumberOneOrigin columnNumber) {
   ShellContext* scx = GetShellContext(cx);
   return scx->moduleLoader->loadImportedModule(cx, referrer, moduleRequest,
                                                payload);
@@ -525,6 +525,7 @@ JSObject* ModuleLoader::loadAndParse(JSContext* cx, HandleString pathArg,
 
   switch (moduleType) {
     case JS::ModuleType::Unknown:
+    case JS::ModuleType::Bytes:
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_BAD_MODULE_TYPE);
       return nullptr;

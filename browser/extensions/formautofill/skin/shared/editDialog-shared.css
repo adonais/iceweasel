@@ -66,7 +66,7 @@ form :is(label, div) .label-text[field-populated] {
 }
 
 form :is(input, select, textarea):focus ~ .label-text {
-  color: var(--in-content-item-selected);
+  color: var(--color-accent-primary-selected);
   opacity: 1;
 }
 

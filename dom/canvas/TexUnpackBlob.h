@@ -11,7 +11,6 @@
 #include "GLContextTypes.h"
 #include "WebGLStrongTypes.h"
 #include "WebGLTypes.h"
-#include "mozilla/RefPtr.h"
 
 namespace mozilla {
 

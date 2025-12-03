@@ -15,7 +15,7 @@
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/StaticPtr.h"
-#include "nsBaseWidget.h"
+#include "nsIWidget.h"
 #include "nsProxyRelease.h"
 #include "nsThreadUtils.h"
 
@@ -37,7 +37,7 @@ namespace layers {
 /* static */
 RefPtr<UiCompositorControllerChild>
 UiCompositorControllerChild::CreateForSameProcess(
-    const LayersId& aRootLayerTreeId, nsBaseWidget* aWidget) {
+    const LayersId& aRootLayerTreeId, nsIWidget* aWidget) {
   RefPtr<UiCompositorControllerChild> child =
       new UiCompositorControllerChild(0, aWidget);
   child->mParent = new UiCompositorControllerParent(aRootLayerTreeId);
@@ -53,7 +53,7 @@ UiCompositorControllerChild::CreateForSameProcess(
 RefPtr<UiCompositorControllerChild>
 UiCompositorControllerChild::CreateForGPUProcess(
     const uint64_t& aProcessToken,
-    Endpoint<PUiCompositorControllerChild>&& aEndpoint, nsBaseWidget* aWidget) {
+    Endpoint<PUiCompositorControllerChild>&& aEndpoint, nsIWidget* aWidget) {
   RefPtr<UiCompositorControllerChild> child =
       new UiCompositorControllerChild(aProcessToken, aWidget);
 
@@ -250,7 +250,7 @@ mozilla::ipc::IPCResult UiCompositorControllerChild::RecvScreenPixels(
 
 // private:
 UiCompositorControllerChild::UiCompositorControllerChild(
-    const uint64_t& aProcessToken, nsBaseWidget* aWidget)
+    const uint64_t& aProcessToken, nsIWidget* aWidget)
     : mIsOpen(false), mProcessToken(aProcessToken), mWidget(aWidget) {}
 
 UiCompositorControllerChild::~UiCompositorControllerChild() = default;

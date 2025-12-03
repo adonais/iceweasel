@@ -155,7 +155,7 @@ void TrackBuffersManager::QueueTask(SourceBufferTask* aTask) {
             "TrackBuffersManager::QueueTask", this,
             &TrackBuffersManager::QueueTask, aTask));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
+    (void)rv;
     return;
   }
   mQueue.Push(aTask);
@@ -2534,7 +2534,7 @@ uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
       bool found = false;
       TimeUnit startTime = intersection.GetStart(&found);
       MOZ_DIAGNOSTIC_ASSERT(found, "Must intersect with added coded frames");
-      Unused << found;
+      (void)found;
       // Signal that this frame should be truncated when decoded.
       if (!sample->mOriginalPresentationWindow) {
         sample->mOriginalPresentationWindow = Some(sampleInterval);

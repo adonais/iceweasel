@@ -18,8 +18,8 @@ add_setup(async () => {
   );
   await SpecialPowers.pushPrefEnv({
     set: [
-      [BACKUP_DEFAULT_LOCATION_PREF, TEST_PROFILE_PATH],
-      [SCHEDULED_BACKUPS_ENABLED_PREF, true],
+      [BACKUP_DEFAULT_LOCATION_PREF, ""],
+      [SCHEDULED_BACKUPS_ENABLED_PREF, false],
     ],
   });
 
@@ -30,13 +30,98 @@ add_setup(async () => {
 });
 
 /**
+ * Tests the case where there is no DEFAULT_PARENT_DIR_PATH
+ */
+add_task(async function test_no_default_folder() {
+  const sandbox = sinon.createSandbox();
+
+  let bs = getAndMaybeInitBackupService();
+  bs.resetDefaultParentInternalState();
+
+  let docStub = sandbox
+    .stub(BackupService, "docsDirFolderPath")
+    .get()
+    .returns(null);
+
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
+    let settings = browser.contentDocument.querySelector("backup-settings");
+    let turnOnButton = settings.scheduledBackupsButtonEl;
+
+    await settings.updateComplete;
+
+    Assert.ok(bs.archiveEnabledStatus, "Archive is enabled for backups");
+
+    Assert.ok(
+      turnOnButton,
+      "Button to turn on scheduled backups should be found"
+    );
+
+    turnOnButton.click();
+
+    await settings.updateComplete;
+
+    let turnOnScheduledBackups = settings.turnOnScheduledBackupsEl;
+
+    Assert.ok(
+      turnOnScheduledBackups,
+      "turn-on-scheduled-backups should be found"
+    );
+
+    let filePathInputDefault = turnOnScheduledBackups.filePathInputDefaultEl;
+
+    Assert.equal(
+      filePathInputDefault.value,
+      "",
+      "Default input displays the expected text"
+    );
+
+    let dialog = settings.turnOnScheduledBackupsDialogEl;
+    let dialogClosePromise = BrowserTestUtils.waitForEvent(dialog, "close");
+    dialog.close();
+
+    await dialogClosePromise;
+  });
+
+  docStub.restore();
+
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
+    let settings = browser.contentDocument.querySelector("backup-settings");
+
+    Assert.ok(
+      settings.turnOnScheduledBackupsEl,
+      "turn-on-scheduled-backups should be found"
+    );
+    settings.scheduledBackupsButtonEl.click();
+
+    const documentsPath = BackupService.DEFAULT_PARENT_DIR_PATH;
+
+    Assert.equal(
+      settings.turnOnScheduledBackupsEl.filePathInputDefaultEl.value,
+      `${PathUtils.filename(documentsPath)} (recommended)`,
+      "Default input displays the expected text"
+    );
+  });
+
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
  * Test creating a new backup using the "Backup now" button
  */
 add_task(async function test_create_new_backup_trigger() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [BACKUP_DEFAULT_LOCATION_PREF, TEST_PROFILE_PATH],
+      [SCHEDULED_BACKUPS_ENABLED_PREF, true],
+    ],
+  });
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     Services.fog.testResetFOG();
 
     let settings = browser.contentDocument.querySelector("backup-settings");
+    // disable the buffer for the test
+    settings.MESSAGE_BAR_BUFFER = 0;
 
     let bs = getAndMaybeInitBackupService();
 
@@ -56,6 +141,12 @@ add_task(async function test_create_new_backup_trigger() {
       }
     );
 
+    // ensure that the in progress message bar is not visible
+    Assert.ok(
+      !settings.backupInProgressMessageBarEl,
+      "A backup is not in progress, the message bar should not be visible"
+    );
+
     // click on button
     settings.triggerBackupButtonEl.click();
 
@@ -66,7 +157,13 @@ add_task(async function test_create_new_backup_trigger() {
 
     Assert.ok(
       settings.triggerBackupButtonEl.disabled,
-      "A backup is in progress"
+      "A backup is in progress, the trigger button should be disabled"
+    );
+
+    // ensure that the in progress message bar is visible
+    Assert.ok(
+      settings.backupInProgressMessageBarEl,
+      "A backup is in progress, the message bar should be visible"
     );
 
     await BrowserTestUtils.waitForEvent(
@@ -79,8 +176,12 @@ add_task(async function test_create_new_backup_trigger() {
     );
 
     await settings.updateComplete;
+
     // make sure that the backup created is a valid backup
-    Assert.ok(!settings.triggerBackupButtonEl.disabled, "A backup is complete");
+    Assert.ok(
+      !settings.backupServiceState.backupInProgress,
+      "A backup is complete"
+    );
 
     let fileName = JSON.parse(
       settings.lastBackupFileNameEl.getAttribute("data-l10n-args")
@@ -88,6 +189,11 @@ add_task(async function test_create_new_backup_trigger() {
 
     // the file should show once it's created
     Assert.ok(fileName, "the archive was created");
+
+    await BrowserTestUtils.waitForCondition(
+      () => !settings.backupInProgressMessageBarEl,
+      "A backup is no longer in progress, the message bar should disappear"
+    );
 
     let gleanEvents = Glean.browserBackup.backupStart.testGetValue();
     Assert.equal(gleanEvents.length, 1, "backup_start event was recorded");
@@ -148,8 +254,9 @@ add_task(async function test_create_backup_trigger_disabled() {
     ok(result, `Backup completed and returned result ${result.archivePath}`);
     await stateUpdated;
     await settings.updateComplete;
+
     Assert.ok(
-      !settings.triggerBackupButtonEl.disabled,
+      !settings.backupServiceState.backupInProgress,
       "No backup in progress, we can trigger a new one"
     );
   });

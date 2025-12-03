@@ -102,7 +102,7 @@ class WindowGlobalParent final : public WindowContext,
 
   // Get this actor's manager if it is not an in-process actor. Returns
   // |nullptr| if the actor has been torn down, or is in-process.
-  BrowserParent* GetBrowserParent();
+  BrowserParent* GetBrowserParent() const;
 
   ContentParent* GetContentParent();
 
@@ -227,7 +227,7 @@ class WindowGlobalParent final : public WindowContext,
 
   nsITransportSecurityInfo* GetSecurityInfo() { return mSecurityInfo; }
 
-  const nsACString& GetRemoteType() override;
+  const nsACString& GetRemoteType() const override;
 
   void NotifySessionStoreUpdatesComplete(Element* aEmbedder);
 

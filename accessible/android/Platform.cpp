@@ -231,8 +231,7 @@ bool a11y::LocalizeString(const nsAString& aToken, nsAString& aLocalized) {
 }
 
 uint64_t a11y::GetCacheDomainsForKnownClients(uint64_t aCacheDomains) {
-  Unused << aCacheDomains;
-
+  (void)aCacheDomains;
   // XXX: Respond to clients such as TalkBack. For now, be safe and default to
   // caching all domains.
   return CacheDomain::All;

@@ -354,8 +354,6 @@
       <menuitem id="context-take-screenshot"
                 data-l10n-id="main-context-menu-take-screenshot"/>
       <menuseparator id="context-sep-screenshots"/>
-      <menuitem id="context-keywordfield"
-                data-l10n-id="main-context-menu-keyword"/>
       <menuitem id="context-add-engine"
                 data-l10n-id="main-context-menu-add-engine"/>
       <menuitem id="context-searchselect"/>

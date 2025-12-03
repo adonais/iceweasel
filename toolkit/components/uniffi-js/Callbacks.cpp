@@ -12,7 +12,6 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/UniFFIBinding.h"
 #include "mozilla/uniffi/Callbacks.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"

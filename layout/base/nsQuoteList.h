@@ -9,7 +9,6 @@
 #ifndef nsQuoteList_h___
 #define nsQuoteList_h___
 
-#include "mozilla/Attributes.h"
 #include "nsGenConList.h"
 
 namespace mozilla {

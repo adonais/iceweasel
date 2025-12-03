@@ -120,6 +120,9 @@ class MOZ_RAII CacheIRReader {
   RealmFuses::FuseIndex realmFuseIndex() {
     return RealmFuses::FuseIndex(buffer_.readByte());
   }
+  RuntimeFuses::FuseIndex runtimeFuseIndex() {
+    return RuntimeFuses::FuseIndex(buffer_.readByte());
+  }
 
   Scalar::Type scalarType() { return Scalar::Type(buffer_.readByte()); }
   JSWhyMagic whyMagic() { return JSWhyMagic(buffer_.readByte()); }

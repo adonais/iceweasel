@@ -15,7 +15,6 @@ import datetime
 import logging
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
-from typing import Dict, Set
 
 from slugid import nice as slugid
 
@@ -298,8 +297,9 @@ def replace_tasks(
 
     opt_counts = defaultdict(int)
     replaced = set()
-    dependents_of = target_task_graph.graph.reverse_links_dict()
-    dependencies_of = target_task_graph.graph.links_dict()
+    dependencies_of, dependents_of = (
+        target_task_graph.graph.links_and_reverse_links_dict()
+    )
 
     for label in target_task_graph.graph.visit_postorder():
         logger.debug(f"replace_tasks: {label}")
@@ -367,9 +367,9 @@ def replace_tasks(
 
 def get_subgraph(
     target_task_graph: TaskGraph,
-    removed_tasks: Set[str],
-    replaced_tasks: Set[str],
-    label_to_taskid: Dict[str, str],
+    removed_tasks: set[str],
+    replaced_tasks: set[str],
+    label_to_taskid: dict[str, str],
     decision_task_id: str,
 ):
     """
@@ -437,6 +437,7 @@ def get_subgraph(
         )
         deps = task.task.setdefault("dependencies", [])
         deps.extend(sorted(named_task_dependencies.values()))
+        task.dependencies.update(named_task_dependencies)
         tasks_by_taskid[task.task_id] = task
 
     # resolve edges to taskIds
@@ -452,7 +453,9 @@ def get_subgraph(
         if left in tasks_by_taskid and right in tasks_by_taskid
     }
 
-    return TaskGraph(tasks_by_taskid, Graph(set(tasks_by_taskid), edges_by_taskid))  # type: ignore
+    return TaskGraph(
+        tasks_by_taskid, Graph(frozenset(tasks_by_taskid), edges_by_taskid)
+    )
 
 
 @register_strategy("never")

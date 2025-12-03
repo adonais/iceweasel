@@ -840,6 +840,7 @@ pub fn create_webrender_instance(
         target_frame_publish_id: None,
         pending_result_msg: None,
         layer_compositor_frame_state_in_prev_frame: None,
+        external_composite_debug_items: Vec::new(),
         #[cfg(feature = "debugger")]
         debugger: Debugger::new(),
     };

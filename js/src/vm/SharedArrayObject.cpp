@@ -15,6 +15,7 @@
 #include "gc/GCContext.h"
 #include "gc/Memory.h"
 #include "jit/AtomicOperations.h"
+#include "jit/InlinableNatives.h"
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/Prefs.h"
 #include "js/PropertySpec.h"
@@ -957,7 +958,8 @@ static const JSFunctionSpec sharedarray_proto_functions[] = {
 };
 
 static const JSPropertySpec sharedarray_proto_properties[] = {
-    JS_PSG("byteLength", SharedArrayBufferObject::byteLengthGetter, 0),
+    JS_INLINABLE_PSG("byteLength", SharedArrayBufferObject::byteLengthGetter, 0,
+                     SharedArrayBufferByteLength),
     JS_PSG("maxByteLength", SharedArrayBufferObject::maxByteLengthGetter, 0),
     JS_PSG("growable", SharedArrayBufferObject::growableGetter, 0),
     JS_STRING_SYM_PS(toStringTag, "SharedArrayBuffer", JSPROP_READONLY),

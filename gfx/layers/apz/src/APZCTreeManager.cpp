@@ -218,7 +218,7 @@ APZCTreeManager::CheckerboardFlushObserver::Observe(nsISupports* aSubject,
   if (XRE_IsGPUProcess()) {
     if (gfx::GPUParent* gpu = gfx::GPUParent::GetSingleton()) {
       nsCString topic("APZ:FlushActiveCheckerboard:Done");
-      Unused << gpu->SendNotifyUiObservers(topic);
+      (void)gpu->SendNotifyUiObservers(topic);
     }
   } else {
     MOZ_ASSERT(XRE_IsParentProcess());
@@ -1737,7 +1737,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(
                 PanGestureInput::PANGESTURE_INTERRUPTED, panInput.mTimeStamp,
                 panInput.mPanStartPoint, panInput.mPanDisplacement,
                 panInput.modifiers);
-            Unused << mInputQueue->ReceiveInputEvent(
+            (void)mInputQueue->ReceiveInputEvent(
                 state.mHit.mTargetApzc,
                 TargetConfirmationFlags{state.mHit.mHitResult}, panInterrupted);
           }
@@ -2638,7 +2638,7 @@ void APZCTreeManager::UpdateZoomConstraints(
     const Maybe<ZoomConstraints>& aConstraints) {
   if (!GetUpdater()->IsUpdaterThread()) {
     // This can happen if we're in the UI process and got a call directly from
-    // nsBaseWidget or from a content process over PAPZCTreeManager. In that
+    // nsIWidget or from a content process over PAPZCTreeManager. In that
     // case we get this call on the compositor thread, which may be different
     // from the updater thread. It can also happen in the GPU process if that is
     // enabled, since the call will go over PAPZCTreeManager and arrive on the

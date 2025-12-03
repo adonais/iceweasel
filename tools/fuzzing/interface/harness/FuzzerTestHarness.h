@@ -12,7 +12,6 @@
 #ifndef FuzzerTestHarness_h__
 #define FuzzerTestHarness_h__
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/IntegerPrintfMacros.h"
 

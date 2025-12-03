@@ -2546,6 +2546,8 @@ class nsINode : public mozilla::dom::EventTarget {
     return HasSlots() ? GetExistingSlots()->mWeakReference : nullptr;
   }
 
+  void QueueAncestorRevealingAlgorithm();
+
   MOZ_CAN_RUN_SCRIPT void AncestorRevealingAlgorithm(ErrorResult& aRv);
 
  protected:

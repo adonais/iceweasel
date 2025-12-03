@@ -11,7 +11,6 @@
 #include "WebGLTransformFeedback.h"
 #include "WebGLVertexArray.h"
 #include "js/Array.h"  // JS::NewArrayObject
-#include "mozilla/RefPtr.h"
 #include "mozilla/dom/WebGL2RenderingContextBinding.h"
 
 namespace mozilla {

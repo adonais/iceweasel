@@ -7,7 +7,6 @@
 #include "mozilla/dom/cache/ManagerId.h"
 
 #include "CacheCommon.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/dom/quota/PrincipalUtils.h"
 #include "nsIPrincipal.h"
 #include "nsProxyRelease.h"

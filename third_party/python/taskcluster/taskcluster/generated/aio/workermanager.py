@@ -107,11 +107,37 @@ class WorkerManager(AsyncBaseClient):
         Mark a worker pool for deletion.  This is the same as updating the pool to
         set its providerId to `"null-provider"`, but does not require scope
         `worker-manager:provider:null-provider`.
+        This will also mark all launch configurations as archived.
 
         This method is ``stable``
         """
 
         return await self._makeApiCall(self.funcinfo["deleteWorkerPool"], *args, **kwargs)
+
+    async def listWorkerPoolLaunchConfigs(self, *args, **kwargs):
+        """
+        List Worker Pool Launch Configs
+
+        Get the list of launch configurations for a given worker pool.
+        Include archived launch configurations by setting includeArchived=true.
+        By default, only active launch configurations are returned.
+
+        This method is ``experimental``
+        """
+
+        return await self._makeApiCall(self.funcinfo["listWorkerPoolLaunchConfigs"], *args, **kwargs)
+
+    async def workerPoolStats(self, *args, **kwargs):
+        """
+        Get Worker Pool Statistics
+
+        Fetch statistics for an existing worker pool, broken down by launch configuration.
+        This includes counts and capacities of requested, running, stopping, and stopped workers.
+
+        This method is ``experimental``
+        """
+
+        return await self._makeApiCall(self.funcinfo["workerPoolStats"], *args, **kwargs)
 
     async def workerPool(self, *args, **kwargs):
         """
@@ -134,6 +160,17 @@ class WorkerManager(AsyncBaseClient):
         """
 
         return await self._makeApiCall(self.funcinfo["listWorkerPools"], *args, **kwargs)
+
+    async def listWorkerPoolsStats(self, *args, **kwargs):
+        """
+        List All Worker Pools Stats
+
+        Get the stats for all worker pools - number of requested, running, stopping and stopped capacity
+
+        This method is ``experimental``
+        """
+
+        return await self._makeApiCall(self.funcinfo["listWorkerPoolsStats"], *args, **kwargs)
 
     async def reportWorkerError(self, *args, **kwargs):
         """
@@ -401,9 +438,18 @@ class WorkerManager(AsyncBaseClient):
             'method': 'get',
             'name': 'listWorkerPoolErrors',
             'output': 'v1/worker-pool-error-list.json#',
-            'query': ['continuationToken', 'limit'],
+            'query': ['continuationToken', 'limit', 'launchConfigId', 'errorId'],
             'route': '/worker-pool-errors/<workerPoolId>',
             'stability': 'stable',
+        },
+        "listWorkerPoolLaunchConfigs": {
+            'args': ['workerPoolId'],
+            'method': 'get',
+            'name': 'listWorkerPoolLaunchConfigs',
+            'output': 'v1/worker-pool-launch-config-list.json#',
+            'query': ['continuationToken', 'limit', 'includeArchived'],
+            'route': '/worker-pool/<workerPoolId>/launch-configs',
+            'stability': 'experimental',
         },
         "listWorkerPools": {
             'args': [],
@@ -414,12 +460,21 @@ class WorkerManager(AsyncBaseClient):
             'route': '/worker-pools',
             'stability': 'stable',
         },
+        "listWorkerPoolsStats": {
+            'args': [],
+            'method': 'get',
+            'name': 'listWorkerPoolsStats',
+            'output': 'v1/worker-pool-list-stats.json#',
+            'query': ['continuationToken', 'limit'],
+            'route': '/worker-pools/stats',
+            'stability': 'experimental',
+        },
         "listWorkers": {
             'args': ['provisionerId', 'workerType'],
             'method': 'get',
             'name': 'listWorkers',
             'output': 'v1/list-workers-response.json#',
-            'query': ['continuationToken', 'limit', 'quarantined', 'workerState'],
+            'query': ['continuationToken', 'limit', 'launchConfigId', 'quarantined', 'workerState'],
             'route': '/provisioners/<provisionerId>/worker-types/<workerType>/workers',
             'stability': 'experimental',
         },
@@ -437,7 +492,7 @@ class WorkerManager(AsyncBaseClient):
             'method': 'get',
             'name': 'listWorkersForWorkerPool',
             'output': 'v1/worker-list.json#',
-            'query': ['continuationToken', 'limit', 'state'],
+            'query': ['continuationToken', 'limit', 'launchConfigId', 'state'],
             'route': '/workers/<workerPoolId>',
             'stability': 'stable',
         },
@@ -530,6 +585,14 @@ class WorkerManager(AsyncBaseClient):
             'output': 'v1/worker-pool-error-stats.json#',
             'query': ['workerPoolId'],
             'route': '/worker-pool-errors/stats',
+            'stability': 'experimental',
+        },
+        "workerPoolStats": {
+            'args': ['workerPoolId'],
+            'method': 'get',
+            'name': 'workerPoolStats',
+            'output': 'v1/worker-pool-stats.json#',
+            'route': '/worker-pool/<workerPoolId>/stats',
             'stability': 'experimental',
         },
     }

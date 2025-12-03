@@ -10,7 +10,6 @@
 #include <cstdint>
 
 #include "ErrorList.h"
-#include "mozilla/Assertions.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIPrincipal.h"

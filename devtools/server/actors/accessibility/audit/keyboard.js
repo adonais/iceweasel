@@ -67,6 +67,7 @@ const KEYBOARD_FOCUSABLE_ROLES = new Set([
   Ci.nsIAccessibleRole.ROLE_PUSHBUTTON,
   Ci.nsIAccessibleRole.ROLE_RADIOBUTTON,
   Ci.nsIAccessibleRole.ROLE_SLIDER,
+  Ci.nsIAccessibleRole.ROLE_SEARCHBOX,
   Ci.nsIAccessibleRole.ROLE_SPINBUTTON,
   Ci.nsIAccessibleRole.ROLE_SUMMARY,
   Ci.nsIAccessibleRole.ROLE_SWITCH,

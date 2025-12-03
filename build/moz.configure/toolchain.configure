@@ -233,7 +233,7 @@ with only_when(host_is_osx | target_is_osx):
     )
 
     def mac_sdk_min_version():
-        return "26.0"
+        return "26.1"
 
     @depends(
         "--with-macos-sdk",
@@ -1142,6 +1142,18 @@ def default_c_compilers(host_or_target, other_c_compiler=None):
             supported = types = ("clang", "gcc")
 
         info = other_c_compiler[0] if other_c_compiler else None
+
+        if (
+            info
+            and info.type == "clang-cl"
+            and "clang-cl" not in supported
+            and "clang" in supported
+        ):
+            dir_path = os.path.dirname(info.compiler)
+            basename = os.path.basename(info.compiler)
+            clang_name = basename.replace("clang-cl", "clang")
+            info = namespace(compiler=os.path.join(dir_path, clang_name), type="clang")
+
         if info and info.type in supported:
             # When getting default C compilers for the host, we prioritize the
             # same compiler as the target C compiler.
@@ -2971,9 +2983,14 @@ set_config(
 )
 
 
+@depends(moz_debug, target)
+def want_stl_hardening(debug, target):
+    return debug or target.os == "OSX"
+
+
 option(
     "--enable-stl-hardening",
-    default=moz_debug,
+    default=want_stl_hardening,
     help="{Enable|Disable} C++ STL hardening",
 )
 
@@ -3010,8 +3027,12 @@ def stl_hardening_flags(
         else:
             return ["-D_LIBCPP_ENABLE_ASSERTIONS=1"]
 
-    if enabled.origin != "default":
-        die("C++ STL does not support hardening")
+    # Debug builds don't ship to users, so it is fine if STL hardening is
+    # silently skipped, unless it has been explicitly enabled.
+    if debug and enabled.origin == "default":
+        return
+
+    die("C++ STL does not support hardening")
 
 
 set_config("MOZ_STL_HARDENING_FLAGS", stl_hardening_flags)
@@ -3893,15 +3914,31 @@ set_config(
     ),
 )
 
-# dtrace support
-##
-option("--enable-dtrace", help="Build with dtrace support")
 
-dtrace = check_header(
-    "sys/sdt.h",
-    when="--enable-dtrace",
-    onerror=lambda: die("dtrace enabled but sys/sdt.h not found"),
-)
+@depends(target, c_compiler)
+def htmlaccel_config(target, c_compiler):
+    # Keep this is sync with the mozilla::htmlaccel::htmlaccelEnabled function.
+    #
+    # The code compiles on SSSE3, but AVX+BMI generates better code
+    # and has been available for 12 years at the time of landing this,
+    # so let's give the best code to users with reasonably recent hardware.
+    #
+    # Not enabled on 32-bit x86, due to lack of insight into what hardware is
+    # representative at this point in time and due to lack of such hardware
+    # for testing to see what config would actually be an optimization.
+    #
+    # aarch64 does not need extra flags.
+    #
+    # clang-cl doesn't tolerate -flax-vector-conversions but GCC requires it.
+    #
+    # -mavx2 doesn't change codegen vs. -mavx. AVX2 and BMI always co-occur
+    # in Intel CPUs, but there are AMD CPUs that have AVX and BMI without
+    # AVX2.
+    if target.cpu != "x86_64":
+        return []
+    if c_compiler.type == "gcc":
+        return ["-mavx", "-mbmi", "-flax-vector-conversions"]
+    return ["-mavx", "-mbmi"]
 
-set_config("HAVE_DTRACE", True, when=dtrace)
-set_define("INCLUDE_MOZILLA_DTRACE", True, when=dtrace)
+
+set_config("HTML_ACCEL_FLAGS", htmlaccel_config)

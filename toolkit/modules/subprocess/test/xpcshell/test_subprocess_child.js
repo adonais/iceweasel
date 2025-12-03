@@ -154,9 +154,7 @@ async function do_test_spawn_parent_with_child(isBreakAwayJob) {
 
   await stdoutDonePromise;
 
-  // On Windows, we close the pipes as soon as the parent process was detected
-  // to have exited. This prevents the child's write to be read.
-  if (wasChildAlive && AppConstants.platform !== "win") {
+  if (wasChildAlive) {
     equal(stdoutText, EXPECTED_STDOUT_AT_CHILD_EXIT, "Stdout from child");
   } else {
     equal(stdoutText, "", "No more stdout after parent exited (with child)");

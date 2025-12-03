@@ -404,11 +404,11 @@ newtab-wallpaper-abstract-orange = Оранжевые формы
 newtab-wallpaper-gradient-orange = Градиент оранжевого и розового
 newtab-wallpaper-abstract-blue-purple = Синие и фиолетовые формы
 newtab-wallpaper-abstract-white-curves = Белый с заштрихованными кривыми
-newtab-wallpaper-abstract-purple-green = Фиолетово-зеленый световой градиент
+newtab-wallpaper-abstract-purple-green = Фиолетово-зелёный световой градиент
 newtab-wallpaper-abstract-blue-purple-waves = Синие и фиолетовые волнистые формы
 newtab-wallpaper-abstract-black-waves = Чёрные волнообразные формы
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Фотографии
 newtab-wallpaper-beach-at-sunrise = Пляж на восходе
@@ -437,6 +437,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -677,10 +681,6 @@ newtab-widget-timer-mode-focus =
     .label = Фокусировка
 newtab-widget-timer-mode-break =
     .label = Перерыв
-newtab-widget-timer-play =
-    .title = Воспроизвести
-newtab-widget-timer-pause =
-    .title = Приостановить
 newtab-widget-timer-label-play =
     .label = Воспроизвести
 newtab-widget-timer-label-pause =

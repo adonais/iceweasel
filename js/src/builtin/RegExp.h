@@ -164,7 +164,7 @@ extern const JSFunctionSpec regexp_static_methods[];
 extern const JSPropertySpec regexp_properties[];
 extern const JSFunctionSpec regexp_methods[];
 
-// Used in RegExpObject::isOriginalFlagGetter.
+// Used in OptimizeRegExpPrototypeFuse::checkInvariant.
 [[nodiscard]] extern bool regexp_hasIndices(JSContext* cx, unsigned argc,
                                             JS::Value* vp);
 [[nodiscard]] extern bool regexp_global(JSContext* cx, unsigned argc,

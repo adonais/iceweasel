@@ -420,6 +420,10 @@ export class MegalistAlpha extends MozLitElement {
   };
 
   renderList() {
+    const scroller = this.shadowRoot.querySelector(
+      ".sidebar-panel-scrollable-content"
+    );
+
     return this.records.length
       ? html`
           <virtual-passwords-list
@@ -460,6 +464,7 @@ export class MegalistAlpha extends MozLitElement {
               }
             }}
             .items=${this.records}
+            .scroller=${scroller}
             .version=${this.listVersion}
             .itemHeightEstimate=${PasswordCard.DEFAULT_PASSWORD_CARD_HEIGHT}
             .heightCalculator=${this.heightCalculator}

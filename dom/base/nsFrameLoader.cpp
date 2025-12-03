@@ -33,7 +33,6 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_fission.h"
-#include "mozilla/Unused.h"
 #include "mozilla/WebBrowserPersistLocalDocument.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/BrowserBridgeHost.h"
@@ -74,7 +73,6 @@
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/toolkit/library/buildid_reader_ffi.h"
 #include "nsAppRunner.h"
-#include "nsBaseWidget.h"
 #include "nsContentUtils.h"
 #include "nsDirectoryService.h"
 #include "nsDirectoryServiceDefs.h"
@@ -107,6 +105,7 @@
 #include "nsIURI.h"
 #include "nsIWebNavigation.h"
 #include "nsIWebProgress.h"
+#include "nsIWidget.h"
 #include "nsIXULRuntime.h"
 #include "nsLayoutUtils.h"
 #include "nsNameSpaceManager.h"
@@ -735,7 +734,7 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
 
     if (!mRemoteBrowserShown) {
       // This can fail if it's too early to show the frame, we will retry later.
-      Unused << ShowRemoteFrame(
+      (void)ShowRemoteFrame(
           /* aFrame = */ do_QueryFrame(GetPrimaryFrameOfOwningContent()));
     }
 
@@ -1029,7 +1028,7 @@ bool nsFrameLoader::Show(nsSubDocumentFrame* aFrame) {
         // Hold on to the editor object to let the document reattach to the
         // same editor object, instead of creating a new one.
         RefPtr<HTMLEditor> htmlEditor = GetDocShell()->GetHTMLEditor();
-        Unused << htmlEditor;
+        (void)htmlEditor;
         htmlDoc->SetDesignMode(u"off"_ns, Nothing(), IgnoreErrors());
 
         htmlDoc->SetDesignMode(u"on"_ns, Nothing(), IgnoreErrors());
@@ -1107,7 +1106,7 @@ bool nsFrameLoader::ShowRemoteFrame(nsSubDocumentFrame* aFrame) {
 
     // We never want to host remote frameloaders in simple popups, like menus.
     nsIWidget* widget = nsContentUtils::WidgetForContent(mOwnerContent);
-    if (!widget || static_cast<nsBaseWidget*>(widget)->IsSmallPopup()) {
+    if (!widget || widget->IsSmallPopup()) {
       return false;
     }
 
@@ -1390,9 +1389,9 @@ nsresult nsFrameLoader::SwapWithOtherRemoteLoader(
     return rv;
   }
 
-  Unused << browserParent->SendSwappedWithOtherRemoteLoader(
+  (void)browserParent->SendSwappedWithOtherRemoteLoader(
       ourContext.AsIPCTabContext());
-  Unused << otherBrowserParent->SendSwappedWithOtherRemoteLoader(
+  (void)otherBrowserParent->SendSwappedWithOtherRemoteLoader(
       otherContext.AsIPCTabContext());
   // These might have moved to a new window, so make sure they have
   // the appropriate priority (bug 1896172)
@@ -1866,6 +1865,9 @@ void nsFrameLoader::StartDestroy(bool aForProcessSwitch) {
     browserParent->RemoveWindowListeners();
   }
 
+  // Hide the content viewer before nulling out the embedder element and so.
+  Hide();
+
   nsCOMPtr<Document> doc;
   bool dynamicSubframeRemoval = false;
   if (mOwnerContent) {
@@ -1914,22 +1916,16 @@ void nsFrameLoader::StartDestroy(bool aForProcessSwitch) {
   }
 
   // Let the tree owner know we're gone.
-  if (mIsTopLevelContent) {
-    if (GetDocShell()) {
+  if (nsCOMPtr<nsIDocShell> ds = GetDocShell()) {
+    if (mIsTopLevelContent) {
       nsCOMPtr<nsIDocShellTreeItem> parentItem;
-      GetDocShell()->GetInProcessParent(getter_AddRefs(parentItem));
-      nsCOMPtr<nsIDocShellTreeOwner> owner = do_GetInterface(parentItem);
-      if (owner) {
-        owner->ContentShellRemoved(GetDocShell());
+      ds->GetInProcessParent(getter_AddRefs(parentItem));
+      if (nsCOMPtr<nsIDocShellTreeOwner> owner = do_GetInterface(parentItem)) {
+        owner->ContentShellRemoved(ds);
       }
     }
-  }
-
-  // Let our window know that we are gone
-  if (GetDocShell()) {
-    nsCOMPtr<nsPIDOMWindowOuter> win_private(GetDocShell()->GetWindow());
-    if (win_private) {
-      win_private->SetFrameElementInternal(nullptr);
+    if (nsCOMPtr<nsPIDOMWindowOuter> win = ds->GetWindow()) {
+      win->SetFrameElementInternal(nullptr);
     }
   }
 
@@ -2124,7 +2120,7 @@ void nsFrameLoader::SetOwnerContent(Element* aContent) {
     JSAutoRealm ar(jsapi.cx(), wrapper);
     IgnoredErrorResult rv;
     UpdateReflectorGlobal(jsapi.cx(), wrapper, rv);
-    Unused << NS_WARN_IF(rv.Failed());
+    (void)NS_WARN_IF(rv.Failed());
   }
 }
 
@@ -2299,7 +2295,7 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   // separately when initializing BrowserChild.
   if (mIsTopLevelContent &&
       mPendingBrowsingContext->GetMessageManagerGroup() == u"browsers"_ns) {
-    Unused << mDocShell->GetDocument();
+    (void)mDocShell->GetDocument();
   }
 
   return NS_OK;
@@ -2459,7 +2455,7 @@ void nsFrameLoader::PropagateIsUnderHiddenEmbedderElement(
   BrowsingContext* browsingContext = GetExtantBrowsingContext();
   if (browsingContext && browsingContext->IsUnderHiddenEmbedderElement() !=
                              isUnderHiddenEmbedderElement) {
-    Unused << browsingContext->SetIsUnderHiddenEmbedderElement(
+    (void)browsingContext->SetIsUnderHiddenEmbedderElement(
         isUnderHiddenEmbedderElement);
   }
 }
@@ -2740,7 +2736,7 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
     if (mOwnerContent->AttrValueIs(kNameSpaceID_None,
                                    nsGkAtoms::allowscriptstoclose,
                                    nsGkAtoms::_true, eCaseMatters)) {
-      Unused << browserParent->SendAllowScriptsToClose();
+      (void)browserParent->SendAllowScriptsToClose();
     }
   }
 
@@ -2874,7 +2870,7 @@ nsresult nsFrameLoader::FinishStaticClone(
   NS_ENSURE_STATE(docShell);
 
   nsCOMPtr<Document> kungFuDeathGrip = docShell->GetDocument();
-  Unused << kungFuDeathGrip;
+  (void)kungFuDeathGrip;
 
   nsCOMPtr<nsIDocumentViewer> viewer;
   docShell->GetDocViewer(getter_AddRefs(viewer));
@@ -3233,7 +3229,7 @@ void nsFrameLoader::RequestEpochUpdate(uint32_t aEpoch) {
   BrowsingContext* context = GetExtantBrowsingContext();
   if (context) {
     BrowsingContext* top = context->Top();
-    Unused << top->SetSessionStoreEpoch(aEpoch);
+    (void)top->SetSessionStoreEpoch(aEpoch);
   }
 }
 
@@ -3245,7 +3241,7 @@ void nsFrameLoader::RequestSHistoryUpdate() {
 
   // If remote browsing (e10s), handle this with the BrowserParent.
   if (auto* browserParent = GetBrowserParent()) {
-    Unused << browserParent->SendUpdateSHistory();
+    (void)browserParent->SendUpdateSHistory();
   }
 }
 
@@ -3396,7 +3392,7 @@ already_AddRefed<Promise> nsFrameLoader::PrintPreview(
 void nsFrameLoader::ExitPrintPreview() {
 #ifdef NS_PRINTING
   if (auto* browserParent = GetBrowserParent()) {
-    Unused << browserParent->SendExitPrintPreview();
+    (void)browserParent->SendExitPrintPreview();
     return;
   }
   if (NS_WARN_IF(!GetExistingDocShell())) {
@@ -3428,9 +3424,9 @@ already_AddRefed<nsILoadContext> nsFrameLoader::GetLoadContext() {
 BrowsingContext* nsFrameLoader::GetBrowsingContext() {
   if (!mInitialized) {
     if (IsRemoteFrame()) {
-      Unused << EnsureRemoteBrowser();
+      (void)EnsureRemoteBrowser();
     } else if (mOwnerContent) {
-      Unused << MaybeCreateDocShell();
+      (void)MaybeCreateDocShell();
     }
   }
   MOZ_ASSERT(mInitialized || mDestroyCalled);
@@ -3611,10 +3607,10 @@ void nsFrameLoader::SetWillChangeProcess() {
         bc->SetCurrentBrowserParent(nullptr);
       }
       // OOP Browser - Go directly over Browser Parent
-      Unused << browserParent->SendWillChangeProcess();
+      (void)browserParent->SendWillChangeProcess();
     } else if (auto* browserBridgeChild = GetBrowserBridgeChild()) {
       // OOP IFrame - Through Browser Bridge Parent, set on browser child
-      Unused << browserBridgeChild->SendWillChangeProcess();
+      (void)browserBridgeChild->SendWillChangeProcess();
     }
     return;
   }

@@ -106,7 +106,7 @@ static auto BuildTimelines(nsPresContext* aPresContext, Element* aElement,
     MOZ_ASSERT(dest);
 
     // Override the previous one if it is duplicated.
-    Unused << result.InsertOrUpdate(timeline.GetName(), dest);
+    (void)result.InsertOrUpdate(timeline.GetName(), dest);
   }
   return result;
 }

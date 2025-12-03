@@ -437,7 +437,7 @@ void L10nRegistrySendUpdateL10nFileSources() {
   nsTArray<ContentParent*> parents;
   ContentParent::GetAll(parents);
   for (ContentParent* parent : parents) {
-    Unused << parent->SendUpdateL10nFileSources(sources);
+    (void)parent->SendUpdateL10nFileSources(sources);
   }
 }
 

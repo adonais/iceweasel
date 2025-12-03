@@ -266,7 +266,7 @@ class SearchActionTest {
 
         assertNotNull(state.search.region)
         assertEquals("DE", state.search.region!!.home)
-        assertEquals("FR", state.search.region!!.current)
+        assertEquals("FR", state.search.region.current)
     }
 
     @Test

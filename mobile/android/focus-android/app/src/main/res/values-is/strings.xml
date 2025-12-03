@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -149,7 +156,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s setur þig við stjórnvölinn.</p> <p>Notaðu það sem huliðsvafra: <ul> <li>Leitaðu og flettu beint í forritinu</li> <li>Lokaðu á rekjara (eða uppfærðu stillingar til að leyfa rekjara)</li> <li>Hreinsaðu til að eyða vefkökum sem og leitar- og vafraferli</li> </ul> </p> <p>%1$s er framleitt af Mozilla. Markmið okkar er að hlúa að heilbrigðu, opnu interneti.<br/> <a href=\"%2$s\">Frekari upplýsingar</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s setur þig við stjórnvölinn.</p>\n<p>Notaðu það sem huliðsvafra:\n<ul>\n<li>Leitaðu og flettu beint í forritinu</li>\n<li>Lokaðu á rekjara (eða uppfærðu stillingar til að leyfa rekjara)</li>\n<li>Hreinsaðu til að eyða vefkökum sem og leitar- og vafraferli</li>\n</ul> </p>\n<p>%1$s er framleitt af Mozilla. Markmið okkar er að hlúa að heilbrigðu, opnu interneti.<br/>\n<a href=\"%2$s\">Frekari upplýsingar</a></p>]]></string>
   <!-- A link to SUMO at the bottom of About Focus screen. -->
   <string name="about_screen_learn_more">Kanna nánar</string>
   <!-- Header for the Privacy and Security settings menu -->
@@ -875,7 +882,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Þetta gæti verið vegna vandamála í stillingum netþjóns, eða einhver gæti verið að reyna að þykjast vera þessi netþjónn.<br/><br/> Ef þú hefur getað tengst þessum netþjóni án vandamála áður, gæti verið að vandamálið sé aðeins tímabundið, þannig að þú gætir reynt aftur seinna.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Einhver gæti verið að reyna að þykjast vera þetta vefsvæði og þú ættir ekki að halda áfram.</label> <br><br> <label>%1$s treystir ekki <b>%2$s</b> vegna þess að útgefandi skilríkisins er óþekktur, skilríkið er gefið út af sjálfu sér eða þjóninn er ekki að senda rétt milliskilríki.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Einhver gæti verið að reyna að þykjast vera þetta vefsvæði og þú ættir ekki að halda áfram.</label> <br><br>\n<label>%1$s treystir ekki <b>%2$s</b> vegna þess að útgefandi skilríkisins er óþekktur, skilríkið er gefið út af sjálfu sér eða þjóninn er ekki að senda rétt milliskilríki.</label>]]></string>
   <!--
     Sessions List
 

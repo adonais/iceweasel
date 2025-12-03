@@ -479,14 +479,17 @@ class WindowResizeObserver extends Observable {
   }
 
   _startListeners() {
-    this.listenerTarget.addEventListener("resize", this.onResize);
+    this._abortController = new AbortController();
+    this.listenerTarget.addEventListener("resize", this.onResize, {
+      signal: this._abortController.signal,
+    });
   }
 
   _stopListeners() {
-    if (!this.listenerTarget) {
-      return;
+    if (this._abortController) {
+      this._abortController.abort();
+      this._abortController = null;
     }
-    this.listenerTarget.removeEventListener("resize", this.onResize);
   }
 
   onNavigate() {
@@ -504,6 +507,7 @@ class WindowResizeObserver extends Observable {
     if (this.targetActor) {
       this.targetActor.off("navigate", this.onNavigate);
     }
+    this._stopListeners();
     super.destroy();
   }
 

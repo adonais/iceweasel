@@ -39,10 +39,14 @@ async function checkIdentityPopup(icon) {
   );
 }
 
-add_task(async function () {
+async function checkMixedContentCertOverride(feltPrivacyV1) {
   await BrowserTestUtils.openNewForegroundTab(gBrowser);
+  Services.prefs.setBoolPref(
+    "security.certerrors.felt-privacy-v1",
+    feltPrivacyV1
+  );
   // check that a warning is shown when loading a page with mixed content and an overridden certificate
-  await loadBadCertPage(MIXED_CONTENT_URL);
+  await loadBadCertPage(MIXED_CONTENT_URL, feltPrivacyV1);
   await checkIdentityPopup("security-warning.svg");
 
   // check that a warning is shown even without mixed content
@@ -58,6 +62,9 @@ add_task(async function () {
     "@mozilla.org/security/certoverride;1"
   ].getService(Ci.nsICertOverrideService);
   certOverrideService.clearValidityOverride("self-signed.example.com", -1, {});
-
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
+  Services.prefs.clearUserPref("security.certerrors.felt-privacy-v1");
+}
+
+add_task(async () => await checkMixedContentCertOverride(true));
+add_task(async () => await checkMixedContentCertOverride(false));

@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -149,7 +156,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s ເຮັດໃຫ້ທ່ານສາມາດຄວບຄູມໄດ້.</p> <p>ໃຊ້ເປັນແບບບຣາວເຊີສ່ວນຕົວ: <ul> <li>ຄົ້ນຫາ ແລະ ທ່ອງເວັບພາຍໃນແອັບ</li> <li>ບັອກຕົວຕິດຕາມ (ຫລື ອັບເດດການຕັ້ງຄ່າເພື່ອອະນຸຍາດຕົວຕິດຕາມ)</li> <li>ລຶບຄຸກກີ້ລວມທັງປະຫວັດການຄົ້ນຫາ ແລະ ການທ່ອງເວັບອອກ</li> </ul> </p> <p>%1$s ໄດ້ຮັບການສ້າງຂື້ນມາຈາກ Mozilla. ພາລະກິດຂອງພວກເຮົາແມ່ນສົ່ງເສີມການນຳໃຊ້ອິນເຕີເນັດທີ່ສົມບູນ ແລະ ເປີດກ້ວາງ<br/> <a href=\"%2$s\">ຮຽນຮູ້ເພີ່ມເຕີ່ມ</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s ເຮັດໃຫ້ທ່ານສາມາດຄວບຄູມໄດ້.</p>\n<p>ໃຊ້ເປັນແບບບຣາວເຊີສ່ວນຕົວ:\n<ul>\n<li>ຄົ້ນຫາ ແລະ ທ່ອງເວັບພາຍໃນແອັບ</li>\n<li>ບັອກຕົວຕິດຕາມ (ຫລື ອັບເດດການຕັ້ງຄ່າເພື່ອອະນຸຍາດຕົວຕິດຕາມ)</li>\n<li>ລຶບຄຸກກີ້ລວມທັງປະຫວັດການຄົ້ນຫາ ແລະ ການທ່ອງເວັບອອກ</li>\n</ul> </p>\n<p>%1$s ໄດ້ຮັບການສ້າງຂື້ນມາຈາກ Mozilla. ພາລະກິດຂອງພວກເຮົາແມ່ນສົ່ງເສີມການນຳໃຊ້ອິນເຕີເນັດທີ່ສົມບູນ ແລະ ເປີດກ້ວາງ<br/>\n<a href=\"%2$s\">ຮຽນຮູ້ເພີ່ມເຕີ່ມ</a></p>]]></string>
   <!-- A link to SUMO at the bottom of About Focus screen. -->
   <string name="about_screen_learn_more">ສຶກສາເພີ່ມເຕີມ</string>
   <!-- Header for the Privacy and Security settings menu -->
@@ -873,9 +880,9 @@
   <!-- The document title and heading of the error page shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_title">ການເຊື່ອມຕໍ່ບໍ່ປອດໄພ</string>
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[\u0020ສິງນີ້ອາດຈະເປັນບັນຫາທີ່ເກີດມາຈາກການຄອນຟິກເຊີເວີຜິດ ຫລື ມັນອາດຈະເກີດມາຈາກການທີ່ມີບາງຄົນພະຍາຍາມປອມແປງເຊີເວີ.<br/><br/> ຖ້າຫາກວ່າທ່ານເຄີຍເຊື່ອມຕໍ່ກັບເຊີເວີນີ້ໄດ້ສຳເລັດມາກ່ອນ ຂໍ້ຜິດພາດນີ້ອາດຈະເກີດຂື້ນພຽງຊົ່ວຄາວ ແລະ ທ່ານສາມາດລອງເຂົ້າໃຫມ່ໃນພາຍຫລັງ.\u0020]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[\u0020ສິງນີ້ອາດຈະເປັນບັນຫາທີ່ເກີດມາຈາກການຄອນຟິກເຊີເວີຜິດ ຫລື ມັນອາດຈະເກີດມາຈາກການທີ່ມີບາງຄົນພະຍາຍາມປອມແປງເຊີເວີ.<br/><br/>\nຖ້າຫາກວ່າທ່ານເຄີຍເຊື່ອມຕໍ່ກັບເຊີເວີນີ້ໄດ້ສຳເລັດມາກ່ອນ ຂໍ້ຜິດພາດນີ້ອາດຈະເກີດຂື້ນພຽງຊົ່ວຄາວ ແລະ ທ່ານສາມາດລອງເຂົ້າໃຫມ່ໃນພາຍຫລັງ.\u0020]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>ມີບາງຄົນອາດຈະກຳລັງປອມແປງເວັບໄຊທ ແລະ ທ່ານບໍ່ຄວນຈະເຂົ້າໄປ.</label> <br><br> <label>ເວັບໄຊທຈະຢັ້ງຢືນຕົວຕົນຜ່ານທາງໃບຮັບຮອງ. %1$s ບໍ່ຫນ້າເຊື່ອຖື <b>%2$s</b> ເພາະວ່າຜູ້ອອກໃບຮັບຮອງຂອງພວກເຂົາແມ່ນບໍເປັນທີ່ຮູ້ຈັກ, ໃບຮັບຮອງແມ່ນສ້າງຂື້ນມາເອງ ຫລື ເຊີເວີບໍ່ໄດ້ສົ່ງໃບຮັບຮອງທີ່ຖືກຕ້ອງມາໃຫ້.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>ມີບາງຄົນອາດຈະກຳລັງປອມແປງເວັບໄຊທ ແລະ ທ່ານບໍ່ຄວນຈະເຂົ້າໄປ.</label> <br><br>\n<label>ເວັບໄຊທຈະຢັ້ງຢືນຕົວຕົນຜ່ານທາງໃບຮັບຮອງ. %1$s ບໍ່ຫນ້າເຊື່ອຖື <b>%2$s</b> ເພາະວ່າຜູ້ອອກໃບຮັບຮອງຂອງພວກເຂົາແມ່ນບໍເປັນທີ່ຮູ້ຈັກ, ໃບຮັບຮອງແມ່ນສ້າງຂື້ນມາເອງ ຫລື ເຊີເວີບໍ່ໄດ້ສົ່ງໃບຮັບຮອງທີ່ຖືກຕ້ອງມາໃຫ້.</label>]]></string>
   <!--
     Sessions List
 

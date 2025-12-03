@@ -7,7 +7,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.helpers.AppAndSystemHelper.clickSystemHomeScreenShortcutAddButton
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
-import org.mozilla.fenix.helpers.TestAssetHelper.getTextFragmentAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.textFragmentAsset
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
@@ -27,7 +27,7 @@ class TextFragmentsTest : TestSetup() {
     @SdkSuppress(minSdkVersion = 34)
     @Test
     fun verifyTheTextFragmentUrlAddedToHomescreenTest() {
-        val genericPage = getTextFragmentAsset(mockWebServer)
+        val genericPage = mockWebServer.textFragmentAsset
         val textFragmentLink = genericPage.url.toString() + "#:~:text=Firefox"
 
         navigationToolbar {
@@ -46,7 +46,7 @@ class TextFragmentsTest : TestSetup() {
     @SdkSuppress(minSdkVersion = 34)
     @Test
     fun verifyTheTextFragmentLinksInHistoryTest() {
-        val genericPage = getTextFragmentAsset(mockWebServer)
+        val genericPage = mockWebServer.textFragmentAsset
         val textFragmentLink = genericPage.url.toString() + "#:~:text=Firefox"
 
         navigationToolbar {
@@ -68,7 +68,7 @@ class TextFragmentsTest : TestSetup() {
     @SdkSuppress(minSdkVersion = 34)
     @Test
     fun verifyTheTextFragmentLinksInBookmarksTest() {
-        val genericPage = getTextFragmentAsset(mockWebServer)
+        val genericPage = mockWebServer.textFragmentAsset
         val textFragmentLink = genericPage.url.toString() + "#:~:text=Firefox"
 
         navigationToolbar {
@@ -94,7 +94,7 @@ class TextFragmentsTest : TestSetup() {
     @SdkSuppress(minSdkVersion = 34)
     @Test
     fun sendTextFragmentTabToDeviceTest() {
-        val genericPage = getTextFragmentAsset(mockWebServer)
+        val genericPage = mockWebServer.textFragmentAsset
         val textFragmentLink = genericPage.url.toString() + "#:~:text=Firefox"
 
         navigationToolbar {

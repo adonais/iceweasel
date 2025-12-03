@@ -41,12 +41,11 @@ export class UrlbarProviderAboutPages extends UrlbarProvider {
   }
 
   /**
-   * Starts querying. Extended classes should return a Promise resolved when the
-   * provider is done searching AND returning results.
+   * Starts querying.
    *
-   * @param {UrlbarQueryContext} queryContext The query context object
-   * @param {Function} addCallback Callback invoked by the provider to add a new
-   *        result. A UrlbarResult should be passed to it.
+   * @param {UrlbarQueryContext} queryContext
+   * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
+   *   Callback invoked by the provider to add a new result.
    */
   startQuery(queryContext, addCallback) {
     let searchString = queryContext.trimmedLowerCaseSearchString;

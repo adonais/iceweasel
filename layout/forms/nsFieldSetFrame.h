@@ -8,7 +8,6 @@
 #define nsFieldSetFrame_h___
 
 #include "ImgDrawResult.h"
-#include "mozilla/Attributes.h"
 #include "nsContainerFrame.h"
 
 namespace mozilla {

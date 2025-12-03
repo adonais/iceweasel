@@ -3,7 +3,13 @@
 .ds-navigation {
   color: var(--newtab-contextual-text-primary-color);
   font-size: var(--font-size-small);
-  font-weight: var(--font-weight-bold);
+
+  /**
+   * @backward-compat { version 146 }
+   *
+   * Replace this with `--font-weight-semibold` once 146 hits release.
+   */
+  font-weight: var(--heading-font-weight);
   padding: var(--space-xsmall) 0;
 
   @media (min-width: $break-point-widest) {
@@ -70,7 +76,7 @@
 
     .ds-navigation-header {
       font-size: var(--font-size-small);
-      font-weight: var(--font-weight-bold);
+      font-weight: var(--heading-font-weight);
       display: inline-block;
       margin-block-end: var(--space-small);
     }
@@ -124,7 +130,13 @@
         border-top: $border-primary;
         line-height: 24px;
         font-size: var(--font-size-small);
-        font-weight: var(--font-weight-bold);
+
+        /**
+         * @backward-compat { version 146 }
+         *
+         * Replace this with `--font-weight-semibold` once 146 hits release.
+         */
+        font-weight: var(--heading-font-weight);
 
         &::after {
           content: '';

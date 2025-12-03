@@ -114,8 +114,6 @@ fun ExtendedFloatingActionButton(
     elevation: FloatingActionButtonElevation = M3FloatingActionButtonDefaults.elevation(),
     icon: @Composable () -> Unit,
 ) {
-    val startPadding = if (expanded) AcornTheme.layout.space.static200 else 0.dp
-    val endPadding = if (expanded) AcornTheme.layout.space.static300 else 0.dp
     M3FloatingActionButton(
         onClick = onClick,
         modifier = modifier,
@@ -126,12 +124,7 @@ fun ExtendedFloatingActionButton(
         Row(
             modifier = Modifier
                 .thenConditional(Modifier.sizeIn(minWidth = ExtendedFabMinimumWidth)) { expanded }
-                .padding(
-                    start = startPadding,
-                    end = endPadding,
-                    top = AcornTheme.layout.space.static200,
-                    bottom = AcornTheme.layout.space.static200,
-                ),
+                .padding(AcornTheme.layout.space.static200),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = if (expanded) Arrangement.Start else Arrangement.Center,
         ) {
@@ -147,7 +140,9 @@ fun ExtendedFloatingActionButton(
 
                     Text(
                         text = label,
-                        modifier = Modifier.animateContentSize(),
+                        modifier = Modifier
+                            .animateContentSize()
+                            .padding(end = AcornTheme.layout.space.static100),
                         style = AcornTheme.typography.button,
                         maxLines = 1,
                     )

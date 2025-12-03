@@ -24,7 +24,7 @@ const mockSessionStore = {
         {
           tabs: [
             {
-              someData: "hi I am data",
+              someData: "hi I am data, I will get serialized",
               moreData: -3.7,
               storage: {
                 message: "I don't get serialized!",
@@ -62,7 +62,7 @@ const mockSessionStore = {
         {
           tabs: [
             {
-              someData: "hi I am window #2's data",
+              someData: "hi I am window #2's data, I will get serialized",
               moreData: -3.7,
               storage: {
                 message: "I don't get serialized!",
@@ -81,6 +81,30 @@ const mockSessionStore = {
               },
             },
           ],
+        },
+        {
+          tabs: [
+            {
+              someData: "hi I am the private window's data",
+              storage: {
+                message: "I don't get serialized!",
+              },
+            },
+          ],
+          isPrivate: true,
+          _closedTabs: [],
+        },
+        {
+          tabs: [
+            {
+              someData: "hi I am the private window #2's data",
+              storage: {
+                message: "I don't get serialized!",
+              },
+            },
+          ],
+          isPrivate: true,
+          _closedTabs: [],
         },
       ],
       savedGroups: [
@@ -110,13 +134,15 @@ const mockSessionStore = {
 };
 
 // This is mockSessionStore but with the data that should not be saved removed.
-const filteredMockSessionData = mockSessionStore.getCurrentState(true);
-filteredMockSessionData.windows.forEach(win => {
-  win.tabs.forEach(tab => delete tab.storage);
-  win._closedTabs.forEach(closedTab => delete closedTab.state.storage);
-});
-filteredMockSessionData.savedGroups.forEach(group => {
-  group.tabs.forEach(tab => delete tab.state.storage);
+let filteredMockSessionData;
+let sessionStoreBackupResource;
+
+add_setup(() => {
+  // let's use the SessionStoreBackupResource's filtering
+  sessionStoreBackupResource = new SessionStoreBackupResource(mockSessionStore);
+
+  filteredMockSessionData =
+    sessionStoreBackupResource.filteredSessionStoreState;
 });
 
 /**
@@ -126,9 +152,6 @@ filteredMockSessionData.savedGroups.forEach(group => {
 add_task(async function test_backups_have_correct_window_state() {
   let sandbox = sinon.createSandbox();
 
-  let sessionStoreBackupResource = new SessionStoreBackupResource(
-    mockSessionStore
-  );
   let sourcePath = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
     "SessionStoreBackupResource-src"
@@ -145,7 +168,7 @@ add_task(async function test_backups_have_correct_window_state() {
   Assert.equal(
     filteredMockSessionData.windows.length,
     2,
-    "will serialize 2 windows"
+    "will serialize only 2 windows, since we don't backup private window sessions"
   );
   Assert.equal(
     filteredMockSessionData.windows[0].tabs.length,
@@ -217,9 +240,6 @@ add_task(async function test_backups_have_correct_window_state() {
  * the recovery directory into the destination profile directory.
  */
 add_task(async function test_recover() {
-  let sessionStoreBackupResource = new SessionStoreBackupResource(
-    mockSessionStore
-  );
   let recoveryPath = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
     "SessionStoreBackupResource-recover"

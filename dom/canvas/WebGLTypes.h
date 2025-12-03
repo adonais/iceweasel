@@ -22,7 +22,6 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EnumTypeTraits.h"
 #include "mozilla/IsEnumCase.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Range.h"
 #include "mozilla/RefCounted.h"
 #include "mozilla/Result.h"

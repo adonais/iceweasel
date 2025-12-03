@@ -18,7 +18,6 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ContentIterator.h"
-#include "mozilla/IntegerRange.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/Result.h"
@@ -53,30 +52,39 @@ enum class BlockInlineCheck : uint8_t {
   // * Looking for whether a padding <br> is required
   // * Looking for a caret position
   UseComputedDisplayStyle,
+  // UseComputedDisplayOutsideStyle if referring siblings or children.
+  // UseComputedDisplayStyle if referring ancestors.
+  Auto,
 };
 
-/**
- * Even if the caller wants block boundary caused by display-inline: flow-root
- * like inline-block, because it's required only when scanning from in it.
- * I.e., if scanning needs to go to siblings, we don't want to treat
- * inline-block siblings as inline.
- */
-[[nodiscard]] inline BlockInlineCheck IgnoreInsideBlockBoundary(
+[[nodiscard]] inline BlockInlineCheck PreferDisplayOutsideIfUsingDisplay(
     BlockInlineCheck aBlockInlineCheck) {
   return aBlockInlineCheck == BlockInlineCheck::UseComputedDisplayStyle
              ? BlockInlineCheck::UseComputedDisplayOutsideStyle
              : aBlockInlineCheck;
 }
 
-[[nodiscard]] inline BlockInlineCheck RespectChildBlockBoundary(
-    BlockInlineCheck aBlockInlineCheck) {
-  return IgnoreInsideBlockBoundary(aBlockInlineCheck);
-}
-
-[[nodiscard]] inline BlockInlineCheck RespectParentBlockBoundary(
+[[nodiscard]] inline BlockInlineCheck PreferDisplayIfUsingDisplayOutside(
     BlockInlineCheck aBlockInlineCheck) {
   return aBlockInlineCheck == BlockInlineCheck::UseComputedDisplayOutsideStyle
              ? BlockInlineCheck::UseComputedDisplayStyle
+             : aBlockInlineCheck;
+}
+
+[[nodiscard]] inline BlockInlineCheck UseComputedDisplayStyleIfAuto(
+    BlockInlineCheck aBlockInlineCheck) {
+  return aBlockInlineCheck == BlockInlineCheck::Auto
+             // Treat flow-root as a block such as inline-block.
+             ? BlockInlineCheck::UseComputedDisplayStyle
+             : aBlockInlineCheck;
+}
+
+[[nodiscard]] inline BlockInlineCheck UseComputedDisplayOutsideStyleIfAuto(
+    BlockInlineCheck aBlockInlineCheck) {
+  return aBlockInlineCheck == BlockInlineCheck::Auto
+             // Use display-outside for checking a sibling or child element as a
+             // block.
+             ? BlockInlineCheck::UseComputedDisplayOutsideStyle
              : aBlockInlineCheck;
 }
 

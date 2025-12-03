@@ -14,7 +14,6 @@
 #include "SVGAnimatedNumberPair.h"
 #include "SVGAnimatedString.h"
 #include "SVGNumberList.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/SVGContentUtils.h"
 #include "mozilla/SVGFilterInstance.h"

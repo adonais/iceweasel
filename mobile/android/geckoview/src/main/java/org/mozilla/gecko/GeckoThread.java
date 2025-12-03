@@ -148,6 +148,8 @@ public class GeckoThread extends Thread {
       1 << 3; // Disable low-memory detection and notifications.
   public static final int FLAG_CHILD = 1 << 4; // This is a child process.
   public static final int FLAG_CONTENT_ISOLATED = 1 << 5; // Content service is isolated process.
+  public static final int FLAG_CONTENT_ISOLATED_HAS_ZYGOTE =
+      1 << 6; // Content service has app Zygote enabled.
 
   /* package */ static final String EXTRA_ARGS = "args";
 
@@ -497,6 +499,10 @@ public class GeckoThread extends Thread {
 
     if ((mInitInfo.flags & FLAG_CONTENT_ISOLATED) != 0) {
       GeckoProcessManager.getInstance().setIsolatedProcessEnabled(true);
+    }
+
+    if ((mInitInfo.flags & FLAG_CONTENT_ISOLATED_HAS_ZYGOTE) != 0) {
+      GeckoProcessManager.getInstance().setAppZygoteEnabled(true);
     }
 
     if ((mInitInfo.flags & FLAG_DEBUGGING) != 0) {

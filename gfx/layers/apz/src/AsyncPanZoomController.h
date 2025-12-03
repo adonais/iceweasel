@@ -1500,6 +1500,12 @@ class AsyncPanZoomController {
   bool InScrollAnimation(ScrollAnimationKind aKind) const;
 
   /**
+   * Check whether there is an ongoing smooth scroll animation triggered by
+   * script.
+   */
+  bool InScrollAnimationTriggeredByScript() const;
+
+  /**
    * Returns whether the specified PanZoomState does not need to be reset when
    * a scroll offset update is processed.
    */

@@ -14,9 +14,10 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 
+private const val TIME_IN_MILLIS = 1759926358L
+
 @RunWith(RobolectricTestRunner::class)
 class TermsOfUsePromptRepositoryTest {
-
     private lateinit var settings: Settings
 
     private lateinit var repository: DefaultTermsOfUsePromptRepository
@@ -28,10 +29,16 @@ class TermsOfUsePromptRepositoryTest {
     }
 
     @Test
-    fun `WHEN updateHasAcceptedTermsOfUsePreference is called THEN the preference is updated`() {
+    fun `WHEN updateHasAcceptedTermsOfUsePreference is called THEN the related ToU preferences are updated`() {
         assertFalse(settings.hasAcceptedTermsOfService)
-        repository.updateHasAcceptedTermsOfUsePreference()
+        assertEquals(0, settings.termsOfUseAcceptedVersion)
+        assertEquals(0L, settings.termsOfUseAcceptedTimeInMillis)
+
+        repository.updateHasAcceptedTermsOfUsePreference(nowMillis = TIME_IN_MILLIS)
+
         assertTrue(settings.hasAcceptedTermsOfService)
+        assertEquals(5, settings.termsOfUseAcceptedVersion)
+        assertEquals(TIME_IN_MILLIS, settings.termsOfUseAcceptedTimeInMillis)
     }
 
     @Test

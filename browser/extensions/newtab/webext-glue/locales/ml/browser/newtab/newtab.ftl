@@ -331,7 +331,7 @@ newtab-wallpaper-abstract-blue = നീല ആകാരങ്ങൾ
 newtab-wallpaper-abstract-purple = ഊതന്നിറ ആകാരങ്ങൾ
 newtab-wallpaper-abstract-orange = പഴുക്ക ആകാരങ്ങൾ
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = ചിത്രങ്ങൾ
 newtab-wallpaper-sky-with-pink-clouds = പാടലന്നിറമുള്ള മുകിലുകൾ പതിഞ്ഞവ്വിണ്ണു്

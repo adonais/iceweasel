@@ -76,10 +76,7 @@ export var DateTimePickerPanel = class {
     this.pickerState = {};
     this.type = undefined;
     this.dateTimePopupFrame.removeEventListener("load", this, true);
-    this.dateTimePopupFrame.contentDocument.removeEventListener(
-      "message",
-      this
-    );
+    this.dateTimePopupFrame.contentWindow.removeEventListener("message", this);
     this.dateTimePopupFrame.setAttribute("src", "");
     this.element.hidePopup();
   }

@@ -28,7 +28,6 @@
 #include "nsDebug.h"           // for NS_ASSERTION, etc
 #include "nsTArray.h"          // for nsTArray
 #include "nsXULAppAPI.h"       // for XRE_GetAsyncIOEventTarget
-#include "mozilla/Unused.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/BaseProfilerMarkerTypes.h"
@@ -444,7 +443,7 @@ void ContentCompositorBridgeParent::ObserveLayersUpdate(LayersId aLayersId,
     return;
   }
 
-  Unused << state->mParent->SendObserveLayersUpdate(aLayersId, aActive);
+  (void)state->mParent->SendObserveLayersUpdate(aLayersId, aActive);
 }
 
 }  // namespace mozilla::layers

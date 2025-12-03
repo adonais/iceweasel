@@ -132,9 +132,44 @@ void TestHashPair() {
   }
 }
 
+void TestCapacityAfterRemove() {
+  mozilla::HashMap<int, int> map;
+  MOZ_RELEASE_ASSERT(map.count() == 0);
+  MOZ_RELEASE_ASSERT(map.capacity() == 0);
+
+  MOZ_RELEASE_ASSERT(map.putNew(1, 1));
+  MOZ_RELEASE_ASSERT(map.count() == 1);
+  MOZ_RELEASE_ASSERT(map.capacity() != 0);
+
+  map.remove(1);
+  MOZ_RELEASE_ASSERT(map.count() == 0);
+  MOZ_RELEASE_ASSERT(map.capacity() != 0);
+
+  map.compact();
+  MOZ_RELEASE_ASSERT(map.count() == 0);
+  MOZ_RELEASE_ASSERT(map.capacity() == 0);
+
+  MOZ_RELEASE_ASSERT(map.putNew(1, 1));
+  MOZ_RELEASE_ASSERT(map.count() == 1);
+  MOZ_RELEASE_ASSERT(map.capacity() != 0);
+
+  {
+    auto iter = map.modIter();
+    MOZ_RELEASE_ASSERT(!iter.done());
+    iter.remove();
+  }
+  MOZ_RELEASE_ASSERT(map.count() == 0);
+  MOZ_RELEASE_ASSERT(map.capacity() != 0);
+
+  map.compact();
+  MOZ_RELEASE_ASSERT(map.count() == 0);
+  MOZ_RELEASE_ASSERT(map.capacity() == 0);
+}
+
 int main() {
   TestMoveConstructor();
   TestEnumHash();
   TestHashPair();
+  TestCapacityAfterRemove();
   return 0;
 }

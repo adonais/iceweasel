@@ -229,6 +229,7 @@ skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64'"] # Bu
 ["browser_urlbar_toggle.js"]
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1833445
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && msix && verify-standalone",
   "win11_2009 && processor == 'x86_64'", # Bug 1833445
 ]
 

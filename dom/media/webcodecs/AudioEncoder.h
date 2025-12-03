@@ -12,7 +12,6 @@
 #include "js/TypeDecls.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/AudioData.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/EncoderTemplate.h"

@@ -24,7 +24,6 @@
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
-#include "mozilla/Unused.h"
 #include "PuppetWidget.h"
 #include "nsContentUtils.h"
 #include "nsIWidgetListener.h"
@@ -56,14 +55,13 @@ already_AddRefed<nsIWidget> nsIWidget::CreatePuppetWidget(
   return widget.forget();
 }
 
-namespace mozilla {
-namespace widget {
+namespace mozilla::widget {
 
-static bool IsPopup(const widget::InitData* aInitData) {
-  return aInitData && aInitData->mWindowType == WindowType::Popup;
+static bool IsPopup(const widget::InitData& aInitData) {
+  return aInitData.mWindowType == WindowType::Popup;
 }
 
-static bool MightNeedIMEFocus(const widget::InitData* aInitData) {
+static bool MightNeedIMEFocus(const widget::InitData& aInitData) {
   // In the puppet-widget world, popup widgets are just dummies and
   // shouldn't try to mess with IME state.
   //
@@ -75,7 +73,7 @@ static bool MightNeedIMEFocus(const widget::InitData* aInitData) {
 #endif
 }
 
-NS_IMPL_ISUPPORTS_INHERITED(PuppetWidget, nsBaseWidget,
+NS_IMPL_ISUPPORTS_INHERITED(PuppetWidget, nsIWidget,
                             TextEventDispatcherListener)
 
 PuppetWidget::PuppetWidget(BrowserChild* aBrowserChild)
@@ -95,21 +93,22 @@ PuppetWidget::~PuppetWidget() { Destroy(); }
 
 void PuppetWidget::InfallibleCreate(nsIWidget* aParent,
                                     const LayoutDeviceIntRect& aRect,
-                                    widget::InitData* aInitData) {
+                                    const widget::InitData& aInitData) {
   BaseCreate(aParent, aInitData);
+  MOZ_ASSERT(GetDesktopToDeviceScale().scale == 1.0);
 
   mBounds = aRect;
   mEnabled = true;
 
   mNeedIMEStateInit = MightNeedIMEFocus(aInitData);
 
-  Resize(mBounds.X(), mBounds.Y(), mBounds.Width(), mBounds.Height(), false);
+  Resize(aRect.Size() / GetDesktopToDeviceScale(), false);
   mMemoryPressureObserver = MemoryPressureObserver::Create(this);
 }
 
 nsresult PuppetWidget::Create(nsIWidget* aParent,
                               const LayoutDeviceIntRect& aRect,
-                              widget::InitData* aInitData) {
+                              const widget::InitData& aInitData) {
   InfallibleCreate(aParent, aRect, aInitData);
   return NS_OK;
 }
@@ -160,15 +159,15 @@ void PuppetWidget::Show(bool aState) {
     // of no use anymore (and is actually actively harmful - see
     // bug 1323586).
     mPreviouslyAttachedWidgetListener = nullptr;
-    Resize(mBounds.Width(), mBounds.Height(), false);
+    Resize(mBounds.Size() / GetDesktopToDeviceScale(), false);
     Invalidate(mBounds);
   }
 }
 
-void PuppetWidget::Resize(double aWidth, double aHeight, bool aRepaint) {
+void PuppetWidget::Resize(const DesktopSize& aSize, bool aRepaint) {
+  MOZ_ASSERT(GetDesktopToDeviceScale().scale == 1.0);
   LayoutDeviceIntRect oldBounds = mBounds;
-  mBounds.SizeTo(
-      LayoutDeviceIntSize(NSToIntRound(aWidth), NSToIntRound(aHeight)));
+  mBounds.SizeTo(LayoutDeviceIntSize::Round(aSize * GetDesktopToDeviceScale()));
 
   // XXX: roc says that |aRepaint| dictates whether or not to
   // invalidate the expanded area
@@ -329,17 +328,17 @@ nsIWidget::ContentAndAPZEventStatus PuppetWidget::DispatchInputEvent(
 
   switch (aEvent->mClass) {
     case eWheelEventClass:
-      Unused << mBrowserChild->SendDispatchWheelEvent(*aEvent->AsWheelEvent());
+      (void)mBrowserChild->SendDispatchWheelEvent(*aEvent->AsWheelEvent());
       break;
     case eMouseEventClass:
-      Unused << mBrowserChild->SendDispatchMouseEvent(*aEvent->AsMouseEvent());
+      (void)mBrowserChild->SendDispatchMouseEvent(*aEvent->AsMouseEvent());
       break;
     case eKeyboardEventClass:
-      Unused << mBrowserChild->SendDispatchKeyboardEvent(
+      (void)mBrowserChild->SendDispatchKeyboardEvent(
           *aEvent->AsKeyboardEvent());
       break;
     case eTouchEventClass:
-      Unused << mBrowserChild->SendDispatchTouchEvent(*aEvent->AsTouchEvent());
+      (void)mBrowserChild->SendDispatchTouchEvent(*aEvent->AsTouchEvent());
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("unsupported event type");
@@ -532,7 +531,7 @@ WindowRenderer* PuppetWidget::GetWindowRenderer() {
     if (XRE_IsParentProcess()) {
       // On the parent process there is no CompositorBridgeChild which confuses
       // some layers code, so we use basic layers instead. Note that we create
-      mWindowRenderer = new FallbackRenderer;
+      mWindowRenderer = CreateFallbackRenderer();
       return mWindowRenderer;
     }
 
@@ -630,7 +629,7 @@ nsresult PuppetWidget::RequestIMEToCommitComposition(bool aCancel) {
   // eCompositionStart event.
   mIgnoreCompositionEvents = true;
 
-  Unused << mBrowserChild->SendOnEventNeedingAckHandled(
+  (void)mBrowserChild->SendOnEventNeedingAckHandled(
       eCompositionCommitRequestHandled, composition->Id());
 
   // NOTE: PuppetWidget might be destroyed already.
@@ -967,6 +966,8 @@ LayoutDeviceIntPoint PuppetWidget::GetWindowPosition() {
          GetOwningBrowserChild()->GetClientOffset();
 }
 
+LayoutDeviceIntRect PuppetWidget::GetBounds() { return mBounds; }
+
 LayoutDeviceIntRect PuppetWidget::GetScreenBounds() {
   return LayoutDeviceIntRect(WidgetToScreenOffset(), mBounds.Size());
 }
@@ -1121,5 +1122,4 @@ LayersId PuppetWidget::GetLayersId() const {
   return mBrowserChild ? mBrowserChild->GetLayersId() : LayersId{0};
 }
 
-}  // namespace widget
-}  // namespace mozilla
+}  // namespace mozilla::widget

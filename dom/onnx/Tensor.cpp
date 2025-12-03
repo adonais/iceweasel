@@ -11,6 +11,7 @@
 #include "js/Value.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Logging.h"
+#include "mozilla/PodOperations.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ONNXBinding.h"

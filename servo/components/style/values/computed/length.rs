@@ -5,8 +5,10 @@
 //! `<length>` computed values, and related ones.
 
 use super::{Context, Number, ToComputedValue};
+use crate::logical_geometry::PhysicalSide;
 use crate::values::animated::{Context as AnimatedContext, ToAnimatedValue};
-use crate::values::computed::{NonNegativeNumber, Zoom};
+use crate::values::computed::position::TryTacticAdjustment;
+use crate::values::computed::{NonNegativeNumber, Percentage, Zoom};
 use crate::values::generics::length as generics;
 use crate::values::generics::length::{
     GenericLengthOrNumber, GenericLengthPercentageOrNormal, GenericMaxSize, GenericSize,
@@ -101,16 +103,6 @@ macro_rules! computed_length_percentage_or_auto {
             match *self {
                 Self::Auto => None,
                 Self::LengthPercentage(ref lp) => Some(lp.to_used_value(percentage_basis)),
-            }
-        }
-
-        /// Returns true if the computed value is absolute 0 or 0%.
-        #[inline]
-        pub fn is_definitely_zero(&self) -> bool {
-            use crate::values::generics::length::LengthPercentageOrAuto::*;
-            match *self {
-                LengthPercentage(ref l) => l.is_definitely_zero(),
-                Auto => false,
             }
         }
     };
@@ -568,3 +560,71 @@ pub fn resolve_anchor_size(
 
 /// A computed type for `margin` properties.
 pub type Margin = generics::GenericMargin<LengthPercentage>;
+
+impl TryTacticAdjustment for MaxSize {
+    fn try_tactic_adjustment(&mut self, old_side: PhysicalSide, new_side: PhysicalSide) {
+        debug_assert!(
+            old_side.orthogonal_to(new_side),
+            "Sizes should only change axes"
+        );
+        match self {
+            Self::FitContentFunction(lp)
+            | Self::LengthPercentage(lp)
+            | Self::AnchorContainingCalcFunction(lp) => {
+                lp.try_tactic_adjustment(old_side, new_side);
+            },
+            Self::AnchorSizeFunction(s) => s.try_tactic_adjustment(old_side, new_side),
+            Self::None
+            | Self::MaxContent
+            | Self::MinContent
+            | Self::FitContent
+            | Self::MozAvailable
+            | Self::WebkitFillAvailable
+            | Self::Stretch => {},
+        }
+    }
+}
+
+impl TryTacticAdjustment for Size {
+    fn try_tactic_adjustment(&mut self, old_side: PhysicalSide, new_side: PhysicalSide) {
+        debug_assert!(
+            old_side.orthogonal_to(new_side),
+            "Sizes should only change axes"
+        );
+        match self {
+            Self::FitContentFunction(lp)
+            | Self::LengthPercentage(lp)
+            | Self::AnchorContainingCalcFunction(lp) => {
+                lp.try_tactic_adjustment(old_side, new_side);
+            },
+            Self::AnchorSizeFunction(s) => s.try_tactic_adjustment(old_side, new_side),
+            Self::Auto
+            | Self::MaxContent
+            | Self::MinContent
+            | Self::FitContent
+            | Self::MozAvailable
+            | Self::WebkitFillAvailable
+            | Self::Stretch => {},
+        }
+    }
+}
+
+impl TryTacticAdjustment for Percentage {
+    fn try_tactic_adjustment(&mut self, old_side: PhysicalSide, new_side: PhysicalSide) {
+        if old_side.parallel_to(new_side) {
+            self.0 = 1.0 - self.0;
+        }
+    }
+}
+
+impl TryTacticAdjustment for Margin {
+    fn try_tactic_adjustment(&mut self, old_side: PhysicalSide, new_side: PhysicalSide) {
+        match self {
+            Self::Auto => {},
+            Self::LengthPercentage(lp) | Self::AnchorContainingCalcFunction(lp) => {
+                lp.try_tactic_adjustment(old_side, new_side)
+            },
+            Self::AnchorSizeFunction(anchor) => anchor.try_tactic_adjustment(old_side, new_side),
+        }
+    }
+}

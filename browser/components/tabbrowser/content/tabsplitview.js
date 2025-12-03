@@ -8,14 +8,6 @@
 // a block to prevent accidentally leaking globals onto `window`.
 {
   class MozTabSplitViewWrapper extends MozXULElement {
-    static markup = `
-      <vbox class="tab-split-view-container" pack="center">
-      </vbox>
-      `;
-
-    /** @type {MozXULElement} */
-    #containerElement;
-
     /** @type {MutationObserver} */
     #tabChangeObserver;
 
@@ -45,6 +37,8 @@
       // removed in disconnectedCallback
       this.ownerGlobal.addEventListener("TabSelect", this);
 
+      this.#observeTabChanges();
+
       if (this._initialized) {
         return;
       }
@@ -52,15 +46,9 @@
       this._initialized = true;
 
       this.textContent = "";
-      this.appendChild(this.constructor.fragment);
-
-      this.#containerElement = this.querySelector(".tab-split-view-container");
-
-      this.#observeTabChanges();
 
       // Mirroring MozTabbrowserTab
-      this.#containerElement.container = gBrowser.tabContainer;
-      this.container = this.#containerElement;
+      this.container = gBrowser.tabContainer;
     }
 
     disconnectedCallback() {
@@ -89,7 +77,7 @@
           }
         });
       }
-      this.#tabChangeObserver.observe(this.#containerElement, {
+      this.#tabChangeObserver.observe(this, {
         childList: true,
       });
     }
@@ -106,9 +94,7 @@
      * @returns {MozTabbrowserTab[]}
      */
     get tabs() {
-      return Array.from(this.#containerElement.children).filter(node =>
-        node.matches("tab")
-      );
+      return Array.from(this.children).filter(node => node.matches("tab"));
     }
 
     /**

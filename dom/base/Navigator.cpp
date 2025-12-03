@@ -108,7 +108,6 @@
 #include "AutoplayPolicy.h"
 #include "mozilla/DetailedPromise.h"
 #include "mozilla/EMEUtils.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/AudioContext.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/WindowGlobalChild.h"
@@ -339,22 +338,27 @@ void Navigator::GetAppName(nsAString& aAppName) const {
  * for more detail.
  */
 /* static */
-void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
+void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages,
+                                   const nsCString* aLanguageOverride) {
   MOZ_ASSERT(NS_IsMainThread());
 
   aLanguages.Clear();
 
   // E.g. "de-de, en-us,en".
-  nsAutoString acceptLang;
-  Preferences::GetLocalizedString("intl.accept_languages", acceptLang);
+  nsAutoCString acceptLang;
+  if (aLanguageOverride) {
+    acceptLang.Assign(aLanguageOverride->get());
+  } else {
+    intl::LocaleService::GetInstance()->GetAcceptLanguages(acceptLang);
+  }
 
   // Split values on commas.
-  for (nsDependentSubstring lang :
-       nsCharSeparatedTokenizer(acceptLang, ',').ToRange()) {
+  for (nsDependentCSubstring lang :
+       nsCCharSeparatedTokenizer(acceptLang, ',').ToRange()) {
     // Replace "_" with "-" to avoid POSIX/Windows "en_US" notation.
     // NOTE: we should probably rely on the pref being set correctly.
-    if (lang.Length() > 2 && lang[2] == char16_t('_')) {
-      lang.Replace(2, 1, char16_t('-'));
+    if (lang.Length() > 2 && lang[2] == '_') {
+      lang.Replace(2, 1, '-');
     }
 
     // Use uppercase for country part, e.g. "en-US", not "en-us", see BCP47
@@ -363,10 +367,10 @@ void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
     if (lang.Length() > 2) {
       int32_t pos = 0;
       bool first = true;
-      for (const nsAString& code :
-           nsCharSeparatedTokenizer(lang, '-').ToRange()) {
+      for (const nsACString& code :
+           nsCCharSeparatedTokenizer(lang, '-').ToRange()) {
         if (code.Length() == 2 && !first) {
-          nsAutoString upper(code);
+          nsAutoCString upper(code);
           ToUpperCase(upper);
           lang.Replace(pos, code.Length(), upper);
         }
@@ -376,7 +380,7 @@ void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
       }
     }
 
-    aLanguages.AppendElement(lang);
+    aLanguages.AppendElement(NS_ConvertUTF8toUTF16(lang));
   }
   if (aLanguages.Length() == 0) {
     nsTArray<nsCString> locales;
@@ -398,7 +402,18 @@ void Navigator::GetLanguage(nsAString& aLanguage) {
 }
 
 void Navigator::GetLanguages(nsTArray<nsString>& aLanguages) {
-  GetAcceptLanguages(aLanguages);
+  BrowsingContext* bc = mWindow ? mWindow->GetBrowsingContext() : nullptr;
+  if (bc) {
+    const nsCString& languageOverride = bc->Top()->GetLanguageOverride();
+
+    if (!languageOverride.IsEmpty()) {
+      GetAcceptLanguages(aLanguages, &languageOverride);
+
+      return;
+    }
+  }
+
+  GetAcceptLanguages(aLanguages, nullptr);
 
   // The returned value is cached by the binding code. The window listens to the
   // accept languages change and will clear the cache when needed. It has to
@@ -1981,6 +1996,11 @@ void Navigator::ClearPlatformCache() {
   Navigator_Binding::ClearCachedPlatformValue(this);
 }
 
+void Navigator::ClearLanguageCache() {
+  Navigator_Binding::ClearCachedLanguageValue(this);
+  Navigator_Binding::ClearCachedLanguagesValue(this);
+}
+
 nsresult Navigator::GetPlatform(nsAString& aPlatform, Document* aCallerDoc,
                                 bool aUsePrefOverriddenValue) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -2140,8 +2160,7 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(doc->GetChannel());
   if (httpChannel) {
     bool IsUserAgentHeaderOutdated;
-    Unused << httpChannel->GetIsUserAgentHeaderOutdated(
-        &IsUserAgentHeaderOutdated);
+    (void)httpChannel->GetIsUserAgentHeaderOutdated(&IsUserAgentHeaderOutdated);
 
     // Do not return user agent from the request
     // if the user agent of the channel is outdated.
@@ -2183,7 +2202,7 @@ already_AddRefed<Promise> Navigator::RequestMediaKeySystemAccess(
     AutoTArray<nsString, 1> params;
     nsString* uri = params.AppendElement();
     if (doc) {
-      Unused << doc->GetDocumentURI(*uri);
+      (void)doc->GetDocumentURI(*uri);
     }
     nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "Media"_ns,
                                     doc, nsContentUtils::eDOM_PROPERTIES,

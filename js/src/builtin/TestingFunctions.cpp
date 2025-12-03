@@ -20,7 +20,6 @@
 #include "mozilla/Span.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StringBuffer.h"
-#include "mozilla/TextUtils.h"
 #include "mozilla/ThreadLocal.h"
 
 #include <algorithm>
@@ -149,6 +148,7 @@
 #include "wasm/WasmValue.h"
 
 #include "debugger/DebugAPI-inl.h"
+#include "gc/AtomMarking-inl.h"
 #include "jit/JitHints-inl.h"
 #include "vm/Compartment-inl.h"
 #include "vm/EnvironmentObject-inl.h"
@@ -527,15 +527,6 @@ static bool GetBuildConfiguration(JSContext* cx, unsigned argc, Value* vp) {
   value = BooleanValue(false);
 #endif
   if (!JS_SetProperty(cx, info, "profiling", value)) {
-    return false;
-  }
-
-#ifdef INCLUDE_MOZILLA_DTRACE
-  value = BooleanValue(true);
-#else
-  value = BooleanValue(false);
-#endif
-  if (!JS_SetProperty(cx, info, "dtrace", value)) {
     return false;
   }
 
@@ -1035,13 +1026,7 @@ static bool WasmCompilersPresent(JSContext* cx, unsigned argc, Value* vp) {
     strcat(buf, "ion");
   }
 
-  JSString* result = JS_NewStringCopyZ(cx, buf);
-  if (!result) {
-    return false;
-  }
-
-  args.rval().setString(result);
-  return true;
+  return ReturnStringCopy(cx, args, buf);
 }
 
 static bool WasmCompileMode(JSContext* cx, unsigned argc, Value* vp) {
@@ -1604,8 +1589,7 @@ static bool WasmGlobalToString(JSContext* cx, unsigned argc, Value* vp) {
       MOZ_ASSERT_UNREACHABLE();
   }
 
-  args.rval().setString(JS_NewStringCopyZ(cx, result.get()));
-  return true;
+  return ReturnStringCopy(cx, args, result.get());
 }
 
 static bool WasmLosslessInvoke(JSContext* cx, unsigned argc, Value* vp) {
@@ -2182,13 +2166,7 @@ static bool WasmFunctionTier(JSContext* cx, unsigned argc, Value* vp) {
       return false;
     }
     wasm::Tier tier = instance.code().funcTier(funcIndex);
-    RootedString tierString(cx, JS_NewStringCopyZ(cx, wasm::ToString(tier)));
-    if (!tierString) {
-      ReportOutOfMemory(cx);
-      return false;
-    }
-    args.rval().set(StringValue(tierString));
-    return true;
+    return ReturnStringCopy(cx, args, wasm::ToString(tier));
   }
   JS_ReportErrorASCII(cx, "argument is not an exported wasm function");
   return false;
@@ -2901,6 +2879,12 @@ static bool CurrentGC(JSContext* cx, unsigned argc, Value* vp) {
   }
 #  endif
 
+  val = BooleanValue(gc.finishMarkingDuringSweeping);
+  if (!JS_DefineProperty(cx, result, "finishMarkingDuringSweeping", val,
+                         JSPROP_ENUMERATE)) {
+    return false;
+  }
+
   args.rval().setObject(*result);
   return true;
 }
@@ -3210,6 +3194,73 @@ static bool IsAtomMarked(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool GetAtomMarkIndex(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject callee(cx, &args.callee());
+
+  if (args.length() != 1 || !args[0].isGCThing() ||
+      !args[0].toGCThing()->zone()->isAtomsZone()) {
+    ReportUsageErrorASCII(cx, callee,
+                          "Expected an atom as the single argument");
+    return false;
+  }
+
+  gc::TenuredCell* atom = &args[0].toGCThing()->asTenured();
+  if ((atom->is<JSString>() &&
+       atom->as<JSString>()->isPermanentAndMayBeShared()) ||
+      (atom->is<JS::Symbol>() &&
+       atom->as<JS::Symbol>()->isPermanentAndMayBeShared())) {
+    ReportUsageErrorASCII(
+        cx, callee, "Atom marking bitmap is not used for permanent atoms");
+    return false;
+  }
+
+  if (atom->is<JSString>() && atom->as<JSString>()->asAtom().isPinned()) {
+    ReportUsageErrorASCII(cx, callee,
+                          "Atom marking bitmap is not used for pinned atoms");
+    return false;
+  }
+
+  size_t index = gc::AtomMarkingRuntime::getAtomBit(atom);
+  MOZ_RELEASE_ASSERT(index <= INT32_MAX);
+  args.rval().setInt32(index);
+  return true;
+}
+
+static bool GetAtomMarkColor(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject callee(cx, &args.callee());
+
+  if (args.length() != 2) {
+    ReportUsageErrorASCII(cx, callee, "Expected two arguments");
+    return false;
+  }
+
+  if (!args[0].isObject()) {
+    ReportUsageErrorASCII(cx, callee,
+                          "Expected an object as the first argument");
+    return false;
+  }
+  Zone* zone = UncheckedUnwrap(&args[0].toObject())->zone();
+
+  if (!args[1].isInt32() || args[1].toInt32() < 0) {
+    ReportUsageErrorASCII(cx, callee,
+                          "Expected a positive integer as the second argument");
+    return false;
+  }
+  size_t index = args[1].toInt32();
+
+  gc::GCRuntime* gc = &cx->runtime()->gc;
+  gc::CellColor color = gc->atomMarking.getAtomMarkColorForIndex(zone, index);
+  RootedString name(cx, JS_NewStringCopyZ(cx, gc::CellColorName(color)));
+  if (!name) {
+    return false;
+  }
+
+  args.rval().setString(name);
+  return true;
+}
+
 static WeakMapObject* MaybeWeakMapObject(const Value& value) {
   if (!value.isObject()) {
     return nullptr;
@@ -3256,6 +3307,19 @@ static bool NondeterministicGetWeakMapKeys(JSContext* cx, unsigned argc,
 
   MOZ_ASSERT(arr);
   args.rval().setObject(*arr);
+  return true;
+}
+
+static bool GrayBitsValid(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  args.rval().setBoolean(cx->runtime()->gc.areGrayBitsValid());
+  return true;
+}
+
+static bool SetGrayBitsInvalid(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  cx->runtime()->gc.setGrayBitsInvalid();
+  args.rval().setUndefined();
   return true;
 }
 
@@ -8995,18 +9059,14 @@ static bool GetEnvironmentObjectType(JSContext* cx, unsigned argc, Value* vp) {
 
   if (envObj->is<EnvironmentObject>()) {
     EnvironmentObject* env = &envObj->as<EnvironmentObject>();
-    JSString* str = JS_NewStringCopyZ(cx, env->typeString());
-    args.rval().setString(str);
-    return true;
+    return ReturnStringCopy(cx, args, env->typeString());
   }
   if (envObj->is<DebugEnvironmentProxy>()) {
     DebugEnvironmentProxy* envProxy = &envObj->as<DebugEnvironmentProxy>();
     EnvironmentObject* env = &envProxy->environment();
     char buf[256] = {'\0'};
     SprintfLiteral(buf, "[DebugProxy] %s", env->typeString());
-    JSString* str = JS_NewStringCopyZ(cx, buf);
-    args.rval().setString(str);
-    return true;
+    return ReturnStringCopy(cx, args, buf);
   }
 
   args.rval().setUndefined();
@@ -9584,7 +9644,8 @@ static bool SetBaselineHint(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  if (!cx->runtime()->jitRuntime()->hasJitHintsMap()) {
+  if (!cx->runtime()->jitRuntime() ||
+      !cx->runtime()->jitRuntime()->hasJitHintsMap()) {
     args.rval().setUndefined();
     return true;
   }
@@ -9610,7 +9671,8 @@ static bool HasBaselineHint(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  if (!cx->runtime()->jitRuntime()->hasJitHintsMap()) {
+  if (!cx->runtime()->jitRuntime() ||
+      !cx->runtime()->jitRuntime()->hasJitHintsMap()) {
     args.rval().setBoolean(false);
     return true;
   }
@@ -10376,6 +10438,14 @@ gc::ZealModeHelpText),
 "isAtomMarked(obj, atom)",
 "  Return whether |atom| is marked relative to the zone containing |obj|."),
 
+    JS_FN_HELP("getAtomMarkIndex", GetAtomMarkIndex, 1, 0,
+"getAtomMarkIndex(atom)",
+"  Return the atom marking bitmap's index for |atom|."),
+
+    JS_FN_HELP("getAtomMarkColor", GetAtomMarkColor, 2, 0,
+"getAtomMarkColor(obj, index)",
+"  Return the atom marking bitmap's mark color for |index| relative to the zone containing |obj|."),
+
     JS_FN_HELP("setMallocMaxDirtyPageModifier", SetMallocMaxDirtyPageModifier, 1, 0,
 "setMallocMaxDirtyPageModifier(value)",
 "  Change the maximum size of jemalloc's page cache. The value should be between\n"
@@ -10392,6 +10462,14 @@ gc::ZealModeHelpText),
     JS_FN_HELP("nondeterministicGetWeakMapKeys", NondeterministicGetWeakMapKeys, 1, 0,
 "nondeterministicGetWeakMapKeys(weakmap)",
 "  Return an array of the keys in the given WeakMap."),
+
+    JS_FN_HELP("grayBitsValid", GrayBitsValid, 0, 0,
+"grayBitsValid()",
+"  Return whether the gray bits state is valid."),
+
+    JS_FN_HELP("setGrayBitsInvalid", SetGrayBitsInvalid, 0, 0,
+"setGrayBitsInvalid()",
+"  Set the gray bits state to invalid."),
 
     JS_FN_HELP("internalConst", InternalConst, 1, 0,
 "internalConst(name)",

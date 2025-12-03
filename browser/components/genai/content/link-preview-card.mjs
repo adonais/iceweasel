@@ -53,10 +53,10 @@ class LinkPreviewCard extends MozLitElement {
     isMissingDataErrorState: { type: Boolean },
     generationError: { type: Object }, // null = no error, otherwise contains error info
     keyPoints: { type: Array },
+    canShowKeyPoints: { type: Boolean },
     optin: { type: Boolean },
     pageData: { type: Object },
     progress: { type: Number }, // -1 = off, 0-100 = download progress
-    regionSupported: { type: Boolean },
   };
 
   constructor() {
@@ -65,10 +65,11 @@ class LinkPreviewCard extends MozLitElement {
     this.generationError = null;
     this.isMissingDataErrorState = false;
     this.keyPoints = [];
+    this.canShowKeyPoints = true;
     this.optin = false;
     this.optinRef = createRef();
+    this.firstTimeModalRef = createRef();
     this.progress = -1;
-    this.regionSupported = true;
   }
 
   /**
@@ -141,6 +142,10 @@ class LinkPreviewCard extends MozLitElement {
    * @param {MouseEvent} _event - The click event
    */
   toggleKeyPoints(_event) {
+    // Do not allow collapsing while a download is in progress.
+    if (this.progress >= 0) {
+      return;
+    }
     Services.prefs.setBoolPref(
       "browser.ml.linkPreview.collapsed",
       !this.collapsed
@@ -153,21 +158,19 @@ class LinkPreviewCard extends MozLitElement {
     }
   }
 
-  updated(properties) {
+  updated(_properties) {
     if (this.optinRef.value) {
       this.optinRef.value.headingIcon = LinkPreviewCard.AI_ICON;
     }
 
-    if (properties.has("generating")) {
-      if (this.generating > 0) {
-        // Count up to 4 so that we can show 0 to 3 dots.
-        this.dotsTimeout = setTimeout(
-          () => (this.generating = (this.generating % 4) + 1),
-          500
-        );
-      } else {
-        // Setting to false or 0 means we're done generating.
-        clearTimeout(this.dotsTimeout);
+    if (this.firstTimeModalRef.value) {
+      this.firstTimeModalRef.value.headingIcon = LinkPreviewCard.AI_ICON;
+      this.firstTimeModalRef.value.iconAtEnd = true;
+      this.firstTimeModalRef.value.footerMessageL10nId = "";
+
+      if (this.progress >= 0) {
+        this.firstTimeModalRef.value.isLoading = true;
+        this.firstTimeModalRef.value.progressStatus = this.progress;
       }
     }
   }
@@ -307,7 +310,7 @@ class LinkPreviewCard extends MozLitElement {
             }
             ${
               /* Loading placeholders with three divs each */
-              this.generating
+              this.generating || this.progress >= 0
                 ? Array(
                     Math.max(
                       0,
@@ -317,7 +320,11 @@ class LinkPreviewCard extends MozLitElement {
                     .fill()
                     .map(
                       () =>
-                        html` <li class="content-item loading">
+                        html` <li
+                          class="content-item loading ${this.progress >= 0
+                            ? "static"
+                            : ""}"
+                        >
                           <div></div>
                           <div></div>
                           <div></div>
@@ -326,7 +333,7 @@ class LinkPreviewCard extends MozLitElement {
                 : []
             }
           </ul>
-          ${!this.generating
+          ${!(this.generating || this.progress >= 0)
             ? html`
                 <div class="visit-link-container">
                   <a
@@ -346,18 +353,8 @@ class LinkPreviewCard extends MozLitElement {
                 </div>
               `
             : ""}
-          ${this.progress >= 0
-            ? html`
-                <p
-                  data-l10n-id="link-preview-setup"
-                  data-l10n-args=${JSON.stringify({
-                    progress: this.progress,
-                  })}
-                ></p>
-                <p data-l10n-id="link-preview-setup-faster-next-time"></p>
-              `
-            : ""}
-          ${!this.generating
+          ${this.renderModalFirstTime()}
+          ${!(this.generating || this.progress >= 0)
             ? html`
                 <hr />
                 ${linksSection}
@@ -391,6 +388,29 @@ class LinkPreviewCard extends MozLitElement {
   }
 
   /**
+   * Renders the first-time setup modal with progress bar.
+   * Shows a modal-style component when progress is being tracked (this.progress >= 0).
+   *
+   * @returns {import('lit').TemplateResult} The first-time setup modal HTML
+   */
+  renderModalFirstTime() {
+    if (this.progress < 0) {
+      return "";
+    }
+
+    return html`
+      <model-optin
+        ${ref(this.firstTimeModalRef)}
+        headingL10nId="link-preview-first-time-setup-title"
+        messageL10nId="link-preview-first-time-setup-message"
+        progressStatus=${this.progress}
+        @MlModelOptinCancelDownload=${this._handleCancelDownload}
+      >
+      </model-optin>
+    `;
+  }
+
+  /**
    * Handles the user confirming the opt-in prompt for link preview.
    * Sets preference values to enable the feature, hides the prompt for future sessions,
    * and triggers a retry to generate the preview.
@@ -399,6 +419,13 @@ class LinkPreviewCard extends MozLitElement {
     Services.prefs.setBoolPref("browser.ml.linkPreview.optin", true);
 
     this.dispatchEvent(new CustomEvent("LinkPreviewCard:generate"));
+  }
+
+  /**
+   * Handles the user canceling the first-time model download.
+   */
+  _handleCancelDownload() {
+    this.dispatchEvent(new CustomEvent("LinkPreviewCard:cancelDownload"));
   }
 
   /**
@@ -420,14 +447,7 @@ class LinkPreviewCard extends MozLitElement {
    * @returns {import('lit').TemplateResult} The content card HTML
    */
   renderKeyPointsSection(pageUrl) {
-    if (!this.regionSupported) {
-      return "";
-    }
-
-    if (
-      !this.optin &&
-      Services.prefs.prefIsLocked("browser.ml.linkPreview.optin")
-    ) {
+    if (!this.canShowKeyPoints) {
       return "";
     }
 

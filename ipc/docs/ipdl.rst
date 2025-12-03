@@ -923,11 +923,9 @@ advanced use is beyond the scope of this document.
     annotation.  See `Actors and Messages in C++`_ for more.
 
 .. note::
-    In the past, it was required to specialize ``mozilla::ipc::IPDLParamTraits<T>``
-    instead of ``IPC::ParamTraits<T>`` if you needed the actor object itself during
-    serialization or deserialization. These days the actor can be fetched using
-    ``IPC::Message{Reader,Writer}::GetActor()`` in ``IPC::ParamTraits``, so that
-    trait should be used for all new serializations.
+    If you need to access the actor object during serialization, use
+    ``IPC::Message{Reader,Writer}::GetActor()``. This should be null-checked, as
+    it may not be set if an actor is unavailable.
 
 A special case worth mentioning is that of enums.  Enums are a common source of
 security holes since code is rarely safe with enum values that are not valid.

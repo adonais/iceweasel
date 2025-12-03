@@ -1005,7 +1005,7 @@ char* DecodeQ(const char* in, uint32_t length) {
           goto badsyntax;
         }
         // Can't fail because of the test above
-        mozilla::Unused << PR_sscanf(in + 1, "%2X", &c);
+        (void)PR_sscanf(in + 1, "%2X", &c);
         *out++ = (char)c;
         in += 3;
         length -= 3;

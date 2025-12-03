@@ -273,8 +273,8 @@ void VRMockDisplay::SetStageSize(double aWidth, double aHeight) {
 
 void VRMockDisplay::SetSittingToStandingTransform(
     const Float32Array& aTransform, ErrorResult& aRv) {
-  Unused << ReadFloat32Array(&DisplayState().sittingToStandingTransform,
-                             aTransform, aRv);
+  (void)ReadFloat32Array(&DisplayState().sittingToStandingTransform, aTransform,
+                         aRv);
 }
 
 void VRMockDisplay::SetPose(const Nullable<Float32Array>& aPosition,

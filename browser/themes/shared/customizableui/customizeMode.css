@@ -53,7 +53,7 @@ toolbar[overflowable][customizing] > .customization-target {
 }
 
 #customization-header {
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--heading-font-weight);
   font-size: 1.2em;
   margin: 20px 20px 15px;
 }
@@ -464,7 +464,7 @@ toolbarpaletteitem {
 
 #customization-panelHeader {
   font-size: 1.3em;
-  font-weight: 600;
+  font-weight: var(--heading-font-weight);
   padding: 2px 12px;
   margin: 0;
 }

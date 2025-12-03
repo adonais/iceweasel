@@ -13,7 +13,7 @@ use euclid::{point2, vec2, size2};
 use api::{ExtendMode, GradientStop, LineOrientation, PremultipliedColorF, ColorF, ColorU};
 use api::units::*;
 use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState, PatternKind, PatternShaderInput, PatternTextureInput};
-use crate::prim_store::gradient::{gpu_gradient_stops_blocks, write_gpu_gradient_stops_tree, GradientKind};
+use crate::prim_store::gradient::{gpu_gradient_stops_blocks, write_gpu_gradient_stops_tree, write_gpu_gradient_stops_linear, GradientKind};
 use crate::scene_building::IsVisible;
 use crate::frame_builder::FrameBuildingState;
 use crate::intern::{Internable, InternDebug, Handle as InternHandle};
@@ -111,6 +111,7 @@ impl PatternBuilder for LinearGradientTemplate {
         } else {
             (self.start_point, self.end_point)
         };
+
         linear_gradient_pattern(
             start,
             end,
@@ -794,10 +795,10 @@ pub fn linear_gradient_pattern(
     end: DevicePoint,
     extend_mode: ExtendMode,
     stops: &[GradientStop],
-    _is_software: bool,
+    is_software: bool,
     gpu_buffer_builder: &mut GpuBufferBuilder
 ) -> Pattern {
-    let num_blocks = 2 + gpu_gradient_stops_blocks(stops.len(), true);
+    let num_blocks = 2 + gpu_gradient_stops_blocks(stops.len(), !is_software);
     let mut writer = gpu_buffer_builder.f32.write_blocks(num_blocks);
     writer.push_one([
         start.x,
@@ -812,7 +813,17 @@ pub fn linear_gradient_pattern(
         0.0,
     ]);
 
-    let is_opaque = write_gpu_gradient_stops_tree(stops, GradientKind::Linear, extend_mode, &mut writer);
+    let is_opaque = if is_software {
+        // The SWGL span shaders for precise gradients can incrementally search
+        // through the stops (each search starts from where the previous one
+        // landed). So it is more efficient to store them linearly in this
+        // configuration.
+        write_gpu_gradient_stops_linear(stops, GradientKind::Linear, extend_mode, &mut writer)
+    } else {
+        // On GPUs, each pixel does its own search so we greatly benefit from
+        // the tree traversal, especially when there are many stops.
+        write_gpu_gradient_stops_tree(stops, GradientKind::Linear, extend_mode, &mut writer)
+    };
     let gradient_address = writer.finish();
 
     Pattern {

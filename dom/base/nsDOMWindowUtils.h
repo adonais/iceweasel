@@ -17,7 +17,6 @@ class nsGlobalWindowOuter;
 class nsIDocShell;
 class nsIWidget;
 class nsPresContext;
-class nsView;
 struct nsPoint;
 
 namespace mozilla {

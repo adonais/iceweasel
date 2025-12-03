@@ -6,8 +6,6 @@
 
 #include "js/MemoryMetrics.h"
 
-#include "mozilla/MathAlgorithms.h"
-
 #include <algorithm>
 
 #include "gc/BufferAllocator.h"

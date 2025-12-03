@@ -218,6 +218,53 @@ describe("MultiStageAboutWelcome module", () => {
       assert.equal(stub.lastCall.args[2], "SELECT_CHECKBOX");
       stub.restore();
     });
+
+    it("does not render anything until targeting/filtering resolves (gated first paint)", async () => {
+      let resolveTargeting;
+      const targetingPromise = new Promise(r => (resolveTargeting = r));
+      globals.set("AWEvaluateScreenTargeting", () => targetingPromise);
+
+      const wrapper = mount(
+        <MultiStageAboutWelcome {...DEFAULT_PROPS} gateInitialPaint={true} />
+      );
+      // Immediately after mount (before resolve), nothing should be painted
+      assert.strictEqual(wrapper.html(), null);
+      assert.ok(!wrapper.find(WelcomeScreen).exists());
+
+      resolveTargeting();
+      await spinEventLoop();
+      wrapper.update();
+
+      // After targeting resolves, the first screen should render
+      assert.ok(wrapper.find(WelcomeScreen).exists());
+    });
+
+    it("does not send telemetry before first paint is ready, but does afterwards", async () => {
+      let resolveTargeting;
+      const targetingPromise = new Promise(r => (resolveTargeting = r));
+      globals.set("AWEvaluateScreenTargeting", () => targetingPromise);
+
+      const sendEventStub = sinon.stub(global, "AWSendEventTelemetry");
+      const wrapper = mount(
+        <MultiStageAboutWelcome {...DEFAULT_PROPS} gateInitialPaint={true} />
+      );
+      assert.notCalled(sendEventStub);
+      assert.strictEqual(wrapper.html(), null);
+
+      resolveTargeting();
+      await spinEventLoop();
+      wrapper.update();
+
+      const hadImpression = sendEventStub
+        .getCalls()
+        .some(c => c.args && c.args[0] && c.args[0].event === "IMPRESSION");
+      assert.ok(
+        hadImpression,
+        "Expected at least one IMPRESSION event after paint"
+      );
+
+      sendEventStub.restore();
+    });
   });
 
   describe("WelcomeScreen component", () => {

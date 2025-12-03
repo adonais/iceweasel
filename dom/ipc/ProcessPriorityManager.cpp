@@ -17,7 +17,6 @@
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_threads.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BrowserHost.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
@@ -849,7 +848,7 @@ void ParticularProcessPriorityManager::SetPriorityNow(
     }
 #endif
 
-    Unused << mContentParent->SendNotifyProcessPriorityChanged(mPriority);
+    (void)mContentParent->SendNotifyProcessPriorityChanged(mPriority);
   }
 
   FireTestOnlyObserverNotification("process-priority-set",

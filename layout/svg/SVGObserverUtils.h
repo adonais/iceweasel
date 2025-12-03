@@ -8,7 +8,6 @@
 #define LAYOUT_SVG_SVGOBSERVERUTILS_H_
 
 #include "FrameProperties.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/SVGIntegrationUtils.h"
 #include "mozilla/dom/IDTracker.h"
 #include "nsID.h"

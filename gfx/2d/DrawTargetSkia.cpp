@@ -420,7 +420,7 @@ static sk_sp<SkImage> ExtractSubset(sk_sp<SkImage> aImage,
     return SkImages::RasterFromPixmap(subsetPixmap, ReleaseImage,
                                       aImage.release());
   }
-  return aImage->makeSubset(nullptr, subsetRect);
+  return aImage->makeSubset(nullptr, subsetRect, SkImage::RequiredProperties());
 }
 
 static void FreeAlphaPixels(void* aBuf, void*) { sk_free(aBuf); }
@@ -1329,7 +1329,10 @@ class GlyphMaskShader : public SkEmptyShader {
   }
 
   bool isOpaque() const override { return true; }
-  bool isConstant() const override { return true; }
+  bool isConstant(SkColor4f* color) const override {
+    if (color) *color = SkColor4f{1, 1, 1, 1};
+    return true;
+  }
 
   void flatten(SkWriteBuffer& buffer) const override {
     buffer.writeColor4f(mColor);
@@ -1412,7 +1415,8 @@ Maybe<Rect> DrawTargetSkia::GetGlyphLocalBounds(
       for (uint32_t i = 0; i < batchSize; i++) {
         glyphs[i] = aBuffer.mGlyphs[offset + i].mIndex;
       }
-      font.getBounds(glyphs.begin(), batchSize, rects.begin(), nullptr);
+      font.getBounds({glyphs.begin(), batchSize}, {rects.begin(), batchSize},
+                     nullptr);
       for (uint32_t i = 0; i < batchSize; i++) {
         bounds = bounds.Union(SkRectToRect(rects[i]) +
                               aBuffer.mGlyphs[offset + i].mPosition);
@@ -1778,8 +1782,17 @@ void DrawTargetSkia::CopySurface(SourceSurface* aSurface,
 }
 
 static inline SkPixelGeometry GetSkPixelGeometry() {
-  return Factory::GetBGRSubpixelOrder() ? kBGR_H_SkPixelGeometry
-                                        : kRGB_H_SkPixelGeometry;
+  switch (Factory::GetSubpixelOrder()) {
+    case SubpixelOrder::BGR:
+      return kBGR_H_SkPixelGeometry;
+    case SubpixelOrder::VBGR:
+      return kBGR_V_SkPixelGeometry;
+    case SubpixelOrder::VRGB:
+      return kRGB_V_SkPixelGeometry;
+    case SubpixelOrder::RGB:
+    default:
+      return kRGB_H_SkPixelGeometry;
+  }
 }
 
 template <typename T>
@@ -1834,6 +1847,7 @@ bool DrawTargetSkia::Init(const IntSize& aSize, SurfaceFormat aFormat) {
   if (info.isOpaque()) {
     mCanvas->clear(SK_ColorBLACK);
   }
+  mIsClear = true;
   return true;
 }
 
@@ -1848,6 +1862,7 @@ bool DrawTargetSkia::Init(SkCanvas* aCanvas) {
     SkColor clearColor =
         imageInfo.isOpaque() ? SK_ColorBLACK : SK_ColorTRANSPARENT;
     mCanvas->clear(clearColor);
+    mIsClear = true;
   }
 
   SkISize size = mCanvas->getBaseLayerSize();
@@ -1861,7 +1876,7 @@ bool DrawTargetSkia::Init(SkCanvas* aCanvas) {
 
 bool DrawTargetSkia::Init(unsigned char* aData, const IntSize& aSize,
                           int32_t aStride, SurfaceFormat aFormat,
-                          bool aUninitialized) {
+                          bool aUninitialized, bool aIsClear) {
   MOZ_ASSERT((aFormat != SurfaceFormat::B8G8R8X8) || aUninitialized ||
              VerifyRGBXFormat(aData, aSize, aStride, aFormat));
 
@@ -1881,6 +1896,7 @@ bool DrawTargetSkia::Init(unsigned char* aData, const IntSize& aSize,
   mFormat = aFormat;
   mCanvas = mSurface->getCanvas();
   SetPermitSubpixelAA(IsOpaque(mFormat));
+  mIsClear = aIsClear;
   return true;
 }
 
@@ -1945,6 +1961,10 @@ already_AddRefed<PathBuilder> DrawTargetSkia::CreatePathBuilder(
 }
 
 void DrawTargetSkia::ClearRect(const Rect& aRect) {
+  if (mIsClear) {
+    return;
+  }
+
   MarkChanged();
   SkPaint paint;
   paint.setAntiAlias(true);
@@ -2012,6 +2032,8 @@ Maybe<IntRect> DrawTargetSkia::GetDeviceClipRect(bool aAllowComplex) const {
   }
   return Nothing();
 }
+
+bool DrawTargetSkia::IsClipEmpty() const { return mCanvas->isClipEmpty(); }
 
 void DrawTargetSkia::PushLayer(bool aOpaque, Float aOpacity,
                                SourceSurface* aMask,
@@ -2129,7 +2151,7 @@ already_AddRefed<FilterNode> DrawTargetSkia::CreateFilter(FilterType aType) {
   return FilterNodeSoftware::Create(aType);
 }
 
-void DrawTargetSkia::MarkChanged() {
+void DrawTargetSkia::DetachAllSnapshots() {
   // I'm not entirely certain whether this lock is needed, as multiple threads
   // should never modify the DrawTarget at the same time anyway, but this seems
   // like the safest.
@@ -2149,6 +2171,11 @@ void DrawTargetSkia::MarkChanged() {
       mSurface->notifyContentWillChange(SkSurface::kRetain_ContentChangeMode);
     }
   }
+}
+
+void DrawTargetSkia::MarkChanged() {
+  DetachAllSnapshots();
+  mIsClear = false;
 }
 
 }  // namespace mozilla::gfx

@@ -42,7 +42,7 @@ class NetworkCommand {
     return { channelId };
   }
 
-  /*
+  /**
    * Get the list of blocked URL filters.
    *
    * A URL filter is a RegExp string so that one filter can match many URLs.

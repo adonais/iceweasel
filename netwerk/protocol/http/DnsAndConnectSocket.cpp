@@ -486,7 +486,7 @@ DnsAndConnectSocket::OnOutputStreamReady(nsIAsyncOutputStream* out) {
   RefPtr<ConnectionEntry> ent =
       gHttpHandler->ConnMgr()->FindConnectionEntry(mConnInfo);
   MOZ_DIAGNOSTIC_ASSERT(ent);
-  Unused << ent;
+  (void)ent;
 
   RefPtr<DnsAndConnectSocket> deleteProtector(this);
 
@@ -861,7 +861,7 @@ bool DnsAndConnectSocket::Claim() {
       if (NS_SUCCEEDED(mPrimaryTransport.mSocketTransport->GetTlsSocketControl(
               getter_AddRefs(tlsSocketControl))) &&
           tlsSocketControl) {
-        Unused << tlsSocketControl->Claim();
+        (void)tlsSocketControl->Claim();
       }
     }
 
@@ -1212,7 +1212,7 @@ nsresult DnsAndConnectSocket::TransportSetup::SetupStreams(
     tmpFlags |= nsISocketTransport::NO_PERMANENT_STORAGE;
   }
 
-  Unused << socketTransport->SetIsPrivate(ci->GetPrivate());
+  (void)socketTransport->SetIsPrivate(ci->GetPrivate());
 
   if (dnsAndSock->mCaps & NS_HTTP_DISALLOW_ECH) {
     tmpFlags |= nsISocketTransport::DONT_TRY_ECH;

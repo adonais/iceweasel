@@ -44,6 +44,7 @@ template struct StyleStrong<StyleLockedStyleRule>;
 template struct StyleStrong<StyleLockedImportRule>;
 template struct StyleStrong<StyleLockedKeyframesRule>;
 template struct StyleStrong<StyleMediaRule>;
+template struct StyleStrong<StyleCustomMediaRule>;
 template struct StyleStrong<StyleDocumentRule>;
 template struct StyleStrong<StyleNamespaceRule>;
 template struct StyleStrong<StyleMarginRule>;
@@ -1272,6 +1273,96 @@ inline gfx::Point StyleCoordinatePair<LengthPercentage>::ToGfxPoint(
   MOZ_ASSERT(aBasis);
   return gfx::Point(x.ResolveToCSSPixels(aBasis->Width()),
                     y.ResolveToCSSPixels(aBasis->Height()));
+}
+
+template <>
+inline gfx::Point StyleShapePosition<StyleCSSFloat>::ToGfxPoint(
+    const CSSSize* aBasis) const {
+  return gfx::Point(horizontal, vertical);
+}
+
+template <>
+inline gfx::Point StyleShapePosition<LengthPercentage>::ToGfxPoint(
+    const CSSSize* aBasis) const {
+  MOZ_ASSERT(aBasis);
+  return gfx::Point(horizontal.ResolveToCSSPixels(aBasis->Width()),
+                    vertical.ResolveToCSSPixels(aBasis->Height()));
+}
+
+template <>
+inline gfx::Point StyleCommandEndPoint<StyleCSSFloat>::ToGfxPoint(
+    const CSSSize* aBasis) const {
+  if (IsToPosition()) {
+    auto& pos = AsToPosition();
+    return pos.ToGfxPoint();
+  } else {
+    auto& coord = AsByCoordinate();
+    return coord.ToGfxPoint();
+  }
+}
+
+template <>
+inline gfx::Point StyleCommandEndPoint<LengthPercentage>::ToGfxPoint(
+    const CSSSize* aBasis) const {
+  MOZ_ASSERT(aBasis);
+  if (IsToPosition()) {
+    auto& pos = AsToPosition();
+    return pos.ToGfxPoint(aBasis);
+  } else {
+    auto& coord = AsByCoordinate();
+    return coord.ToGfxPoint(aBasis);
+  }
+}
+
+template <>
+inline gfx::Point StyleControlPoint<StyleCSSFloat>::ToGfxPoint(
+    const gfx::Point aStatePos, const gfx::Point aEndPoint,
+    const bool isRelativeEndPoint, const CSSSize* aBasis) const {
+  if (IsPosition()) {
+    auto& pos = AsPosition();
+    return pos.ToGfxPoint();
+  }
+
+  // Else
+  auto& point = AsRelative();
+  auto cp = point.coord.ToGfxPoint();
+  bool isRelativeDefaultCase =
+      point.reference == StyleControlReference::None && isRelativeEndPoint;
+
+  if (point.reference == StyleControlReference::Start ||
+      isRelativeDefaultCase) {
+    return cp + aStatePos;
+  } else if (point.reference == StyleControlReference::End) {
+    return cp + aEndPoint;
+  } else {
+    return cp;
+  }
+}
+
+template <>
+inline gfx::Point StyleControlPoint<LengthPercentage>::ToGfxPoint(
+    const gfx::Point aStatePos, const gfx::Point aEndPoint,
+    const bool isRelativeEndPoint, const CSSSize* aBasis) const {
+  MOZ_ASSERT(aBasis);
+  if (IsPosition()) {
+    auto& pos = AsPosition();
+    return pos.ToGfxPoint(aBasis);
+  }
+
+  // Else
+  auto& point = AsRelative();
+  auto cp = point.coord.ToGfxPoint(aBasis);
+  bool isRelativeDefaultCase =
+      point.reference == StyleControlReference::None && isRelativeEndPoint;
+
+  if (point.reference == StyleControlReference::Start ||
+      isRelativeDefaultCase) {
+    return cp + aStatePos;
+  } else if (point.reference == StyleControlReference::End) {
+    return cp + aEndPoint;
+  } else {
+    return cp;
+  }
 }
 
 inline StylePhysicalSide ToStylePhysicalSide(mozilla::Side aSide) {

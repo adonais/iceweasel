@@ -245,6 +245,11 @@ class ImageAnalzer:
             total_time_seconds += time_seconds
             if "org.mozilla.fenix:tab" in process_name:
                 process_name = "org.mozilla.fenix:tab"
+            if (
+                "com.android.chrome" in process_name
+                and "sandboxed_process" in process_name
+            ):
+                process_name = "com.android.chrome:sandboxed_process"
 
             if process_name not in self.cpu_data.keys():
                 self.cpu_data[process_name] = {}

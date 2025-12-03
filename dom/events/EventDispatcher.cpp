@@ -27,7 +27,6 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TouchEvents.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/CloseEvent.h"
 #include "mozilla/dom/CustomEvent.h"
@@ -459,7 +458,7 @@ void EventTargetChainItem::PreHandleEvent(EventChainVisitor& aVisitor) {
   }
   aVisitor.mItemFlags = mItemFlags;
   aVisitor.mItemData = mItemData;
-  Unused << mTarget->PreHandleEvent(aVisitor);
+  (void)mTarget->PreHandleEvent(aVisitor);
   MOZ_ASSERT(mItemFlags == aVisitor.mItemFlags);
   MOZ_ASSERT(mItemData == aVisitor.mItemData);
 }

@@ -698,15 +698,12 @@ skip-if = ["os == 'android'"] # bug 1149374
 scheme = "https"
 
 ["test_eme_detach_media_keys.html"]
-skip-if = ["os == 'android'"]
 scheme = "https"
 
 ["test_eme_getstatusforpolicy.html"]
-skip-if = ["os == 'android'"] # bug 1149374
 scheme = "https"
 
 ["test_eme_requestKeySystemAccess.html"]
-skip-if = ["os == 'android'"] # bug 1149374
 scheme = "https"
 
 ["test_eme_requestMediaKeySystemAccess_origin_check_widevine.html"]
@@ -714,7 +711,6 @@ run-if = ["os == 'win'"] # origin check is only supported on windows
 scheme = "https"
 
 ["test_eme_requestMediaKeySystemAccess_with_app_approval.html"]
-skip-if = ["os == 'android'"] # bug 1149374
 scheme = "https"
 
 ["test_eme_request_notifications.html"]
@@ -725,5 +721,4 @@ scheme = "https"
 scheme = "https"
 
 ["test_eme_setMediaKeys_before_attach_MediaSource.html"]
-skip-if = ["os == 'android'"] # bug 1149374
 scheme = "https"

@@ -80,7 +80,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsPlainTextSerializer)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-NS_IMPL_CYCLE_COLLECTION(nsPlainTextSerializer, mElement)
+NS_IMPL_CYCLE_COLLECTION(nsPlainTextSerializer)
 
 nsresult NS_NewPlainTextSerializer(nsIContentSerializer** aSerializer) {
   RefPtr<nsPlainTextSerializer> it = new nsPlainTextSerializer();
@@ -230,11 +230,8 @@ uint32_t nsPlainTextSerializer::OutputManager::GetOutputLength() const {
 
 nsPlainTextSerializer::nsPlainTextSerializer()
     : mFloatingLines(-1),
-      mLineBreakDue(false),
       kSpace(u" "_ns)  // Init of "constant"
 {
-  mHeadLevel = 0;
-  mHasWrittenCiteBlockquote = false;
   mSpanLevel = 0;
   for (int32_t i = 0; i <= 6; i++) {
     mHeaderCounter[i] = 0;
@@ -255,8 +252,6 @@ nsPlainTextSerializer::nsPlainTextSerializer()
   mIgnoreAboveIndex = (uint32_t)kNotFound;
 
   mULCount = 0;
-
-  mIgnoredChildNodeLevel = 0;
 }
 
 nsPlainTextSerializer::~nsPlainTextSerializer() {
@@ -458,6 +453,21 @@ nsPlainTextSerializer::AppendText(Text* aText, int32_t aStartOffset,
     return NS_OK;
   }
 
+  // If we don't want any output, just return.
+  if (!DoOutput()) {
+    return NS_OK;
+  }
+
+  if (mLineBreakDue) {
+    EnsureVerticalSpace(mFloatingLines);
+  }
+
+  // Check whether this text node is under an element that doesn’t need  to be
+  // serialized. If so, we can return early here.
+  if (MustSuppressLeaf()) {
+    return NS_OK;
+  }
+
   nsAutoString textstr;
   if (characterDataBuffer->Is2b()) {
     textstr.Assign(characterDataBuffer->Get2b() + aStartOffset, length);
@@ -479,11 +489,11 @@ nsPlainTextSerializer::AppendText(Text* aText, int32_t aStartOffset,
   while (offset != kNotFound) {
     if (offset > start) {
       // Pass in the line
-      DoAddText(false, Substring(textstr, start, offset - start));
+      DoAddText(Substring(textstr, start, offset - start));
     }
 
     // Pass in a newline
-    DoAddText();
+    DoAddLineBreak();
 
     start = offset + 1;
     offset = textstr.FindCharInSet(u"\n\r", start);
@@ -492,9 +502,9 @@ nsPlainTextSerializer::AppendText(Text* aText, int32_t aStartOffset,
   // Consume the last bit of the string if there's any left
   if (start < length) {
     if (start) {
-      DoAddText(false, Substring(textstr, start, length - start));
+      DoAddText(Substring(textstr, start, length - start));
     } else {
-      DoAddText(false, textstr);
+      DoAddText(textstr);
     }
   }
 
@@ -529,20 +539,13 @@ nsPlainTextSerializer::AppendElementStart(Element* aElement,
                                           Element* aOriginalElement) {
   NS_ENSURE_ARG(aElement);
 
-  mElement = aElement;
-
-  nsresult rv;
-  nsAtom* id = GetIdForContent(mElement);
-
-  bool isContainer = !FragmentOrElement::IsHTMLVoid(id);
-
-  if (isContainer) {
-    rv = DoOpenContainer(id);
+  nsresult rv = NS_OK;
+  nsAtom* id = GetIdForContent(aElement);
+  if (!FragmentOrElement::IsHTMLVoid(id)) {
+    rv = DoOpenContainer(aElement, id);
   } else {
-    rv = DoAddLeaf(id);
+    rv = DoAddLeaf(aElement, id);
   }
-
-  mElement = nullptr;
 
   if (id == nsGkAtoms::head) {
     ++mHeadLevel;
@@ -556,19 +559,11 @@ nsPlainTextSerializer::AppendElementEnd(Element* aElement,
                                         Element* aOriginalElement) {
   NS_ENSURE_ARG(aElement);
 
-  mElement = aElement;
-
-  nsresult rv;
-  nsAtom* id = GetIdForContent(mElement);
-
-  bool isContainer = !FragmentOrElement::IsHTMLVoid(id);
-
-  rv = NS_OK;
-  if (isContainer) {
-    rv = DoCloseContainer(id);
+  nsresult rv = NS_OK;
+  nsAtom* id = GetIdForContent(aElement);
+  if (!FragmentOrElement::IsHTMLVoid(id)) {
+    rv = DoCloseContainer(aElement, id);
   }
-
-  mElement = nullptr;
 
   if (id == nsGkAtoms::head) {
     NS_ASSERTION(mHeadLevel != 0, "mHeadLevel being decremented below 0");
@@ -609,14 +604,19 @@ nsPlainTextSerializer::AppendDocumentStart(Document* aDocument) {
 
 constexpr int32_t kOlStackDummyValue = 0;
 
-nsresult nsPlainTextSerializer::DoOpenContainer(const nsAtom* aTag) {
+nsresult nsPlainTextSerializer::DoOpenContainer(Element* aElement,
+                                                const nsAtom* aTag) {
+  MOZ_ASSERT(aElement);
+  MOZ_ASSERT(GetIdForContent(aElement) == aTag);
+  MOZ_ASSERT(!FragmentOrElement::IsHTMLVoid(aTag));
+
   if (IsIgnorableRubyAnnotation(aTag)) {
     // Ignorable ruby annotation shouldn't be replaced by a placeholder
     // character, neither any of its descendants.
     mIgnoredChildNodeLevel++;
     return NS_OK;
   }
-  if (IsIgnorableScriptOrStyle(mElement)) {
+  if (IsIgnorableScriptOrStyle(aElement)) {
     mIgnoredChildNodeLevel++;
     return NS_OK;
   }
@@ -658,7 +658,7 @@ nsresult nsPlainTextSerializer::DoOpenContainer(const nsAtom* aTag) {
   // newlines before the text.
   if (aTag == nsGkAtoms::blockquote) {
     nsAutoString value;
-    nsresult rv = GetAttributeValue(nsGkAtoms::type, value);
+    nsresult rv = GetAttributeValue(aElement, nsGkAtoms::type, value);
     isInCiteBlockquote = NS_SUCCEEDED(rv) && value.EqualsIgnoreCase("cite");
   }
 
@@ -684,7 +684,7 @@ nsresult nsPlainTextSerializer::DoOpenContainer(const nsAtom* aTag) {
     // it, but better than nothing.
     nsAutoString style;
     int32_t whitespace;
-    if (NS_SUCCEEDED(GetAttributeValue(nsGkAtoms::style, style)) &&
+    if (NS_SUCCEEDED(GetAttributeValue(aElement, nsGkAtoms::style, style)) &&
         (kNotFound != (whitespace = style.Find(u"white-space:")))) {
       if (kNotFound != style.LowerCaseFindASCII("pre-wrap", whitespace)) {
 #ifdef DEBUG_preformatted
@@ -752,7 +752,8 @@ nsresult nsPlainTextSerializer::DoOpenContainer(const nsAtom* aTag) {
       // Must end the current line before we change indention
       nsAutoString startAttr;
       int32_t startVal = 1;
-      if (NS_SUCCEEDED(GetAttributeValue(nsGkAtoms::start, startAttr))) {
+      if (NS_SUCCEEDED(
+              GetAttributeValue(aElement, nsGkAtoms::start, startAttr))) {
         nsresult rv = NS_OK;
         startVal = startAttr.ToInteger(&rv);
         if (NS_FAILED(rv)) {
@@ -769,7 +770,8 @@ nsresult nsPlainTextSerializer::DoOpenContainer(const nsAtom* aTag) {
     if (mTagStackIndex > 1 && IsInOL()) {
       if (!mOLStack.IsEmpty()) {
         nsAutoString valueAttr;
-        if (NS_SUCCEEDED(GetAttributeValue(nsGkAtoms::value, valueAttr))) {
+        if (NS_SUCCEEDED(
+                GetAttributeValue(aElement, nsGkAtoms::value, valueAttr))) {
           nsresult rv = NS_OK;
           int32_t valueAttrVal = valueAttr.ToInteger(&rv);
           if (NS_SUCCEEDED(rv)) {
@@ -819,19 +821,23 @@ nsresult nsPlainTextSerializer::DoOpenContainer(const nsAtom* aTag) {
 
   // Else make sure we'll separate block level tags,
   // even if we're about to leave, before doing any other formatting.
-  else if (IsCssBlockLevelElement(mElement)) {
+  else if (IsCssBlockLevelElement(aElement)) {
     EnsureVerticalSpace(0);
   }
 
   if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatted)) {
-    OpenContainerForOutputFormatted(aTag);
+    OpenContainerForOutputFormatted(aElement, aTag);
   }
   return NS_OK;
 }
 
 void nsPlainTextSerializer::OpenContainerForOutputFormatted(
-    const nsAtom* aTag) {
-  const bool currentNodeIsConverted = IsCurrentNodeConverted();
+    Element* aElement, const nsAtom* aTag) {
+  MOZ_ASSERT(aElement);
+  MOZ_ASSERT(GetIdForContent(aElement) == aTag);
+  MOZ_ASSERT(!FragmentOrElement::IsHTMLVoid(aTag));
+
+  const bool currentNodeIsConverted = IsCurrentNodeConverted(aElement);
 
   if (aTag == nsGkAtoms::h1 || aTag == nsGkAtoms::h2 || aTag == nsGkAtoms::h3 ||
       aTag == nsGkAtoms::h4 || aTag == nsGkAtoms::h5 || aTag == nsGkAtoms::h6) {
@@ -894,19 +900,24 @@ void nsPlainTextSerializer::OpenContainerForOutputFormatted(
   mInWhitespace = true;
 }
 
-nsresult nsPlainTextSerializer::DoCloseContainer(const nsAtom* aTag) {
+nsresult nsPlainTextSerializer::DoCloseContainer(Element* aElement,
+                                                 const nsAtom* aTag) {
+  MOZ_ASSERT(aElement);
+  MOZ_ASSERT(GetIdForContent(aElement) == aTag);
+  MOZ_ASSERT(!FragmentOrElement::IsHTMLVoid(aTag));
+
   if (IsIgnorableRubyAnnotation(aTag)) {
     mIgnoredChildNodeLevel--;
     return NS_OK;
   }
-  if (IsIgnorableScriptOrStyle(mElement)) {
+  if (IsIgnorableScriptOrStyle(aElement)) {
     mIgnoredChildNodeLevel--;
     return NS_OK;
   }
 
   if (mSettings.HasFlag(nsIDocumentEncoder::OutputForPlainTextClipboardCopy)) {
     if (DoOutput() && IsElementPreformatted() &&
-        IsCssBlockLevelElement(mElement)) {
+        IsCssBlockLevelElement(aElement)) {
       // If we're closing a preformatted block element, output a line break
       // when we find a new container.
       mPreformattedBlockBoundary = true;
@@ -1021,7 +1032,7 @@ nsresult nsPlainTextSerializer::DoCloseContainer(const nsAtom* aTag) {
     mLineBreakDue = true;
   } else if (aTag == nsGkAtoms::q) {
     Write(u"\""_ns);
-  } else if (IsCssBlockLevelElement(mElement)) {
+  } else if (IsCssBlockLevelElement(aElement)) {
     // All other blocks get 1 vertical space after them
     // in formatted mode, otherwise 0.
     // This is hard. Sometimes 0 is a better number, but
@@ -1035,15 +1046,19 @@ nsresult nsPlainTextSerializer::DoCloseContainer(const nsAtom* aTag) {
   }
 
   if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatted)) {
-    CloseContainerForOutputFormatted(aTag);
+    CloseContainerForOutputFormatted(aElement, aTag);
   }
 
   return NS_OK;
 }
 
 void nsPlainTextSerializer::CloseContainerForOutputFormatted(
-    const nsAtom* aTag) {
-  const bool currentNodeIsConverted = IsCurrentNodeConverted();
+    Element* aElement, const nsAtom* aTag) {
+  MOZ_ASSERT(aElement);
+  MOZ_ASSERT(GetIdForContent(aElement) == aTag);
+  MOZ_ASSERT(!FragmentOrElement::IsHTMLVoid(aTag));
+
+  const bool currentNodeIsConverted = IsCurrentNodeConverted(aElement);
 
   if (aTag == nsGkAtoms::h1 || aTag == nsGkAtoms::h2 || aTag == nsGkAtoms::h3 ||
       aTag == nsGkAtoms::h4 || aTag == nsGkAtoms::h5 || aTag == nsGkAtoms::h6) {
@@ -1064,7 +1079,7 @@ void nsPlainTextSerializer::CloseContainerForOutputFormatted(
     EnsureVerticalSpace(1);
   } else if (aTag == nsGkAtoms::a && !currentNodeIsConverted) {
     nsAutoString url;
-    if (NS_SUCCEEDED(GetAttributeValue(nsGkAtoms::href, url)) &&
+    if (NS_SUCCEEDED(GetAttributeValue(aElement, nsGkAtoms::href, url)) &&
         !url.IsEmpty()) {
       nsAutoString temp;
       temp.AssignLiteral(" <");
@@ -1108,43 +1123,37 @@ bool nsPlainTextSerializer::MustSuppressLeaf() const {
   return false;
 }
 
-void nsPlainTextSerializer::DoAddText() { DoAddText(true, u""_ns); }
+void nsPlainTextSerializer::DoAddLineBreak() {
+  MOZ_ASSERT(DoOutput());
+  MOZ_ASSERT(!mLineBreakDue);
+  MOZ_ASSERT(mIgnoreAboveIndex == (uint32_t)kNotFound);
+  MOZ_ASSERT(!MustSuppressLeaf());
 
-void nsPlainTextSerializer::DoAddText(bool aIsLineBreak,
-                                      const nsAString& aText) {
-  // If we don't want any output, just return
-  if (!DoOutput()) {
-    return;
+  // The only times we want to pass along whitespace from the original
+  // html source are if we're forced into preformatted mode via flags,
+  // or if we're prettyprinting and we're inside a <pre>.
+  // Otherwise, either we're collapsing to minimal text, or we're
+  // prettyprinting to mimic the html format, and in neither case
+  // does the formatting of the html source help us.
+  if (mSettings.HasFlag(nsIDocumentEncoder::OutputPreformatted) ||
+      (mPreFormattedMail && !mSettings.GetWrapColumn()) ||
+      IsElementPreformatted()) {
+    EnsureVerticalSpace(mEmptyLines + 1);
+  } else if (!mInWhitespace) {
+    Write(kSpace);
+    mInWhitespace = true;
   }
+}
 
-  if (!aIsLineBreak) {
-    // Make sure to reset this, since it's no longer true.
-    mHasWrittenCiteBlockquote = false;
-  }
+void nsPlainTextSerializer::DoAddText(const nsAString& aText) {
+  MOZ_ASSERT(DoOutput());
+  MOZ_ASSERT(!mLineBreakDue);
+  MOZ_ASSERT(mIgnoreAboveIndex == (uint32_t)kNotFound);
+  MOZ_ASSERT(!MustSuppressLeaf());
 
-  if (mLineBreakDue) EnsureVerticalSpace(mFloatingLines);
-
-  if (MustSuppressLeaf()) {
-    return;
-  }
-
-  if (aIsLineBreak) {
-    // The only times we want to pass along whitespace from the original
-    // html source are if we're forced into preformatted mode via flags,
-    // or if we're prettyprinting and we're inside a <pre>.
-    // Otherwise, either we're collapsing to minimal text, or we're
-    // prettyprinting to mimic the html format, and in neither case
-    // does the formatting of the html source help us.
-    if (mSettings.HasFlag(nsIDocumentEncoder::OutputPreformatted) ||
-        (mPreFormattedMail && !mSettings.GetWrapColumn()) ||
-        IsElementPreformatted()) {
-      EnsureVerticalSpace(mEmptyLines + 1);
-    } else if (!mInWhitespace) {
-      Write(kSpace);
-      mInWhitespace = true;
-    }
-    return;
-  }
+  // Reset this, as it’s no longer true after serializing texts, so the next
+  // <pre> element will get a leading newline.
+  mHasWrittenCiteBlockquote = false;
 
   Write(aText);
 }
@@ -1158,7 +1167,12 @@ void CreateLineOfDashes(nsAString& aResult, const uint32_t aWrapColumn) {
   }
 }
 
-nsresult nsPlainTextSerializer::DoAddLeaf(const nsAtom* aTag) {
+nsresult nsPlainTextSerializer::DoAddLeaf(Element* aElement,
+                                          const nsAtom* aTag) {
+  MOZ_ASSERT(aElement);
+  MOZ_ASSERT(GetIdForContent(aElement) == aTag);
+  MOZ_ASSERT(FragmentOrElement::IsHTMLVoid(aTag));
+
   mPreformattedBlockBoundary = false;
 
   if (!DoOutput()) {
@@ -1178,7 +1192,7 @@ nsresult nsPlainTextSerializer::DoAddLeaf(const nsAtom* aTag) {
     //      of non-HTML element.
     // XXX Do we need to call `EnsureVerticalSpace()` when the <br> element
     //     is not an HTML element?
-    HTMLBRElement* brElement = HTMLBRElement::FromNodeOrNull(mElement);
+    HTMLBRElement* brElement = HTMLBRElement::FromNodeOrNull(aElement);
     if (!brElement || !brElement->IsPaddingForEmptyLastLine()) {
       EnsureVerticalSpace(mEmptyLines + 1);
     }
@@ -1198,10 +1212,11 @@ nsresult nsPlainTextSerializer::DoAddLeaf(const nsAtom* aTag) {
        alt, title or nothing */
     // See <http://www.w3.org/TR/REC-html40/struct/objects.html#edef-IMG>
     nsAutoString imageDescription;
-    if (NS_SUCCEEDED(GetAttributeValue(nsGkAtoms::alt, imageDescription))) {
+    if (NS_SUCCEEDED(
+            GetAttributeValue(aElement, nsGkAtoms::alt, imageDescription))) {
       // If the alt attribute has an empty value (|alt=""|), output nothing
-    } else if (NS_SUCCEEDED(
-                   GetAttributeValue(nsGkAtoms::title, imageDescription)) &&
+    } else if (NS_SUCCEEDED(GetAttributeValue(aElement, nsGkAtoms::title,
+                                              imageDescription)) &&
                !imageDescription.IsEmpty()) {
       imageDescription = u" ["_ns + imageDescription + u"] "_ns;
     }
@@ -1692,12 +1707,14 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
  * Gets the value of an attribute in a string. If the function returns
  * NS_ERROR_NOT_AVAILABLE, there was none such attribute specified.
  */
-nsresult nsPlainTextSerializer::GetAttributeValue(const nsAtom* aName,
+nsresult nsPlainTextSerializer::GetAttributeValue(Element* aElement,
+                                                  const nsAtom* aName,
                                                   nsString& aValueRet) const {
-  if (mElement) {
-    if (mElement->GetAttr(aName, aValueRet)) {
-      return NS_OK;
-    }
+  MOZ_ASSERT(aElement);
+  MOZ_ASSERT(aName);
+
+  if (aElement->GetAttr(aName, aValueRet)) {
+    return NS_OK;
   }
 
   return NS_ERROR_NOT_AVAILABLE;
@@ -1707,9 +1724,11 @@ nsresult nsPlainTextSerializer::GetAttributeValue(const nsAtom* aName,
  * Returns true, if the element was inserted by Moz' TXT->HTML converter.
  * In this case, we should ignore it.
  */
-bool nsPlainTextSerializer::IsCurrentNodeConverted() const {
+bool nsPlainTextSerializer::IsCurrentNodeConverted(Element* aElement) const {
+  MOZ_ASSERT(aElement);
+
   nsAutoString value;
-  nsresult rv = GetAttributeValue(nsGkAtoms::_class, value);
+  nsresult rv = GetAttributeValue(aElement, nsGkAtoms::_class, value);
   return (NS_SUCCEEDED(rv) &&
           (StringBeginsWith(value, u"moz-txt"_ns,
                             nsASCIICaseInsensitiveStringComparator) ||

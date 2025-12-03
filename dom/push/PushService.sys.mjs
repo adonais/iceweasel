@@ -12,7 +12,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "gPushNotifier",
   "@mozilla.org/push/Notifier;1",
-  "nsIPushNotifier"
+  Ci.nsIPushNotifier
 );
 ChromeUtils.defineESModuleGetters(lazy, {
   PushCrypto: "resource://gre/modules/PushCrypto.sys.mjs",
@@ -50,7 +50,7 @@ const PUSH_SERVICE_RUNNING = 5;
  *                             PUSH_SERVICE_ACTIVE_OFFLINE or
  *                             PUSH_SERVICE_RUNNING.
  *   uninit - change state to PUSH_SERVICE_UNINIT.
- **/
+ */
 
 // This is for starting and stopping service.
 const STARTING_SERVICE_EVENT = 0;

@@ -22,7 +22,6 @@
 #include "jsapi.h"                  // for CurrentGlobalOrNull
 #include "mozilla/Assertions.h"  // for AssertionConditionType, MOZ_ASSERT, MOZ_ASSERT_HELPER1
 #include "mozilla/UniquePtr.h"         // for UniquePtr
-#include "mozilla/Unused.h"            // for Unused
 #include "mozilla/dom/BindingUtils.h"  // for MaybeWrapValue, MaybeWrapObjectOrNullValue, XPCOMObjectToJsval, GetOrCreateDOMReflector
 #include "mozilla/dom/CallbackObject.h"  // for CallbackObject
 #include "mozilla/dom/Record.h"
@@ -187,7 +186,7 @@ ToJSValue(JSContext* aCx, UniquePtr<T>&& aArgument,
   }
 
   // JS object took ownership
-  Unused << aArgument.release();
+  (void)aArgument.release();
   return true;
 }
 

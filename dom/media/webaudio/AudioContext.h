@@ -11,7 +11,6 @@
 #include "MediaBufferDecoder.h"
 #include "X11UndefineNone.h"
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RelativeTimeline.h"

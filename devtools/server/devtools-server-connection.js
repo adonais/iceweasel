@@ -280,7 +280,7 @@ DevToolsServerConnection.prototype = {
 
   /* Forwarding packets to other transports based on actor name prefixes. */
 
-  /*
+  /**
    * Arrange to forward packets to another server. This is how we
    * forward debugging connections to child processes.
    *

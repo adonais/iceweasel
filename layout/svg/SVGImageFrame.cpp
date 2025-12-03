@@ -840,8 +840,11 @@ SVGBBox SVGImageFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 
   if ((aFlags & SVGUtils::eForGetClientRects) &&
       aToBBoxUserspace.PreservesAxisAlignedRectangles()) {
-    Rect rect = NSRectToRect(mRect, AppUnitsPerCSSPixel());
-    return aToBBoxUserspace.TransformBounds(rect);
+    if (!mRect.IsEmpty()) {
+      Rect rect = NSRectToRect(mRect, AppUnitsPerCSSPixel());
+      return aToBBoxUserspace.TransformBounds(rect);
+    }
+    return {};
   }
 
   auto* element = static_cast<SVGImageElement*>(GetContent());

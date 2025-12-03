@@ -28,7 +28,8 @@ nsresult SVGDocument::Clone(dom::NodeInfo* aNodeInfo, nsINode** aResult) const {
   NS_ASSERTION(aNodeInfo->NodeInfoManager() == mNodeInfoManager,
                "Can't import this document into another document!");
 
-  RefPtr<SVGDocument> clone = new SVGDocument();
+  // TODO: Disable styling when not needed
+  RefPtr<SVGDocument> clone = new SVGDocument(LoadedAsData::AsData);
   nsresult rv = CloneDocHelper(clone.get());
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -43,8 +44,9 @@ nsresult SVGDocument::Clone(dom::NodeInfo* aNodeInfo, nsINode** aResult) const {
 
 nsresult NS_NewSVGDocument(Document** aInstancePtrResult,
                            nsIPrincipal* aPrincipal,
-                           nsIPrincipal* aPartitionedPrincipal) {
-  RefPtr<SVGDocument> doc = new SVGDocument();
+                           nsIPrincipal* aPartitionedPrincipal,
+                           mozilla::dom::LoadedAsData aLoadedAsData) {
+  RefPtr<SVGDocument> doc = new SVGDocument(aLoadedAsData);
 
   nsresult rv = doc->Init(aPrincipal, aPartitionedPrincipal);
   if (NS_FAILED(rv)) {

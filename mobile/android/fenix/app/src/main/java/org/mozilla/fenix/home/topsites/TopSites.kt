@@ -434,19 +434,19 @@ private fun TopSiteFaviconCard(
                 color = backgroundColor,
                 shape = RoundedCornerShape(4.dp),
             ) {
-                TopSiteFavicon(url = topSite.url)
+                TopSiteFavicon(topSite = topSite)
             }
         }
     }
 }
 
 @Composable
-private fun TopSiteFavicon(url: String) {
-    when (val favicon = getTopSitesFavicon(url)) {
+private fun TopSiteFavicon(topSite: TopSite) {
+    when (val favicon = getTopSitesFavicon(topSite)) {
         is TopSitesFavicon.ImageUrl -> Favicon(
-            url = url,
+            url = topSite.url,
             size = TOP_SITES_FAVICON_SIZE.dp,
-            imageUrl = favicon.url,
+            imageUrl = favicon.imageUrl,
         )
 
         is TopSitesFavicon.Drawable -> Favicon(

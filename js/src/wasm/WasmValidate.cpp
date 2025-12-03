@@ -2747,10 +2747,6 @@ static bool DecodeTypeSection(Decoder& d, CodeMetadata* codeMeta) {
     return false;
   }
 
-  if (numBytes > MaxStringBytes) {
-    return false;
-  }
-
   const uint8_t* bytes;
   if (!d.readBytes(numBytes, &bytes)) {
     return false;

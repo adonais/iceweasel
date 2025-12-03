@@ -16,7 +16,7 @@ from collections import namedtuple
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, List
+from typing import Any
 from urllib.parse import urlparse
 
 import appdirs
@@ -62,6 +62,31 @@ def format_taskgraph_json(taskgraph):
 
 def format_taskgraph_yaml(taskgraph):
     return yaml.safe_dump(taskgraph.to_json(), default_flow_style=False)
+
+
+def format_kind_graph_mermaid(kind_graph):
+    """
+    Convert a kind dependency graph to Mermaid flowchart format.
+
+    @param kind_graph: Graph object containing kind nodes and dependencies
+    @return: String representation of the graph in Mermaid format
+    """
+    lines = ["flowchart TD"]
+
+    # Add nodes (kinds)
+    for node in sorted(kind_graph.nodes):
+        # Sanitize node names for Mermaid (replace hyphens with underscores for IDs)
+        node_id = node.replace("-", "_")
+        lines.append(f"    {node_id}[{node}]")
+
+    # Add edges (dependencies)
+    # Reverse the edge direction: if left depends on right, show right --> left
+    for left, right, _ in sorted(kind_graph.edges):
+        left_id = left.replace("-", "_")
+        right_id = right.replace("-", "_")
+        lines.append(f"    {right_id} --> {left_id}")
+
+    return "\n".join(lines)
 
 
 def get_filtered_taskgraph(taskgraph, tasksregex, exclude_keys):
@@ -223,6 +248,69 @@ def generate_taskgraph(options, parameters, overrides, logdir):
         )
 
     return returncode
+
+
+@command(
+    "kind-graph",
+    help="Generate a Mermaid flowchart diagram source file for the kind dependency graph. To render as a graph, run the output of this command through the Mermaid CLI or an online renderer.",
+)
+@argument("--root", "-r", help="root of the taskgraph definition relative to topsrcdir")
+@argument("--quiet", "-q", action="store_true", help="suppress all logging output")
+@argument(
+    "--verbose", "-v", action="store_true", help="include debug-level logging output"
+)
+@argument(
+    "--parameters",
+    "-p",
+    default=None,
+    help="Parameters to use for the generation. Can be a path to file (.yml or "
+    ".json; see `taskcluster/docs/parameters.rst`), a url, of the form "
+    "`project=mozilla-central` to download latest parameters file for the specified "
+    "project from CI, or of the form `task-id=<decision task id>` to download "
+    "parameters from the specified decision task.",
+)
+@argument(
+    "-o",
+    "--output-file",
+    default=None,
+    help="file path to store generated output.",
+)
+@argument(
+    "-k",
+    "--target-kind",
+    dest="target_kinds",
+    action="append",
+    default=[],
+    help="only return kinds and their dependencies.",
+)
+def show_kind_graph(options):
+    from taskgraph.parameters import parameters_loader  # noqa: PLC0415
+
+    if options.pop("verbose", False):
+        logging.root.setLevel(logging.DEBUG)
+
+    setup_logging()
+
+    target_kinds = options.get("target_kinds", [])
+    parameters = parameters_loader(
+        options.get("parameters"),
+        strict=False,
+        overrides={"target-kinds": target_kinds},
+    )
+
+    tgg = get_taskgraph_generator(options.get("root"), parameters)
+    kind_graph = tgg.kind_graph
+
+    output = format_kind_graph_mermaid(kind_graph)
+
+    if output_file := options.get("output_file"):
+        with open(output_file, "w") as fh:
+            print(output, file=fh)
+        print(f"Kind graph written to {output_file}", file=sys.stderr)
+    else:
+        print(output)
+
+    return 0
 
 
 @command(
@@ -412,7 +500,7 @@ def show_taskgraph(options):
     overrides = {
         "target-kinds": options.get("target_kinds"),
     }
-    parameters: List[Any[str, Parameters]] = options.pop("parameters")
+    parameters: list[Any[str, Parameters]] = options.pop("parameters")
     if not parameters:
         parameters = [
             parameters_loader(None, strict=False, overrides=overrides)
@@ -572,9 +660,6 @@ def show_taskgraph(options):
     help="Relative path to the root of the Taskgraph definition.",
 )
 @argument(
-    "-t", "--tag", help="tag that the image should be built as.", metavar="name:tag"
-)
-@argument(
     "--context-only",
     help="File name the context tarball should be written to."
     "with this option it will only build the context.tar.",
@@ -582,19 +667,16 @@ def show_taskgraph(options):
 )
 def build_image(args):
     from taskgraph.config import load_graph_config  # noqa: PLC0415
-    from taskgraph.docker import build_context, build_image  # noqa: PLC0415
+    from taskgraph.docker import build_image  # noqa: PLC0415
 
     validate_docker()
+    graph_config = load_graph_config(args["root"])
 
-    root = args["root"]
-    graph_config = load_graph_config(root)
-
-    if args["context_only"] is None:
-        build_image(args["image_name"], args["tag"], graph_config, os.environ)
-    else:
-        build_context(
-            args["image_name"], args["context_only"], graph_config, os.environ
-        )
+    return build_image(
+        graph_config,
+        args["image_name"],
+        args["context_only"],
+    )
 
 
 @command(
@@ -674,7 +756,21 @@ def image_digest(args):
     "The task's payload.command will be replaced with 'bash'. You need to have "
     "docker installed and running for this to work.",
 )
-@argument("task_id", help="The task id to load into a docker container.")
+@argument(
+    "task",
+    help="The task id or definition to load into a docker container. Can use "
+    "'-' to read from stdin.",
+)
+@argument(
+    "-i",
+    "--interactive",
+    action="store_true",
+    default=False,
+    help="Setup the task but pause execution before executing its command. "
+    "Repositories will be cloned, environment variables will be set and an"
+    "executable script named `exec-task` will be provided to resume task "
+    "execution. Only supported for `run-task` based tasks.",
+)
 @argument(
     "--keep",
     dest="remove",
@@ -699,14 +795,23 @@ def image_digest(args):
 def load_task(args):
     from taskgraph.config import load_graph_config  # noqa: PLC0415
     from taskgraph.docker import load_task  # noqa: PLC0415
+    from taskgraph.util import json  # noqa: PLC0415
 
     validate_docker()
+
+    if args["task"] == "-":
+        data = sys.stdin.read()
+        try:
+            args["task"] = json.loads(data)
+        except ValueError:
+            args["task"] = data  # assume it is a taskId
 
     root = args["root"]
     graph_config = load_graph_config(root)
     return load_task(
         graph_config,
-        args["task_id"],
+        args["task"],
+        interactive=args["interactive"],
         remove=args["remove"],
         user=args["user"],
         custom_image=args["image"],

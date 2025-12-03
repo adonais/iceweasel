@@ -6,7 +6,6 @@
 #ifndef nsViewSourceChannel_h___
 #define nsViewSourceChannel_h___
 
-#include "mozilla/Attributes.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "nsCOMPtr.h"
 #include "nsICachingChannel.h"

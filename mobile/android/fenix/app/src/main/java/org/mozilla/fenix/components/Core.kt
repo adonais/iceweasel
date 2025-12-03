@@ -223,6 +223,12 @@ class Core(
                 FxNimbus.features.thirdPartyCookieBlocking.value().enabledPrivate
         }
 
+        // Apply Safe Browsing V5 settings if the Nimbus feature is enabled.
+        if (FxNimbus.features.safeBrowsingV5.value().featureEnabled) {
+            defaultSettings.safeBrowsingV5Enabled =
+                FxNimbus.features.safeBrowsingV5.value().enableV5
+        }
+
         GeckoEngine(
             context,
             defaultSettings,

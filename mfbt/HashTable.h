@@ -1456,8 +1456,11 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
       aOther.mRemoved = false;
     }
 
-    // Removes the current element from the table, leaving |get()|
-    // invalid until the next call to |next()|.
+    // Removes the current element from the table, leaving |get()| invalid until
+    // the next call to |next()|.
+    //
+    // See the comments on ~ModIterator about table resizing after removing
+    // entries.
     void remove() {
       mTable.remove(this->mCur);
       mRemoved = true;
@@ -1491,7 +1494,12 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
 
     void rekey(const Key& k) { rekey(k, k); }
 
-    // Potentially rehashes the table.
+    // This can rehash the table or resize it if entries were removed.
+    //
+    // This does not go as far as freeing the table if it is now empty, as that
+    // can lead to repeatedly allocating and freeing the table when a small
+    // number of entries are repeatedly added and removed. If callers require
+    // memory to be minimised after removing entries they should call compact().
     ~ModIterator() {
       if (mRekeyed) {
         mTable.mGen++;
@@ -1499,7 +1507,7 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
       }
 
       if (mRemoved) {
-        mTable.compact();
+        mTable.shrinkToBestCapacity();
       }
     }
   };
@@ -1541,6 +1549,8 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
 
     void popFront() { return mIter.next(); }
 
+    // See the comments on ~ModIterator about table resizing after removing
+    // entries.
     void removeFront() { mIter.remove(); }
 
     NonConstT& mutableFront() { return mIter.getMutable(); }
@@ -2043,9 +2053,12 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
 #endif
   }
 
-  // Resize the table down to the smallest capacity that doesn't overload the
-  // table. Since we call shrinkIfUnderloaded() on every remove, you only need
-  // to call this after a bulk removal of items done without calling remove().
+  // Minimise the memory used. If there are no entries the table is freed,
+  // otherwise the table is resized to the smallest capacity that doesn't
+  // overload the table and that is at least sMinCapacity entries.
+  //
+  // Since we shrink the table after every remove, you only need to call this if
+  // you want to free the table when it's empty.
   void compact() {
     if (empty()) {
       // Free the entry storage.
@@ -2057,9 +2070,11 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
       return;
     }
 
-    uint32_t bestCapacity = this->bestCapacity(mEntryCount);
-    MOZ_ASSERT(bestCapacity <= capacity());
+    shrinkToBestCapacity();
+  }
 
+  void shrinkToBestCapacity() {
+    uint32_t bestCapacity = this->bestCapacity(mEntryCount);
     if (bestCapacity < capacity()) {
       (void)changeTableSize(bestCapacity, DontReportFailure);
     }

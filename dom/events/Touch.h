@@ -8,7 +8,6 @@
 #define mozilla_dom_Touch_h_
 
 #include "Units.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/dom/BindingDeclarations.h"

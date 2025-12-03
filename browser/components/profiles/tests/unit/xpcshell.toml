@@ -13,6 +13,8 @@ prefs = [
 ["test_command_line_handler.js"]
 run-sequentially = ["os == 'mac'"] # frequent fail in parallel on Mac
 
+["test_copy_profile.js"]
+
 ["test_create_profile.js"]
 
 ["test_delete_last_profile.js"]

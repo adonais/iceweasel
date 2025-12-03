@@ -198,7 +198,6 @@ class nsCaret final : public nsISelectionListener {
   // invalidates paint as needed.
   void UpdateCaretPositionFromSelectionIfNeeded();
 
-  nsWeakPtr mPresShell;
   mozilla::WeakPtr<mozilla::dom::Selection> mDomSelectionWeak;
 
   nsCOMPtr<nsITimer> mBlinkTimer;

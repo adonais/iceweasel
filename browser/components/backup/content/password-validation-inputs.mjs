@@ -17,17 +17,16 @@ export default class PasswordValidationInputs extends MozLitElement {
     _hasEmail: { type: Boolean, state: true },
     _passwordsMatch: { type: Boolean, state: true },
     _passwordsValid: { type: Boolean, state: true },
-    _showRules: { type: Boolean, state: true },
     _tooShort: { type: Boolean, state: true },
-    /**
-     * If, by chance, there is focus on a focusable element in the tooltip,
-     * track the focus state so that we can keep the tooltip open.
-     */
-    _tooltipFocus: { type: Boolean, state: true },
     createPasswordLabelL10nId: {
       type: String,
       reflect: true,
       attribute: "create-password-label-l10n-id",
+    },
+    embeddedFxBackupOptIn: {
+      type: Boolean,
+      reflect: true,
+      attribute: "embedded-fx-backup-opt-in",
     },
   };
 
@@ -37,6 +36,7 @@ export default class PasswordValidationInputs extends MozLitElement {
       inputNewPasswordEl: "#new-password-input",
       inputRepeatPasswordEl: "#repeat-password-input",
       passwordRulesEl: "#password-rules",
+      repeatPasswordErrorEl: "#repeat-password-error",
     };
   }
 
@@ -46,27 +46,58 @@ export default class PasswordValidationInputs extends MozLitElement {
     this._hasEmail = false;
     this._passwordsMatch = false;
     this._passwordsValid = false;
-    this._tooltipFocus = false;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this._onKeydown = e => {
+      if (e.key === "Escape" && this.passwordRulesEl.open) {
+        this.passwordRulesEl.hide();
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("keydown", this._onKeydown, true);
+  }
+  disconnectedCallback() {
+    document.removeEventListener("keydown", this._onKeydown, true);
+    super.disconnectedCallback();
+  }
+
+  setInputValidity(input, isValid, describedById = null) {
+    input.setAttribute("aria-invalid", isValid ? "false" : "true");
+    if (describedById) {
+      input.setAttribute("aria-describedby", describedById);
+    } else {
+      input.removeAttribute("aria-describedby");
+    }
   }
 
   reset() {
-    this.formEl.reset();
-    this.inputNewPasswordEl.revealPassword = false;
-    this.inputRepeatPasswordEl.revealPassword = false;
-    this._showRules = false;
+    this.formEl?.reset();
+    if (this.inputNewPasswordEl) {
+      this.inputNewPasswordEl.revealPassword = false;
+      this.setInputValidity(this.inputNewPasswordEl, true);
+    }
+    if (this.inputRepeatPasswordEl) {
+      this.inputRepeatPasswordEl.revealPassword = false;
+      this.setInputValidity(this.inputRepeatPasswordEl, true);
+    }
     this._hasEmail = false;
     this._tooShort = true;
     this._passwordsMatch = false;
     this._passwordsValid = false;
-    this._tooltipFocus = false;
+    this.passwordRulesEl.hide();
   }
 
   handleFocusNewPassword() {
-    this._showRules = true;
+    this.passwordRulesEl.show();
   }
 
   handleBlurNewPassword(event) {
-    this._showRules = !event.target.checkValidity();
+    if (event.target.checkValidity()) {
+      this.passwordRulesEl.hide();
+    }
   }
 
   handleChangeNewPassword() {
@@ -97,18 +128,32 @@ export default class PasswordValidationInputs extends MozLitElement {
     const newPassValidity = this.inputNewPasswordEl.validity;
     this._tooShort = newPassValidity?.valueMissing || newPassValidity?.tooShort;
 
+    const newInvalid = !newPassValidity?.valid;
+    this.setInputValidity(
+      this.inputNewPasswordEl,
+      !newInvalid,
+      "password-rules-tooltip"
+    );
+
     this._passwordsMatch =
       this.inputNewPasswordEl.value == this.inputRepeatPasswordEl.value;
-    if (!this._passwordsMatch) {
-      const passwords_do_not_match_l10n_message = l10n.formatValueSync(
-        "password-validity-do-not-match"
-      );
 
+    if (!this._passwordsMatch) {
       this.inputRepeatPasswordEl.setCustomValidity(
-        passwords_do_not_match_l10n_message
+        l10n.formatValueSync("password-validity-do-not-match")
+      );
+      this.setInputValidity(
+        this.inputRepeatPasswordEl,
+        false,
+        "repeat-password-error"
+      );
+      document.l10n.setAttributes(
+        this.repeatPasswordErrorEl,
+        "password-validity-do-not-match"
       );
     } else {
       this.inputRepeatPasswordEl.setCustomValidity("");
+      this.setInputValidity(this.inputRepeatPasswordEl, true);
     }
 
     const repeatPassValidity = this.inputRepeatPasswordEl.validity;
@@ -116,20 +161,6 @@ export default class PasswordValidationInputs extends MozLitElement {
       newPassValidity?.valid &&
       repeatPassValidity?.valid &&
       this._passwordsMatch;
-
-    /**
-     * This step may involve async validation with BackupService. For instance, we have to
-     * check against a list of common passwords (bug 1905140) and display an error message if an
-     * issue occurs (bug 1905145).
-     */
-  }
-
-  handleTooltipFocus() {
-    this._tooltipFocus = true;
-  }
-
-  handleTooltipBlur() {
-    this._tooltipFocus = false;
   }
 
   /**
@@ -179,9 +210,11 @@ export default class PasswordValidationInputs extends MozLitElement {
                 id="new-password-input"
                 minlength="8"
                 required
+                aria-describedby="password-rules-tooltip"
                 @input=${this.handleChangeNewPassword}
-                @focus=${this.handleFocusNewPassword}
                 @blur=${this.handleBlurNewPassword}
+                @mouseenter=${this.handleFocusNewPassword}
+                @focus=${this.handleFocusNewPassword}
               />
               <!--TODO: (bug 1909984) improve how we read out the first input field for screen readers-->
             </div>
@@ -189,11 +222,10 @@ export default class PasswordValidationInputs extends MozLitElement {
           <!--TODO: (bug 1909984) look into how the tooltip vs dialog behaves when pressing the ESC key-->
           <password-rules-tooltip
             id="password-rules"
-            class=${!this._showRules && !this._tooltipFocus ? "hidden" : ""}
+            role="tooltip"
             .hasEmail=${this._hasEmail}
             .tooShort=${this._tooShort}
-            @focus=${this.handleTooltipFocus}
-            @blur=${this.handleTooltipBlur}
+            ?embedded-fx-backup-opt-in=${this.embeddedFxBackupOptIn}
           ></password-rules-tooltip>
           <label id="repeat-password-label" for="repeat-password-input">
             <span
@@ -203,10 +235,14 @@ export default class PasswordValidationInputs extends MozLitElement {
             <input
               type="password"
               id="repeat-password-input"
-              minlength="8"
               required
               @input=${this.handleChangeRepeatPassword}
             />
+            <span
+              id="repeat-password-error"
+              role="alert"
+              class="field-error"
+            ></span>
           </label>
         </form>
       </div>

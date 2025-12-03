@@ -21,6 +21,15 @@ class GeckoChildProcessHost;
 }
 
 /**
+ * Returns, in bytes, a platform-normalized estimate of the process's
+ * private physical memory usage, that is, how much RAM the process
+ * alone consumes.
+ *
+ * @return NS_OK on success.
+ */
+nsresult GetCurrentProcessMemoryUsage(uint64_t* aResult);
+
+/**
  * Return the number of milliseconds of CPU time used since process start.
  *
  * @return NS_OK on success.

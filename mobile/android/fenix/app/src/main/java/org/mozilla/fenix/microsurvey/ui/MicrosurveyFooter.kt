@@ -73,7 +73,7 @@ fun MicrosurveyFooter(
 @PreviewScreenSizes
 @PreviewLightDark
 @Composable
-private fun ReviewQualityCheckFooterPreview() {
+private fun MicrosurveyFooterPreview() {
     FirefoxTheme {
         Column(
             modifier = Modifier

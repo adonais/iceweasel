@@ -25,7 +25,7 @@ class PerformanceEntry : public nsISupports, public nsWrapperCache {
 
  public:
   PerformanceEntry(nsISupports* aParent, const nsAString& aName,
-                   const nsAString& aEntryType);
+                   const nsStaticAtom* aEntryType);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(PerformanceEntry)
@@ -47,10 +47,9 @@ class PerformanceEntry : public nsISupports, public nsWrapperCache {
   }
 
   const nsAtom* GetEntryType() const { return mEntryType; }
+  const nsStaticAtom* GetEntryTypeAsStaticAtom() const { return mEntryType; }
 
-  void SetEntryType(const nsAString& aEntryType) {
-    mEntryType = NS_Atomize(aEntryType);
-  }
+  void SetEntryType(nsStaticAtom* aEntryType) { mEntryType = aEntryType; }
 
   virtual DOMHighResTimeStamp StartTime() const { return 0; }
 
@@ -80,7 +79,7 @@ class PerformanceEntry : public nsISupports, public nsWrapperCache {
  private:
   nsCOMPtr<nsISupports> mParent;
   RefPtr<nsAtom> mName;
-  RefPtr<nsAtom> mEntryType;
+  const nsStaticAtom* mEntryType;
 };
 
 // Helper classes

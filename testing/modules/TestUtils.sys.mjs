@@ -141,9 +141,7 @@ export var TestUtils = {
    * @resolves The array [subject, data] from the observed notification.
    */
   topicObserved(topic, checkFn) {
-    // This newtab train-hop compatibility shim can be removed once Firefox 144
-    // makes it to the release channel.
-    let startTime = ChromeUtils.now?.() || Cu.now();
+    let startTime = ChromeUtils.now();
     return new Promise((resolve, reject) => {
       let removed = false;
       function observer(subject, topic, data) {
@@ -288,9 +286,7 @@ export var TestUtils = {
    * instead. setInterval is not promise-safe.
    */
   waitForCondition(condition, msg, interval = 100, maxTries = 50) {
-    // This newtab train-hop compatibility shim can be removed once Firefox 144
-    // makes it to the release channel.
-    let startTime = ChromeUtils.now?.() || Cu.now();
+    let startTime = ChromeUtils.now();
     return new Promise((resolve, reject) => {
       let tries = 0;
       let timeoutId = 0;

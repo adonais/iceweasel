@@ -464,34 +464,6 @@ void EventListenerManager::AddEventListenerInternal(
       case eFormRadioStateChange:
         nsContentUtils::SetMayHaveFormRadioStateChangeListeners();
         break;
-      case eAfterScriptExecute:
-        if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
-          if (Document* doc = window->GetExtantDoc()) {
-            doc->SetUseCounter(eUseCounter_AfterScriptExecuteEvent);
-            if (StaticPrefs::dom_events_script_execute_enabled()) {
-              doc->WarnOnceAbout(
-                  DeprecatedOperations::eAfterScriptExecuteEvent);
-            } else {
-              doc->WarnOnceAbout(
-                  Document::eAfterScriptExecuteEventNotSupported);
-            }
-          }
-        }
-        break;
-      case eBeforeScriptExecute:
-        if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
-          if (Document* doc = window->GetExtantDoc()) {
-            doc->SetUseCounter(eUseCounter_BeforeScriptExecuteEvent);
-            if (StaticPrefs::dom_events_script_execute_enabled()) {
-              doc->WarnOnceAbout(
-                  DeprecatedOperations::eBeforeScriptExecuteEvent);
-            } else {
-              doc->WarnOnceAbout(
-                  Document::eBeforeScriptExecuteEventNotSupported);
-            }
-          }
-        }
-        break;
       default:
         // XXX Use NS_ASSERTION here to print resolvedEventMessage since
         //     MOZ_ASSERT can take only string literal, not pointer to
@@ -1303,7 +1275,7 @@ bool EventListenerManager::HandleEventSingleListener(
   }
 
   if (innerWindow) {
-    Unused << innerWindow->SetEvent(oldWindowEvent);
+    (void)innerWindow->SetEvent(oldWindowEvent);
   }
 
   if (NS_FAILED(result)) {

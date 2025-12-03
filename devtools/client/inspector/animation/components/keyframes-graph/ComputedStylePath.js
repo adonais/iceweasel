@@ -17,7 +17,7 @@ const {
   toPathString,
 } = require("resource://devtools/client/inspector/animation/utils/graph-helper.js");
 
-/*
+/**
  * This class is an abstraction for computed style path of keyframes.
  * Subclass of this should implement the following methods:
  *

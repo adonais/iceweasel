@@ -4,11 +4,11 @@
 
 use std::mem;
 use smallvec::SmallVec;
-use api::{ImageFormat, ImageBufferKind, DebugFlags};
+use api::{ImageFormat, ImageBufferKind, DebugFlags, TextureCacheCategory};
 use api::units::*;
 use crate::device::TextureFilter;
 use crate::internal_types::{
-    CacheTextureId, TextureUpdateList, Swizzle, TextureCacheAllocInfo, TextureCacheCategory,
+    CacheTextureId, TextureUpdateList, Swizzle, TextureCacheAllocInfo,
     TextureSource, FrameStamp, FrameId,
 };
 use crate::profiler::{self, TransactionProfile};
@@ -229,7 +229,7 @@ impl PictureTextures {
 
         self.cache_handles.push(strong_handle);
 
-        new_handle        
+        new_handle
     }
 
     pub fn free_tile(

@@ -480,7 +480,7 @@ async function getComputedStyleProperty(selector, pseudo, propName) {
     [selector, pseudo, propName],
     (selectorChild, pseudoChild, propNameChild) => {
       const element = content.document.querySelector(selectorChild);
-      return content.document.defaultView
+      return content
         .getComputedStyle(element, pseudoChild)
         .getPropertyValue(propNameChild);
     }
@@ -512,7 +512,7 @@ async function waitForComputedStyleProperty(
     (selectorChild, pseudoChild, propNameChild, expectedChild) => {
       const element = content.document.querySelector(selectorChild);
       return ContentTaskUtils.waitForCondition(() => {
-        const value = content.document.defaultView
+        const value = content
           .getComputedStyle(element, pseudoChild)
           .getPropertyValue(propNameChild);
         return value === expectedChild;

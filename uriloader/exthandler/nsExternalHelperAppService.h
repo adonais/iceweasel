@@ -31,7 +31,6 @@
 #include "nsIObserver.h"
 #include "nsCOMArray.h"
 #include "nsWeakReference.h"
-#include "mozilla/Attributes.h"
 
 class nsExternalAppHandler;
 class nsIMIMEInfo;

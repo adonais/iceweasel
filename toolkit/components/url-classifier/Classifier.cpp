@@ -17,8 +17,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/Base64.h"
-#include "mozilla/Unused.h"
-#include "mozilla/UniquePtr.h"
 #include "nsUrlClassifierDBService.h"
 #include "nsUrlClassifierUtils.h"
 
@@ -298,7 +296,7 @@ nsresult Classifier::Open(nsIFile& aCacheDirectory) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = ClearLegacyFiles();
-  Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 
   // Build the list of know urlclassifier lists
   // XXX: Disk IO potentially on the main thread during startup
@@ -995,11 +993,11 @@ nsresult Classifier::RegenActiveTables() {
   nsTArray<nsCString> exts = {".vlpset"_ns, ".pset"_ns};
   nsTArray<nsCString> foundTables;
   nsresult rv = ScanStoreDir(mRootStoreDirectory, exts, foundTables);
-  Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 
   // We don't have test tables on disk, add Moz built-in entries here
   rv = AddMozEntries(foundTables);
-  Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 
   for (const auto& table : foundTables) {
     RefPtr<const LookupCache> lookupCache = GetLookupCache(table);

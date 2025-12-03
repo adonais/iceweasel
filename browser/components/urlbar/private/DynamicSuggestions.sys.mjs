@@ -91,12 +91,14 @@ export class DynamicSuggestions extends SuggestProvider {
       return this.#makeExposureResult(suggestion, payload);
     }
 
-    let isSponsored = !!payload.isSponsored;
+    // Dynamic results can set `result.bypassSuggestAll` to be shown even when
+    // `suggest.quicksuggest.all` is false. Typically results should not do this
+    // unless they aren't considered part of the Suggest brand.
     if (
-      (isSponsored &&
-        !lazy.UrlbarPrefs.get("suggest.quicksuggest.sponsored")) ||
-      (!isSponsored &&
-        !lazy.UrlbarPrefs.get("suggest.quicksuggest.nonsponsored"))
+      !result.bypassSuggestAll &&
+      (!lazy.UrlbarPrefs.get("suggest.quicksuggest.all") ||
+        (payload.isSponsored &&
+          !lazy.UrlbarPrefs.get("suggest.quicksuggest.sponsored")))
     ) {
       return null;
     }

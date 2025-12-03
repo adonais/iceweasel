@@ -16,7 +16,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "obliviousHttpService",
   "@mozilla.org/network/oblivious-http-service;1",
-  "nsIObliviousHttpService"
+  Ci.nsIObliviousHttpService
 );
 
 /**

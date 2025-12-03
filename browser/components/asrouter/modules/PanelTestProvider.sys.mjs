@@ -2364,7 +2364,7 @@ const MESSAGES = () => [
                 dismiss: true,
               },
             },
-            contentTilesContainer: {
+            tiles_container: {
               style: {
                 marginBlock: "6px",
               },

@@ -158,7 +158,7 @@
 
   h1 {
     font-size: 2rem;
-    font-weight: 200;
+    font-weight: normal;
   }
 
   h2 button,
@@ -443,7 +443,7 @@
 
       .impressions-category {
         font-size: var(--font-size-large);
-        font-weight: var(--font-weight-bold);
+        font-weight: var(--font-weight-semibold);
         white-space: nowrap;
         flex-grow: 0.1;
       }

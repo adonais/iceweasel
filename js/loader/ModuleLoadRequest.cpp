@@ -45,20 +45,25 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(ModuleLoadRequest,
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 ModuleLoadRequest::ModuleLoadRequest(
-    nsIURI* aURI, ModuleType aModuleType,
-    mozilla::dom::ReferrerPolicy aReferrerPolicy,
-    ScriptFetchOptions* aFetchOptions,
-    const mozilla::dom::SRIMetadata& aIntegrity, nsIURI* aReferrer,
-    LoadContextBase* aContext, Kind aKind, ModuleLoaderBase* aLoader,
-    ModuleLoadRequest* aRootModule)
-    : ScriptLoadRequest(ScriptKind::eModule, aURI, aReferrerPolicy,
-                        aFetchOptions, aIntegrity, aReferrer, aContext),
+    ModuleType aModuleType, const mozilla::dom::SRIMetadata& aIntegrity,
+    nsIURI* aReferrer, LoadContextBase* aContext, Kind aKind,
+    ModuleLoaderBase* aLoader, ModuleLoadRequest* aRootModule)
+    : ScriptLoadRequest(ScriptKind::eModule, aIntegrity, aReferrer, aContext),
       mKind(aKind),
       mModuleType(aModuleType),
+      mIsDynamicImport(aKind == Kind::DynamicImport),
       mErroredLoadingImports(false),
       mLoader(aLoader),
       mRootModule(aRootModule) {
   MOZ_ASSERT(mLoader);
+}
+
+ModuleLoadRequest::~ModuleLoadRequest() {
+  MOZ_ASSERT(!mReferrerScript);
+  MOZ_ASSERT(!mModuleRequestObj);
+  MOZ_ASSERT(mPayload.isUndefined());
+
+  DropJSObjects(this);
 }
 
 nsIGlobalObject* ModuleLoadRequest::GetGlobalObject() {
@@ -89,9 +94,9 @@ void ModuleLoadRequest::ModuleLoaded() {
     return;
   }
 
-  MOZ_ASSERT(IsFetching() || IsPendingFetchingError());
+  MOZ_ASSERT(IsFetching());
 
-  mModuleScript = mLoader->GetFetchedModule(ModuleMapKey(mURI, mModuleType));
+  mModuleScript = mLoader->GetFetchedModule(ModuleMapKey(URI(), mModuleType));
 }
 
 void ModuleLoadRequest::LoadFailed() {
@@ -104,7 +109,7 @@ void ModuleLoadRequest::LoadFailed() {
     return;
   }
 
-  MOZ_ASSERT(IsFetching() || IsPendingFetchingError());
+  MOZ_ASSERT(IsFetching());
   MOZ_ASSERT(!mModuleScript);
 
   Cancel();

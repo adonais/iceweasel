@@ -9,7 +9,6 @@
 #include "mozilla/Base64.h"
 #include "mozilla/Components.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/PermissionStatusBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseWorkerProxy.h"
@@ -188,7 +187,7 @@ class GetSubscriptionCallback final : public nsIPushSubscriptionCallback {
 
   // Convenience method for use in this file.
   void OnPushSubscriptionError(nsresult aStatus) {
-    Unused << NS_WARN_IF(NS_FAILED(OnPushSubscription(aStatus, nullptr)));
+    (void)NS_WARN_IF(NS_FAILED(OnPushSubscription(aStatus, nullptr)));
   }
 
  protected:
@@ -347,7 +346,7 @@ class PermissionStateRunnable final : public Runnable {
 
     // This can fail if the worker thread is already shutting down, but there's
     // nothing we can do in that case.
-    Unused << NS_WARN_IF(!r->Dispatch(mProxy->GetWorkerPrivate()));
+    (void)NS_WARN_IF(!r->Dispatch(mProxy->GetWorkerPrivate()));
 
     return NS_OK;
   }

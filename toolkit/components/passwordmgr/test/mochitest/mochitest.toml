@@ -158,10 +158,11 @@ skip-if = [
 
 ["test_autofill_from_bfcache.html"]
 scheme = "https"
+support-files = ["form_basic_bfcache.html"]
 skip-if = [
   "os == 'android'", # bug 1527403
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && debug && xorigin && verify-standalone",
 ]
-support-files = ["form_basic_bfcache.html"]
 
 ["test_autofill_hasBeenTypePassword.html"]
 scheme = "https"

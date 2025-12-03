@@ -19,7 +19,6 @@ import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import org.mozilla.fenix.crashes.StartupCrashCanary
 import org.mozilla.fenix.startupCrash.NoTapped
 import org.mozilla.fenix.startupCrash.ReopenTapped
 import org.mozilla.fenix.startupCrash.ReportTapped
@@ -37,13 +36,11 @@ class StartupCrashMiddlewareTest {
 
     private lateinit var settings: Settings
     private lateinit var crashReporter: CrashReporter
-    private lateinit var canaryRepo: StartupCrashCanary
 
     @Before
     fun setup() {
         settings = mock()
         crashReporter = mock()
-        canaryRepo = mock()
     }
 
     @Test
@@ -71,7 +68,6 @@ class StartupCrashMiddlewareTest {
         verify(crashReporter).submitReport(crashCaptor.capture(), any())
         assertEquals(crash, crashCaptor.value)
 
-        verify(canaryRepo).clearCanary()
         assertEquals(UiState.Finished, store.state.uiState)
     }
 
@@ -84,7 +80,6 @@ class StartupCrashMiddlewareTest {
         store.dispatch(NoTapped)
         advanceUntilIdle()
 
-        verify(canaryRepo).clearCanary()
         verify(settings).crashReportDeferredUntil = currentTime + FIVE_DAYS_IN_MILLIS
         assertEquals(UiState.Finished, store.state.uiState)
     }
@@ -113,7 +108,6 @@ class StartupCrashMiddlewareTest {
             settings = settings,
             crashReporter = crashReporter,
             restartHandler = { called = true },
-            startupCrashCanaryCache = canaryRepo,
             currentTimeInMillis = currentTime,
             scope = scope,
         )

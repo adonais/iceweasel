@@ -8,7 +8,6 @@
 #define mozilla_dom_Fetch_h
 
 #include "mozilla/Attributes.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/dom/AbortSignal.h"
 #include "mozilla/dom/BodyConsumer.h"
 #include "mozilla/dom/FetchStreamReader.h"

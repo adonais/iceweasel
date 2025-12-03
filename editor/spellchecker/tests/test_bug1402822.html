@@ -29,7 +29,7 @@ function getMisspelledWords(editor) {
   return editor.selectionController.getSelection(Ci.nsISelectionController.SELECTION_SPELLCHECK).toString();
 }
 
-/** Test for Bug 1402822 **/
+/** Test for Bug 1402822 */
 SimpleTest.waitForExplicitFinish();
 addLoadEvent(start);
 async function start() {

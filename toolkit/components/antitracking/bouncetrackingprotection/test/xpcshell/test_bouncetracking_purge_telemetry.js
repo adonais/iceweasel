@@ -32,9 +32,6 @@ function waitForPurgeTelemetry(siteHosts) {
 }
 
 add_setup(async function () {
-  // Need a profile to data clearing calls.
-  do_get_profile();
-
   Services.prefs.setIntPref(
     "privacy.bounceTrackingProtection.mode",
     Ci.nsIBounceTrackingProtection.MODE_ENABLED

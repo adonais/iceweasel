@@ -3,9 +3,6 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-const { setTimeout } = ChromeUtils.importESModule(
-  "resource://gre/modules/Timer.sys.mjs"
-);
 const { NetUtil } = ChromeUtils.importESModule(
   "resource://gre/modules/NetUtil.sys.mjs"
 );
@@ -132,16 +129,8 @@ async function expectRegeneration(taskFn, msg) {
 
   let bs = new BackupService();
 
-  // Now we set up some stubs on the BackupService to detect calls to
-  // deleteLastBackup and createbackupOnIdleDispatch, which are both called
-  // on regeneration.
-  let deleteDeferred = Promise.withResolvers();
-  sandbox.stub(bs, "deleteLastBackup").callsFake(() => {
-    Assert.ok(true, "Saw deleteLastBackup call");
-    deleteDeferred.resolve();
-    return Promise.resolve();
-  });
-
+  // Now we set up a stub on the BackupService to detect calls to
+  // createbackupOnIdleDispatch
   let createBackupDeferred = Promise.withResolvers();
   sandbox.stub(bs, "createBackupOnIdleDispatch").callsFake(options => {
     Assert.ok(true, "Saw createBackupOnIdleDispatch call");
@@ -165,11 +154,6 @@ async function expectRegeneration(taskFn, msg) {
 
   await taskFn();
 
-  let regenerationPromises = [
-    deleteDeferred.promise,
-    createBackupDeferred.promise,
-  ];
-
   // We'll wait for 1 second before considering the regeneration a bust.
   let timeoutPromise = new Promise((resolve, reject) =>
     // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
@@ -179,7 +163,7 @@ async function expectRegeneration(taskFn, msg) {
   );
 
   try {
-    await Promise.race([Promise.all(regenerationPromises), timeoutPromise]);
+    await Promise.race([createBackupDeferred.promise, timeoutPromise]);
     Assert.ok(true, msg);
   } catch (e) {
     Assert.ok(false, "Timed out waiting for regeneration.");
@@ -233,7 +217,7 @@ async function expectNoRegeneration(taskFn, msg) {
   Services.prefs.setBoolPref("browser.backup.scheduled.enabled", true);
   // But also stub out `onIdle` so that we don't get any interference during
   // our test by the idle service.
-  sandbox.stub(bs, "onIdle").returns();
+  sandbox.stub(bs, "onIdle").resolves();
 
   bs.initBackupScheduler();
 
@@ -639,4 +623,24 @@ add_task(async function test_newtab_link_blocked() {
   await expectRegeneration(async () => {
     NewTabUtils.activityStreamLinks.blockURL("https://example.com");
   }, "Saw regeneration on the blocking of a newtab link");
+});
+
+/**
+ * Tests that setting up a regeneration without archiveEnabledStatus being true
+ * leads to NO regeneration upon data mutation
+ */
+add_task(async function test_enabledStatus_no_regeneration() {
+  let bookmark = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: "data:text/plain,Content",
+    title: "Regeneration Test Bookmark",
+  });
+
+  Services.prefs.setBoolPref("browser.backup.archive.enabled", false);
+
+  await expectNoRegeneration(async () => {
+    await PlacesUtils.bookmarks.remove(bookmark);
+  }, "Saw no regeneration on bookmark removed.");
+
+  Services.prefs.clearUserPref("browser.backup.archive.enabled");
 });

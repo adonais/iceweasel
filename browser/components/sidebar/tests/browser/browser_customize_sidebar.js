@@ -5,8 +5,17 @@
 
 requestLongerTimeout(2);
 
+let initialSidebarVisibility = Services.prefs.getStringPref(
+  SIDEBAR_VISIBILITY_PREF
+);
+
 registerCleanupFunction(() => {
-  Services.prefs.clearUserPref(SIDEBAR_VISIBILITY_PREF);
+  // sidebar.visibility gets set during startup and should be restored
+  // to that value, not the default value
+  Services.prefs.setStringPref(
+    SIDEBAR_VISIBILITY_PREF,
+    initialSidebarVisibility
+  );
   Services.prefs.clearUserPref(POSITION_SETTING_PREF);
   Services.prefs.clearUserPref(VERTICAL_TABS_PREF);
 });

@@ -91,10 +91,10 @@ class TokenizerBase {
 
     TokenType Type() const { return mType; }
     TChar AsChar() const;
-    TDependentSubstring AsString() const;
+    TDependentSubstring const& AsString() const;
     uint64_t AsInteger() const;
 
-    TDependentSubstring Fragment() const { return mFragment; }
+    TDependentSubstring const& Fragment() const { return mFragment; }
   };
 
   /**

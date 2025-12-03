@@ -405,8 +405,8 @@ void TCPSocket::NotifyCopyComplete(nsresult aStatus) {
   CalculateBufferedAmount();
 
   if (mSocketBridgeParent && mSocketBridgeParent->IPCOpen()) {
-    mozilla::Unused << mSocketBridgeParent->SendUpdateBufferedAmount(
-        BufferedAmount(), mTrackingNumber);
+    (void)mSocketBridgeParent->SendUpdateBufferedAmount(BufferedAmount(),
+                                                        mTrackingNumber);
   }
 
   if (NS_FAILED(aStatus)) {
@@ -731,7 +731,7 @@ nsresult TCPSocket::MaybeReportErrorAndCloseIfOpen(nsresult status) {
       }
     }
 
-    Unused << NS_WARN_IF(NS_FAILED(FireErrorEvent(errName, errorType, status)));
+    (void)NS_WARN_IF(NS_FAILED(FireErrorEvent(errName, errorType, status)));
   }
 
   return FireEvent(u"close"_ns);

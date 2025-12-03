@@ -43,9 +43,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
 XPCOMUtils.defineLazyServiceGetters(lazy, {
   gClipboardHelper: [
     "@mozilla.org/widget/clipboardhelper;1",
-    "nsIClipboardHelper",
+    Ci.nsIClipboardHelper,
   ],
-  gMIMEService: ["@mozilla.org/mime;1", "nsIMIMEService"],
+  gMIMEService: ["@mozilla.org/mime;1", Ci.nsIMIMEService],
 });
 
 ChromeUtils.defineLazyGetter(lazy, "DownloadsLogger", () => {

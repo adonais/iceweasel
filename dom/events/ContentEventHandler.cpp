@@ -45,7 +45,6 @@
 #include "nsQueryObject.h"
 #include "nsRange.h"
 #include "nsTextFrame.h"
-#include "nsView.h"
 
 // Work around conflicting define in rpcndr.h
 #if defined(small)

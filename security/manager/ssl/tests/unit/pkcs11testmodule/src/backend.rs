@@ -4,9 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use pkcs11_bindings::*;
-use rsclientcerts::error::Error;
+use rsclientcerts::cryptoki::*;
 use rsclientcerts::manager::{ClientCertsBackend, CryptokiObject, Sign};
-use rsclientcerts::util::*;
+use rsclientcerts_util::error::Error;
+use rsclientcerts_util::*;
 
 use base64::prelude::*;
 use libcrux_p256::{ecdsa_sign_p256_without_hash, validate_private_key};

@@ -9,7 +9,6 @@
 
 #include "nsString.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 

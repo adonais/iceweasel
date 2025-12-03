@@ -23,6 +23,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -136,7 +137,7 @@ private fun AppIconGroupHeader(title: IconGroupTitle) {
             .wrapContentHeight(Alignment.CenterVertically)
             .semantics { heading() },
         style = FirefoxTheme.typography.headline8,
-        color = FirefoxTheme.colors.textAccent,
+        color = MaterialTheme.colorScheme.tertiary,
     )
 }
 

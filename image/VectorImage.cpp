@@ -1330,12 +1330,6 @@ already_AddRefed<SourceSurface> VectorImage::CreateSurface(
       aParams.context ? aParams.context->GetDrawTarget()->GetBackendType()
                       : gfxPlatform::GetPlatform()->GetDefaultContentBackend();
 
-  if (backend == BackendType::DIRECT2D1_1) {
-    // We don't want to draw arbitrary content with D2D anymore
-    // because it doesn't support PushLayerWithBlend so switch to skia
-    backend = BackendType::SKIA;
-  }
-
   // Try to create an imgFrame, initializing the surface it contains by drawing
   // our gfxDrawable into it. (We use FILTER_NEAREST since we never scale here.)
   auto frame = MakeNotNull<RefPtr<imgFrame>>();
@@ -1426,7 +1420,7 @@ void VectorImage::Show(gfxDrawable* aDrawable,
   gfxUtils::DrawPixelSnapped(aParams.context, aDrawable,
                              SizeDouble(aParams.size), region,
                              SurfaceFormat::OS_RGBA, aParams.samplingFilter,
-                             aParams.flags, aParams.opacity, false);
+                             aParams.flags, aParams.opacity);
 
   AutoProfilerImagePaintMarker PROFILER_RAII(this);
 #ifdef DEBUG

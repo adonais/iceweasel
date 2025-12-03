@@ -5,8 +5,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/ArrayUtils.h"
-
 #include "nsArrayUtils.h"
 #include "nsClipboard.h"
 #if defined(MOZ_X11)
@@ -343,31 +341,34 @@ nsClipboard::SetNativeClipboardData(nsITransferable* aTransferable,
 
   ClearCachedTargets(aWhichClipboard);
 
+  // On Wayland, track when we're setting clipboard data to avoid double
+  // sequence number increment in OwnerChangedEvent
+  MarkNextOwnerClipboardChange(aWhichClipboard, /* aOurChange */ true);
+
   // Set getcallback and request to store data after an application exit
   if (gtk_clipboard_set_with_data(gtkClipboard, gtkTargets, numTargets,
                                   clipboard_get_cb, clipboard_clear_cb, this)) {
+    IncrementSequenceNumber(aWhichClipboard);
     // We managed to set-up the clipboard so update internal state
     // We have to set it now because gtk_clipboard_set_with_data() calls
     // clipboard_clear_cb() which reset our internal state
     if (aWhichClipboard == kSelectionClipboard) {
-      mSelectionSequenceNumber++;
       mSelectionTransferable = aTransferable;
     } else {
-      mGlobalSequenceNumber++;
       mGlobalTransferable = aTransferable;
       gtk_clipboard_set_can_store(gtkClipboard, gtkTargets, numTargets);
     }
-
+    MOZ_CLIPBOARD_LOG("     sequence %d", GetSequenceNumber(aWhichClipboard));
     rv = NS_OK;
   } else {
-    MOZ_CLIPBOARD_LOG("    gtk_clipboard_set_with_data() failed!\n");
+    MOZ_CLIPBOARD_LOG("     gtk_clipboard_set_with_data() failed!\n");
     EmptyNativeClipboardData(aWhichClipboard);
+    MOZ_CLIPBOARD_LOG("     sequence %d", GetSequenceNumber(aWhichClipboard));
     rv = NS_ERROR_FAILURE;
   }
 
   gtk_target_table_free(gtkTargets, numTargets);
   gtk_target_list_unref(list);
-
   return rv;
 }
 
@@ -515,9 +516,9 @@ nsClipboard::GetNativeClipboardData(const nsACString& aFlavor,
       nsIClipboard::IsClipboardTypeSupported(aWhichClipboard));
 
   MOZ_CLIPBOARD_LOG(
-      "nsClipboard::GetNativeClipboardData (%s) for %s\n",
+      "nsClipboard::GetNativeClipboardData (%s) for %s sequence num %d",
       aWhichClipboard == kSelectionClipboard ? "primary" : "clipboard",
-      PromiseFlatCString(aFlavor).get());
+      PromiseFlatCString(aFlavor).get(), GetSequenceNumber(aWhichClipboard));
 
   // TODO: Ensure we don't re-enter here.
   if (!mContext) {
@@ -866,11 +867,13 @@ nsresult nsClipboard::EmptyNativeClipboardData(ClipboardType aWhichClipboard) {
     if (mSelectionTransferable) {
       gtk_clipboard_clear(gtk_clipboard_get(GDK_SELECTION_PRIMARY));
       MOZ_ASSERT(!mSelectionTransferable);
+      MarkNextOwnerClipboardChange(aWhichClipboard, /* aOurChange */ true);
     }
   } else {
     if (mGlobalTransferable) {
       gtk_clipboard_clear(gtk_clipboard_get(GDK_SELECTION_CLIPBOARD));
       MOZ_ASSERT(!mGlobalTransferable);
+      MarkNextOwnerClipboardChange(aWhichClipboard, /* aOurChange */ true);
     }
   }
   ClearCachedTargets(aWhichClipboard);
@@ -878,11 +881,10 @@ nsresult nsClipboard::EmptyNativeClipboardData(ClipboardType aWhichClipboard) {
 }
 
 void nsClipboard::ClearTransferable(int32_t aWhichClipboard) {
+  IncrementSequenceNumber(aWhichClipboard);
   if (aWhichClipboard == kSelectionClipboard) {
-    mSelectionSequenceNumber++;
     mSelectionTransferable = nullptr;
   } else {
-    mGlobalSequenceNumber++;
     mGlobalTransferable = nullptr;
   }
 }
@@ -1101,7 +1103,6 @@ void nsClipboard::SelectionGetEvent(GtkClipboard* aClipboard,
   // that we want to do is see if that something includes text.  If
   // it does, try to give it text/plain after converting it to
   // utf-8.
-
   int32_t whichClipboard;
 
   // which clipboard?
@@ -1357,27 +1358,20 @@ void nsClipboard::OwnerChangedEvent(GtkClipboard* aGtkClipboard,
   if (whichClipboard.isNothing()) {
     return;
   }
-  MOZ_CLIPBOARD_LOG(
-      "nsClipboard::OwnerChangedEvent (%s)\n",
-      *whichClipboard == kSelectionClipboard ? "primary" : "clipboard");
-  GtkWidget* gtkWidget = [aEvent]() -> GtkWidget* {
-    if (!aEvent->owner) {
-      return nullptr;
-    }
-    gpointer user_data = nullptr;
-    gdk_window_get_user_data(aEvent->owner, &user_data);
-    return GTK_WIDGET(user_data);
-  }();
-  // If we can get GtkWidget from the current clipboard owner, this
-  // owner-changed event must be triggered by ourself via calling
-  // gtk_clipboard_set_with_data, the sequence number should already be handled.
-  if (!gtkWidget) {
-    if (*whichClipboard == kSelectionClipboard) {
-      mSelectionSequenceNumber++;
-    } else {
-      mGlobalSequenceNumber++;
-    }
+
+  bool shouldIncrementSequence = !IsOurOwnerClipboardChange(*whichClipboard);
+  MarkNextOwnerClipboardChange(*whichClipboard, /* aOurChange */ false);
+
+  if (shouldIncrementSequence) {
+    IncrementSequenceNumber(*whichClipboard);
   }
+
+  MOZ_CLIPBOARD_LOG(
+      "nsClipboard::OwnerChangedEvent (%s) %s sequence %d\n",
+      *whichClipboard == kSelectionClipboard ? "primary" : "clipboard",
+      shouldIncrementSequence ? "external change" : "internal change",
+      *whichClipboard == kSelectionClipboard ? mSelectionSequenceNumber
+                                             : mGlobalSequenceNumber);
 
   ClearCachedTargets(*whichClipboard);
 }

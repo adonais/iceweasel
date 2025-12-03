@@ -143,7 +143,7 @@ void DAV1DDecoder::ReleaseDataBuffer(const uint8_t* buf) {
     nsresult rv = mTaskQueue->Dispatch(NS_NewRunnableFunction(
         "DAV1DDecoder::ReleaseDataBuffer", std::move(releaseBuffer)));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
+    (void)rv;
   }
 }
 

@@ -21,7 +21,6 @@
 
 #include "base/process.h"
 #include "nsIMemoryReporter.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/MemoryReporting.h"

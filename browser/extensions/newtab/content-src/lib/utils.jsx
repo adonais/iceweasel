@@ -58,6 +58,21 @@ function useIntersectionObserver(callback, threshold = 0.3) {
 }
 
 /**
+ * Determines which column layout is active based on the screen width
+ * @param {number} screenWidth - The current window width (in pixels)
+ * @returns {string} The active column layout (e.g. "col-3", "col-2", "col-1")
+ */
+function getActiveColumnLayout(screenWidth) {
+  const breakpoints = [
+    { min: 1374, column: "col-4" }, // $break-point-sections-variant
+    { min: 1122, column: "col-3" }, // $break-point-widest
+    { min: 724, column: "col-2" }, // $break-point-layout-variant
+    { min: 0, column: "col-1" }, // (default layout)
+  ];
+  return breakpoints.find(bp => screenWidth >= bp.min).column;
+}
+
+/**
  * Determines the active card size ("small", "medium", or "large") based on the screen width
  * and class names applied to the card element at the time of an event (example: click)
  *
@@ -86,19 +101,10 @@ function getActiveCardSize(screenWidth, classNames, sectionsEnabled, flightId) {
   }
 
   const classList = classNames.split(" ");
-
-  // Each breakpoint corresponds to a minimum screen width and its associated column class
-  const breakpoints = [
-    { min: 1374, column: "col-4" }, // $break-point-sections-variant
-    { min: 1122, column: "col-3" }, // $break-point-widest
-    { min: 724, column: "col-2" }, // $break-point-layout-variant
-    { min: 0, column: "col-1" }, // (default layout)
-  ];
-
   const cardTypes = ["small", "medium", "large"];
 
   // Determine which column is active based on the current screen width
-  const currColumnCount = breakpoints.find(bp => screenWidth >= bp.min).column;
+  const currColumnCount = getActiveColumnLayout(screenWidth);
 
   // Match the card type for that column count
   for (let type of cardTypes) {
@@ -317,6 +323,7 @@ function selectWeatherPlacement(state) {
 export {
   useIntersectionObserver,
   getActiveCardSize,
+  getActiveColumnLayout,
   useConfetti,
   selectWeatherPlacement,
 };

@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -149,7 +156,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s ger dig full kontroll.</p> <p>Använd den som en privat webbläsare: <ul> <li>Sök och surfa direkt i appen</li> <li>Blockera trackers (eller uppdatera inställningar att tillåta trackers)</li> <li>Radera för att ta bort kakor samt sök- och webbhistorik</li> </ul> </p> <p>%1$s är utvecklad av Mozilla. Vårt uppdrag är att främja ett hälsosamt, öppet Internet.<br/> <a href=\"%2$s\">Läs mer</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s ger dig full kontroll.</p>\n<p>Använd den som en privat webbläsare:\n<ul>\n<li>Sök och surfa direkt i appen</li>\n<li>Blockera trackers (eller uppdatera inställningar att tillåta trackers)</li>\n<li>Radera för att ta bort kakor samt sök- och webbhistorik</li>\n</ul> </p>\n<p>%1$s är utvecklad av Mozilla. Vårt uppdrag är att främja ett hälsosamt, öppet Internet.<br/>\n<a href=\"%2$s\">Läs mer</a></p>]]></string>
   <!-- A link to SUMO at the bottom of About Focus screen. -->
   <string name="about_screen_learn_more">Läs mer</string>
   <!-- Header for the Privacy and Security settings menu -->
@@ -875,7 +882,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Detta kan vara ett problem med serverns konfiguration, eller så kan det vara någon som försöker utge sig för att vara servern. <br/><br/> Om du har anslutit till den här servern tidigare kan felet vara tillfälligt.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Någon kan försöka utge sig för webbplatsen och att fortsätta kan vara riskabelt.</label> <br><br> <label>%1$s litar inte på <b>%2$s</b> eftersom dess certifikatutfärdare är okänd, certifikatet är självsignerat eller att servern inte skickar rätt mellanliggande certifikat.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Någon kan försöka utge sig för webbplatsen och att fortsätta kan vara riskabelt.</label> <br><br>\n<label>%1$s litar inte på <b>%2$s</b> eftersom dess certifikatutfärdare är okänd, certifikatet är självsignerat eller att servern inte skickar rätt mellanliggande certifikat.</label>]]></string>
   <!--
     Sessions List
 

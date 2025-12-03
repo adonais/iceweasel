@@ -9,7 +9,6 @@
 
 #include "ThemeDrawing.h"
 #include "Units.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLMeterElement.h"
@@ -634,26 +633,29 @@ void Theme::PaintRadioControl(PaintBackendData& aPaintData,
                               DPIRatio aDpiRatio) {
   auto [backgroundColor, borderColor, checkColor] =
       ComputeCheckboxColors(aState, StyleAppearance::Radio, aColors);
+  const bool isChecked = aState.HasState(ElementState::CHECKED);
   {
-    CSSCoord borderWidth = kCheckboxRadioBorderWidth;
-    if (backgroundColor == borderColor) {
-      borderWidth = 0.0f;
+    CSSCoord outerBorderWidth = kCheckboxRadioBorderWidth;
+    auto effectiveBackground = isChecked ? checkColor : backgroundColor;
+    if (effectiveBackground == borderColor) {
+      outerBorderWidth = 0.0f;
     }
-    PaintStrokedCircle(aPaintData, aRect, backgroundColor, borderColor,
-                       borderWidth, aDpiRatio);
+    PaintStrokedCircle(aPaintData, aRect, effectiveBackground, borderColor,
+                       outerBorderWidth, aDpiRatio);
   }
 
-  if (aState.HasState(ElementState::CHECKED)) {
-    // See bug 1951930 and bug 1941755 for some discussion on this chunk of
-    // code.
-    const CSSCoord kOuterBorderWidth = 1.0f;
-    const CSSCoord kInnerBorderWidth = 2.0f;
-    LayoutDeviceRect rect(aRect);
-    auto width = LayoutDeviceCoord(
-        ThemeDrawing::SnapBorderWidth(kOuterBorderWidth, aDpiRatio));
-    rect.Deflate(width);
-    PaintStrokedCircle(aPaintData, rect, backgroundColor, checkColor,
-                       kInnerBorderWidth, aDpiRatio);
+  if (isChecked) {
+    // See bug 1951930 / bug 1941755 for discussion on this chunk of code.
+    constexpr CSSCoord kInnerBorderWidth = 2.0f;
+    LayoutDeviceRect innerCircleBounds(aRect);
+    // It's important that these are two different calls so that the snapping of
+    // the inner rect matches the one PaintStrokedCircle above does.
+    innerCircleBounds.Deflate(
+        ThemeDrawing::SnapBorderWidth(kCheckboxRadioBorderWidth, aDpiRatio));
+    innerCircleBounds.Deflate(
+        ThemeDrawing::SnapBorderWidth(kInnerBorderWidth, aDpiRatio));
+    PaintStrokedCircle(aPaintData, innerCircleBounds, backgroundColor,
+                       sTransparent, 0.0f, aDpiRatio);
   }
 
   if (aState.HasState(ElementState::FOCUSRING)) {
@@ -1234,21 +1236,18 @@ bool Theme::DoDrawWidgetBackground(PaintBackendData& aPaintData,
     case StyleAppearance::ScrollbarbuttonDown:
     case StyleAppearance::ScrollbarbuttonLeft:
     case StyleAppearance::ScrollbarbuttonRight: {
-      // For scrollbar-width:thin, we don't display the buttons.
-      if (!ScrollbarDrawing::IsScrollbarWidthThin(aFrame)) {
-        if constexpr (std::is_same_v<PaintBackendData, WebRenderBackendData>) {
-          // TODO: Need to figure out how to best draw this using WR.
-          return false;
-        } else {
-          bool isHorizontal =
-              aAppearance == StyleAppearance::ScrollbarbuttonLeft ||
-              aAppearance == StyleAppearance::ScrollbarbuttonRight;
-          auto kind = ComputeScrollbarKind(aFrame, isHorizontal);
-          GetScrollbarDrawing().PaintScrollbarButton(
-              aPaintData, aAppearance, devPxRect, kind, aFrame,
-              *nsLayoutUtils::StyleForScrollbar(aFrame), elementState, colors,
-              dpiRatio);
-        }
+      if constexpr (std::is_same_v<PaintBackendData, WebRenderBackendData>) {
+        // TODO: Need to figure out how to best draw this using WR.
+        return false;
+      } else {
+        bool isHorizontal =
+            aAppearance == StyleAppearance::ScrollbarbuttonLeft ||
+            aAppearance == StyleAppearance::ScrollbarbuttonRight;
+        auto kind = ComputeScrollbarKind(aFrame, isHorizontal);
+        GetScrollbarDrawing().PaintScrollbarButton(
+            aPaintData, aAppearance, devPxRect, kind, aFrame,
+            *nsLayoutUtils::StyleForScrollbar(aFrame), elementState, colors,
+            dpiRatio);
       }
       break;
     }

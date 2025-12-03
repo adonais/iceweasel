@@ -93,6 +93,10 @@ class MOZ_RAII IonCacheIRCompiler : public CacheIRCompiler {
       ValOperandId targetId, ObjOperandId receiverId, ObjOperandId handlerId,
       ObjOperandId trapId, IdType id, uint32_t nargsAndFlags);
 
+  enum class StringCharOutOfBounds { Failure, EmptyString, UndefinedValue };
+  bool emitLoadStringCharResult(StringOperandId strId, Int32OperandId indexId,
+                                StringCharOutOfBounds outOfBounds);
+
   void pushStubCodePointer();
 
   CACHE_IR_COMPILER_UNSHARED_GENERATED

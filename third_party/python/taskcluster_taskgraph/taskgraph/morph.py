@@ -51,7 +51,7 @@ def amend_taskgraph(taskgraph, label_to_taskid, to_add):
         for depname, dep in task.dependencies.items():
             new_edges.add((task.task_id, dep, depname))
 
-    taskgraph = TaskGraph(new_tasks, Graph(set(new_tasks), new_edges))  # type: ignore
+    taskgraph = TaskGraph(new_tasks, Graph(frozenset(new_tasks), new_edges))
     return taskgraph, label_to_taskid
 
 

@@ -7,8 +7,6 @@
 #ifndef LlamaRuntimeLinker_h__
 #define LlamaRuntimeLinker_h__
 
-#include "mozilla/Attributes.h"
-#include "mozilla/Types.h"
 #include "llama/llama.h"
 #include "ggml.h"
 

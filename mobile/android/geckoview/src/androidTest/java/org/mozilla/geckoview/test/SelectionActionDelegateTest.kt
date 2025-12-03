@@ -14,7 +14,6 @@ import android.util.Base64
 import androidx.core.net.toUri
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import org.hamcrest.Matcher
 import org.hamcrest.Matchers.arrayContainingInAnyOrder
@@ -169,7 +168,6 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun request_html() {
         if (editable) {
@@ -272,7 +270,6 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun pasteAsPlainText() = assumingEditable(true) {
         assumeThat("Paste as plain text works on content editable", type, not(equalTo(ContentType.EDITABLE_ELEMENT)))

@@ -44,10 +44,10 @@ export class LoginManagerStorage extends LoginManagerStorage_json {
   }
 
   /**
-   * Internal method used by regression tests only.  It is called before
-   * replacing this storage module with a new instance.
+   * Internal method used by tests only. It is called before replacing
+   * this storage module with a new instance.
    */
-  terminate() {}
+  testSaveForReplace() {}
 
   async addLoginsAsync(_logins, _continueOnDuplicates = false) {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);

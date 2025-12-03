@@ -36,7 +36,6 @@
 #include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/SVGTextFrame.h"
 #include "mozilla/StaticPrefs_svg.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/SVGClipPathElement.h"
 #include "mozilla/dom/SVGGeometryElement.h"
@@ -805,10 +804,10 @@ gfxRect SVGUtils::GetClipRectForFrame(const nsIFrame* aFrame, float aX,
   gfxRect clipRect =
       gfxRect(clipPxRect.x, clipPxRect.y, clipPxRect.width, clipPxRect.height);
   if (rect.right.IsAuto()) {
-    clipRect.width = aWidth - clipRect.X();
+    clipRect.width = std::max(aWidth - clipRect.X(), 0.0);
   }
   if (rect.bottom.IsAuto()) {
-    clipRect.height = aHeight - clipRect.Y();
+    clipRect.height = std::max(aHeight - clipRect.Y(), 0.0);
   }
   if (disp->mOverflowX != StyleOverflow::Hidden) {
     clipRect.x = aX;

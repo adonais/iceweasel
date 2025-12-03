@@ -76,6 +76,7 @@ class nsRange;
 class nsRefreshDriver;
 class nsRegion;
 class nsTextFrame;
+class nsSubDocumentFrame;
 class nsView;
 class nsViewManager;
 class nsWindowSizes;
@@ -453,6 +454,16 @@ class PresShell final : public nsStubDocumentObserver,
    */
   nsIFrame* GetRootFrame() const { return mFrameConstructor->GetRootFrame(); }
 
+  // Return the closest root widget (widget owned by a root frame).
+  nsIWidget* GetRootWidget() const;
+
+  // Return the closest widget (including popups, if our document is inside a
+  // popup).
+  nsIWidget* GetNearestWidget() const;
+
+  // Get the current frame of our embedder, if it's in our same process.
+  nsSubDocumentFrame* GetInProcessEmbedderFrame() const;
+
   /**
    * Get root scroll container frame from the frame constructor.
    */
@@ -740,23 +751,11 @@ class PresShell final : public nsStubDocumentObserver,
    */
   MOZ_CAN_RUN_SCRIPT void ReconstructFrames();
 
-  /**
-   * See if reflow verification is enabled. To enable reflow verification add
-   * "verifyreflow:1" to your MOZ_LOG environment variable (any non-zero
-   * debug level will work). Or, call SetVerifyReflowEnable with true.
-   */
-  static bool GetVerifyReflowEnable();
-
-  /**
-   * Set the verify-reflow enable flag.
-   */
-  static void SetVerifyReflowEnable(bool aEnabled);
-
   nsIFrame* GetAbsoluteContainingBlock(nsIFrame* aFrame);
 
   // https://drafts.csswg.org/css-anchor-position-1/#target
-  nsIFrame* GetAnchorPosAnchor(const nsAtom* aName,
-                               const nsIFrame* aPositionedFrame) const;
+  const nsIFrame* GetAnchorPosAnchor(const nsAtom* aName,
+                                     const nsIFrame* aPositionedFrame) const;
   void AddAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
   void RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
   enum class AnchorPosUpdateResult {
@@ -765,7 +764,7 @@ class PresShell final : public nsStubDocumentObserver,
     NeedReflow,
   };
   AnchorPosUpdateResult UpdateAnchorPosLayout();
-  void UpdateAnchorPosLayoutForScroll(ScrollContainerFrame* aScrollContainer);
+  void UpdateAnchorPosForScroll(const ScrollContainerFrame* aScrollContainer);
 
   inline void AddAnchorPosPositioned(nsIFrame* aFrame) {
     if (!mAnchorPosPositioned.Contains(aFrame)) {
@@ -965,7 +964,7 @@ class PresShell final : public nsStubDocumentObserver,
    * widget, otherwise the PresContext default background color. This color is
    * only visible if the contents of the view as a whole are translucent.
    */
-  nscolor ComputeBackstopColor(nsView* aDisplayRoot);
+  nscolor ComputeBackstopColor(nsIFrame* aDisplayRoot);
 
   void ObserveNativeAnonMutationsForPrint(bool aObserve) {
     mObservesMutationsForPrint = aObserve;
@@ -1091,9 +1090,6 @@ class PresShell final : public nsStubDocumentObserver,
     mUnderHiddenEmbedderElement = aUnderHiddenEmbedderElement;
   }
 
-  MOZ_CAN_RUN_SCRIPT void DispatchSynthMouseOrPointerMove(
-      WidgetMouseEvent* aMouseOrPointerMoveEvent);
-
   /* Temporarily ignore the Displayport for better paint performance. We
    * trigger a repaint once suppression is disabled. Without that
    * the displayport may get left at the suppressed size for an extended
@@ -1131,10 +1127,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   bool FontSizeInflationForceEnabled() const {
     return mFontSizeInflationForceEnabled;
-  }
-
-  bool FontSizeInflationDisabledInMasterProcess() const {
-    return mFontSizeInflationDisabledInMasterProcess;
   }
 
   bool FontSizeInflationEnabled() const { return mFontSizeInflationEnabled; }
@@ -1367,14 +1359,15 @@ class PresShell final : public nsStubDocumentObserver,
    * SyncPaintFallback from the widget paint event.
    */
   MOZ_CAN_RUN_SCRIPT
-  void PaintAndRequestComposite(nsView* aView, PaintFlags aFlags);
+  void PaintAndRequestComposite(nsIFrame* aFrame, WindowRenderer* aRenderer,
+                                PaintFlags aFlags);
 
   /**
    * Does an immediate paint+composite using the FallbackRenderer (which must
    * be the current WindowRenderer for the root frame's widget).
    */
   MOZ_CAN_RUN_SCRIPT
-  void SyncPaintFallback(nsView* aView);
+  void SyncPaintFallback(nsIFrame* aFrame, WindowRenderer* aRenderer);
 
   /**
    * Notify that we're going to call Paint with PaintFlags::PaintLayers
@@ -1868,7 +1861,8 @@ class PresShell final : public nsStubDocumentObserver,
   bool ComputeActiveness() const;
 
   MOZ_CAN_RUN_SCRIPT
-  void PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags);
+  void PaintInternal(nsIFrame* aFrame, WindowRenderer* aRenderer,
+                     PaintInternalFlags aFlags);
 
   // Refresh observer management.
   void ScheduleFlush();
@@ -3183,11 +3177,7 @@ class PresShell final : public nsStubDocumentObserver,
   VisibleFrames mApproximatelyVisibleFrames;
 
 #ifdef DEBUG
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool VerifyIncrementalReflow();
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DoVerifyReflow();
   void VerifyHasDirtyRootAncestor(nsIFrame* aFrame);
-
-  bool mInVerifyReflow = false;
   // The reflow root under which we're currently reflowing.  Null when
   // not in reflow.
   nsIFrame* mCurrentReflowRoot = nullptr;
@@ -3450,7 +3440,6 @@ class PresShell final : public nsStubDocumentObserver,
   bool mVisualViewportResizeEventPending : 1;
 
   bool mFontSizeInflationForceEnabled : 1;
-  bool mFontSizeInflationDisabledInMasterProcess : 1;
   bool mFontSizeInflationEnabled : 1;
 
   // If a document belongs to an invisible DocShell, this flag must be set
@@ -3516,20 +3505,15 @@ class PresShell final : public nsStubDocumentObserver,
   dom::SelectionNodeCache* mSelectionNodeCache{nullptr};
 
   struct CapturingContentInfo final {
-    CapturingContentInfo()
-        : mRemoteTarget(nullptr),
-          mAllowed(false),
-          mPointerLock(false),
-          mRetargetToElement(false),
-          mPreventDrag(false) {}
+    constexpr CapturingContentInfo() = default;
 
     // capture should only be allowed during a mousedown event
     StaticRefPtr<nsIContent> mContent;
-    dom::BrowserParent* mRemoteTarget;
-    bool mAllowed;
-    bool mPointerLock;
-    bool mRetargetToElement;
-    bool mPreventDrag;
+    dom::BrowserParent* mRemoteTarget = nullptr;
+    bool mAllowed = false;
+    bool mPointerLock = false;
+    bool mRetargetToElement = false;
+    bool mPreventDrag = false;
   };
   static CapturingContentInfo sCapturingContentInfo;
 

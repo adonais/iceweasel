@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -198,7 +199,7 @@ private fun CrashReportsSection(
                     selected = selectedOption == crashReportOption,
                     modifier = Modifier
                         .semantics {
-                            testTag = "data.collection.$crashReportOption.radio.button"
+                            testTag = "data.collection.$crashReportOption.option"
                             testTagsAsResourceId = true
                         },
                     maxLabelLines = 1,
@@ -217,7 +218,7 @@ private fun TitleText(text: String, modifier: Modifier) {
     Text(
         text = text,
         style = FirefoxTheme.typography.body2,
-        color = FirefoxTheme.colors.textAccent,
+        color = MaterialTheme.colorScheme.tertiary,
         modifier = modifier,
     )
 }

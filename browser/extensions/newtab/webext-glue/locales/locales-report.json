@@ -30,7 +30,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -43,7 +42,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -309,7 +307,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -570,7 +567,6 @@
           "newtab-discovery-empty-section-topstories-header",
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -586,7 +582,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-bookmark",
           "newtab-menu-content-tooltip",
           "newtab-menu-copy-download-link",
@@ -883,7 +878,6 @@
           "newtab-label-source-read-time",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -1135,9 +1129,6 @@
           "newtab-new-user-custom-wallpaper-subtitle",
           "newtab-new-user-custom-wallpaper-title",
           "newtab-promo-card-body",
-          "newtab-promo-card-cta",
-          "newtab-promo-card-dismiss-button",
-          "newtab-promo-card-title",
           "newtab-report-ads-reason-seen-it-too-many-times",
           "newtab-report-content-spam-misleading",
           "newtab-section-block-topic-button",
@@ -1218,38 +1209,20 @@
           "newtab-widget-lists-completed-list",
           "newtab-widget-lists-dropdown-create",
           "newtab-widget-lists-empty-cta",
-          "newtab-widget-lists-input-add-an-item",
           "newtab-widget-lists-input-error",
-          "newtab-widget-lists-input-menu-delete",
-          "newtab-widget-lists-input-menu-edit",
           "newtab-widget-lists-input-menu-move-down",
           "newtab-widget-lists-input-menu-move-up",
           "newtab-widget-lists-input-menu-open-link",
-          "newtab-widget-lists-label-beta",
-          "newtab-widget-lists-label-new",
-          "newtab-widget-lists-menu-copy",
-          "newtab-widget-lists-menu-create",
-          "newtab-widget-lists-menu-delete",
-          "newtab-widget-lists-menu-edit",
-          "newtab-widget-lists-menu-hide",
-          "newtab-widget-lists-menu-learn-more",
           "newtab-widget-lists-name-label-default",
-          "newtab-widget-lists-name-placeholder-default",
-          "newtab-widget-lists-name-placeholder-new",
           "newtab-widget-message-copy",
           "newtab-widget-message-title",
-          "newtab-widget-task-list-menu-copy",
-          "newtab-widget-timer-label-pause",
-          "newtab-widget-timer-label-play",
           "newtab-widget-timer-menu-hide",
-          "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
           "newtab-widget-timer-menu-notifications-on",
           "newtab-widget-timer-mode-break",
           "newtab-widget-timer-mode-focus",
           "newtab-widget-timer-notification-break",
           "newtab-widget-timer-notification-focus",
-          "newtab-widget-timer-notification-title",
           "newtab-widget-timer-notification-warning",
           "newtab-widget-timer-reset",
           "topsite-label-pinned"
@@ -1292,7 +1265,6 @@
           "newtab-label-source-read-time",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -1554,7 +1526,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-content-tooltip",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
@@ -1814,7 +1785,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -1827,7 +1797,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -2059,11 +2028,7 @@
     },
     "be": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "bg": {
       "errors": null,
@@ -2236,7 +2201,6 @@
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -2485,7 +2449,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -2498,7 +2461,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -2758,7 +2720,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -2771,7 +2732,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -3031,7 +2991,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -3052,7 +3011,6 @@
           "newtab-label-sponsored-fixed",
           "newtab-label-visited",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-bookmark",
           "newtab-menu-content-tooltip",
           "newtab-menu-copy-download-link",
@@ -3416,16 +3374,13 @@
           "newtab-widget-lists-input-menu-move-up",
           "newtab-widget-lists-input-menu-open-link",
           "newtab-widget-lists-label-beta",
-          "newtab-widget-lists-label-new",
           "newtab-widget-lists-menu-copy",
-          "newtab-widget-lists-menu-create",
           "newtab-widget-lists-menu-delete",
           "newtab-widget-lists-menu-edit",
           "newtab-widget-lists-menu-hide",
           "newtab-widget-lists-menu-learn-more",
           "newtab-widget-lists-name-label-default",
           "newtab-widget-lists-name-placeholder-default",
-          "newtab-widget-lists-name-placeholder-new",
           "newtab-widget-message-copy",
           "newtab-widget-message-title",
           "newtab-widget-task-list-menu-copy",
@@ -3475,7 +3430,6 @@
           "newtab-discovery-empty-section-topstories-content",
           "newtab-discovery-empty-section-topstories-header",
           "newtab-discovery-empty-section-topstories-timed-out",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -3490,7 +3444,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-content-tooltip",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
@@ -3943,7 +3896,6 @@
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -4192,7 +4144,6 @@
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -4446,7 +4397,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -4702,7 +4652,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -4718,7 +4667,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-content-tooltip",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
@@ -4955,64 +4903,35 @@
     },
     "cs": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "cy": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "da": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "de": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "dsb": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "el": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox",
-          "newtab-weather-opt-in-see-weather"
-        ]
-      }
+      "missing": null
     },
     "en-CA": {
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-custom-close-menu-button",
-          "newtab-custom-stories-personalized-checkbox-label",
-          "newtab-custom-widget-lists-toggle",
           "newtab-custom-widget-section-title",
           "newtab-custom-widget-timer-toggle",
-          "newtab-custom-widget-trending-search-toggle",
-          "newtab-custom-widget-weather-toggle",
           "newtab-wallpaper-category-title-firefox",
           "newtab-wallpaper-error-upload-file-type",
           "newtab-weather-menu-detect-my-location",
@@ -5053,11 +4972,7 @@
     },
     "en-GB": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "en-US": {
       "errors": null,
@@ -5065,48 +4980,25 @@
     },
     "eo": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "es-AR": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "es-CL": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "es-ES": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox",
-          "newtab-weather-menu-detect-my-location",
-          "newtab-weather-opt-in-not-now",
-          "newtab-weather-opt-in-see-weather",
-          "newtab-weather-opt-in-yes",
-          "newtab-weather-static-city"
-        ]
-      }
+      "missing": null
     },
     "es-MX": {
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-custom-trending-search-toggle",
-          "newtab-custom-wallpaper-subtitle",
-          "newtab-custom-wallpaper-title",
           "newtab-download-mobile-highlight-body-variant-c",
           "newtab-download-mobile-highlight-image",
           "newtab-new-user-custom-wallpaper-cta",
@@ -5120,8 +5012,6 @@
           "newtab-report-content-spam-misleading",
           "newtab-report-content-why-reporting-this",
           "newtab-report-content-wrong-category",
-          "newtab-section-follow-highlight-subtitle",
-          "newtab-section-follow-highlight-title",
           "newtab-shortcuts-highlight-subtitle",
           "newtab-shortcuts-highlight-title",
           "newtab-toast-thanks-for-reporting",
@@ -5130,13 +5020,7 @@
           "newtab-trending-searches-learn-more",
           "newtab-trending-searches-show-trending",
           "newtab-trending-searches-title",
-          "newtab-wallpaper-category-title-firefox",
           "newtab-wallpaper-error-upload-file-type",
-          "newtab-weather-menu-detect-my-location",
-          "newtab-weather-opt-in-not-now",
-          "newtab-weather-opt-in-see-weather",
-          "newtab-weather-opt-in-yes",
-          "newtab-weather-static-city",
           "newtab-widget-lists-empty-cta",
           "topsite-label-pinned"
         ]
@@ -5172,7 +5056,6 @@
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -5403,15 +5286,8 @@
           "newtab-download-mobile-highlight-body-variant-c",
           "newtab-download-mobile-highlight-image",
           "newtab-download-mobile-highlight-title",
-          "newtab-empty-section-topstories-generic",
-          "newtab-menu-manage-sponsored-content",
-          "newtab-menu-our-sponsors-and-your-privacy",
-          "newtab-menu-report-this-ad",
           "newtab-new-user-custom-wallpaper-subtitle",
           "newtab-new-user-custom-wallpaper-title",
-          "newtab-promo-card-body",
-          "newtab-promo-card-dismiss-button",
-          "newtab-promo-card-title",
           "newtab-report-ads-reason-inappropriate",
           "newtab-report-ads-reason-not-interested",
           "newtab-report-ads-reason-seen-it-too-many-times",
@@ -5422,7 +5298,6 @@
           "newtab-report-content-wrong-category",
           "newtab-section-follow-highlight-subtitle",
           "newtab-section-follow-highlight-title",
-          "newtab-section-header-todays-picks",
           "newtab-shortcuts-highlight-subtitle",
           "newtab-shortcuts-highlight-title",
           "newtab-topic-label-home",
@@ -5431,11 +5306,6 @@
           "newtab-topic-selection-privacy-link",
           "newtab-topic-selection-subtitle",
           "newtab-topic-selection-title",
-          "newtab-trending-searches-dismiss",
-          "newtab-trending-searches-hide-trending",
-          "newtab-trending-searches-learn-more",
-          "newtab-trending-searches-show-trending",
-          "newtab-trending-searches-title",
           "newtab-wallpaper-abstract-black-waves",
           "newtab-wallpaper-abstract-blue-purple-waves",
           "newtab-wallpaper-abstract-purple-green",
@@ -5457,14 +5327,11 @@
           "newtab-wallpaper-starry-canyon",
           "newtab-wallpaper-suspension-bridge",
           "newtab-weather-menu-detect-my-location",
-          "newtab-weather-opt-in-not-now",
           "newtab-weather-opt-in-see-weather",
-          "newtab-weather-opt-in-yes",
           "newtab-weather-see-forecast",
           "newtab-weather-sponsored",
           "newtab-weather-static-city",
           "newtab-widget-lists-completed-list",
-          "newtab-widget-lists-dropdown-create",
           "newtab-widget-lists-empty-cta",
           "newtab-widget-message-copy",
           "topsite-label-pinned"
@@ -5499,7 +5366,6 @@
           "newtab-download-mobile-highlight-title",
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -5721,7 +5587,6 @@
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -5952,20 +5817,11 @@
     },
     "fi": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox",
-          "newtab-weather-static-city"
-        ]
-      }
+      "missing": null
     },
     "fr": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "frp": {
       "errors": null,
@@ -5999,7 +5855,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -6020,7 +5875,6 @@
           "newtab-label-sponsored-fixed",
           "newtab-label-visited",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-bookmark",
           "newtab-menu-content-tooltip",
           "newtab-menu-copy-download-link",
@@ -6285,19 +6139,11 @@
     },
     "fur": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "fy-NL": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "ga-IE": {
       "errors": null,
@@ -6328,7 +6174,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -6345,7 +6190,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-content-tooltip",
           "newtab-menu-copy-download-link",
           "newtab-menu-go-to-download-page",
@@ -6610,7 +6454,6 @@
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -6868,11 +6711,7 @@
     },
     "gn": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "gu-IN": {
       "errors": null,
@@ -6899,7 +6738,6 @@
           "newtab-custom-widget-weather-toggle",
           "newtab-customize-panel-icon-button",
           "newtab-customize-panel-icon-button-label",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -6912,7 +6750,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -7174,7 +7011,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -7195,7 +7031,6 @@
           "newtab-label-sponsored-fixed",
           "newtab-label-visited",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-bookmark",
           "newtab-menu-content-tooltip",
           "newtab-menu-copy-download-link",
@@ -7465,8 +7300,7 @@
           "newtab-discovery-empty-section-topstories-content",
           "newtab-discovery-empty-section-topstories-header",
           "newtab-discovery-empty-section-topstories-timed-out",
-          "newtab-menu-show-privacy-info",
-          "newtab-wallpaper-category-title-firefox"
+          "newtab-menu-show-privacy-info"
         ]
       }
     },
@@ -7503,7 +7337,6 @@
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -7738,74 +7571,42 @@
     },
     "hsb": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "hu": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox",
-          "newtab-widget-message-copy",
-          "newtab-widget-message-title"
-        ]
-      }
+      "missing": null
     },
     "hy-AM": {
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-custom-stories-personalized-checkbox-label",
-          "newtab-custom-stories-personalized-toggle",
           "newtab-custom-stories-toggle",
           "newtab-custom-trending-search-toggle",
-          "newtab-custom-wallpaper-subtitle",
-          "newtab-custom-wallpaper-title",
-          "newtab-download-mobile-highlight-body-variant-a",
-          "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
           "newtab-download-mobile-highlight-image",
-          "newtab-download-mobile-highlight-title",
           "newtab-empty-section-topstories-generic",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-section-unfollow",
           "newtab-new-user-custom-wallpaper-subtitle",
           "newtab-new-user-custom-wallpaper-title",
-          "newtab-promo-card-body",
-          "newtab-report-content-why-reporting-this",
           "newtab-section-confirm-block-topic-p1",
           "newtab-section-confirm-block-topic-p2",
           "newtab-section-follow-highlight-subtitle",
-          "newtab-section-follow-highlight-title",
-          "newtab-section-mangage-topics-blocked-topics-empty-state",
-          "newtab-section-mangage-topics-followed-topics-empty-state",
           "newtab-shortcuts-highlight-subtitle",
           "newtab-topic-selection-subtitle",
           "newtab-trending-searches-show-trending",
           "newtab-wallpaper-abstract-black-waves",
           "newtab-wallpaper-abstract-blue-purple-waves",
           "newtab-wallpaper-blue-flowers",
-          "newtab-wallpaper-category-title-firefox",
           "newtab-wallpaper-error-max-file-size",
           "newtab-wallpaper-hot-air-balloons",
           "newtab-wallpaper-palm-trees",
           "newtab-wallpaper-sand-dunes",
           "newtab-wallpaper-starry-canyon",
           "newtab-wallpaper-suspension-bridge",
-          "newtab-weather-menu-detect-my-location",
-          "newtab-weather-opt-in-not-now",
-          "newtab-weather-opt-in-see-weather",
-          "newtab-weather-opt-in-yes",
-          "newtab-weather-static-city",
-          "newtab-widget-keep-scrolling",
-          "newtab-widget-lists-dropdown-create",
-          "newtab-widget-message-copy",
-          "newtab-widget-message-title",
-          "newtab-widget-timer-notification-break",
-          "newtab-widget-timer-notification-focus"
+          "newtab-widget-message-copy"
         ]
       }
     },
@@ -7839,7 +7640,6 @@
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -8060,11 +7860,7 @@
     },
     "ia": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "id": {
       "errors": null,
@@ -8116,29 +7912,7 @@
     },
     "is": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-custom-trending-search-toggle",
-          "newtab-custom-wallpaper-subtitle",
-          "newtab-download-mobile-highlight-body-variant-a",
-          "newtab-new-user-custom-wallpaper-subtitle",
-          "newtab-new-user-custom-wallpaper-title",
-          "newtab-section-follow-highlight-subtitle",
-          "newtab-shortcuts-highlight-subtitle",
-          "newtab-wallpaper-category-title-firefox",
-          "newtab-wallpaper-error-upload-file-type",
-          "newtab-weather-menu-detect-my-location",
-          "newtab-weather-opt-in-not-now",
-          "newtab-weather-opt-in-see-weather",
-          "newtab-weather-opt-in-yes",
-          "newtab-weather-static-city",
-          "newtab-widget-lists-completed-list",
-          "newtab-widget-lists-dropdown-create",
-          "newtab-widget-lists-empty-cta",
-          "newtab-widget-lists-input-error",
-          "newtab-widget-lists-name-label-default"
-        ]
-      }
+      "missing": null
     },
     "it": {
       "errors": null,
@@ -8169,7 +7943,6 @@
           "newtab-custom-widget-weather-toggle",
           "newtab-customize-panel-icon-button",
           "newtab-customize-panel-icon-button-label",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -8181,7 +7954,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -8412,37 +8184,15 @@
     },
     "ja": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox",
-          "newtab-weather-menu-detect-my-location",
-          "newtab-weather-opt-in-not-now",
-          "newtab-weather-opt-in-see-weather",
-          "newtab-weather-opt-in-yes",
-          "newtab-weather-static-city"
-        ]
-      }
+      "missing": null
     },
     "ja-JP-mac": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox",
-          "newtab-weather-menu-detect-my-location",
-          "newtab-weather-opt-in-not-now",
-          "newtab-weather-opt-in-see-weather",
-          "newtab-weather-opt-in-yes",
-          "newtab-weather-static-city"
-        ]
-      }
+      "missing": null
     },
     "ka": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "kab": {
       "errors": null,
@@ -8564,7 +8314,6 @@
           "newtab-section-mangage-topics-followed-topics",
           "newtab-shortcuts-highlight-subtitle",
           "newtab-shortcuts-highlight-title",
-          "newtab-wallpaper-category-title-firefox",
           "newtab-widget-message-copy"
         ]
       }
@@ -8599,7 +8348,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -8612,7 +8360,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -8873,7 +8620,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -8888,7 +8634,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-content-tooltip",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
@@ -9126,11 +8871,7 @@
     },
     "ko": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "ks": {
       "errors": null,
@@ -9164,7 +8905,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -9185,7 +8925,6 @@
           "newtab-label-sponsored-fixed",
           "newtab-label-visited",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-bookmark",
           "newtab-menu-content-tooltip",
           "newtab-menu-copy-download-link",
@@ -9481,7 +9220,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -9502,7 +9240,6 @@
           "newtab-label-sponsored-fixed",
           "newtab-label-visited",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-bookmark",
           "newtab-menu-content-tooltip",
           "newtab-menu-copy-download-link",
@@ -9792,7 +9529,6 @@
           "newtab-customize-panel-icon-button-label",
           "newtab-discovery-empty-section-topstories-content",
           "newtab-discovery-empty-section-topstories-header",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -9804,7 +9540,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -10063,7 +9798,6 @@
           "newtab-download-mobile-highlight-title",
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
-          "newtab-menu-about-fakespot",
           "newtab-menu-content-tooltip",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
@@ -10313,7 +10047,6 @@
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -10557,7 +10290,6 @@
           "newtab-custom-widget-weather-toggle",
           "newtab-customize-panel-icon-button",
           "newtab-customize-panel-icon-button-label",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -10569,7 +10301,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -10965,7 +10696,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -10978,7 +10708,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-content-tooltip",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
@@ -11242,7 +10971,6 @@
           "newtab-label-source-read-time",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -11492,7 +11220,6 @@
           "newtab-discovery-empty-section-topstories-content",
           "newtab-discovery-empty-section-topstories-header",
           "newtab-discovery-empty-section-topstories-timed-out",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -11508,7 +11235,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -11769,7 +11495,6 @@
           "newtab-customize-panel-icon-button",
           "newtab-customize-panel-icon-button-label",
           "newtab-discovery-empty-section-topstories-header",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -11781,7 +11506,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -12178,7 +11902,6 @@
           "newtab-customize-panel-icon-button",
           "newtab-customize-panel-icon-button-label",
           "newtab-discovery-empty-section-topstories-header",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -12190,7 +11913,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -12449,7 +12171,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -12462,7 +12183,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -12722,7 +12442,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -12736,7 +12455,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-content-tooltip",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
@@ -12970,11 +12688,7 @@
     },
     "nb-NO": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "ne-NP": {
       "errors": null,
@@ -13006,7 +12720,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -13019,7 +12732,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-content-tooltip",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
@@ -13254,19 +12966,11 @@
     },
     "nl": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "nn-NO": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "oc": {
       "errors": null,
@@ -13463,7 +13167,6 @@
           "newtab-custom-widget-weather-toggle",
           "newtab-customize-panel-icon-button",
           "newtab-customize-panel-icon-button-label",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -13476,7 +13179,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -13709,12 +13411,7 @@
     },
     "pa-IN": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox",
-          "newtab-widget-message-copy"
-        ]
-      }
+      "missing": null
     },
     "pai": {
       "errors": null,
@@ -13748,7 +13445,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -13769,7 +13465,6 @@
           "newtab-label-sponsored-fixed",
           "newtab-label-visited",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-bookmark",
           "newtab-menu-content-tooltip",
           "newtab-menu-copy-download-link",
@@ -14032,24 +13727,11 @@
     },
     "pl": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "pt-BR": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox",
-          "newtab-weather-menu-detect-my-location",
-          "newtab-weather-opt-in-not-now",
-          "newtab-weather-opt-in-see-weather",
-          "newtab-weather-opt-in-yes",
-          "newtab-weather-static-city"
-        ]
-      }
+      "missing": null
     },
     "pt-PT": {
       "errors": null,
@@ -14134,19 +13816,11 @@
     },
     "ro": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "ru": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "sat": {
       "errors": null,
@@ -14292,17 +13966,7 @@
     },
     "sc": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox",
-          "newtab-weather-menu-detect-my-location",
-          "newtab-weather-opt-in-not-now",
-          "newtab-weather-opt-in-see-weather",
-          "newtab-weather-opt-in-yes",
-          "newtab-weather-static-city",
-          "newtab-widget-lists-dropdown-create"
-        ]
-      }
+      "missing": null
     },
     "scn": {
       "errors": null,
@@ -14329,7 +13993,6 @@
           "newtab-custom-widget-weather-toggle",
           "newtab-customize-panel-icon-button",
           "newtab-customize-panel-icon-button-label",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -14341,7 +14004,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -14598,7 +14260,6 @@
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -14846,7 +14507,6 @@
           "newtab-download-mobile-highlight-title",
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -15039,11 +14699,7 @@
     },
     "sk": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "skr": {
       "errors": null,
@@ -15194,15 +14850,8 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox",
-          "newtab-weather-menu-detect-my-location",
-          "newtab-weather-opt-in-not-now",
           "newtab-weather-opt-in-see-weather",
-          "newtab-weather-opt-in-yes",
-          "newtab-weather-static-city",
-          "newtab-widget-lists-dropdown-create",
-          "newtab-widget-message-copy",
-          "newtab-widget-message-title"
+          "newtab-widget-message-copy"
         ]
       }
     },
@@ -15238,7 +14887,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -15259,7 +14907,6 @@
           "newtab-label-sponsored-fixed",
           "newtab-label-visited",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-bookmark",
           "newtab-menu-content-tooltip",
           "newtab-menu-copy-download-link",
@@ -15527,82 +15174,7 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-custom-close-menu-button",
-          "newtab-custom-stories-personalized-checkbox-label",
-          "newtab-custom-stories-personalized-toggle",
-          "newtab-custom-trending-search-toggle",
-          "newtab-custom-widget-lists-toggle",
-          "newtab-custom-widget-section-title",
-          "newtab-custom-widget-timer-toggle",
-          "newtab-custom-widget-trending-search-toggle",
-          "newtab-custom-widget-weather-toggle",
-          "newtab-customize-panel-icon-button",
-          "newtab-customize-panel-icon-button-label",
-          "newtab-label-sponsored-fixed",
-          "newtab-menu-report",
-          "newtab-new-user-custom-wallpaper-cta",
-          "newtab-new-user-custom-wallpaper-subtitle",
-          "newtab-new-user-custom-wallpaper-title",
-          "newtab-promo-card-body",
-          "newtab-promo-card-cta",
-          "newtab-promo-card-dismiss-button",
-          "newtab-promo-card-title",
-          "newtab-section-follow-highlight-subtitle",
-          "newtab-section-follow-highlight-title",
-          "newtab-shortcuts-highlight-subtitle",
-          "newtab-shortcuts-highlight-title",
-          "newtab-topic-label-society-parenting",
-          "newtab-trending-searches-dismiss",
-          "newtab-trending-searches-hide-trending",
-          "newtab-trending-searches-learn-more",
-          "newtab-trending-searches-show-trending",
-          "newtab-trending-searches-title",
-          "newtab-wallpaper-category-title-firefox",
-          "newtab-wallpaper-error-upload-file-type",
-          "newtab-weather-menu-detect-my-location",
-          "newtab-weather-opt-in-not-now",
-          "newtab-weather-opt-in-see-weather",
-          "newtab-weather-opt-in-yes",
-          "newtab-weather-static-city",
-          "newtab-widget-keep-scrolling",
-          "newtab-widget-lists-completed-list",
-          "newtab-widget-lists-dropdown-create",
-          "newtab-widget-lists-empty-cta",
-          "newtab-widget-lists-input-add-an-item",
-          "newtab-widget-lists-input-error",
-          "newtab-widget-lists-input-menu-delete",
-          "newtab-widget-lists-input-menu-edit",
-          "newtab-widget-lists-input-menu-move-down",
-          "newtab-widget-lists-input-menu-move-up",
-          "newtab-widget-lists-input-menu-open-link",
-          "newtab-widget-lists-label-beta",
-          "newtab-widget-lists-label-new",
-          "newtab-widget-lists-menu-copy",
-          "newtab-widget-lists-menu-create",
-          "newtab-widget-lists-menu-delete",
-          "newtab-widget-lists-menu-edit",
-          "newtab-widget-lists-menu-hide",
-          "newtab-widget-lists-menu-learn-more",
-          "newtab-widget-lists-name-label-default",
-          "newtab-widget-lists-name-placeholder-default",
-          "newtab-widget-lists-name-placeholder-new",
-          "newtab-widget-message-copy",
-          "newtab-widget-message-title",
-          "newtab-widget-task-list-menu-copy",
-          "newtab-widget-timer-label-pause",
-          "newtab-widget-timer-label-play",
-          "newtab-widget-timer-menu-hide",
-          "newtab-widget-timer-menu-learn-more",
-          "newtab-widget-timer-menu-notifications",
-          "newtab-widget-timer-menu-notifications-on",
-          "newtab-widget-timer-mode-break",
-          "newtab-widget-timer-mode-focus",
-          "newtab-widget-timer-notification-break",
-          "newtab-widget-timer-notification-focus",
-          "newtab-widget-timer-notification-title",
-          "newtab-widget-timer-notification-warning",
-          "newtab-widget-timer-reset",
-          "topsite-label-pinned"
+          "newtab-topic-label-society-parenting"
         ]
       }
     },
@@ -15751,11 +15323,7 @@
     },
     "sv-SE": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "sw": {
       "errors": null,
@@ -15789,7 +15357,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -15810,7 +15377,6 @@
           "newtab-label-sponsored-fixed",
           "newtab-label-visited",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-bookmark",
           "newtab-menu-content-tooltip",
           "newtab-menu-copy-download-link",
@@ -16104,7 +15670,6 @@
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -16348,7 +15913,6 @@
           "newtab-custom-widget-weather-toggle",
           "newtab-customize-panel-icon-button",
           "newtab-customize-panel-icon-button-label",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -16361,7 +15925,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -16622,7 +16185,6 @@
           "newtab-download-mobile-highlight-title",
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -16810,7 +16372,6 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox",
           "newtab-weather-menu-detect-my-location",
           "newtab-weather-opt-in-see-weather"
         ]
@@ -16818,11 +16379,7 @@
     },
     "th": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "tl": {
       "errors": null,
@@ -16855,7 +16412,6 @@
           "newtab-label-source-read-time",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -17079,11 +16635,7 @@
     },
     "tr": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "trs": {
       "errors": null,
@@ -17110,7 +16662,6 @@
           "newtab-custom-widget-weather-toggle",
           "newtab-customize-panel-icon-button",
           "newtab-customize-panel-icon-button-label",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -17122,7 +16673,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -17353,17 +16903,7 @@
     },
     "uk": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox",
-          "newtab-weather-menu-detect-my-location",
-          "newtab-weather-opt-in-not-now",
-          "newtab-weather-opt-in-see-weather",
-          "newtab-weather-opt-in-yes",
-          "newtab-weather-static-city",
-          "newtab-widget-lists-dropdown-create"
-        ]
-      }
+      "missing": null
     },
     "ur": {
       "errors": null,
@@ -17397,7 +16937,6 @@
           "newtab-label-sponsored-by",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -17650,7 +17189,6 @@
           "newtab-empty-section-topstories-generic",
           "newtab-label-sponsored-fixed",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-manage-sponsored-content",
           "newtab-menu-our-sponsors-and-your-privacy",
           "newtab-menu-report",
@@ -17871,11 +17409,7 @@
     },
     "vi": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "wo": {
       "errors": null,
@@ -17909,7 +17443,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -17930,7 +17463,6 @@
           "newtab-label-sponsored-fixed",
           "newtab-label-visited",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-bookmark",
           "newtab-menu-content-tooltip",
           "newtab-menu-copy-download-link",
@@ -18226,7 +17758,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -18247,7 +17778,6 @@
           "newtab-label-sponsored-fixed",
           "newtab-label-visited",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-bookmark",
           "newtab-menu-content-tooltip",
           "newtab-menu-copy-download-link",
@@ -18543,7 +18073,6 @@
           "newtab-discovery-empty-section-topstories-loading",
           "newtab-discovery-empty-section-topstories-timed-out",
           "newtab-discovery-empty-section-topstories-try-again-button",
-          "newtab-dismiss-button-tooltip",
           "newtab-download-mobile-highlight-body-variant-a",
           "newtab-download-mobile-highlight-body-variant-b",
           "newtab-download-mobile-highlight-body-variant-c",
@@ -18564,7 +18093,6 @@
           "newtab-label-sponsored-fixed",
           "newtab-label-visited",
           "newtab-logo-and-wordmark",
-          "newtab-menu-about-fakespot",
           "newtab-menu-bookmark",
           "newtab-menu-content-tooltip",
           "newtab-menu-copy-download-link",
@@ -18830,336 +18358,326 @@
     },
     "zh-CN": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     },
     "zh-TW": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-wallpaper-category-title-firefox"
-        ]
-      }
+      "missing": null
     }
   },
   "message_dates": {
-    "feature-highlight-dismiss-button": "2024-06-04T10:54:00",
-    "feature-highlight-wallpaper": "2024-06-04T10:54:00",
-    "newtab-confirm-delete-history-p1": "2019-06-28T06:31:22",
-    "newtab-confirm-delete-history-p2": "2019-06-28T06:31:22",
-    "newtab-custom-close-menu-button": "2025-08-13T01:31:05",
-    "newtab-custom-row-selector": "2020-12-10T08:36:54",
-    "newtab-custom-settings": "2020-12-10T08:36:54",
-    "newtab-custom-shortcuts-toggle": "2023-09-26T06:32:10",
-    "newtab-custom-stories-personalized-checkbox-label": "2025-08-29T09:59:39",
-    "newtab-custom-stories-personalized-toggle": "2025-08-29T09:59:39",
-    "newtab-custom-stories-toggle": "2024-02-11T04:56:00",
-    "newtab-custom-trending-search-toggle": "2025-06-04T07:43:01",
-    "newtab-custom-wallpaper-cta": "2025-03-26T01:34:05",
-    "newtab-custom-wallpaper-subtitle": "2025-03-26T01:34:05",
-    "newtab-custom-wallpaper-title": "2025-03-26T01:34:05",
-    "newtab-custom-weather-toggle": "2024-05-10T03:35:00",
-    "newtab-custom-widget-lists-toggle": "2025-08-07T04:12:52",
-    "newtab-custom-widget-section-title": "2025-08-07T04:12:52",
-    "newtab-custom-widget-timer-toggle": "2025-08-07T04:12:52",
-    "newtab-custom-widget-trending-search-toggle": "2025-08-07T04:12:52",
-    "newtab-custom-widget-weather-toggle": "2025-08-07T04:12:52",
-    "newtab-customize-panel-icon-button": "2025-06-13T18:55:10",
-    "newtab-customize-panel-icon-button-label": "2025-06-13T18:55:10",
-    "newtab-discovery-empty-section-topstories-content": "2019-07-16T23:52:26",
-    "newtab-discovery-empty-section-topstories-header": "2019-07-16T23:52:26",
-    "newtab-discovery-empty-section-topstories-loading": "2019-07-16T23:52:26",
-    "newtab-discovery-empty-section-topstories-timed-out": "2019-07-16T23:52:26",
-    "newtab-discovery-empty-section-topstories-try-again-button": "2019-07-16T23:52:26",
-    "newtab-dismiss-button-tooltip": "2020-04-02T04:08:42",
-    "newtab-download-mobile-highlight-body-variant-a": "2025-04-17T06:15:29",
-    "newtab-download-mobile-highlight-body-variant-b": "2025-04-17T06:15:29",
-    "newtab-download-mobile-highlight-body-variant-c": "2025-04-17T06:15:29",
-    "newtab-download-mobile-highlight-image": "2025-04-17T06:15:29",
-    "newtab-download-mobile-highlight-title": "2025-04-17T06:15:29",
-    "newtab-empty-section-highlights": "2019-06-28T06:31:22",
-    "newtab-empty-section-topstories-generic": "2024-02-11T04:56:00",
-    "newtab-error-fallback-info": "2019-06-28T06:31:22",
-    "newtab-error-fallback-refresh-link": "2019-06-28T06:31:22",
-    "newtab-label-bookmarked": "2019-06-28T06:31:22",
-    "newtab-label-download": "2019-06-28T06:31:22",
-    "newtab-label-recommended": "2019-06-28T06:31:22",
-    "newtab-label-removed-bookmark": "2019-08-08T15:36:24",
-    "newtab-label-saved": "2019-06-28T06:31:22",
-    "newtab-label-source-read-time": "2021-09-16T09:47:41",
-    "newtab-label-sponsored": "2020-01-24T06:35:54",
-    "newtab-label-sponsored-by": "2020-05-21T06:57:12",
-    "newtab-label-sponsored-fixed": "2025-05-17T02:09:36",
-    "newtab-label-visited": "2019-06-28T06:31:22",
-    "newtab-logo-and-wordmark": "2024-10-03T00:12:03",
-    "newtab-menu-about-fakespot": "2025-10-03T08:04:00",
-    "newtab-menu-bookmark": "2019-06-28T06:31:22",
-    "newtab-menu-content-tooltip": "2019-06-28T06:31:22",
-    "newtab-menu-copy-download-link": "2019-06-28T06:31:22",
-    "newtab-menu-delete-history": "2019-06-28T06:31:22",
-    "newtab-menu-dismiss": "2019-06-28T06:31:22",
-    "newtab-menu-edit-topsites": "2019-06-28T06:31:22",
-    "newtab-menu-go-to-download-page": "2019-06-28T06:31:22",
-    "newtab-menu-manage-sponsored-content": "2025-03-13T11:57:03",
-    "newtab-menu-open-file": "2019-06-28T06:31:22",
-    "newtab-menu-open-new-private-window": "2019-06-28T06:31:22",
-    "newtab-menu-open-new-window": "2019-06-28T06:31:22",
-    "newtab-menu-our-sponsors-and-your-privacy": "2025-03-13T11:57:03",
-    "newtab-menu-pin": "2019-06-28T06:31:22",
-    "newtab-menu-remove-bookmark": "2019-06-28T06:31:22",
-    "newtab-menu-remove-download": "2019-06-28T06:31:22",
-    "newtab-menu-report": "2025-05-07T11:52:47",
-    "newtab-menu-report-this-ad": "2025-03-28T22:21:18",
-    "newtab-menu-section-block": "2024-12-11T09:21:28",
-    "newtab-menu-section-tooltip": "2019-06-28T06:31:22",
-    "newtab-menu-section-unfollow": "2025-02-12T07:50:18",
-    "newtab-menu-show-file": "2019-06-28T06:31:22",
-    "newtab-menu-show-privacy-info": "2019-10-05T03:06:01",
-    "newtab-menu-unpin": "2019-06-28T06:31:22",
-    "newtab-new-user-custom-wallpaper-cta": "2025-07-11T17:09:09",
-    "newtab-new-user-custom-wallpaper-subtitle": "2025-07-11T17:09:09",
-    "newtab-new-user-custom-wallpaper-title": "2025-07-11T17:09:09",
-    "newtab-page-title": "2019-06-28T06:31:22",
-    "newtab-pocket-thumbs-down-tooltip": "2024-06-28T11:41:21",
-    "newtab-pocket-thumbs-up-tooltip": "2024-06-28T11:41:21",
-    "newtab-promo-card-body": "2025-08-09T08:16:39",
-    "newtab-promo-card-cta": "2025-08-09T08:16:39",
-    "newtab-promo-card-dismiss-button": "2025-08-14T02:47:35",
-    "newtab-promo-card-title": "2025-08-09T08:16:39",
-    "newtab-report-ads-reason-inappropriate": "2025-04-15T12:47:15",
-    "newtab-report-ads-reason-not-interested": "2025-04-15T12:47:15",
-    "newtab-report-ads-reason-seen-it-too-many-times": "2025-04-15T12:47:15",
-    "newtab-report-cancel": "2025-04-15T12:47:15",
-    "newtab-report-content-inappropriate-offensive": "2025-04-15T12:47:15",
-    "newtab-report-content-outdated": "2025-04-15T12:47:15",
-    "newtab-report-content-spam-misleading": "2025-04-15T12:47:15",
-    "newtab-report-content-why-reporting-this": "2025-04-15T12:47:15",
-    "newtab-report-content-wrong-category": "2025-04-15T12:47:15",
-    "newtab-report-submit": "2025-04-15T12:47:15",
-    "newtab-search-box-handoff-input": "2021-03-24T09:56:54",
-    "newtab-search-box-handoff-input-no-engine": "2021-03-24T09:56:54",
-    "newtab-search-box-handoff-text": "2021-03-24T09:56:54",
-    "newtab-search-box-handoff-text-no-engine": "2021-03-24T09:56:54",
-    "newtab-search-box-input": "2021-01-08T01:38:48",
-    "newtab-search-box-search-button": "2019-06-28T06:31:22",
-    "newtab-search-box-text": "2021-07-23T01:46:30",
-    "newtab-section-block-button": "2025-01-18T03:49:56",
-    "newtab-section-block-topic-button": "2025-02-12T07:50:18",
-    "newtab-section-blocked-button": "2025-01-18T03:49:56",
-    "newtab-section-cancel-button": "2024-12-20T02:29:28",
-    "newtab-section-confirm-block-topic-p1": "2025-02-12T07:50:18",
-    "newtab-section-confirm-block-topic-p2": "2025-02-12T07:50:18",
-    "newtab-section-follow-button": "2024-12-12T13:16:01",
-    "newtab-section-follow-highlight-subtitle": "2025-06-24T01:15:41",
-    "newtab-section-follow-highlight-title": "2025-06-24T01:15:41",
-    "newtab-section-following-button": "2024-12-12T13:16:01",
-    "newtab-section-header-recent-activity": "2020-12-01T07:51:44",
-    "newtab-section-header-stories": "2024-02-11T04:56:00",
-    "newtab-section-header-todays-picks": "2024-08-01T06:06:14",
-    "newtab-section-header-topsites": "2019-06-28T06:31:22",
-    "newtab-section-manage-topics-button-v2": "2025-02-12T07:50:18",
-    "newtab-section-mangage-topics-blocked-topics": "2025-02-12T07:50:18",
-    "newtab-section-mangage-topics-blocked-topics-empty-state": "2025-01-18T03:49:56",
-    "newtab-section-mangage-topics-followed-topics": "2025-02-12T07:50:18",
-    "newtab-section-mangage-topics-followed-topics-empty-state": "2025-01-18T03:49:56",
-    "newtab-section-mangage-topics-title": "2025-01-18T03:49:56",
-    "newtab-section-menu-privacy-notice": "2019-06-28T06:31:22",
-    "newtab-section-unblock-button": "2025-01-18T03:49:56",
-    "newtab-section-unfollow-button": "2024-12-12T13:16:01",
-    "newtab-settings-dialog-label": "2024-11-06T13:14:26",
-    "newtab-shortcuts-highlight-subtitle": "2025-07-08T08:18:56",
-    "newtab-shortcuts-highlight-title": "2025-07-08T08:18:56",
-    "newtab-toast-dismiss-button": "2024-06-28T11:41:21",
-    "newtab-toast-thanks-for-reporting": "2025-04-25T04:26:59",
-    "newtab-toast-thumbs-up-or-down2": "2025-01-22T02:29:45",
-    "newtab-topic-label-arts": "2024-07-30T07:30:32",
-    "newtab-topic-label-business": "2024-07-30T07:30:32",
-    "newtab-topic-label-career": "2024-07-30T07:30:32",
-    "newtab-topic-label-education": "2024-07-30T07:30:32",
-    "newtab-topic-label-education-science": "2024-07-30T07:30:32",
-    "newtab-topic-label-finance": "2024-07-30T07:30:32",
-    "newtab-topic-label-food": "2024-07-30T07:30:32",
-    "newtab-topic-label-government": "2024-07-30T07:30:32",
-    "newtab-topic-label-health": "2024-07-30T07:30:32",
-    "newtab-topic-label-hobbies": "2024-07-30T07:30:32",
-    "newtab-topic-label-home": "2024-08-06T04:06:48",
-    "newtab-topic-label-society": "2024-07-30T07:30:32",
-    "newtab-topic-label-society-parenting": "2024-07-30T07:30:32",
-    "newtab-topic-label-sports": "2024-07-30T07:30:32",
-    "newtab-topic-label-tech": "2024-07-30T07:30:32",
-    "newtab-topic-label-travel": "2024-07-30T07:30:32",
-    "newtab-topic-selection-button-maybe-later": "2024-08-02T02:17:58",
-    "newtab-topic-selection-button-pick-interests": "2024-08-01T06:06:14",
-    "newtab-topic-selection-button-update-interests": "2024-08-01T06:06:14",
-    "newtab-topic-selection-cancel-button": "2024-08-01T05:50:13",
-    "newtab-topic-selection-privacy-link": "2024-08-02T02:17:58",
-    "newtab-topic-selection-save-button": "2024-08-01T05:50:13",
-    "newtab-topic-selection-subtitle": "2024-08-01T05:50:13",
-    "newtab-topic-selection-title": "2024-08-01T05:50:13",
-    "newtab-topsite-sponsored": "2020-10-19T02:11:36",
-    "newtab-topsites-add-button": "2019-06-28T06:31:22",
-    "newtab-topsites-add-search-engine-header": "2019-06-28T06:31:22",
-    "newtab-topsites-add-shortcut-header": "2021-01-09T05:55:24",
-    "newtab-topsites-add-shortcut-label": "2024-03-02T07:26:11",
-    "newtab-topsites-add-shortcut-title": "2025-07-09T05:33:02",
-    "newtab-topsites-cancel-button": "2019-06-28T06:31:22",
-    "newtab-topsites-delete-history-button": "2019-06-28T06:31:22",
-    "newtab-topsites-edit-shortcut-header": "2021-01-09T05:55:24",
-    "newtab-topsites-image-url-label": "2019-06-28T06:31:22",
-    "newtab-topsites-image-validation": "2019-06-28T06:31:22",
-    "newtab-topsites-preview-button": "2019-06-28T06:31:22",
-    "newtab-topsites-save-button": "2019-06-28T06:31:22",
-    "newtab-topsites-title-input": "2019-06-28T06:31:22",
-    "newtab-topsites-title-label": "2019-06-28T06:31:22",
-    "newtab-topsites-url-input": "2019-06-28T06:31:22",
-    "newtab-topsites-url-label": "2019-06-28T06:31:22",
-    "newtab-topsites-url-validation": "2019-06-28T06:31:22",
-    "newtab-topsites-use-image-link": "2019-06-28T06:31:22",
-    "newtab-trending-searches-dismiss": "2025-06-09T23:57:24",
-    "newtab-trending-searches-hide-trending": "2025-06-04T07:43:01",
-    "newtab-trending-searches-learn-more": "2025-06-09T23:57:24",
-    "newtab-trending-searches-show-trending": "2025-06-04T07:43:01",
-    "newtab-trending-searches-title": "2025-06-25T08:10:38",
-    "newtab-wallpaper-abstract-black-waves": "2025-02-14T09:21:16",
-    "newtab-wallpaper-abstract-blue": "2024-06-07T00:52:53",
-    "newtab-wallpaper-abstract-blue-purple": "2024-06-07T00:52:53",
-    "newtab-wallpaper-abstract-blue-purple-waves": "2025-02-14T09:21:16",
-    "newtab-wallpaper-abstract-green": "2024-06-07T00:52:53",
-    "newtab-wallpaper-abstract-orange": "2024-06-07T00:52:53",
-    "newtab-wallpaper-abstract-purple": "2024-06-07T00:52:53",
-    "newtab-wallpaper-abstract-purple-green": "2025-02-14T09:21:16",
-    "newtab-wallpaper-abstract-white-curves": "2025-02-14T09:21:16",
-    "newtab-wallpaper-attribution": "2024-04-12T00:01:18",
-    "newtab-wallpaper-beach-at-sunrise": "2024-06-07T00:52:53",
-    "newtab-wallpaper-beach-at-sunset": "2024-06-07T00:52:53",
-    "newtab-wallpaper-beige": "2024-06-07T00:52:53",
-    "newtab-wallpaper-blue": "2024-06-07T00:52:53",
-    "newtab-wallpaper-blue-flowers": "2025-03-17T16:48:23",
-    "newtab-wallpaper-brown": "2024-06-07T00:52:53",
-    "newtab-wallpaper-category-title-abstract": "2024-06-07T00:52:53",
-    "newtab-wallpaper-category-title-celestial": "2025-02-14T09:21:16",
-    "newtab-wallpaper-category-title-colors": "2024-06-07T00:52:53",
-    "newtab-wallpaper-category-title-firefox": "2025-10-03T06:52:03",
-    "newtab-wallpaper-category-title-photographs": "2024-06-07T00:52:53",
-    "newtab-wallpaper-celestial-black-hole": "2025-02-14T09:21:16",
-    "newtab-wallpaper-celestial-earth-night": "2025-02-14T09:21:16",
-    "newtab-wallpaper-celestial-eclipse-time-lapse": "2025-02-14T09:21:16",
-    "newtab-wallpaper-celestial-lunar-eclipse": "2025-02-14T09:21:16",
-    "newtab-wallpaper-celestial-river": "2025-02-14T09:21:16",
-    "newtab-wallpaper-celestial-starry-sky": "2025-02-14T09:21:16",
-    "newtab-wallpaper-custom-color": "2025-02-14T09:21:16",
-    "newtab-wallpaper-dark-aurora": "2024-04-12T00:01:18",
-    "newtab-wallpaper-dark-blue": "2024-06-07T00:52:53",
-    "newtab-wallpaper-dark-city": "2024-04-12T00:01:18",
-    "newtab-wallpaper-dark-color": "2024-04-12T00:01:18",
-    "newtab-wallpaper-dark-fox-anniversary": "2025-02-14T09:21:16",
-    "newtab-wallpaper-dark-green": "2024-06-07T00:52:53",
-    "newtab-wallpaper-dark-mountain": "2024-04-12T00:01:18",
-    "newtab-wallpaper-dark-panda": "2024-04-12T00:01:18",
-    "newtab-wallpaper-dark-purple": "2024-06-07T00:52:53",
-    "newtab-wallpaper-dark-sky": "2024-04-12T00:01:18",
-    "newtab-wallpaper-error-max-file-size": "2025-02-14T09:21:16",
-    "newtab-wallpaper-error-upload-file-type": "2025-08-30T00:54:09",
-    "newtab-wallpaper-feature-highlight-button": "2024-06-04T10:54:00",
-    "newtab-wallpaper-feature-highlight-content": "2024-06-04T10:54:00",
-    "newtab-wallpaper-feature-highlight-header": "2024-06-04T10:54:00",
-    "newtab-wallpaper-gradient-orange": "2024-06-07T00:52:53",
-    "newtab-wallpaper-green": "2024-06-07T00:52:53",
-    "newtab-wallpaper-hot-air-balloons": "2025-02-14T09:21:16",
-    "newtab-wallpaper-light-beach": "2024-04-12T00:01:18",
-    "newtab-wallpaper-light-blue": "2024-06-07T00:52:53",
-    "newtab-wallpaper-light-color": "2024-04-12T00:01:18",
-    "newtab-wallpaper-light-fox-anniversary": "2024-10-26T00:38:42",
-    "newtab-wallpaper-light-green": "2024-06-07T00:52:53",
-    "newtab-wallpaper-light-landscape": "2024-04-12T00:01:18",
-    "newtab-wallpaper-light-mountain": "2024-04-12T00:01:18",
-    "newtab-wallpaper-light-pink": "2024-06-07T00:52:53",
-    "newtab-wallpaper-light-purple": "2024-06-07T00:52:53",
-    "newtab-wallpaper-light-red-panda": "2024-04-12T00:01:18",
-    "newtab-wallpaper-light-sky": "2024-04-12T00:01:18",
-    "newtab-wallpaper-orange": "2024-06-07T00:52:53",
-    "newtab-wallpaper-palm-trees": "2025-02-14T09:21:16",
-    "newtab-wallpaper-pink": "2024-06-07T00:52:53",
-    "newtab-wallpaper-red": "2024-06-07T00:52:53",
-    "newtab-wallpaper-red-panda-yawns-in-a-tree": "2024-06-07T00:52:53",
-    "newtab-wallpaper-reset": "2024-04-12T00:01:18",
-    "newtab-wallpaper-sand-dunes": "2025-02-14T09:21:16",
-    "newtab-wallpaper-sky-with-pink-clouds": "2024-06-07T00:52:53",
-    "newtab-wallpaper-starry-canyon": "2025-02-14T09:21:16",
-    "newtab-wallpaper-storm-sky": "2024-06-07T00:52:53",
-    "newtab-wallpaper-suspension-bridge": "2025-02-14T09:21:16",
-    "newtab-wallpaper-title": "2024-04-12T00:01:18",
-    "newtab-wallpaper-upload-image": "2025-02-14T09:21:16",
-    "newtab-wallpaper-white-mountains": "2024-06-07T00:52:53",
-    "newtab-wallpaper-yellow": "2024-06-07T00:52:53",
-    "newtab-weather-change-location-search-input-placeholder": "2024-12-06T09:47:22",
-    "newtab-weather-error-not-available": "2024-05-10T03:35:00",
-    "newtab-weather-menu-change-location": "2024-05-10T03:35:00",
-    "newtab-weather-menu-change-temperature-units-celsius": "2024-05-10T03:35:00",
-    "newtab-weather-menu-change-temperature-units-fahrenheit": "2024-05-10T03:35:00",
-    "newtab-weather-menu-change-weather-display-detailed": "2024-05-10T03:35:00",
-    "newtab-weather-menu-change-weather-display-simple": "2024-05-10T03:35:00",
-    "newtab-weather-menu-detect-my-location": "2025-10-02T12:35:21",
-    "newtab-weather-menu-hide-weather": "2024-05-10T03:35:00",
-    "newtab-weather-menu-learn-more": "2024-05-10T03:35:00",
-    "newtab-weather-menu-temperature-option-celsius": "2024-05-10T03:35:00",
-    "newtab-weather-menu-temperature-option-fahrenheit": "2024-05-10T03:35:00",
-    "newtab-weather-menu-temperature-units": "2024-05-10T03:35:00",
-    "newtab-weather-menu-weather-display": "2024-05-10T03:35:00",
-    "newtab-weather-menu-weather-display-option-detailed": "2024-05-10T03:35:00",
-    "newtab-weather-menu-weather-display-option-simple": "2024-05-10T03:35:00",
-    "newtab-weather-opt-in-not-now": "2025-10-02T12:35:21",
-    "newtab-weather-opt-in-see-weather": "2025-10-02T12:35:21",
-    "newtab-weather-opt-in-yes": "2025-10-02T12:35:21",
-    "newtab-weather-see-forecast": "2024-05-10T03:35:00",
-    "newtab-weather-sponsored": "2024-05-10T03:35:00",
-    "newtab-weather-static-city": "2025-10-02T12:35:21",
-    "newtab-widget-keep-scrolling": "2025-08-15T10:32:25",
-    "newtab-widget-lists-completed-list": "2025-08-07T04:12:52",
-    "newtab-widget-lists-dropdown-create": "2025-09-19T05:50:38",
-    "newtab-widget-lists-empty-cta": "2025-08-07T04:12:52",
-    "newtab-widget-lists-input-add-an-item": "2025-08-16T01:20:57",
-    "newtab-widget-lists-input-error": "2025-08-07T04:12:52",
-    "newtab-widget-lists-input-menu-delete": "2025-08-07T04:12:52",
-    "newtab-widget-lists-input-menu-edit": "2025-08-07T04:12:52",
-    "newtab-widget-lists-input-menu-move-down": "2025-08-07T04:12:52",
-    "newtab-widget-lists-input-menu-move-up": "2025-08-07T04:12:52",
-    "newtab-widget-lists-input-menu-open-link": "2025-08-07T04:12:52",
-    "newtab-widget-lists-label-beta": "2025-08-13T07:53:56",
-    "newtab-widget-lists-label-new": "2025-08-13T07:53:56",
-    "newtab-widget-lists-menu-copy": "2025-08-07T04:12:52",
-    "newtab-widget-lists-menu-create": "2025-08-07T04:12:52",
-    "newtab-widget-lists-menu-delete": "2025-08-07T04:12:52",
-    "newtab-widget-lists-menu-edit": "2025-08-07T04:12:52",
-    "newtab-widget-lists-menu-hide": "2025-08-07T04:12:52",
-    "newtab-widget-lists-menu-learn-more": "2025-08-07T04:12:52",
-    "newtab-widget-lists-name-label-default": "2025-08-22T12:02:26",
-    "newtab-widget-lists-name-placeholder-default": "2025-08-22T12:02:26",
-    "newtab-widget-lists-name-placeholder-new": "2025-08-22T12:02:26",
-    "newtab-widget-message-copy": "2025-08-20T03:14:31",
-    "newtab-widget-message-title": "2025-08-20T03:14:31",
-    "newtab-widget-task-list-menu-copy": "2025-08-07T04:12:52",
-    "newtab-widget-timer-label-pause": "2025-09-06T05:35:44",
-    "newtab-widget-timer-label-play": "2025-09-06T05:35:44",
-    "newtab-widget-timer-menu-hide": "2025-08-07T04:12:52",
-    "newtab-widget-timer-menu-learn-more": "2025-08-07T04:12:52",
-    "newtab-widget-timer-menu-notifications": "2025-08-07T04:12:52",
-    "newtab-widget-timer-menu-notifications-on": "2025-08-08T07:23:16",
-    "newtab-widget-timer-mode-break": "2025-08-07T04:12:52",
-    "newtab-widget-timer-mode-focus": "2025-08-07T04:12:52",
-    "newtab-widget-timer-notification-break": "2025-08-07T04:12:52",
-    "newtab-widget-timer-notification-focus": "2025-08-07T04:12:52",
-    "newtab-widget-timer-notification-title": "2025-08-07T04:12:52",
-    "newtab-widget-timer-notification-warning": "2025-08-07T04:12:52",
-    "newtab-widget-timer-reset": "2025-08-07T04:12:52",
-    "topsite-label-pinned": "2025-07-24T12:47:20"
+    "feature-highlight-dismiss-button": "2024-06-03T19:54:00",
+    "feature-highlight-wallpaper": "2024-06-03T19:54:00",
+    "newtab-confirm-delete-history-p1": "2019-06-27T15:31:22",
+    "newtab-confirm-delete-history-p2": "2019-06-27T15:31:22",
+    "newtab-custom-close-menu-button": "2025-08-12T10:31:05",
+    "newtab-custom-row-selector": "2020-12-09T15:36:54",
+    "newtab-custom-settings": "2020-12-09T15:36:54",
+    "newtab-custom-shortcuts-toggle": "2023-09-25T15:32:10",
+    "newtab-custom-stories-personalized-checkbox-label": "2025-08-28T18:59:39",
+    "newtab-custom-stories-personalized-toggle": "2025-08-28T18:59:39",
+    "newtab-custom-stories-toggle": "2024-02-10T11:56:00",
+    "newtab-custom-trending-search-toggle": "2025-06-03T16:43:01",
+    "newtab-custom-wallpaper-cta": "2025-03-25T09:34:05",
+    "newtab-custom-wallpaper-subtitle": "2025-03-25T09:34:05",
+    "newtab-custom-wallpaper-title": "2025-03-25T09:34:05",
+    "newtab-custom-weather-toggle": "2024-05-09T12:35:00",
+    "newtab-custom-widget-lists-toggle": "2025-08-06T13:12:52",
+    "newtab-custom-widget-section-title": "2025-08-06T13:12:52",
+    "newtab-custom-widget-timer-toggle": "2025-08-06T13:12:52",
+    "newtab-custom-widget-trending-search-toggle": "2025-08-06T13:12:52",
+    "newtab-custom-widget-weather-toggle": "2025-08-06T13:12:52",
+    "newtab-customize-panel-icon-button": "2025-06-13T03:55:10",
+    "newtab-customize-panel-icon-button-label": "2025-06-13T03:55:10",
+    "newtab-discovery-empty-section-topstories-content": "2019-07-16T08:52:26",
+    "newtab-discovery-empty-section-topstories-header": "2019-07-16T08:52:26",
+    "newtab-discovery-empty-section-topstories-loading": "2019-07-16T08:52:26",
+    "newtab-discovery-empty-section-topstories-timed-out": "2019-07-16T08:52:26",
+    "newtab-discovery-empty-section-topstories-try-again-button": "2019-07-16T08:52:26",
+    "newtab-download-mobile-highlight-body-variant-a": "2025-04-16T15:15:29",
+    "newtab-download-mobile-highlight-body-variant-b": "2025-04-16T15:15:29",
+    "newtab-download-mobile-highlight-body-variant-c": "2025-04-16T15:15:29",
+    "newtab-download-mobile-highlight-image": "2025-04-16T15:15:29",
+    "newtab-download-mobile-highlight-title": "2025-04-16T15:15:29",
+    "newtab-empty-section-highlights": "2019-06-27T15:31:22",
+    "newtab-empty-section-topstories-generic": "2024-02-10T11:56:00",
+    "newtab-error-fallback-info": "2019-06-27T15:31:22",
+    "newtab-error-fallback-refresh-link": "2019-06-27T15:31:22",
+    "newtab-label-bookmarked": "2019-06-27T15:31:22",
+    "newtab-label-download": "2019-06-27T15:31:22",
+    "newtab-label-recommended": "2019-06-27T15:31:22",
+    "newtab-label-removed-bookmark": "2019-08-08T00:36:24",
+    "newtab-label-saved": "2019-06-27T15:31:22",
+    "newtab-label-source-read-time": "2021-09-15T18:47:41",
+    "newtab-label-sponsored": "2020-01-23T13:35:54",
+    "newtab-label-sponsored-by": "2020-05-20T15:57:12",
+    "newtab-label-sponsored-fixed": "2025-05-16T11:09:36",
+    "newtab-label-visited": "2019-06-27T15:31:22",
+    "newtab-logo-and-wordmark": "2024-10-02T09:12:03",
+    "newtab-menu-bookmark": "2019-06-27T15:31:22",
+    "newtab-menu-content-tooltip": "2019-06-27T15:31:22",
+    "newtab-menu-copy-download-link": "2019-06-27T15:31:22",
+    "newtab-menu-delete-history": "2019-06-27T15:31:22",
+    "newtab-menu-dismiss": "2019-06-27T15:31:22",
+    "newtab-menu-edit-topsites": "2019-06-27T15:31:22",
+    "newtab-menu-go-to-download-page": "2019-06-27T15:31:22",
+    "newtab-menu-manage-sponsored-content": "2025-03-12T19:57:03",
+    "newtab-menu-open-file": "2019-06-27T15:31:22",
+    "newtab-menu-open-new-private-window": "2019-06-27T15:31:22",
+    "newtab-menu-open-new-window": "2019-06-27T15:31:22",
+    "newtab-menu-our-sponsors-and-your-privacy": "2025-03-12T19:57:03",
+    "newtab-menu-pin": "2019-06-27T15:31:22",
+    "newtab-menu-remove-bookmark": "2019-06-27T15:31:22",
+    "newtab-menu-remove-download": "2019-06-27T15:31:22",
+    "newtab-menu-report": "2025-05-06T20:52:47",
+    "newtab-menu-report-this-ad": "2025-03-28T06:21:18",
+    "newtab-menu-section-block": "2024-12-10T16:21:28",
+    "newtab-menu-section-tooltip": "2019-06-27T15:31:22",
+    "newtab-menu-section-unfollow": "2025-02-11T14:50:18",
+    "newtab-menu-show-file": "2019-06-27T15:31:22",
+    "newtab-menu-show-privacy-info": "2019-10-04T12:06:01",
+    "newtab-menu-unpin": "2019-06-27T15:31:22",
+    "newtab-new-user-custom-wallpaper-cta": "2025-07-11T02:09:09",
+    "newtab-new-user-custom-wallpaper-subtitle": "2025-07-11T02:09:09",
+    "newtab-new-user-custom-wallpaper-title": "2025-07-11T02:09:09",
+    "newtab-page-title": "2019-06-27T15:31:22",
+    "newtab-pocket-thumbs-down-tooltip": "2024-06-27T20:41:21",
+    "newtab-pocket-thumbs-up-tooltip": "2024-06-27T20:41:21",
+    "newtab-promo-card-body": "2025-08-08T17:16:39",
+    "newtab-promo-card-cta": "2025-08-08T17:16:39",
+    "newtab-promo-card-dismiss-button": "2025-08-13T11:47:35",
+    "newtab-promo-card-title": "2025-08-08T17:16:39",
+    "newtab-report-ads-reason-inappropriate": "2025-04-14T21:47:15",
+    "newtab-report-ads-reason-not-interested": "2025-04-14T21:47:15",
+    "newtab-report-ads-reason-seen-it-too-many-times": "2025-04-14T21:47:15",
+    "newtab-report-cancel": "2025-04-14T21:47:15",
+    "newtab-report-content-inappropriate-offensive": "2025-04-14T21:47:15",
+    "newtab-report-content-outdated": "2025-04-14T21:47:15",
+    "newtab-report-content-spam-misleading": "2025-04-14T21:47:15",
+    "newtab-report-content-why-reporting-this": "2025-04-14T21:47:15",
+    "newtab-report-content-wrong-category": "2025-04-14T21:47:15",
+    "newtab-report-submit": "2025-04-14T21:47:15",
+    "newtab-search-box-handoff-input": "2021-03-23T17:56:54",
+    "newtab-search-box-handoff-input-no-engine": "2021-03-23T17:56:54",
+    "newtab-search-box-handoff-text": "2021-03-23T17:56:54",
+    "newtab-search-box-handoff-text-no-engine": "2021-03-23T17:56:54",
+    "newtab-search-box-input": "2021-01-07T08:38:48",
+    "newtab-search-box-search-button": "2019-06-27T15:31:22",
+    "newtab-search-box-text": "2021-07-22T10:46:30",
+    "newtab-section-block-button": "2025-01-17T10:49:56",
+    "newtab-section-block-topic-button": "2025-02-11T14:50:18",
+    "newtab-section-blocked-button": "2025-01-17T10:49:56",
+    "newtab-section-cancel-button": "2024-12-19T09:29:28",
+    "newtab-section-confirm-block-topic-p1": "2025-02-11T14:50:18",
+    "newtab-section-confirm-block-topic-p2": "2025-02-11T14:50:18",
+    "newtab-section-follow-button": "2024-12-11T20:16:01",
+    "newtab-section-follow-highlight-subtitle": "2025-06-23T10:15:41",
+    "newtab-section-follow-highlight-title": "2025-06-23T10:15:41",
+    "newtab-section-following-button": "2024-12-11T20:16:01",
+    "newtab-section-header-recent-activity": "2020-11-30T14:51:44",
+    "newtab-section-header-stories": "2024-02-10T11:56:00",
+    "newtab-section-header-todays-picks": "2024-07-31T15:06:14",
+    "newtab-section-header-topsites": "2019-06-27T15:31:22",
+    "newtab-section-manage-topics-button-v2": "2025-02-11T14:50:18",
+    "newtab-section-mangage-topics-blocked-topics": "2025-02-11T14:50:18",
+    "newtab-section-mangage-topics-blocked-topics-empty-state": "2025-01-17T10:49:56",
+    "newtab-section-mangage-topics-followed-topics": "2025-02-11T14:50:18",
+    "newtab-section-mangage-topics-followed-topics-empty-state": "2025-01-17T10:49:56",
+    "newtab-section-mangage-topics-title": "2025-01-17T10:49:56",
+    "newtab-section-menu-privacy-notice": "2019-06-27T15:31:22",
+    "newtab-section-unblock-button": "2025-01-17T10:49:56",
+    "newtab-section-unfollow-button": "2024-12-11T20:16:01",
+    "newtab-settings-dialog-label": "2024-11-05T20:14:26",
+    "newtab-shortcuts-highlight-subtitle": "2025-07-07T17:18:56",
+    "newtab-shortcuts-highlight-title": "2025-07-07T17:18:56",
+    "newtab-toast-dismiss-button": "2024-06-27T20:41:21",
+    "newtab-toast-thanks-for-reporting": "2025-04-24T13:26:59",
+    "newtab-toast-thumbs-up-or-down2": "2025-01-21T09:29:45",
+    "newtab-topic-label-arts": "2024-07-29T16:30:32",
+    "newtab-topic-label-business": "2024-07-29T16:30:32",
+    "newtab-topic-label-career": "2024-07-29T16:30:32",
+    "newtab-topic-label-education": "2024-07-29T16:30:32",
+    "newtab-topic-label-education-science": "2024-07-29T16:30:32",
+    "newtab-topic-label-finance": "2024-07-29T16:30:32",
+    "newtab-topic-label-food": "2024-07-29T16:30:32",
+    "newtab-topic-label-government": "2024-07-29T16:30:32",
+    "newtab-topic-label-health": "2024-07-29T16:30:32",
+    "newtab-topic-label-hobbies": "2024-07-29T16:30:32",
+    "newtab-topic-label-home": "2024-08-05T13:06:48",
+    "newtab-topic-label-society": "2024-07-29T16:30:32",
+    "newtab-topic-label-society-parenting": "2024-07-29T16:30:32",
+    "newtab-topic-label-sports": "2024-07-29T16:30:32",
+    "newtab-topic-label-tech": "2024-07-29T16:30:32",
+    "newtab-topic-label-travel": "2024-07-29T16:30:32",
+    "newtab-topic-selection-button-maybe-later": "2024-08-01T11:17:58",
+    "newtab-topic-selection-button-pick-interests": "2024-07-31T15:06:14",
+    "newtab-topic-selection-button-update-interests": "2024-07-31T15:06:14",
+    "newtab-topic-selection-cancel-button": "2024-07-31T14:50:13",
+    "newtab-topic-selection-privacy-link": "2024-08-01T11:17:58",
+    "newtab-topic-selection-save-button": "2024-07-31T14:50:13",
+    "newtab-topic-selection-subtitle": "2024-07-31T14:50:13",
+    "newtab-topic-selection-title": "2024-07-31T14:50:13",
+    "newtab-topsite-sponsored": "2020-10-18T10:11:36",
+    "newtab-topsites-add-button": "2019-06-27T15:31:22",
+    "newtab-topsites-add-search-engine-header": "2019-06-27T15:31:22",
+    "newtab-topsites-add-shortcut-header": "2021-01-08T12:55:24",
+    "newtab-topsites-add-shortcut-label": "2024-03-01T14:26:11",
+    "newtab-topsites-add-shortcut-title": "2025-07-08T14:33:02",
+    "newtab-topsites-cancel-button": "2019-06-27T15:31:22",
+    "newtab-topsites-delete-history-button": "2019-06-27T15:31:22",
+    "newtab-topsites-edit-shortcut-header": "2021-01-08T12:55:24",
+    "newtab-topsites-image-url-label": "2019-06-27T15:31:22",
+    "newtab-topsites-image-validation": "2019-06-27T15:31:22",
+    "newtab-topsites-preview-button": "2019-06-27T15:31:22",
+    "newtab-topsites-save-button": "2019-06-27T15:31:22",
+    "newtab-topsites-title-input": "2019-06-27T15:31:22",
+    "newtab-topsites-title-label": "2019-06-27T15:31:22",
+    "newtab-topsites-url-input": "2019-06-27T15:31:22",
+    "newtab-topsites-url-label": "2019-06-27T15:31:22",
+    "newtab-topsites-url-validation": "2019-06-27T15:31:22",
+    "newtab-topsites-use-image-link": "2019-06-27T15:31:22",
+    "newtab-trending-searches-dismiss": "2025-06-09T08:57:24",
+    "newtab-trending-searches-hide-trending": "2025-06-03T16:43:01",
+    "newtab-trending-searches-learn-more": "2025-06-09T08:57:24",
+    "newtab-trending-searches-show-trending": "2025-06-03T16:43:01",
+    "newtab-trending-searches-title": "2025-06-24T17:10:38",
+    "newtab-wallpaper-abstract-black-waves": "2025-02-13T16:21:16",
+    "newtab-wallpaper-abstract-blue": "2024-06-06T09:52:53",
+    "newtab-wallpaper-abstract-blue-purple": "2024-06-06T09:52:53",
+    "newtab-wallpaper-abstract-blue-purple-waves": "2025-02-13T16:21:16",
+    "newtab-wallpaper-abstract-green": "2024-06-06T09:52:53",
+    "newtab-wallpaper-abstract-orange": "2024-06-06T09:52:53",
+    "newtab-wallpaper-abstract-purple": "2024-06-06T09:52:53",
+    "newtab-wallpaper-abstract-purple-green": "2025-02-13T16:21:16",
+    "newtab-wallpaper-abstract-white-curves": "2025-02-13T16:21:16",
+    "newtab-wallpaper-attribution": "2024-04-11T09:01:18",
+    "newtab-wallpaper-beach-at-sunrise": "2024-06-06T09:52:53",
+    "newtab-wallpaper-beach-at-sunset": "2024-06-06T09:52:53",
+    "newtab-wallpaper-beige": "2024-06-06T09:52:53",
+    "newtab-wallpaper-blue": "2024-06-06T09:52:53",
+    "newtab-wallpaper-blue-flowers": "2025-03-17T00:48:23",
+    "newtab-wallpaper-brown": "2024-06-06T09:52:53",
+    "newtab-wallpaper-category-title-abstract": "2024-06-06T09:52:53",
+    "newtab-wallpaper-category-title-celestial": "2025-02-13T16:21:16",
+    "newtab-wallpaper-category-title-colors": "2024-06-06T09:52:53",
+    "newtab-wallpaper-category-title-firefox": "2025-10-02T15:52:03",
+    "newtab-wallpaper-category-title-photographs": "2024-06-06T09:52:53",
+    "newtab-wallpaper-celestial-black-hole": "2025-02-13T16:21:16",
+    "newtab-wallpaper-celestial-earth-night": "2025-02-13T16:21:16",
+    "newtab-wallpaper-celestial-eclipse-time-lapse": "2025-02-13T16:21:16",
+    "newtab-wallpaper-celestial-lunar-eclipse": "2025-02-13T16:21:16",
+    "newtab-wallpaper-celestial-river": "2025-02-13T16:21:16",
+    "newtab-wallpaper-celestial-starry-sky": "2025-02-13T16:21:16",
+    "newtab-wallpaper-custom-color": "2025-02-13T16:21:16",
+    "newtab-wallpaper-dark-aurora": "2024-04-11T09:01:18",
+    "newtab-wallpaper-dark-blue": "2024-06-06T09:52:53",
+    "newtab-wallpaper-dark-city": "2024-04-11T09:01:18",
+    "newtab-wallpaper-dark-color": "2024-04-11T09:01:18",
+    "newtab-wallpaper-dark-fox-anniversary": "2025-02-13T16:21:16",
+    "newtab-wallpaper-dark-green": "2024-06-06T09:52:53",
+    "newtab-wallpaper-dark-mountain": "2024-04-11T09:01:18",
+    "newtab-wallpaper-dark-panda": "2024-04-11T09:01:18",
+    "newtab-wallpaper-dark-purple": "2024-06-06T09:52:53",
+    "newtab-wallpaper-dark-sky": "2024-04-11T09:01:18",
+    "newtab-wallpaper-error-max-file-size": "2025-02-13T16:21:16",
+    "newtab-wallpaper-error-upload-file-type": "2025-08-29T09:54:09",
+    "newtab-wallpaper-feature-highlight-button": "2024-06-03T19:54:00",
+    "newtab-wallpaper-feature-highlight-content": "2024-06-03T19:54:00",
+    "newtab-wallpaper-feature-highlight-header": "2024-06-03T19:54:00",
+    "newtab-wallpaper-gradient-orange": "2024-06-06T09:52:53",
+    "newtab-wallpaper-green": "2024-06-06T09:52:53",
+    "newtab-wallpaper-hot-air-balloons": "2025-02-13T16:21:16",
+    "newtab-wallpaper-light-beach": "2024-04-11T09:01:18",
+    "newtab-wallpaper-light-blue": "2024-06-06T09:52:53",
+    "newtab-wallpaper-light-color": "2024-04-11T09:01:18",
+    "newtab-wallpaper-light-fox-anniversary": "2024-10-25T08:38:42",
+    "newtab-wallpaper-light-green": "2024-06-06T09:52:53",
+    "newtab-wallpaper-light-landscape": "2024-04-11T09:01:18",
+    "newtab-wallpaper-light-mountain": "2024-04-11T09:01:18",
+    "newtab-wallpaper-light-pink": "2024-06-06T09:52:53",
+    "newtab-wallpaper-light-purple": "2024-06-06T09:52:53",
+    "newtab-wallpaper-light-red-panda": "2024-04-11T09:01:18",
+    "newtab-wallpaper-light-sky": "2024-04-11T09:01:18",
+    "newtab-wallpaper-orange": "2024-06-06T09:52:53",
+    "newtab-wallpaper-palm-trees": "2025-02-13T16:21:16",
+    "newtab-wallpaper-pink": "2024-06-06T09:52:53",
+    "newtab-wallpaper-red": "2024-06-06T09:52:53",
+    "newtab-wallpaper-red-panda-yawns-in-a-tree": "2024-06-06T09:52:53",
+    "newtab-wallpaper-reset": "2024-04-11T09:01:18",
+    "newtab-wallpaper-sand-dunes": "2025-02-13T16:21:16",
+    "newtab-wallpaper-sky-with-pink-clouds": "2024-06-06T09:52:53",
+    "newtab-wallpaper-starry-canyon": "2025-02-13T16:21:16",
+    "newtab-wallpaper-storm-sky": "2024-06-06T09:52:53",
+    "newtab-wallpaper-suspension-bridge": "2025-02-13T16:21:16",
+    "newtab-wallpaper-title": "2024-04-11T09:01:18",
+    "newtab-wallpaper-upload-image": "2025-02-13T16:21:16",
+    "newtab-wallpaper-white-mountains": "2024-06-06T09:52:53",
+    "newtab-wallpaper-yellow": "2024-06-06T09:52:53",
+    "newtab-weather-change-location-search-input-placeholder": "2024-12-05T16:47:22",
+    "newtab-weather-error-not-available": "2024-05-09T12:35:00",
+    "newtab-weather-menu-change-location": "2024-05-09T12:35:00",
+    "newtab-weather-menu-change-temperature-units-celsius": "2024-05-09T12:35:00",
+    "newtab-weather-menu-change-temperature-units-fahrenheit": "2024-05-09T12:35:00",
+    "newtab-weather-menu-change-weather-display-detailed": "2024-05-09T12:35:00",
+    "newtab-weather-menu-change-weather-display-simple": "2024-05-09T12:35:00",
+    "newtab-weather-menu-detect-my-location": "2025-10-01T21:35:21",
+    "newtab-weather-menu-hide-weather": "2024-05-09T12:35:00",
+    "newtab-weather-menu-learn-more": "2024-05-09T12:35:00",
+    "newtab-weather-menu-temperature-option-celsius": "2024-05-09T12:35:00",
+    "newtab-weather-menu-temperature-option-fahrenheit": "2024-05-09T12:35:00",
+    "newtab-weather-menu-temperature-units": "2024-05-09T12:35:00",
+    "newtab-weather-menu-weather-display": "2024-05-09T12:35:00",
+    "newtab-weather-menu-weather-display-option-detailed": "2024-05-09T12:35:00",
+    "newtab-weather-menu-weather-display-option-simple": "2024-05-09T12:35:00",
+    "newtab-weather-opt-in-not-now": "2025-10-01T21:35:21",
+    "newtab-weather-opt-in-see-weather": "2025-10-01T21:35:21",
+    "newtab-weather-opt-in-yes": "2025-10-01T21:35:21",
+    "newtab-weather-see-forecast": "2024-05-09T12:35:00",
+    "newtab-weather-sponsored": "2024-05-09T12:35:00",
+    "newtab-weather-static-city": "2025-10-01T21:35:21",
+    "newtab-widget-keep-scrolling": "2025-08-14T19:32:25",
+    "newtab-widget-lists-completed-list": "2025-08-06T13:12:52",
+    "newtab-widget-lists-dropdown-create": "2025-09-18T14:50:38",
+    "newtab-widget-lists-empty-cta": "2025-08-06T13:12:52",
+    "newtab-widget-lists-input-add-an-item": "2025-08-15T10:20:57",
+    "newtab-widget-lists-input-error": "2025-08-06T13:12:52",
+    "newtab-widget-lists-input-menu-delete": "2025-08-06T13:12:52",
+    "newtab-widget-lists-input-menu-edit": "2025-08-06T13:12:52",
+    "newtab-widget-lists-input-menu-move-down": "2025-08-06T13:12:52",
+    "newtab-widget-lists-input-menu-move-up": "2025-08-06T13:12:52",
+    "newtab-widget-lists-input-menu-open-link": "2025-08-06T13:12:52",
+    "newtab-widget-lists-label-beta": "2025-08-12T16:53:56",
+    "newtab-widget-lists-label-new": "2025-08-12T16:53:56",
+    "newtab-widget-lists-menu-copy": "2025-08-06T13:12:52",
+    "newtab-widget-lists-menu-create": "2025-08-06T13:12:52",
+    "newtab-widget-lists-menu-delete": "2025-08-06T13:12:52",
+    "newtab-widget-lists-menu-edit": "2025-08-06T13:12:52",
+    "newtab-widget-lists-menu-hide": "2025-08-06T13:12:52",
+    "newtab-widget-lists-menu-learn-more": "2025-08-06T13:12:52",
+    "newtab-widget-lists-name-label-default": "2025-08-21T21:02:26",
+    "newtab-widget-lists-name-placeholder-default": "2025-08-21T21:02:26",
+    "newtab-widget-lists-name-placeholder-new": "2025-08-21T21:02:26",
+    "newtab-widget-message-copy": "2025-08-19T12:14:31",
+    "newtab-widget-message-title": "2025-08-19T12:14:31",
+    "newtab-widget-task-list-menu-copy": "2025-08-06T13:12:52",
+    "newtab-widget-timer-label-pause": "2025-09-05T14:35:44",
+    "newtab-widget-timer-label-play": "2025-09-05T14:35:44",
+    "newtab-widget-timer-menu-hide": "2025-08-06T13:12:52",
+    "newtab-widget-timer-menu-learn-more": "2025-08-06T13:12:52",
+    "newtab-widget-timer-menu-notifications": "2025-08-06T13:12:52",
+    "newtab-widget-timer-menu-notifications-on": "2025-08-07T16:23:16",
+    "newtab-widget-timer-mode-break": "2025-08-06T13:12:52",
+    "newtab-widget-timer-mode-focus": "2025-08-06T13:12:52",
+    "newtab-widget-timer-notification-break": "2025-08-06T13:12:52",
+    "newtab-widget-timer-notification-focus": "2025-08-06T13:12:52",
+    "newtab-widget-timer-notification-title": "2025-08-06T13:12:52",
+    "newtab-widget-timer-notification-warning": "2025-08-06T13:12:52",
+    "newtab-widget-timer-reset": "2025-08-06T13:12:52",
+    "topsite-label-pinned": "2025-07-23T21:47:20"
   },
   "meta": {
     "repository": "https://github.com/mozilla-l10n/firefox-l10n.git",
-    "revision": "6c5062f659b4b874c7c4ecc29729a3864d63aa60",
-    "updated": "2025-10-08T09:23:14.740073"
+    "revision": "ba6cea93f2acd856aace6e5e01e76dce60edac77",
+    "updated": "2025-11-04T19:17:04.824441"
   }
 }

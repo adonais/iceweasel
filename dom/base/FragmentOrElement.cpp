@@ -11,7 +11,6 @@
 #include "mozilla/dom/FragmentOrElement.h"
 
 #include "DOMIntersectionObserver.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/EffectSet.h"
@@ -74,6 +73,10 @@
 #include "mozilla/dom/NodeListBinding.h"
 #include "mozilla/dom/SVGUseElement.h"
 #include "mozilla/dom/ShadowRoot.h"
+#include "mozilla/htmlaccel/htmlaccelEnabled.h"
+#ifdef MOZ_MAY_HAVE_HTMLACCEL
+#  include "mozilla/htmlaccel/htmlaccelNotInline.h"
+#endif
 #include "nsCCUncollectableMarker.h"
 #include "nsChildContentList.h"
 #include "nsContentCreatorFunctions.h"
@@ -87,7 +90,6 @@
 #include "nsLayoutUtils.h"
 #include "nsNodeInfoManager.h"
 #include "nsPIDOMWindow.h"
-#include "nsView.h"
 #include "nsWindowSizes.h"
 #include "nsWrapperCacheInlines.h"
 #include "xpcpublic.h"
@@ -1817,7 +1819,7 @@ bool FragmentOrElement::TextIsOnlyWhitespace() { return false; }
 
 bool FragmentOrElement::ThreadSafeTextIsOnlyWhitespace() const { return false; }
 
-static inline bool IsVoidTag(nsAtom* aTag) {
+static inline bool IsVoidTag(const nsAtom* aTag) {
   static const nsAtom* voidElements[] = {
       nsGkAtoms::area,    nsGkAtoms::base,  nsGkAtoms::basefont,
       nsGkAtoms::bgsound, nsGkAtoms::br,    nsGkAtoms::col,
@@ -1846,7 +1848,7 @@ static inline bool IsVoidTag(nsAtom* aTag) {
 }
 
 /* static */
-bool FragmentOrElement::IsHTMLVoid(nsAtom* aLocalName) {
+bool FragmentOrElement::IsHTMLVoid(const nsAtom* aLocalName) {
   return aLocalName && IsVoidTag(aLocalName);
 }
 
@@ -1918,6 +1920,23 @@ static bool ContainsMarkup(const nsAString& aStr) {
   // want to search for.
   const char16_t* start = aStr.BeginReading();
   const char16_t* end = aStr.EndReading();
+
+#ifdef MOZ_MAY_HAVE_HTMLACCEL
+  if (mozilla::htmlaccel::htmlaccelEnabled()) {
+    // We need to check for the empty string in order to
+    // dereference `start` for the '<' check. We might as well
+    // check that we have a full SIMD stride.
+    if (end - start >= 16) {
+      // Optimize the case where the input starts with a tag.
+      if (*start == u'<') {
+        return true;
+      }
+      // Curiously, this doesn't look like much of an optimization on Zen 3,
+      // but since it is an optimization on M3 Pro and Skylake, let's do this.
+      return mozilla::htmlaccel::ContainsMarkup(start, end);
+    }
+  }
+#endif
 
   while (start != end) {
     char16_t c = *start;

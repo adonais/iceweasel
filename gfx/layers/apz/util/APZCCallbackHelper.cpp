@@ -38,7 +38,6 @@
 #include "nsPIDOMWindow.h"
 #include "nsRefreshDriver.h"
 #include "nsString.h"
-#include "nsView.h"
 
 static mozilla::LazyLogModule sApzHlpLog("apz.helper");
 #define APZCCH_LOG(...) MOZ_LOG(sApzHlpLog, LogLevel::Debug, (__VA_ARGS__))

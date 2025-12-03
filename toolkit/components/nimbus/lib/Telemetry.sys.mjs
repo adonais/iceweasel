@@ -51,6 +51,7 @@ const RemoteSettingsSyncErrorReason = Object.freeze({
   INVALID_DATA: "invalid-data",
   INVALID_LAST_MODIFIED: "invalid-last-modified",
   LAST_MODIFIED_EXCEPTION: "last-modified-exception",
+  NOT_YET_SYNCED: "not-yet-synced",
   NULL_LAST_MODIFIED: "null-last-modified",
 });
 
@@ -81,6 +82,7 @@ const UnenrollReason = Object.freeze({
   CHANGED_PREF: "changed-pref",
   FORCE_ENROLLMENT: "force-enrollment",
   INDIVIDUAL_OPT_OUT: "individual-opt-out",
+  LABS_DIABLED: "labs-disabled",
   LABS_OPT_OUT: "labs-opt-out",
   PREF_FLIPS_CONFLICT: "prefFlips-conflict",
   PREF_FLIPS_FAILED: "prefFlips-failed",
@@ -240,6 +242,10 @@ export const NimbusTelemetry = {
       case UnenrollReason.CHANGED_PREF:
         legacyEvent.changedPref = cause.changedPref.name;
         gleanEvent.changed_pref = cause.changedPref.name;
+
+        // We've hit the limit of extra keys that can go on the legacy
+        // unenrollment event, so this key does not get mirrored.
+        gleanEvent.about_config_change = cause.isAboutConfigChange;
         break;
 
       case UnenrollReason.PREF_FLIPS_CONFLICT:

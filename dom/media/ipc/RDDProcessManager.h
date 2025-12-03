@@ -76,7 +76,6 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
  private:
   bool IsRDDProcessLaunching() const;
   bool IsRDDProcessAlive() const;
-  bool CreateVideoBridge();
 
   // Called from our xpcom-shutdown observer.
   void OnXPCOMShutdown();

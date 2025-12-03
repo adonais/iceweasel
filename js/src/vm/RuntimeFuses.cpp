@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "builtin/String.h"
 #include "js/friend/UsageStatistics.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
@@ -58,5 +59,21 @@ void js::HasSeenObjectEmulateUndefinedFuse::popFuse(JSContext* cx) {
 }
 
 void js::HasSeenArrayExceedsInt32LengthFuse::popFuse(JSContext* cx) {
+  js::InvalidatingRuntimeFuse::popFuse(cx);
+}
+
+bool js::DefaultLocaleHasDefaultCaseMappingFuse::checkInvariant(JSContext* cx) {
+#if JS_HAS_INTL_API
+  const char* locale = cx->runtime()->getDefaultLocaleIfInitialized();
+  if (!locale) {
+    return true;
+  }
+  return LocaleHasDefaultCaseMapping(locale);
+#else
+  return true;
+#endif
+}
+
+void js::DefaultLocaleHasDefaultCaseMappingFuse::popFuse(JSContext* cx) {
   js::InvalidatingRuntimeFuse::popFuse(cx);
 }

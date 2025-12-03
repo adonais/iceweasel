@@ -297,7 +297,7 @@
 };
 
 [[maybe_unused]] static const char* kBaseFonts_13_Higher[] = {
-    "Stix Two Math",
+    "STIX Two Math",
 };
 
 [[maybe_unused]] static const char* kLangPackFonts[] = {};

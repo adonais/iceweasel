@@ -9,7 +9,6 @@
 #include "DecoderFactory.h"
 #include "IDecodingTask.h"
 #include "mozilla/AppShutdown.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/Logging.h"
 #include "nsNetUtil.h"

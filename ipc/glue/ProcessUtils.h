@@ -16,7 +16,6 @@
 #include "mozilla/ipc/SharedMemoryMapping.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/RefPtr.h"
 #include "nsXULAppAPI.h"
 
 namespace mozilla {

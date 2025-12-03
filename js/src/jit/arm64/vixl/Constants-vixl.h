@@ -1005,7 +1005,11 @@ enum ExceptionOp : uint32_t {
   SMC            = ExceptionFixed | 0x00000003,
   DCPS1          = ExceptionFixed | 0x00A00001,
   DCPS2          = ExceptionFixed | 0x00A00002,
-  DCPS3          = ExceptionFixed | 0x00A00003
+  DCPS3          = ExceptionFixed | 0x00A00003,
+
+  // Mozilla change:
+  // Add pseudo-instruction for Wasm traps.
+  DCPS0          = ExceptionFixed | 0x00A00000,
 };
 
 enum MemBarrierOp : uint32_t {
@@ -4557,7 +4561,7 @@ enum MaxMinImmediateOp : uint32_t {
 // 0x5ac00c00 (rbit variant)
 //
 // This instruction is "dcps0", also has 16-bit payload if needed.
-static constexpr uint32_t UNDEFINED_INST_PATTERN = 0xd4a00000;
+static constexpr uint32_t UNDEFINED_INST_PATTERN = DCPS0;
 
 }  // namespace vixl
 

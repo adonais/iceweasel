@@ -42,13 +42,13 @@ XPCOMUtils.defineLazyServiceGetter(
   Svc,
   "mime",
   "@mozilla.org/mime;1",
-  "nsIMIMEService"
+  Ci.nsIMIMEService
 );
 XPCOMUtils.defineLazyServiceGetter(
   Svc,
   "handlers",
   "@mozilla.org/uriloader/handler-service;1",
-  "nsIHandlerService"
+  Ci.nsIHandlerService
 );
 
 ChromeUtils.defineLazyGetter(lazy, "gOurBinary", () => {
@@ -499,6 +499,11 @@ class ChromeActions {
   reportTelemetry(data) {
     const actor = getActor(this.domWindow);
     actor?.sendAsyncMessage("PDFJS:Parent:reportTelemetry", data);
+  }
+
+  reportText(data) {
+    const actor = getActor(this.domWindow);
+    actor?.sendAsyncMessage("PDFJS:Parent:reportText", data);
   }
 
   updateFindControlState(data) {

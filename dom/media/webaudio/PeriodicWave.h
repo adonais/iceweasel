@@ -9,7 +9,6 @@
 
 #include "AudioContext.h"
 #include "AudioNodeEngine.h"
-#include "mozilla/Attributes.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
 

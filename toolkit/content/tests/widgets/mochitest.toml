@@ -91,13 +91,10 @@ skip-if = [
 ["test_videocontrols_clickToPlay_ariaLabel.html"]
 
 ["test_videocontrols_closed_caption_menu.html"]
-skip-if = ["isolated_process"] # Bug 1810736
 
 ["test_videocontrols_error.html"]
-skip-if = ["isolated_process"] # Bug 1810736
 
 ["test_videocontrols_iframe_fullscreen.html"]
-skip-if = ["isolated_process"] # Bug 1810736
 
 ["test_videocontrols_jsdisabled.html"]
 skip-if = ["os == 'android'"] # bug 1272646
@@ -109,19 +106,14 @@ skip-if = [
 ]
 
 ["test_videocontrols_l10n_trusted_types.html"]
-skip-if = ["isolated_process"] # Bug 1810736
 
 ["test_videocontrols_scrubber_position.html"]
-skip-if = ["isolated_process"] # Bug 1810736
 
 ["test_videocontrols_scrubber_position_nopreload.html"]
-skip-if = ["isolated_process"] # Bug 1810736
 
 ["test_videocontrols_size.html"]
-skip-if = ["isolated_process"] # Bug 1810736
 
 ["test_videocontrols_src_change.html"]
-skip-if = ["isolated_process"] # Bug 1810736
 
 ["test_videocontrols_standalone.html"]
 skip-if = [
@@ -138,7 +130,5 @@ skip-if = [
 ]
 
 ["test_videocontrols_video_noaudio.html"]
-skip-if = ["isolated_process"] # Bug 1810736
 
 ["test_videocontrols_vtt.html"]
-skip-if = ["isolated_process"] # Bug 1810736

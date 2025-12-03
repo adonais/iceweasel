@@ -19,6 +19,7 @@
 
     #mustUpdateTabMinHeight = false;
     #tabMinHeight = 36;
+    #animatingGroups = new Set();
 
     constructor() {
       super();
@@ -34,6 +35,7 @@
       this.addEventListener("TabGroupLabelHoverEnd", this);
       this.addEventListener("TabGroupExpand", this);
       this.addEventListener("TabGroupCollapse", this);
+      this.addEventListener("TabGroupAnimationComplete", this);
       this.addEventListener("TabGroupCreate", this);
       this.addEventListener("TabGroupRemoved", this);
       this.addEventListener("transitionend", this);
@@ -216,7 +218,24 @@
 
       this.tooltip = "tabbrowser-tab-tooltip";
 
-      this.tabDragAndDrop = new window.TabDragAndDrop(this);
+      Services.prefs.addObserver(
+        "browser.tabs.dragDrop.multiselectStacking",
+        this.boundObserve
+      );
+      this.observe(
+        null,
+        "nsPref:changed",
+        "browser.tabs.dragDrop.multiselectStacking"
+      );
+    }
+
+    #initializeDragAndDrop() {
+      this.tabDragAndDrop = Services.prefs.getBoolPref(
+        "browser.tabs.dragDrop.multiselectStacking",
+        true
+      )
+        ? new window.TabStacking(this)
+        : new window.TabDragAndDrop(this);
       this.tabDragAndDrop.init();
     }
 
@@ -354,13 +373,19 @@
       this.previewPanel?.deactivate(event.target.group);
     }
 
-    on_TabGroupExpand() {
+    on_TabGroupExpand(event) {
       this._invalidateCachedVisibleTabs();
+      this.#animatingGroups.add(event.target.id);
     }
 
-    on_TabGroupCollapse() {
+    on_TabGroupCollapse(event) {
       this._invalidateCachedVisibleTabs();
       this._unlockTabSizing();
+      this.#animatingGroups.add(event.target.id);
+    }
+
+    on_TabGroupAnimationComplete(event) {
+      this.#animatingGroups.delete(event.target.id);
     }
 
     on_TabGroupCreate() {
@@ -720,7 +745,10 @@
 
       this.toggleAttribute("overflow", true);
       this._updateCloseButtons();
-      this._handleTabSelect(true);
+
+      if (!this.#animatingGroups.size) {
+        this._handleTabSelect(true);
+      }
 
       document
         .getElementById("tab-preview-panel")
@@ -1144,9 +1172,12 @@
       }
     }
 
-    observe(aSubject, aTopic) {
+    observe(aSubject, aTopic, aData) {
       switch (aTopic) {
         case "nsPref:changed": {
+          if (aData == "browser.tabs.dragDrop.multiselectStacking") {
+            this.#initializeDragAndDrop();
+          }
           // This is has to deal with changes in
           // privacy.userContext.enabled and
           // privacy.userContext.newTabContainerOnLeftClick.enabled.
@@ -1347,7 +1378,7 @@
           tab.style.setProperty("max-width", aTabWidth, "important");
           if (!isEndTab) {
             // keep tabs the same width
-            tab.style.transition = "none";
+            tab.animationsEnabled = false;
             tabsToReset.push(tab);
           }
         }
@@ -1358,7 +1389,7 @@
             .then(() => {
               window.requestAnimationFrame(() => {
                 for (let tab of tabsToReset) {
-                  tab.style.transition = "";
+                  tab.animationsEnabled = true;
                 }
               });
             });
@@ -1621,6 +1652,10 @@
     destroy() {
       if (this.boundObserve) {
         Services.prefs.removeObserver("privacy.userContext", this.boundObserve);
+        Services.prefs.removeObserver(
+          "browser.tabs.dragDrop.multiselectStacking",
+          this.boundObserve
+        );
       }
       CustomizableUI.removeListener(this);
     }

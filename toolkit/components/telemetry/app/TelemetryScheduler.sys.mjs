@@ -12,7 +12,7 @@ import { clearTimeout, setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 const lazy = {};
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
-  idleService: ["@mozilla.org/widget/useridleservice;1", "nsIUserIdleService"],
+  idleService: ["@mozilla.org/widget/useridleservice;1", Ci.nsIUserIdleService],
 });
 
 const MIN_SUBSESSION_LENGTH_MS =

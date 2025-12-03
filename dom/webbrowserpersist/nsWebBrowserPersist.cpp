@@ -9,7 +9,6 @@
 
 #include "ReferrerInfo.h"
 #include "WebBrowserPersistLocalDocument.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Printf.h"
 #include "mozilla/TextUtils.h"
@@ -2434,7 +2433,7 @@ nsresult nsWebBrowserPersist::URIData::GetLocalURI(nsIURI* targetBaseURI,
   }
 
   // remove username/password if present
-  Unused << NS_MutateURI(fileAsURI).SetUserPass(""_ns).Finalize(fileAsURI);
+  (void)NS_MutateURI(fileAsURI).SetUserPass(""_ns).Finalize(fileAsURI);
 
   // reset node attribute
   // Use relative or absolute links

@@ -10,13 +10,12 @@
 #include "mozilla/UniquePtrExtensions.h"
 #include "nsISupportsImpl.h"
 
+namespace IPC {
+template <typename P>
+struct ParamTraits;
+}
+
 namespace mozilla {
-
-namespace ipc {
-template <typename T>
-struct IPDLParamTraits;
-}  // namespace ipc
-
 namespace gfx {
 
 //
@@ -26,7 +25,7 @@ namespace gfx {
 // could reduce the number of shared handles in a process.
 //
 class FileHandleWrapper {
-  friend struct mozilla::ipc::IPDLParamTraits<gfx::FileHandleWrapper*>;
+  friend struct IPC::ParamTraits<gfx::FileHandleWrapper*>;
 
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FileHandleWrapper);

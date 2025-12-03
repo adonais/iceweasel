@@ -33,7 +33,6 @@
 #include "mozilla/Encoding.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ProfilerLabels.h"
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/BrowserChild.h"
@@ -902,7 +901,7 @@ void BackgroundFactoryRequestChild::HandleResponse(
   IDBDatabase* const database = [this, databaseActor]() -> IDBDatabase* {
     IDBDatabase* database = databaseActor->GetDOMObject();
     if (!database) {
-      Unused << this;
+      (void)this;
 
       if (NS_WARN_IF(!databaseActor->EnsureDOMObject())) {
         return nullptr;
@@ -1193,11 +1192,10 @@ BackgroundDatabaseChild::RecvPBackgroundIDBVersionChangeTransactionConstructor(
     // XXX This is a hack to ensure that transaction/request serial numbers stay
     // in sync between parent and child. Actually, it might be better to create
     // an IDBTransaction in the child and abort that.
-    Unused
-        << mozilla::ipc::BackgroundChildImpl::GetThreadLocalForCurrentThread()
-               ->mIndexedDBThreadLocal->NextTransactionSN(
-                   IDBTransaction::Mode::VersionChange);
-    Unused << IDBRequest::NextSerialNumber();
+    (void)mozilla::ipc::BackgroundChildImpl::GetThreadLocalForCurrentThread()
+        ->mIndexedDBThreadLocal->NextTransactionSN(
+            IDBTransaction::Mode::VersionChange);
+    (void)IDBRequest::NextSerialNumber();
 
     // No reason to IPC_FAIL here.
     return IPC_OK();
@@ -2368,7 +2366,7 @@ void BackgroundCursorChild<CursorType>::SendContinueInternal(
           if constexpr (!CursorTypeTraits<CursorType>::IsObjectStoreCursor) {
             currentObjectStoreKey = currentCachedResponse.mObjectStoreKey;
           } else {
-            Unused << currentObjectStoreKey;
+            (void)currentObjectStoreKey;
           }
         }
         return res;
@@ -2737,9 +2735,9 @@ mozilla::ipc::IPCResult BackgroundCursorChild<CursorType>::RecvResponse(
   MaybeCollectGarbageOnIPCMessage();
 
   const RefPtr<IDBRequest> request = std::move(mStrongRequest);
-  Unused << request;  // XXX see Bug 1605075
+  (void)request;  // XXX see Bug 1605075
   const RefPtr<IDBCursor> cursor = std::move(mStrongCursor);
-  Unused << cursor;  // XXX see Bug 1605075
+  (void)cursor;  // XXX see Bug 1605075
 
   const auto transaction =
       SafeRefPtr{&mTransaction.ref(), AcquireStrongRefFromRawPtr{}};

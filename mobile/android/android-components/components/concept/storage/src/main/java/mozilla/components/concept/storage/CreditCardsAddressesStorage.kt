@@ -374,6 +374,7 @@ data class Address(
      */
     val addressLabel: String
         get() = listOf(
+            name,
             streetAddress.toOneLineAddress(),
             addressLevel3,
             addressLevel2,

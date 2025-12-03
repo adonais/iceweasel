@@ -83,7 +83,7 @@ h2 {
   min-width: 20px;
   background-color: var(--color-accent-primary);
   color: var(--button-text-color-primary);
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   /* Use a large border-radius to get semi-circles on the sides. */
   border-radius: var(--border-radius-circle);
   padding: 2px 6px;
@@ -211,7 +211,7 @@ message-bar-stack > * {
 
 .list-section-subheading {
   font-size: 0.9em;
-  font-weight: 400;
+  font-weight: normal;
   margin-block-start: 0.5em;
 }
 
@@ -322,7 +322,7 @@ addon-card[expanded] .update-postponed-bar,
 
 .addon-name {
   font-size: 16px;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
   line-height: 22px;
   margin: 0;
   margin-inline-end: 8px;
@@ -399,7 +399,7 @@ addon-card[expanded] .update-postponed-bar,
   font-size: 14px;
   line-height: 20px;
   color: var(--text-color-deemphasized);
-  font-weight: 400;
+  font-weight: normal;
 }
 
 /* Prevent the content from wrapping unless expanded. */
@@ -814,5 +814,5 @@ section:not(:empty) ~ #empty-addons-message {
 }
 
 .permission-header > .addon-sitepermissions-host {
-  font-weight: bolder;
+  font-weight: var(--font-weight-bold);
 }

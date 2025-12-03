@@ -8,7 +8,6 @@
 #define mozilla_dom_MediaKeyError_h
 
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/Event.h"
 #include "nsWrapperCache.h"
 

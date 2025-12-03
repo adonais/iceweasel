@@ -48,7 +48,6 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ArrayIterator.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BaseProfilerMarkersPrerequisites.h"
 #include "mozilla/BasicEvents.h"
@@ -78,7 +77,6 @@
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/SizeOfState.h"
-#include "mozilla/Span.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_browser.h"
@@ -92,7 +90,6 @@
 #include "mozilla/ThrottledEventQueue.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/AudioContext.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/BarProps.h"
@@ -1745,7 +1742,7 @@ void nsGlobalWindowInner::UpdateAutoplayPermission() {
   }
 
   // Setting autoplay permission on a discarded context has no effect.
-  Unused << GetWindowContext()->SetAutoplayPermission(perm);
+  (void)GetWindowContext()->SetAutoplayPermission(perm);
 }
 
 void nsGlobalWindowInner::UpdateShortcutsPermission() {
@@ -1763,7 +1760,7 @@ void nsGlobalWindowInner::UpdateShortcutsPermission() {
   }
 
   // If the WindowContext is discarded this has no effect.
-  Unused << GetWindowContext()->SetShortcutsPermission(perm);
+  (void)GetWindowContext()->SetShortcutsPermission(perm);
 }
 
 /* static */
@@ -1789,7 +1786,7 @@ void nsGlobalWindowInner::UpdatePopupPermission() {
   }
 
   // If the WindowContext is discarded this has no effect.
-  Unused << GetWindowContext()->SetPopupPermission(perm);
+  (void)GetWindowContext()->SetPopupPermission(perm);
 }
 
 void nsGlobalWindowInner::UpdatePermissions() {
@@ -1810,7 +1807,7 @@ void nsGlobalWindowInner::UpdatePermissions() {
   }
 
   // Setting permissions on a discarded WindowContext has no effect
-  Unused << txn.Commit(windowContext);
+  (void)txn.Commit(windowContext);
 }
 
 void nsGlobalWindowInner::InitDocumentDependentState(JSContext* aCx) {
@@ -1862,7 +1859,7 @@ void nsGlobalWindowInner::InitDocumentDependentState(JSContext* aCx) {
   if (mWindowGlobalChild && GetBrowsingContext() &&
       !GetBrowsingContext()->GetParent()) {
     // Return value of setting synced field should be checked. See bug 1656492.
-    Unused << GetBrowsingContext()->ResetGVAutoplayRequestStatus();
+    (void)GetBrowsingContext()->ResetGVAutoplayRequestStatus();
   }
 #endif
 
@@ -1888,7 +1885,7 @@ nsresult nsGlobalWindowInner::EnsureClientSource() {
   nsCOMPtr<nsIChannel> channel = mDoc->GetChannel();
   if (channel) {
     nsCOMPtr<nsIURI> uri;
-    Unused << channel->GetURI(getter_AddRefs(uri));
+    (void)channel->GetURI(getter_AddRefs(uri));
 
     bool ignoreLoadInfo = false;
 
@@ -2185,7 +2182,7 @@ void nsGlobalWindowInner::FireFrameLoadEvent() {
       return;
     }
 
-    mozilla::Unused << browserChild->SendMaybeFireEmbedderLoadEvents(
+    (void)browserChild->SendMaybeFireEmbedderLoadEvents(
         EmbedderElementEventType::LoadEvent);
   }
 }
@@ -2205,11 +2202,9 @@ nsresult nsGlobalWindowInner::PostHandleEvent(EventChainPostVisitor& aVisitor) {
    function under some circumstances (events that destroy the window)
    without this addref. */
   RefPtr<EventTarget> kungFuDeathGrip1(mChromeEventHandler);
-  mozilla::Unused
-      << kungFuDeathGrip1;  // These aren't referred to through the function
+  (void)kungFuDeathGrip1;  // These aren't referred to through the function
   nsCOMPtr<nsIScriptContext> kungFuDeathGrip2(GetContextInternal());
-  mozilla::Unused
-      << kungFuDeathGrip2;  // These aren't referred to through the function
+  (void)kungFuDeathGrip2;  // These aren't referred to through the function
 
   if (aVisitor.mEvent->mMessage == eResize) {
     mIsHandlingResizeEvent = false;
@@ -2638,10 +2633,10 @@ CallState nsGlobalWindowInner::ShouldReportForServiceWorkerScopeInternal(
   nsCOMPtr<nsIDocumentLoader> loader(do_QueryInterface(GetDocShell()));
   if (loader) {
     nsCOMPtr<nsILoadGroup> loadgroup;
-    Unused << loader->GetLoadGroup(getter_AddRefs(loadgroup));
+    (void)loader->GetLoadGroup(getter_AddRefs(loadgroup));
     if (loadgroup) {
       nsCOMPtr<nsISimpleEnumerator> iter;
-      Unused << loadgroup->GetRequests(getter_AddRefs(iter));
+      (void)loadgroup->GetRequests(getter_AddRefs(iter));
       if (iter) {
         nsCOMPtr<nsISupports> tmp;
         bool hasMore = true;
@@ -2657,12 +2652,12 @@ CallState nsGlobalWindowInner::ShouldReportForServiceWorkerScopeInternal(
             continue;
           }
           nsCOMPtr<nsIURI> loadingURL;
-          Unused << loadingChannel->GetURI(getter_AddRefs(loadingURL));
+          (void)loadingChannel->GetURI(getter_AddRefs(loadingURL));
           if (!loadingURL) {
             continue;
           }
           nsAutoCString loadingSpec;
-          Unused << loadingURL->GetSpec(loadingSpec);
+          (void)loadingURL->GetSpec(loadingSpec);
           // Perform a simple substring comparison to match the scope
           // against the channel URL.
           if (StringBeginsWith(loadingSpec, aScope)) {
@@ -2950,7 +2945,7 @@ void nsGlobalWindowInner::SetActiveLoadingState(bool aIsLoading) {
       ("SetActiveLoadingState innerwindow %p: %d", (void*)this, aIsLoading));
   if (GetBrowsingContext()) {
     // Setting loading on a discarded context has no effect.
-    Unused << GetBrowsingContext()->SetLoading(aIsLoading);
+    (void)GetBrowsingContext()->SetLoading(aIsLoading);
   }
 
   if (!nsGlobalWindowInner::Cast(this)->IsChromeWindow()) {
@@ -4943,8 +4938,12 @@ already_AddRefed<CacheStorage> nsGlobalWindowInner::GetCaches(
 void nsGlobalWindowInner::FireOfflineStatusEventIfChanged() {
   if (!IsCurrentInnerWindow()) return;
 
+  bool isOffline =
+      NS_IsOffline() ||
+      (GetBrowsingContext() && GetBrowsingContext()->Top()->GetForceOffline());
+
   // Don't fire an event if the status hasn't changed
-  if (mWasOffline == NS_IsOffline()) {
+  if (mWasOffline == isOffline) {
     return;
   }
 
@@ -6463,7 +6462,7 @@ void nsGlobalWindowInner::NotifyDetectXRRuntimesCompleted() {
   mXRPermissionRequestInFlight = true;
   RefPtr<XRPermissionRequest> request =
       new XRPermissionRequest(this, WindowID());
-  Unused << NS_WARN_IF(NS_FAILED(request->Start()));
+  (void)NS_WARN_IF(NS_FAILED(request->Start()));
 }
 
 void nsGlobalWindowInner::RequestXRPermission() {
@@ -6569,7 +6568,7 @@ void nsGlobalWindowInner::EventListenerAdded(nsAtom* aType) {
         mLocalStorage->Type() == Storage::eLocalStorage) {
       auto object = static_cast<LSObject*>(mLocalStorage.get());
 
-      Unused << NS_WARN_IF(NS_FAILED(object->EnsureObserver()));
+      (void)NS_WARN_IF(NS_FAILED(object->EnsureObserver()));
     }
   }
 }
@@ -7626,7 +7625,7 @@ JS::loader::ModuleLoaderBase* nsGlobalWindowInner::GetModuleLoader(
     return nullptr;
   }
 
-  ScriptLoader* loader = document->ScriptLoader();
+  ScriptLoader* loader = document->GetScriptLoader();
   if (!loader) {
     return nullptr;
   }
@@ -7702,7 +7701,7 @@ void nsPIDOMWindowInner::MaybeCreateDoc() {
     // don't have to explicitly set the member variable because the docshell
     // has already called SetNewDocument().
     nsCOMPtr<Document> document = docShell->GetDocument();
-    Unused << document;
+    (void)document;
   }
 }
 
@@ -7731,7 +7730,7 @@ RefPtr<GenericPromise>
 nsPIDOMWindowInner::SaveStorageAccessPermissionGranted() {
   WindowContext* wc = GetWindowContext();
   if (wc) {
-    Unused << wc->SetUsingStorageAccess(true);
+    (void)wc->SetUsingStorageAccess(true);
   }
 
   return nsGlobalWindowInner::Cast(this)->StorageAccessPermissionChanged(true);
@@ -7741,7 +7740,7 @@ RefPtr<GenericPromise>
 nsPIDOMWindowInner::SaveStorageAccessPermissionRevoked() {
   WindowContext* wc = GetWindowContext();
   if (wc) {
-    Unused << wc->SetUsingStorageAccess(false);
+    (void)wc->SetUsingStorageAccess(false);
   }
 
   return nsGlobalWindowInner::Cast(this)->StorageAccessPermissionChanged(false);
@@ -7778,14 +7777,14 @@ CloseWatcherManager* nsPIDOMWindowInner::EnsureCloseWatcherManager() {
 void nsPIDOMWindowInner::NotifyCloseWatcherAdded() {
   MOZ_ASSERT(mCloseWatcherManager && !mCloseWatcherManager->IsEmpty());
   if (WindowContext* top = TopWindowContext(*this)) {
-    Unused << top->SetHasActiveCloseWatcher(true);
+    (void)top->SetHasActiveCloseWatcher(true);
   }
 }
 
 void nsPIDOMWindowInner::NotifyCloseWatcherRemoved() {
   MOZ_ASSERT(mCloseWatcherManager);
   if (WindowContext* top = TopWindowContext(*this)) {
-    Unused << top->SetHasActiveCloseWatcher(!mCloseWatcherManager->IsEmpty());
+    (void)top->SetHasActiveCloseWatcher(!mCloseWatcherManager->IsEmpty());
   }
 }
 

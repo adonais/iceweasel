@@ -39,7 +39,6 @@ typedef realGLboolean GLboolean;
 
 #  include "2D.h"
 #  include "mozilla/RefCounted.h"
-#  include "mozilla/RefPtr.h"
 
 class MacIOSurface final
     : public mozilla::external::AtomicRefCounted<MacIOSurface> {

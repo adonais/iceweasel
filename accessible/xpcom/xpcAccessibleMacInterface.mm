@@ -90,6 +90,13 @@ xpcAccessibleMacInterface::GetParameterizedAttributeNames(
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE)
 }
 
+// Return a string that uniquely identifies a custom action.
+static NSString* GetCustomActionName(NSAccessibilityCustomAction* action) {
+  return [NSString stringWithFormat:@"Name:%@ Target:%@ Selector:%@",
+                                    [action name], [action target],
+                                    NSStringFromSelector([action selector])];
+}
+
 NS_IMETHODIMP
 xpcAccessibleMacInterface::GetActionNames(nsTArray<nsString>& aActionNames) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN
@@ -104,9 +111,48 @@ xpcAccessibleMacInterface::GetActionNames(nsTArray<nsString>& aActionNames) {
     aActionNames.AppendElement(actionName);
   }
 
+  if (NSArray* customActions = [mNativeObject accessibilityCustomActions]) {
+    for (id action in customActions) {
+      nsAutoString actionName;
+      NSString* actionNameStr = GetCustomActionName(action);
+      nsCocoaUtils::GetStringForNSString(actionNameStr, actionName);
+      aActionNames.AppendElement(actionName);
+    }
+  }
+
   return NS_OK;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE)
+}
+
+NS_IMETHODIMP
+xpcAccessibleMacInterface::GetActionDescription(const nsAString& aActionName,
+                                                nsAString& aDescription) {
+  aDescription.Truncate();
+
+  if (!mNativeObject || [mNativeObject isExpired]) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  NSString* actionName = nsCocoaUtils::ToNSString(aActionName);
+
+  // First search custom actions, since `accessibilityActionDescription` will
+  // just return the provided name if no description is found.
+  if (NSArray* customActions = [mNativeObject accessibilityCustomActions]) {
+    for (id action in customActions) {
+      NSString* actionNameStr = GetCustomActionName(action);
+      if ([actionNameStr isEqualToString:actionName]) {
+        nsCocoaUtils::GetStringForNSString([action name], aDescription);
+        return NS_OK;
+      }
+    }
+  }
+
+  NSString* description =
+      [mNativeObject accessibilityActionDescription:actionName];
+  nsCocoaUtils::GetStringForNSString(description, aDescription);
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -118,6 +164,19 @@ xpcAccessibleMacInterface::PerformAction(const nsAString& aActionName) {
   }
 
   NSString* actionName = nsCocoaUtils::ToNSString(aActionName);
+
+  // First search custom actions, since `accessibilityPerformAction` will
+  // silently fail on unknown action names.
+  if (NSArray* customActions = [mNativeObject accessibilityCustomActions]) {
+    for (id action in customActions) {
+      NSString* actionNameStr = GetCustomActionName(action);
+      if ([actionNameStr isEqualToString:actionName]) {
+        [[action target] performSelector:[action selector]];
+        return NS_OK;
+      }
+    }
+  }
+
   [mNativeObject accessibilityPerformAction:actionName];
 
   return NS_OK;

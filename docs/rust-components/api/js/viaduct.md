@@ -23,6 +23,26 @@
     :members:
     :exclude-members: NonTlsUrl
 ```
+```{js:autoclass} RustViaduct.sys.OhttpChannelNotConfigured
+    :members:
+    :exclude-members: OhttpChannelNotConfigured
+```
+```{js:autoclass} RustViaduct.sys.OhttpConfigFetchFailed
+    :members:
+    :exclude-members: OhttpConfigFetchFailed
+```
+```{js:autoclass} RustViaduct.sys.OhttpNotSupported
+    :members:
+    :exclude-members: OhttpNotSupported
+```
+```{js:autoclass} RustViaduct.sys.OhttpRequestError
+    :members:
+    :exclude-members: OhttpRequestError
+```
+```{js:autoclass} RustViaduct.sys.OhttpResponseError
+    :members:
+    :exclude-members: OhttpResponseError
+```
 ```{js:autoclass} RustViaduct.sys.RequestHeaderError
     :members:
     :exclude-members: RequestHeaderError

@@ -155,6 +155,8 @@ interface OnboardingTermsOfServiceEventHandler {
 
     /**
      * Invoked when the accept button is clicked.
+     *
+     * @param nowMillis The current time in milliseconds.
      */
-    fun onAcceptTermsButtonClicked() = Unit
+    fun onAcceptTermsButtonClicked(nowMillis: Long = System.currentTimeMillis()) = Unit
 }

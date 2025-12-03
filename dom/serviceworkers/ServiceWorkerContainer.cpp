@@ -288,7 +288,7 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
   // Verify that the global is valid and has permission to store
   // data.  We perform this late so that we can report the final
   // scope URL in any error message.
-  Unused << GetGlobalIfValid(aRv, [&](nsIGlobalObject* aGlobal) {
+  (void)GetGlobalIfValid(aRv, [&](nsIGlobalObject* aGlobal) {
     AutoTArray<nsString, 1> param;
     CopyUTF8toUTF16(cleanedScopeURL, *param.AppendElement());
     aGlobal->ReportToConsole(nsIScriptError::errorFlag, "Service Workers"_ns,
@@ -510,7 +510,7 @@ already_AddRefed<Promise> ServiceWorkerContainer::GetRegistration(
             //  If rv is a failure then this is an application layer error.
             //  Note, though, we also reject with NS_OK to indicate that we just
             //  didn't find a registration.
-            Unused << self->GetGlobalIfValid(rv);
+            (void)self->GetGlobalIfValid(rv);
             if (!rv.Failed()) {
               outer->MaybeResolveWithUndefined();
               return;

@@ -50,6 +50,7 @@ add_task(async function () {
     {
       selector: `*`,
       ancestorRulesData: null,
+      inherited: true,
       declarations: [{ name: "cursor", value: "default" }],
     },
     {
@@ -58,6 +59,7 @@ add_task(async function () {
     {
       selector: `body`,
       ancestorRulesData: null,
+      inherited: true,
       declarations: [{ name: "color", value: "#333" }],
     },
   ]);
@@ -93,6 +95,7 @@ add_task(async function () {
     {
       selector: `*`,
       ancestorRulesData: null,
+      inherited: true,
       declarations: [{ name: "cursor", value: "default" }],
     },
     {
@@ -101,6 +104,7 @@ add_task(async function () {
     {
       selector: `body`,
       ancestorRulesData: null,
+      inherited: true,
       declarations: [{ name: "color", value: "#333" }],
     },
   ]);
@@ -144,6 +148,7 @@ add_task(async function () {
     {
       selector: `*`,
       ancestorRulesData: null,
+      inherited: true,
       declarations: [{ name: "cursor", value: "default" }],
     },
     {
@@ -152,6 +157,7 @@ add_task(async function () {
     {
       selector: `body`,
       ancestorRulesData: null,
+      inherited: true,
       declarations: [{ name: "color", value: "#333", overridden: true }],
     },
   ]);
@@ -182,6 +188,7 @@ add_task(async function () {
     {
       selector: `*`,
       ancestorRulesData: null,
+      inherited: true,
       declarations: [{ name: "cursor", value: "default" }],
     },
     {
@@ -190,6 +197,7 @@ add_task(async function () {
     {
       selector: `body`,
       ancestorRulesData: null,
+      inherited: true,
       declarations: [{ name: "color", value: "#333", overridden: true }],
     },
   ]);
@@ -220,6 +228,7 @@ add_task(async function () {
     {
       selector: `*`,
       ancestorRulesData: null,
+      inherited: true,
       declarations: [{ name: "cursor", value: "default" }],
     },
     {
@@ -228,6 +237,7 @@ add_task(async function () {
     {
       selector: `body`,
       ancestorRulesData: null,
+      inherited: true,
       declarations: [{ name: "color", value: "#333" }],
     },
   ]);

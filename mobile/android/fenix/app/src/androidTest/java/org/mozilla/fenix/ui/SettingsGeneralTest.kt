@@ -16,7 +16,7 @@ import org.mozilla.fenix.helpers.AppAndSystemHelper.runWithSystemLocaleChanged
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.RecyclerViewIdlingResource
-import org.mozilla.fenix.helpers.TestAssetHelper.getLoremIpsumAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.loremIpsumAsset
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.TestSetup
@@ -70,7 +70,7 @@ class SettingsGeneralTest : TestSetup() {
     fun verifyFontSizingChangeTest() {
         // Goes through the settings and changes the default text on a webpage, then verifies if the text has changed.
         val fenixApp = activityIntentTestRule.activity.applicationContext as FenixApplication
-        val webpage = getLoremIpsumAsset(mockWebServer).url
+        val webpage = mockWebServer.loremIpsumAsset.url
 
         // This value will represent the text size percentage the webpage will scale to. The default value is 100%.
         val textSizePercentage = 180

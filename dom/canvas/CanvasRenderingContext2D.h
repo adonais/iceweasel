@@ -12,7 +12,6 @@
 #include "gfxFontConstants.h"
 #include "gfxTextRun.h"
 #include "gfxUtils.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/Maybe.h"

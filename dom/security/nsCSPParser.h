@@ -8,7 +8,6 @@
 #define nsCSPParser_h___
 
 #include "PolicyTokenizer.h"
-#include "mozilla/UniquePtr.h"
 #include "nsCSPContext.h"
 #include "nsCSPUtils.h"
 #include "nsIURI.h"

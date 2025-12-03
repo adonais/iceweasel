@@ -23,7 +23,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WindowButtonType.h"
 #include "nsChangeHint.h"
 #include "nsColor.h"
@@ -44,7 +43,7 @@ namespace mozilla {
 class ComputedStyle;
 struct IntrinsicSize;
 struct ReflowInput;
-class AnchorPosReferenceData;
+struct AnchorPosResolutionCache;
 
 }  // namespace mozilla
 
@@ -391,16 +390,16 @@ struct AnchorPosResolutionParams {
   mozilla::StylePositionProperty mPosition;
   // position-area property of the element in question.
   mozilla::StylePositionArea mPositionArea;
-  // Storage for anchor reference data. To be populated on abspos reflow,
-  // whenever the frame makes any anchor reference.
-  mozilla::AnchorPosReferenceData* const mAnchorPosReferenceData = nullptr;
+  // Cache data used for anchor resolution.
+  mozilla::AnchorPosResolutionCache* const mCache;
 
   // Helper functions for creating anchor resolution parameters.
   // Defined in corresponding header files.
   static inline AnchorPosResolutionParams From(
       const nsIFrame* aFrame,
-      mozilla::AnchorPosReferenceData* aAnchorPosReferenceData = nullptr);
-  static inline AnchorPosResolutionParams From(const mozilla::ReflowInput* aRI);
+      mozilla::AnchorPosResolutionCache* aAnchorPosResolutionCache = nullptr);
+  static inline AnchorPosResolutionParams From(
+      const mozilla::ReflowInput* aRI, bool aIgnorePositionArea = false);
   static inline AnchorPosResolutionParams From(
       const nsComputedDOMStyle* aComputedDOMStyle);
 };
@@ -934,8 +933,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   using LogicalAxis = mozilla::LogicalAxis;
   using StyleImplicitGridTracks = mozilla::StyleImplicitGridTracks;
   using ComputedStyle = mozilla::ComputedStyle;
-  using StyleAlignSelf = mozilla::StyleAlignSelf;
-  using StyleJustifySelf = mozilla::StyleJustifySelf;
+  using StyleSelfAlignment = mozilla::StyleSelfAlignment;
 
   nsChangeHint CalcDifference(const nsStylePosition& aNewData,
                               const ComputedStyle& aOldStyle) const;
@@ -973,13 +971,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
    * Return the used value for 'align-self' given our parent ComputedStyle
    * (or null for the root).
    */
-  StyleAlignSelf UsedAlignSelf(const ComputedStyle*) const;
+  StyleSelfAlignment UsedAlignSelf(const ComputedStyle*) const;
 
   /**
    * Return the used value for 'justify-self' given our parent ComputedStyle
    * aParent (or null for the root).
    */
-  StyleJustifySelf UsedJustifySelf(const ComputedStyle*) const;
+  StyleSelfAlignment UsedJustifySelf(const ComputedStyle*) const;
 
   /**
    * Return the used value for 'justify/align-self' in aAxis given our parent
@@ -1020,12 +1018,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   mozilla::StyleGridAutoFlow mGridAutoFlow;
   mozilla::StyleMasonryAutoFlow mMasonryAutoFlow;
 
-  mozilla::StyleAlignContent mAlignContent;
-  mozilla::StyleAlignItems mAlignItems;
-  mozilla::StyleAlignSelf mAlignSelf;
-  mozilla::StyleJustifyContent mJustifyContent;
+  mozilla::StyleContentDistribution mAlignContent;
+  mozilla::StyleItemPlacement mAlignItems;
+  mozilla::StyleSelfAlignment mAlignSelf;
+  mozilla::StyleContentDistribution mJustifyContent;
   mozilla::StyleComputedJustifyItems mJustifyItems;
-  mozilla::StyleJustifySelf mJustifySelf;
+  mozilla::StyleSelfAlignment mJustifySelf;
   mozilla::StyleFlexDirection mFlexDirection;
   mozilla::StyleFlexWrap mFlexWrap;
   mozilla::StyleObjectFit mObjectFit;
@@ -1089,6 +1087,40 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
 
   inline AnchorResolvedInset GetAnchorResolvedInset(
       mozilla::LogicalSide aSide, WritingMode aWM,
+      const AnchorPosOffsetResolutionParams& aParams) const;
+
+  // Returns the side with an auto inset if exactly one inset in the given
+  // physical axis is auto. Otherwise returns Nothing().
+  mozilla::Maybe<mozilla::Side> GetSingleAutoInsetInAxis(
+      mozilla::StylePhysicalAxis aAxis,
+      const AnchorPosOffsetResolutionParams& aParams) const {
+    const mozilla::Side startSide =
+        aAxis == mozilla::StylePhysicalAxis::Horizontal ? mozilla::eSideLeft
+                                                        : mozilla::eSideTop;
+    const mozilla::Side endSide =
+        aAxis == mozilla::StylePhysicalAxis::Horizontal ? mozilla::eSideRight
+                                                        : mozilla::eSideBottom;
+
+    const bool startInsetIsAuto =
+        AnchorResolvedInsetHelper::FromUnresolved(mOffset.Get(startSide),
+                                                  startSide, aParams)
+            ->IsAuto();
+    const bool endInsetIsAuto = AnchorResolvedInsetHelper::FromUnresolved(
+                                    mOffset.Get(endSide), endSide, aParams)
+                                    ->IsAuto();
+
+    if (startInsetIsAuto && !endInsetIsAuto) {
+      return mozilla::Some(startSide);
+    }
+    if (!startInsetIsAuto && endInsetIsAuto) {
+      return mozilla::Some(endSide);
+    }
+    return mozilla::Nothing();
+  }
+
+  // Logical-axis version, defined in WritingModes.h
+  inline mozilla::Maybe<mozilla::Side> GetSingleAutoInsetInAxis(
+      LogicalAxis aAxis, WritingMode aWM,
       const AnchorPosOffsetResolutionParams& aParams) const;
 
   AnchorResolvedSize GetWidth(const AnchorPosResolutionParams& aParams) const {
@@ -1163,7 +1195,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTextReset {
   mozilla::StyleInitialLetter mInitialLetter;
   mozilla::StyleColor mTextDecorationColor;
   mozilla::StyleTextDecorationLength mTextDecorationThickness;
-  mozilla::StyleTextDecorationTrim mTextDecorationTrim;
+  mozilla::StyleTextDecorationInset mTextDecorationInset;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {

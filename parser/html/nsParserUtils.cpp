@@ -5,7 +5,6 @@
 
 #include "nsParserUtils.h"
 #include "mozilla/NullPrincipal.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ScriptLoader.h"
@@ -92,11 +91,14 @@ nsParserUtils::ParseFragment(const nsAString& aFragment, uint32_t aFlags,
 
   nsAutoScriptBlockerSuppressNodeRemoved autoBlocker;
 
+  bool scripts_enabled = false;
   // stop scripts
-  RefPtr<ScriptLoader> loader = document->ScriptLoader();
-  bool scripts_enabled = loader->GetEnabled();
-  if (scripts_enabled) {
-    loader->SetEnabled(false);
+  RefPtr<ScriptLoader> loader = document->GetScriptLoader();
+  if (loader) {
+    scripts_enabled = loader->GetEnabled();
+    if (scripts_enabled) {
+      loader->SetEnabled(false);
+    }
   }
 
   // Wrap things in a div or body for parsing, but it won't show up in

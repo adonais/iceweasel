@@ -43,7 +43,8 @@ mozilla::ipc::IPCResult MIDIPortChild::RecvUpdateStatus(
   mDeviceState = static_cast<MIDIPortDeviceState>(aDeviceState);
   mConnectionState = static_cast<MIDIPortConnectionState>(aConnectionState);
   if (mDOMPort) {
-    mDOMPort->FireStateChangeEvent();
+    RefPtr<MIDIPort> self(mDOMPort);
+    self->FireStateChangeEvent();
   }
   return IPC_OK();
 }

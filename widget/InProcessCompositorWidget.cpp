@@ -5,7 +5,8 @@
 #include "InProcessCompositorWidget.h"
 
 #include "mozilla/VsyncDispatcher.h"
-#include "nsBaseWidget.h"
+#include "mozilla/layers/NativeLayer.h"
+#include "nsIWidget.h"
 
 namespace mozilla {
 namespace widget {
@@ -24,14 +25,14 @@ RefPtr<CompositorWidget> CompositorWidget::CreateLocal(
   // only remaining explanation that doesn't involve memory corruption,
   // so placing a release assert here. For even more sanity-checking, we
   // do it after the static_cast.
-  nsBaseWidget* widget = static_cast<nsBaseWidget*>(aWidget);
+  nsIWidget* widget = static_cast<nsIWidget*>(aWidget);
   MOZ_RELEASE_ASSERT(widget);
   return new InProcessCompositorWidget(aOptions, widget);
 }
 #endif
 
 InProcessCompositorWidget::InProcessCompositorWidget(
-    const layers::CompositorOptions& aOptions, nsBaseWidget* aWidget)
+    const layers::CompositorOptions& aOptions, nsIWidget* aWidget)
     : CompositorWidget(aOptions),
       mWidget(aWidget),
       mCanary(CANARY_VALUE),
@@ -55,8 +56,7 @@ void InProcessCompositorWidget::PostRender(WidgetRenderingContext* aContext) {
   mWidget->PostRender(aContext);
 }
 
-RefPtr<layers::NativeLayerRoot>
-InProcessCompositorWidget::GetNativeLayerRoot() {
+layers::NativeLayerRoot* InProcessCompositorWidget::GetNativeLayerRoot() {
   CheckWidgetSanity();
   return mWidget->GetNativeLayerRoot();
 }

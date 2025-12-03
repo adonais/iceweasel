@@ -5827,13 +5827,19 @@ class TranslationScheduler {
 }
 
 /**
- * Returns true if an HTML element is hidden based on factors such as collapsed state and
+ * Returns true if a node is hidden based on factors such as collapsed state and
  * computed style, otherwise false.
  *
- * @param {HTMLElement} element
+ * @param {Node} node
  * @returns {boolean}
  */
-function isHTMLElementHidden(element) {
+function isNodeHidden(node) {
+  const element = getHTMLElementForStyle(node);
+
+  if (!element) {
+    return true;
+  }
+
   // This is a cheap and easy check that will not compute style or force reflow.
   if (element.hidden) {
     // The element is explicitly hidden.
@@ -5860,6 +5866,15 @@ function isHTMLElementHidden(element) {
       element.offsetHeight ||
       element.getClientRects().length
     )
+  ) {
+    return true;
+  }
+
+  // The element may still have a zero-sized bounding client rectangle.
+  const boundingClientRect = element.getBoundingClientRect();
+  if (
+    boundingClientRect &&
+    (boundingClientRect.width === 0 || boundingClientRect.height === 0)
   ) {
     return true;
   }
@@ -5947,7 +5962,7 @@ function getNodeSpatialContext(node) {
     return {};
   }
 
-  if (isHTMLElementHidden(element)) {
+  if (isNodeHidden(element)) {
     // If the element is hidden, then the spatial context is not important.
     return {};
   }

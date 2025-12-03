@@ -16,12 +16,12 @@ from .ini import combine_fields
 __all__ = ["read_toml", "alphabetize_toml_str", "add_skip_if", "sort_paths"]
 
 CreateBug = Optional[Callable[[], object]]
-ListStr = List[str]
+ListStr = List[str]  # noqa UP006
 OptArray = Optional[Array]
 OptRegex = Optional[re.Pattern]
 OptStr = Optional[str]
-OptConditions = List[Tuple[str, OptStr]]
-TupleStrBool = Tuple[str, bool]
+OptConditions = List[Tuple[str, OptStr]]  # noqa UP006
+TupleStrBoolStr = Tuple[str, bool, str]  # noqa UP006
 
 FILENAME_REGEX = r"^([A-Za-z0-9_./-]*)([Bb][Uu][Gg])([-_]*)([0-9]+)([A-Za-z0-9_./-]*)$"
 DEFAULT_SECTION = "DEFAULT"
@@ -284,6 +284,19 @@ def _should_ignore_new_condition(existing_condition: str, new_condition: str) ->
     return existing_condition == new_condition or existing_condition in new_condition
 
 
+class Mode:
+    "Skipfails mode of operation"
+
+    NORMAL: int = 0
+    CARRYOVER: int = 1
+    KNOWN_INTERMITTENT: int = 2
+    NEW_FAILURE: int = 3
+    REPLACE_TBD: int = 4
+    CARRYOVER_FILED: int = 5
+    KNOWN_INTERMITTENT_FILED: int = 6
+    NEW_FAILURE_FILED: int = 7
+
+
 class Carry:
     "Helper class for add_skip_if to call is_carryover()"
 
@@ -408,21 +421,22 @@ def add_skip_if(
     condition: str,
     bug_reference: OptStr = None,
     create_bug_lambda: CreateBug = None,
-    carryover_mode: bool = False,
-) -> TupleStrBool:
+    mode: Mode = Mode.NORMAL,
+) -> TupleStrBoolStr:
     """
     Will take a TOMLkit manifest document (i.e. from a previous invocation
     of read_toml(..., document=True) and accessing the document
     from mp.source_documents[filename]) and mutate it
     in sorted order by section (i.e. test file name, taking bug ids into consideration).
     Determine if this condition is a carryover (see ./test/SKIP-FAILS.txt and Bug 1971610)
-    In carryover_mode only consider carryover edits (do not create bugs)
-    Else when not in carryover_mode and create_bug_lambda is not None
+    In carryover mode only consider carryover edits (do not create bugs)
+    Else when not in carryover mode and create_bug_lambda is not None
       then invoke create_bug_lambda to create new bug
 
     Returns (additional_comment, carryover) where
       additional_comment is the empty string (used in other manifest add_skip_if functions)
       carryover is True if this condition is carried over from an existing condition
+    bug_reference is returned as None if the skip-if was ignored
     """
 
     from tomlkit import array
@@ -453,7 +467,7 @@ def add_skip_if(
                 first_comment += skip_if.trivia.comment
     mp_array: Array = array()
     if skip_if is None:  # add the first one line entry to the table
-        if not carryover_mode:
+        if mode != Mode.CARRYOVER:
             mp_array.add_line(condition, indent="", add_comma=False, newline=False)
             if create_bug_lambda is not None:
                 bug = create_bug_lambda()
@@ -476,7 +490,7 @@ def add_skip_if(
                 conditions_array.append([first, first_comment])
                 if (
                     not ignore_condition
-                    and carryover_mode
+                    and mode == Mode.CARRYOVER
                     and carry.is_carryover(first, condition)
                 ):
                     carryover = True
@@ -493,7 +507,7 @@ def add_skip_if(
                             conditions_array.append([e_condition, e_comment])
                             if (
                                 not ignore_condition
-                                and carryover_mode
+                                and mode == Mode.CARRYOVER
                                 and carry.is_carryover(e_condition, condition)
                             ):
                                 carryover = True
@@ -513,15 +527,18 @@ def add_skip_if(
                     conditions_array.append([e_condition, e_comment])
                     if (
                         not ignore_condition
-                        and carryover_mode
+                        and mode == Mode.CARRYOVER
                         and carry.is_carryover(e_condition, condition)
                     ):
                         carryover = True
                         bug_reference = e_comment
                 elif bug_reference is None and create_bug_lambda is None:
                     bug_reference = e_comment
-        if not ignore_condition:
-            if not carryover_mode and create_bug_lambda is not None:
+        if ignore_condition:
+            carryover = False
+            bug_reference = None
+        else:
+            if mode == Mode.NORMAL and create_bug_lambda is not None:
                 bug = create_bug_lambda()
                 if bug is not None:
                     bug_reference = f"Bug {bug.id}"
@@ -533,7 +550,7 @@ def add_skip_if(
         skip_if = {"skip-if": mp_array}
         del keyvals["skip-if"]
         keyvals.update(skip_if)
-    return (additional_comment, carryover)
+    return (additional_comment, carryover, bug_reference)
 
 
 def _should_remove_condition(
@@ -620,3 +637,86 @@ def remove_skip_if(
                     del key_values["skip-if"]
 
     return has_removed_items
+
+
+def replace_tbd_skip_if(
+    manifest: TOMLDocument, filename: str, condition: str, bugid: str
+) -> bool:
+    """
+    Edits the test ["filename"] in manifest with the given condition
+    that has a bug reference `# Bug TBD`
+    with the actual bugid
+    returns True if properly updated
+    """
+    from tomlkit import array
+    from tomlkit.items import Comment, String, Whitespace
+
+    updated: bool = False  # was the TBD found and updated with bugid?
+    BUG_TBD: str = "Bug TBD"  # string we are looking for
+    if filename not in manifest:
+        raise Exception(f"TOML manifest does not contain section: {filename}")
+    keyvals: dict = manifest[filename]
+    if not "skip-if" in keyvals:
+        raise Exception(
+            f"TOML manifest for section: {filename} does not contain a skip-if condition"
+        )
+    skip_if: Array = keyvals["skip-if"]
+    mp_array: Array = array()
+    conditions_array: OptConditions = []
+    first: OptStr = None  # first skip-if condition
+    first_comment: str = ""  # first skip-if comment
+    e_condition: OptStr = None  # existing skip-if condition
+    e_comment: str = ""  # existing skip-if comment
+
+    # handle the first condition uniquely to properly perserve whitespace
+    if len(skip_if) == 1:
+        for e in skip_if._iter_items():
+            if first is None:
+                if not isinstance(e, Whitespace):
+                    first = e.as_string().strip('"')
+            else:
+                c = e.as_string()
+                if c != ",":
+                    first_comment += c
+        if skip_if.trivia is not None:
+            first_comment += skip_if.trivia.comment
+    if first is not None:
+        if first_comment:
+            first_comment = _simplify_comment(first_comment)
+        if first == condition and first_comment.endswith(BUG_TBD):
+            i: int = max(first_comment.find(BUG_TBD), 0)
+            first_comment = f"{' ' * i}Bug {bugid}"
+            updated = True
+        e_condition = first
+        e_comment = first_comment
+
+    # loop over all skip-if conditions to find BUG_TBD
+    for e in skip_if._iter_items():
+        if isinstance(e, String):
+            if e_condition is not None:
+                conditions_array.append([e_condition, e_comment])
+                e_condition = None
+                e_comment = ""
+            if len(e) > 0:
+                e_condition = e.as_string().strip('"')
+                if e_condition == first:
+                    e_condition = None  # don't repeat first
+        elif isinstance(e, Comment):
+            e_comment = _simplify_comment(e.as_string())
+        if e_condition == condition and e_comment.endswith(BUG_TBD):
+            i: int = max(e_comment.find(BUG_TBD), 0)
+            e_comment = f"{' ' * i}Bug {bugid}"
+            updated = True
+    if e_condition is not None:
+        conditions_array.append([e_condition, e_comment])
+
+    # Update TOML document for the test with the updated skip-if comment
+    conditions_array.sort()
+    for c in conditions_array:
+        mp_array.add_line(c[0], indent="  ", comment=c[1])
+    mp_array.add_line("", indent="")  # fixed in write_toml_str
+    skip_if = {"skip-if": mp_array}
+    del keyvals["skip-if"]
+    keyvals.update(skip_if)
+
+    return updated

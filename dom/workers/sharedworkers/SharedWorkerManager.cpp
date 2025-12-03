@@ -134,11 +134,11 @@ void SharedWorkerManager::AddActor(SharedWorkerParent* aParent) {
   mActors.AppendElement(aParent);
 
   if (mLockCount) {
-    Unused << aParent->SendNotifyLock(true);
+    (void)aParent->SendNotifyLock(true);
   }
 
   if (mWebTransportCount) {
-    Unused << aParent->SendNotifyWebTransport(true);
+    (void)aParent->SendNotifyWebTransport(true);
   }
 
   // NB: We don't update our Suspended/Frozen state here, yet. The aParent is
@@ -244,7 +244,7 @@ void SharedWorkerManager::CreationFailed() {
   ::mozilla::ipc::AssertIsOnBackgroundThread();
 
   for (SharedWorkerParent* actor : mActors) {
-    Unused << actor->SendError(NS_ERROR_FAILURE);
+    (void)actor->SendError(NS_ERROR_FAILURE);
   }
 }
 
@@ -257,7 +257,7 @@ void SharedWorkerManager::ErrorReceived(const ErrorValue& aValue) {
   ::mozilla::ipc::AssertIsOnBackgroundThread();
 
   for (SharedWorkerParent* actor : mActors) {
-    Unused << actor->SendError(aValue);
+    (void)actor->SendError(aValue);
   }
 }
 
@@ -272,7 +272,7 @@ void SharedWorkerManager::LockNotified(bool aCreated) {
   // 2. Lost all locks
   if ((aCreated && mLockCount == 1) || !mLockCount) {
     for (SharedWorkerParent* actor : mActors) {
-      Unused << actor->SendNotifyLock(aCreated);
+      (void)actor->SendNotifyLock(aCreated);
     }
   }
 };
@@ -288,7 +288,7 @@ void SharedWorkerManager::WebTransportNotified(bool aCreated) {
   // 2. The last WebTransport goes away
   if ((aCreated && mWebTransportCount == 1) || mWebTransportCount == 0) {
     for (SharedWorkerParent* actor : mActors) {
-      Unused << actor->SendNotifyWebTransport(aCreated);
+      (void)actor->SendNotifyWebTransport(aCreated);
     }
   }
 };
@@ -297,7 +297,7 @@ void SharedWorkerManager::Terminated() {
   ::mozilla::ipc::AssertIsOnBackgroundThread();
 
   for (SharedWorkerParent* actor : mActors) {
-    Unused << actor->SendTerminate();
+    (void)actor->SendTerminate();
   }
 }
 

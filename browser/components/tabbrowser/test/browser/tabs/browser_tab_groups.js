@@ -239,6 +239,54 @@ add_task(async function test_tabGroupCollapseWhileSelected() {
   await removeTabGroup(group);
 });
 
+add_task(async function test_tabGroupPreventScrollOnUncollapse() {
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+
+  // create a tab group that overflows the tabstrip
+  await BrowserTestUtils.overflowTabs(null, win);
+  let bigGroup = win.gBrowser.addTabGroup(win.gBrowser.tabs);
+
+  // create some more tabs after the group
+  createManyTabs(4, win);
+
+  await BrowserTestUtils.waitForCondition(() => {
+    return Array.from(win.gBrowser.tabs).every(tab => tab._fullyOpen);
+  });
+
+  info("selecting the last tab");
+  let tabSelected = BrowserTestUtils.waitForEvent(win, "TabSelect");
+  win.gBrowser.selectedTab = win.gBrowser.tabs[win.gBrowser.tabs.length - 1];
+  await tabSelected;
+
+  info("scrolling to beginning of tabstrip");
+  let arrowScrollbox = win.gBrowser.tabContainer.arrowScrollbox;
+  let scrolledToStart = BrowserTestUtils.waitForCondition(() =>
+    arrowScrollbox.hasAttribute("scrolledtostart")
+  );
+
+  bigGroup.labelElement.scrollIntoView(true);
+  await scrolledToStart;
+  Assert.ok(!bigGroup.collapsed, "Group is expanded");
+  Assert.ok(
+    arrowScrollbox.hasAttribute("scrolledtostart"),
+    "arrowscrollbox is scrolled to start"
+  );
+
+  info("Collapsing and expanding the big group");
+  await TabGroupTestUtils.toggleCollapsed(bigGroup, true);
+  Assert.ok(bigGroup.collapsed, "Group is collapsed");
+  await TabGroupTestUtils.toggleCollapsed(bigGroup, false);
+  Assert.ok(!bigGroup.collapsed, "Group is expanded");
+
+  Assert.ok(
+    arrowScrollbox.hasAttribute("scrolledtostart"),
+    "arrowscrollbox is still scrolled to start"
+  );
+
+  await TabGroupTestUtils.removeTabGroup(bigGroup);
+  BrowserTestUtils.closeWindow(win);
+});
+
 /**
  * Bug 1979067 - The collapsed tab group's overflow counter should be included in the bounds
  * calculations that determine whether the tabstrip scroll button is enabled.

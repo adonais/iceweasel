@@ -66,7 +66,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "TrackingDBService",
   "@mozilla.org/tracking-db-service;1",
-  "nsITrackingDBService"
+  Ci.nsITrackingDBService
 );
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -161,17 +161,6 @@ Preferences.addAll([
     type: "bool",
   },
 
-  // Location Bar
-  { id: "browser.urlbar.suggest.bookmark", type: "bool" },
-  { id: "browser.urlbar.suggest.clipboard", type: "bool" },
-  { id: "browser.urlbar.suggest.history", type: "bool" },
-  { id: "browser.urlbar.suggest.openpage", type: "bool" },
-  { id: "browser.urlbar.suggest.topsites", type: "bool" },
-  { id: "browser.urlbar.suggest.engines", type: "bool" },
-  { id: "browser.urlbar.suggest.quicksuggest.nonsponsored", type: "bool" },
-  { id: "browser.urlbar.suggest.quicksuggest.sponsored", type: "bool" },
-  { id: "browser.urlbar.quicksuggest.dataCollection.enabled", type: "bool" },
-
   // History
   { id: "places.history.enabled", type: "bool" },
   { id: "browser.formfill.enable", type: "bool" },
@@ -209,6 +198,14 @@ Preferences.addAll([
 
   // Global Privacy Control
   { id: "privacy.globalprivacycontrol.enabled", type: "bool" },
+
+  // Firefox VPN
+  { id: "browser.ipProtection.variant", type: "string" },
+  { id: "browser.ipProtection.features.siteExceptions", type: "bool" },
+  { id: "browser.ipProtection.exceptionsMode", type: "string" },
+  { id: "browser.ipProtection.features.autoStart", type: "bool" },
+  { id: "browser.ipProtection.autoStartEnabled", type: "bool" },
+  { id: "browser.ipProtection.autoStartPrivateEnabled", type: "bool" },
 
   // Media
   { id: "media.autoplay.default", type: "int" },
@@ -1250,6 +1247,97 @@ Preferences.addSetting({
     "etpStrictEnabled",
     ...SECURITY_WARNINGS.map(warning => warning.id),
   ],
+});
+
+Preferences.addSetting({
+  id: "ipProtectionVisible",
+  pref: "browser.ipProtection.variant",
+  get: prefVal => prefVal == "beta",
+});
+Preferences.addSetting({
+  id: "ipProtectionSiteExceptionsFeatureEnabled",
+  pref: "browser.ipProtection.features.siteExceptions",
+});
+// This setting also affects the radio group for site exceptions
+Preferences.addSetting({
+  id: "ipProtectionExceptionsMode",
+  pref: "browser.ipProtection.exceptionsMode",
+  deps: ["ipProtectionVisible", "ipProtectionSiteExceptionsFeatureEnabled"],
+  visible: ({
+    ipProtectionVisible,
+    ipProtectionSiteExceptionsFeatureEnabled,
+  }) =>
+    ipProtectionVisible.value && ipProtectionSiteExceptionsFeatureEnabled.value,
+});
+Preferences.addSetting({
+  id: "ipProtectionExceptionAllListButton",
+  deps: ["ipProtectionVisible", "ipProtectionExceptionsMode"],
+  visible: ({ ipProtectionVisible, ipProtectionExceptionsMode }) =>
+    ipProtectionVisible.value && ipProtectionExceptionsMode.value == "all",
+  onUserClick() {
+    let params = {
+      blockVisible: true,
+      hideStatusColumn: true,
+      prefilledHost: "",
+      permissionType: "ipp-vpn",
+      capabilityFilter: Ci.nsIPermissionManager.DENY_ACTION,
+    };
+
+    gSubDialog.open(
+      "chrome://browser/content/preferences/dialogs/permissions.xhtml",
+      { features: "resizable=yes" },
+      params
+    );
+  },
+});
+Preferences.addSetting({
+  id: "ipProtectionExceptionSelectListButton",
+  deps: ["ipProtectionVisible", "ipProtectionExceptionsMode"],
+  visible: ({ ipProtectionVisible, ipProtectionExceptionsMode }) =>
+    ipProtectionVisible.value && ipProtectionExceptionsMode.value == "select",
+  onUserClick() {
+    let params = {
+      allowVisible: true,
+      hideStatusColumn: true,
+      prefilledHost: "",
+      permissionType: "ipp-vpn",
+      capabilityFilter: Ci.nsIPermissionManager.ALLOW_ACTION,
+    };
+
+    gSubDialog.open(
+      "chrome://browser/content/preferences/dialogs/permissions.xhtml",
+      { features: "resizable=yes" },
+      params
+    );
+  },
+});
+Preferences.addSetting({
+  id: "ipProtectionAutoStartFeatureEnabled",
+  pref: "browser.ipProtection.features.autoStart",
+  get: prefVal => prefVal,
+});
+Preferences.addSetting({
+  id: "ipProtectionAutoStart",
+  deps: ["ipProtectionVisible", "ipProtectionAutoStartFeatureEnabled"],
+  visible: ({ ipProtectionVisible, ipProtectionAutoStartFeatureEnabled }) =>
+    ipProtectionVisible.value && ipProtectionAutoStartFeatureEnabled.value,
+});
+Preferences.addSetting({
+  id: "ipProtectionAutoStartCheckbox",
+  pref: "browser.ipProtection.autoStartEnabled",
+  deps: ["ipProtectionVisible", "ipProtectionAutoStart"],
+  visible: ({ ipProtectionVisible }) => ipProtectionVisible.value,
+});
+Preferences.addSetting({
+  id: "ipProtectionAutoStartPrivateCheckbox",
+  pref: "browser.ipProtection.autoStartPrivateEnabled",
+  deps: ["ipProtectionVisible", "ipProtectionAutoStart"],
+  visible: ({ ipProtectionVisible }) => ipProtectionVisible.value,
+});
+Preferences.addSetting({
+  id: "ipProtectionAdditionalLinks",
+  deps: ["ipProtectionVisible"],
+  visible: ({ ipProtectionVisible }) => ipProtectionVisible.value,
 });
 
 // Study opt out
@@ -2367,6 +2455,7 @@ var gPrivacyPane = {
     initSettingGroup("browsingProtection");
     initSettingGroup("cookiesAndSiteData");
     initSettingGroup("certificates");
+    initSettingGroup("ipprotection");
 
     this._updateSanitizeSettingsButton();
     this.initializeHistoryMode();
@@ -2588,13 +2677,6 @@ var gPrivacyPane = {
         notificationsDoNotDisturb.setAttribute("checked", true);
       }
     }
-
-    let onNimbus = () => this._updateFirefoxSuggestToggle();
-    NimbusFeatures.urlbar.onUpdate(onNimbus);
-    this._updateFirefoxSuggestToggle();
-    window.addEventListener("unload", () => {
-      NimbusFeatures.urlbar.offUpdate(onNimbus);
-    });
 
     this.initSiteDataControls();
 
@@ -3881,19 +3963,6 @@ var gPrivacyPane = {
     } else {
       groupbox.setAttribute("style", "display: none !important");
     }
-  },
-
-  /**
-   * Updates the visibility of the Firefox Suggest Privacy Container
-   * based on the user's Quick Suggest settings.
-   */
-  _updateFirefoxSuggestToggle() {
-    document.getElementById(
-      "firefoxSuggestDataCollectionPrivacyToggle"
-    ).hidden =
-      !UrlbarPrefs.get("quickSuggestEnabled") ||
-      UrlbarPrefs.get("quickSuggestSettingsUi") !=
-        QuickSuggest.SETTINGS_UI.FULL;
   },
 
   // GEOLOCATION

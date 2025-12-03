@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "api/audio_options.h"
 #include "api/candidate.h"
 #include "api/jsep.h"
@@ -149,10 +150,12 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   bool AddIceCandidate(const IceCandidate* candidate);
   void AddIceCandidate(std::unique_ptr<IceCandidate> candidate,
                        std::function<void(RTCError)> callback);
+  bool RemoveIceCandidate(const IceCandidate* candidate);
   bool RemoveIceCandidates(const std::vector<Candidate>& candidates);
   // Adds a locally generated candidate to the local description.
   void AddLocalIceCandidate(const IceCandidate* candidate);
-  void RemoveLocalIceCandidates(const std::vector<Candidate>& candidates);
+  void RemoveLocalIceCandidates(absl::string_view mid,
+                                const std::vector<Candidate>& candidates);
   bool ShouldFireNegotiationNeededEvent(uint32_t event_id);
 
   bool AddStream(MediaStreamInterface* local_stream);

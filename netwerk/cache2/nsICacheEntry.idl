@@ -29,12 +29,13 @@ interface nsICacheEntry : nsISupports
   const unsigned long CONTENT_TYPE_MEDIA = 4;
   const unsigned long CONTENT_TYPE_STYLESHEET = 5;
   const unsigned long CONTENT_TYPE_WASM = 6;
+  const unsigned long CONTENT_TYPE_DICTIONARY = 7;
   /**
    * Content type that is used internally to check whether the value parsed
    * from disk is within allowed limits. Don't pass CONTENT_TYPE_LAST to
    * setContentType method.
    */
-  const unsigned long CONTENT_TYPE_LAST = 7;
+  const unsigned long CONTENT_TYPE_LAST = 8;
 
   /**
    * Placeholder for the initial value of expiration time.
@@ -204,6 +205,11 @@ interface nsICacheEntry : nsISupports
   void   setMetaDataElement(in string key, in string value);
 
   /**
+   * Get if the entry is empty (new)
+   */
+  readonly attribute boolean isEmpty;
+
+  /**
    * Obtain the list of metadata keys this entry keeps.
    *
    * NOTE: The callback is invoked under the CacheFile's lock.  It means
@@ -328,6 +334,10 @@ interface nsICacheEntry : nsISupports
    */
   [noscript] void SetDictionary(in DictionaryCacheEntry dict);
 
+  /**
+   * Set bypass flag to allow waiting listeners to continue even while entry is being written
+   */
+  void setBypassWriterLock(in boolean aBypass);
 };
 
 /**

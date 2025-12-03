@@ -1442,7 +1442,7 @@ var Search = {
   },
 };
 
-/*
+/**
  * Helper function to render JS objects with white space between top level elements
  * so that they look better in the browser
  * @param   aObject JavaScript object or array to render

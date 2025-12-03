@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 
 @dataclass
@@ -33,14 +33,14 @@ class Task:
 
     kind: str
     label: str
-    attributes: Dict
-    task: Dict
+    attributes: dict
+    task: dict
     description: str = ""
     task_id: Union[str, None] = field(default=None, init=False)
-    optimization: Union[Dict[str, Any], None] = field(default=None)
-    dependencies: Dict = field(default_factory=dict)
-    soft_dependencies: List = field(default_factory=list)
-    if_dependencies: List = field(default_factory=list)
+    optimization: Union[dict[str, Any], None] = field(default=None)
+    dependencies: dict = field(default_factory=dict)
+    soft_dependencies: list = field(default_factory=list)
+    if_dependencies: list = field(default_factory=list)
 
     def __post_init__(self):
         self.attributes["kind"] = self.kind

@@ -26,8 +26,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
-  UrlbarTokenizer:
-    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
+  UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
 });
 
 const DYNAMIC_RESULT_TYPE = "onboardTabToSearch";
@@ -123,9 +122,8 @@ export class UrlbarProviderTabToSearch extends UrlbarProvider {
    * with this provider, to save on resources.
    *
    * @param {UrlbarQueryContext} queryContext The query context object
-   * @param {UrlbarController} controller The current controller.
    */
-  async isActive(queryContext, controller) {
+  async isActive(queryContext) {
     return (
       queryContext.searchString &&
       queryContext.tokens.length == 1 &&
@@ -134,8 +132,8 @@ export class UrlbarProviderTabToSearch extends UrlbarProvider {
       !(
         (await this.queryInstance
           .getProvider(lazy.UrlbarProviderGlobalActions.name)
-          ?.isActive(queryContext, controller)) &&
-        lazy.ActionsProviderContextualSearch.isActive(queryContext, controller)
+          ?.isActive(queryContext)) &&
+        lazy.ActionsProviderContextualSearch.isActive(queryContext)
       )
     );
   }
@@ -254,10 +252,9 @@ export class UrlbarProviderTabToSearch extends UrlbarProvider {
   /**
    * Starts querying.
    *
-   * @param {object} queryContext The query context object
-   * @param {Function} addCallback Callback invoked by the provider to add a new
-   *        result.
-   * @returns {Promise} resolved when the query stops.
+   * @param {UrlbarQueryContext} queryContext
+   * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
+   *   Callback invoked by the provider to add a new result.
    */
   async startQuery(queryContext, addCallback) {
     // enginesForDomainPrefix only matches against engine domains.
@@ -272,7 +269,7 @@ export class UrlbarProviderTabToSearch extends UrlbarProvider {
     );
     // Skip any string that cannot be an origin.
     if (
-      !lazy.UrlbarTokenizer.looksLikeOrigin(searchStr, {
+      !lazy.UrlUtils.looksLikeOrigin(searchStr, {
         ignoreKnownDomains: true,
         noIp: true,
       })

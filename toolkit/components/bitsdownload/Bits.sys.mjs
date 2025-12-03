@@ -28,7 +28,7 @@ if (AppConstants.MOZ_BITS_DOWNLOAD) {
     lazy,
     "gBits",
     "@mozilla.org/bits;1",
-    "nsIBits"
+    Ci.nsIBits
   );
 }
 

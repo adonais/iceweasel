@@ -37,6 +37,7 @@
     --color-accent-primary: AccentColor;
     --color-accent-primary-hover: color-mix(in srgb, black 10%, var(--color-accent-primary));
     --color-accent-primary-active: color-mix(in srgb, black 20%, var(--color-accent-primary));
+    --color-accent-primary-selected: SelectedItem;
 
     /** Font Size **/
     --font-size-root: unset;
@@ -55,5 +56,6 @@
 
     /** Text **/
     --text-color: currentColor;
+    --text-color-accent-primary-selected: SelectedItemText;
   }
 }

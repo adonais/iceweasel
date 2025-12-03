@@ -16,24 +16,19 @@ elif CONFIG["MOZ_BRANDING_DIRECTORY"] == "browser/branding/aurora":
 else:
     DEFINES["MOZ_BRANDING_IS_UNOFFICIAL"] = 1
 
-# Only build on platforms that have WinHTTP.h (i.e. not mingw)
-if CONFIG["OS_ARCH"] == "WINNT" and CONFIG["HAVE_WINHTTP_H"]:
-    UNIFIED_SOURCES += [
-        "../../download_firefox.cpp",
-        "../../file_sink.cpp",
-        "../../find_firefox.cpp",
-        "../../main.cpp",
-        "../../tempfile_name.cpp",
-    ]
+UNIFIED_SOURCES += [
+    "../../download_firefox.cpp",
+    "../../file_sink.cpp",
+    "../../find_firefox.cpp",
+    "../../main.cpp",
+    "../../tempfile_name.cpp",
+]
 
-    OS_LIBS += [
-        "advapi32",
-        "rpcrt4",
-        "shell32",
-        "winhttp",
-    ]
-    DEFFILE = "desktop-launcher-test.def"
-    Library("desktop-launcher-test")
-    DisableStlWrapping()
+OS_LIBS += [
+    "advapi32",
+    "rpcrt4",
+    "shell32",
+    "winhttp",
+]
 
-    FINAL_LIBRARY = "xul-gtest"
+FINAL_LIBRARY = "xul-gtest"

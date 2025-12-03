@@ -14,6 +14,9 @@ kind-dependencies:
     # Primary dependencies
     - build
 
+task-defaults:
+    run-on-repo-type: [hg]
+
 only-for-build-platforms:
     - linux64/opt
     - macosx64/opt

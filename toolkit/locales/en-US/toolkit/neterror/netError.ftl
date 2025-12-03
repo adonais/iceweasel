@@ -187,3 +187,14 @@ certerror-coep-learn-more = Learn more about Cross Origin Embedder Policies (COE
 #   $responsestatus (string) - HTTP response status code (e.g., 500).
 #   $responsestatustext (string) - HTTP response status text (e.g., "Internal Server Error").
 neterror-response-status-code = Error code: { $responsestatus } { $responsestatustext }
+
+## Felt Privacy V1 Strings
+## Variables:
+##   $hostname (String) - Hostname of the website to which the user was trying to connect.
+
+fp-neterror-connection-intro = { -brand-short-name } can’t create a secure connection to the server at { $hostname }.
+
+# This string appears after the following string: "What makes the site look dangerous?" (fp-neterror-why-site-dangerous)
+fp-neterror-cypher-overlap-why-dangerous-body = It looks like this site is using old software with known security issues.
+# This string appears after the following string: "What can you do about it?" (fp-neterror-what-can-you-do)
+fp-neterror-cypher-overlap-what-can-you-do-body = Make sure you’re using the latest version of { -brand-short-name }. Go to Help > About { -brand-short-name } in the menu. If you’re using the latest { -brand-short-name }, the problem is most likely with the site itself.

@@ -10,7 +10,6 @@
 
 #include "MainThreadUtils.h"
 #include "ReferrerInfo.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/ConsoleReportCollector.h"
@@ -280,8 +279,6 @@ SheetLoadData::SheetLoadData(
       mMediaMatched(aMediaMatches == MediaMatched::Yes),
       mUseSystemPrincipal(false),
       mSheetAlreadyComplete(false),
-      mIsCrossOriginNoCORS(false),
-      mBlockResourceTiming(false),
       mLoadFailed(false),
       mShouldEmulateNotificationsForCachedLoad(false),
       mPreloadKind(aPreloadKind),
@@ -325,8 +322,6 @@ SheetLoadData::SheetLoadData(
       mMediaMatched(true),
       mUseSystemPrincipal(aParentData && aParentData->mUseSystemPrincipal),
       mSheetAlreadyComplete(false),
-      mIsCrossOriginNoCORS(false),
-      mBlockResourceTiming(false),
       mLoadFailed(false),
       mShouldEmulateNotificationsForCachedLoad(false),
       mPreloadKind(StylePreloadKind::None),
@@ -373,8 +368,6 @@ SheetLoadData::SheetLoadData(
       mMediaMatched(true),
       mUseSystemPrincipal(aUseSystemPrincipal == UseSystemPrincipal::Yes),
       mSheetAlreadyComplete(false),
-      mIsCrossOriginNoCORS(false),
-      mBlockResourceTiming(false),
       mLoadFailed(false),
       mShouldEmulateNotificationsForCachedLoad(false),
       mPreloadKind(aPreloadKind),
@@ -660,8 +653,6 @@ void SheetLoadData::OnStartRequest(nsIRequest* aRequest) {
   NS_GetFinalChannelURI(channel, getter_AddRefs(finalURI));
   MOZ_DIAGNOSTIC_ASSERT(finalURI,
                         "Someone just violated the nsIRequest contract");
-  mSheet->SetURIs(finalURI, originalURI, finalURI);
-
   nsCOMPtr<nsIPrincipal> principal;
   nsIScriptSecurityManager* secMan = nsContentUtils::GetSecurityManager();
   if (mUseSystemPrincipal) {
@@ -670,22 +661,40 @@ void SheetLoadData::OnStartRequest(nsIRequest* aRequest) {
     secMan->GetChannelResultPrincipal(channel, getter_AddRefs(principal));
   }
   MOZ_DIAGNOSTIC_ASSERT(principal);
-  mSheet->SetPrincipal(principal);
 
   nsCOMPtr<nsIReferrerInfo> referrerInfo =
       ReferrerInfo::CreateForExternalCSSResources(
-          mSheet, nsContentUtils::GetReferrerPolicyFromChannel(channel));
-  mSheet->SetReferrerInfo(referrerInfo);
-
+          mSheet, finalURI,
+          nsContentUtils::GetReferrerPolicyFromChannel(channel));
+  mSheet->SetURIs(originalURI, finalURI, referrerInfo, principal);
+  mSheet->SetOriginClean([&] {
+    if (mParentData && !mParentData->mSheet->IsOriginClean()) {
+      return false;
+    }
+    if (mSheet->GetCORSMode() != CORS_NONE) {
+      return true;
+    }
+    if (!mLoader->LoaderPrincipal()->Subsumes(mSheet->Principal())) {
+      return false;
+    }
+    if (nsCOMPtr<nsITimedChannel> timedChannel = do_QueryInterface(channel)) {
+      bool allRedirectsSameOrigin = false;
+      bool hadCrossOriginRedirects =
+          NS_SUCCEEDED(timedChannel->GetAllRedirectsSameOrigin(
+              &allRedirectsSameOrigin)) &&
+          !allRedirectsSameOrigin;
+      if (hadCrossOriginRedirects) {
+        return false;
+      }
+    }
+    return true;
+  }());
   if (nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel)) {
     nsCString sourceMapURL;
     if (nsContentUtils::GetSourceMapURL(httpChannel, sourceMapURL)) {
       mSheet->SetSourceMapURL(std::move(sourceMapURL));
     }
   }
-
-  mIsCrossOriginNoCORS = mSheet->GetCORSMode() == CORS_NONE &&
-                         !mTriggeringPrincipal->Subsumes(mSheet->Principal());
 }
 
 /*
@@ -734,14 +743,18 @@ nsresult SheetLoadData::VerifySheetReadyToParse(nsresult aStatus,
                          contentType.IsEmpty();
 
   if (!validType) {
-    const bool sameOrigin = mTriggeringPrincipal->Subsumes(mSheet->Principal());
+    // FIXME(emilio, bug 1995647): This should arguably use IsOriginClean(),
+    // though test_css_cross_domain_no_orb.html tests precisely this behavior
+    // intentionally, and this is quirks-only...
+    const bool sameOrigin =
+        mLoader->LoaderPrincipal()->Subsumes(mSheet->Principal());
     const auto flag = sameOrigin && mCompatMode == eCompatibility_NavQuirks
                           ? nsIScriptError::warningFlag
                           : nsIScriptError::errorFlag;
     const auto errorMessage = flag == nsIScriptError::errorFlag
                                   ? "MimeNotCss"_ns
                                   : "MimeNotCssWarn"_ns;
-    NS_ConvertUTF8toUTF16 sheetUri(mSheet->GetSheetURI()->GetSpecOrDefault());
+    NS_ConvertUTF8toUTF16 sheetUri(mURI->GetSpecOrDefault());
     NS_ConvertUTF8toUTF16 contentType16(contentType);
 
     nsAutoCString referrerSpec;
@@ -943,16 +956,14 @@ Loader::CreateSheet(nsIURI* aURI, nsIContent* aLinkingContent,
       return {std::move(sheet), sheetState, std::move(networkMetadata)};
     }
   }
-
-  nsIURI* sheetURI = aURI;
-  nsIURI* baseURI = aURI;
-  nsIURI* originalURI = aURI;
-
   auto sheet = MakeRefPtr<StyleSheet>(aParsingMode, aCORSMode, sriMetadata);
-  sheet->SetURIs(sheetURI, originalURI, baseURI);
   nsCOMPtr<nsIReferrerInfo> referrerInfo =
-      ReferrerInfo::CreateForExternalCSSResources(sheet);
-  sheet->SetReferrerInfo(referrerInfo);
+      ReferrerInfo::CreateForExternalCSSResources(sheet, aURI);
+  // NOTE: If the sheet is loaded, then SetURIs gets called again with the right
+  // principal / final uri / etc.
+  sheet->SetURIs(aURI, aURI, referrerInfo, LoaderPrincipal());
+  // Load errors should be origin-dirty, even if same-origin.
+  sheet->SetOriginClean(false);
   LOG(("  Needs parser"));
   return {std::move(sheet), SheetState::NeedsParser, nullptr};
 }
@@ -1397,16 +1408,16 @@ nsresult Loader::LoadSheetAsyncInternal(SheetLoadData& aLoadData,
   if (nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel)) {
     if (nsCOMPtr<nsIReferrerInfo> referrerInfo = aLoadData.ReferrerInfo()) {
       rv = httpChannel->SetReferrerInfo(referrerInfo);
-      Unused << NS_WARN_IF(NS_FAILED(rv));
+      (void)NS_WARN_IF(NS_FAILED(rv));
     }
 
     // Set the initiator type
     if (nsCOMPtr<nsITimedChannel> timedChannel =
             do_QueryInterface(httpChannel)) {
       timedChannel->SetInitiatorType(aLoadData.InitiatorTypeString());
-
-      if (aLoadData.mParentData) {
-        // This is a child sheet load.
+      if (aLoadData.mParentData &&
+          !aLoadData.mParentData->mSheet->IsOriginClean()) {
+        // This is a child sheet load of a cross-origin stylesheet.
         //
         // The resource timing of the sub-resources that a document loads
         // should normally be reported to the document.  One exception is any
@@ -1418,24 +1429,9 @@ nsresult Loader::LoadSheetAsyncInternal(SheetLoadData& aLoadData,
         // timings for any sub-resources that a cross-origin resource may load
         // since that obviously leaks information about what the cross-origin
         // resource loads, which is bad.
-        //
-        // In addition to checking whether we're an immediate child resource of
-        // a cross-origin resource (by checking if mIsCrossOriginNoCORS is set
-        // to true on our parent), we also check our parent to see whether it
-        // itself is a sub-resource of a cross-origin resource by checking
-        // mBlockResourceTiming.  If that is set then we too are such a
-        // sub-resource and so we set the flag on ourself too to propagate it
-        // on down.
-        if (aLoadData.mParentData->mIsCrossOriginNoCORS ||
-            aLoadData.mParentData->mBlockResourceTiming) {
-          // Set a flag so any other stylesheet triggered by this one will
-          // not be reported
-          aLoadData.mBlockResourceTiming = true;
-
-          // Mark the channel so PerformanceMainThread::AddEntry will not
-          // report the resource.
-          timedChannel->SetReportResourceTiming(false);
-        }
+        // Mark the channel so PerformanceMainThread::AddEntry will not
+        // report the resource.
+        timedChannel->SetReportResourceTiming(false);
       }
     }
   }
@@ -1602,7 +1598,7 @@ void Loader::NotifyObservers(SheetLoadData& aData, nsresult aStatus) {
           // of desktop Firefox).
           nsCOMPtr<nsISupports> pageStyleActor =
               do_QueryActor("PageStyle", doc);
-          Unused << pageStyleActor;
+          (void)pageStyleActor;
         }));
   }
   if (aData.mMustNotify) {
@@ -1801,9 +1797,6 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
   // Use the document's base URL so that @import in the inline sheet picks up
   // the right base.
   nsIURI* baseURI = aInfo.mContent->GetBaseURI();
-  nsIURI* sheetURI = aInfo.mContent->OwnerDoc()->GetDocumentURI();
-  nsIURI* originalURI = nullptr;
-
   MOZ_ASSERT(aInfo.mIntegrity.IsEmpty());
   nsIPrincipal* loadingPrincipal = LoaderPrincipal();
   nsIPrincipal* principal = aInfo.mTriggeringPrincipal
@@ -1829,13 +1822,18 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
   if (!isSheetFromCache) {
     sheet = MakeRefPtr<StyleSheet>(eAuthorSheetFeatures, aInfo.mCORSMode,
                                    SRIMetadata{});
-    sheet->SetURIs(sheetURI, originalURI, baseURI);
-    nsIReferrerInfo* referrerInfo =
-        aInfo.mContent->OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
-    sheet->SetReferrerInfo(referrerInfo);
-    // We never actually load this, so just set its principal directly.
-    sheet->SetPrincipal(sheetPrincipal);
+    // If an extension creates an inline stylesheet, we don't want to consider
+    // it same-origin with the page.
+    // FIXME(emilio): That's rather odd.
+    sheet->SetOriginClean(LoaderPrincipal()->Subsumes(sheetPrincipal));
   }
+  // We allow sharing inline sheets with e.g. different base URIs, iff there's
+  // no dependency on that base URI. However, we still need to keep track of the
+  // right URIs in case the sheet is then mutated. EnsureUniqueInner will make
+  // sure the StylesheetContents get fixed up.
+  nsIReferrerInfo* referrerInfo =
+      aInfo.mContent->OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
+  sheet->SetURIs(nullptr, baseURI, referrerInfo, sheetPrincipal);
 
   auto matched = PrepareSheet(*sheet, aInfo.mTitle, aInfo.mMedia, nullptr,
                               isAlternate, aInfo.mIsExplicitlyEnabled);

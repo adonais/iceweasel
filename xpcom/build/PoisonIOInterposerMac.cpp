@@ -10,7 +10,6 @@
 #  include "mach_override.h"
 #endif
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IOInterposer.h"

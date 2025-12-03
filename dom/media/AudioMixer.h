@@ -9,7 +9,6 @@
 #include "AudioSampleFormat.h"
 #include "AudioSegment.h"
 #include "AudioStream.h"
-#include "mozilla/NotNull.h"
 #include "mozilla/PodOperations.h"
 #include "nsTArray.h"
 

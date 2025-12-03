@@ -7,7 +7,6 @@
 #ifndef mozilla_GlobalStyleSheetCache_h__
 #define mozilla_GlobalStyleSheetCache_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/BuiltInStyleSheets.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/NotNull.h"

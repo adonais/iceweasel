@@ -1235,7 +1235,6 @@ export var UrlbarTestUtils = {
       Object.assign(
         {
           input: {
-            isAddressbar: true,
             isPrivate: false,
             onFirstResult() {
               return false;
@@ -1589,6 +1588,10 @@ class TestProvider extends UrlbarProvider {
    *   If non-zero, each result will be added on this timeout.  If zero, all
    *   results will be added immediately and synchronously.
    *   If there's no results, the query will be completed after this timeout.
+   * @param {Function} [options.getViewTemplate]
+   *   If given, override the UrlbarProvider.getViewTemplate().
+   * @param {Function} [options.getViewUpdate]
+   *   If given, override the UrlbarProvider.getViewUpdate().
    * @param {Function} [options.onCancel]
    *   If given, a function that will be called when the provider's cancelQuery
    *   method is called.
@@ -1614,6 +1617,8 @@ class TestProvider extends UrlbarProvider {
     type = UrlbarUtils.PROVIDER_TYPE.PROFILE,
     priority = 0,
     addTimeout = 0,
+    getViewTemplate = null,
+    getViewUpdate = null,
     onCancel = null,
     onSelection = null,
     onEngagement = null,
@@ -1641,6 +1646,14 @@ class TestProvider extends UrlbarProvider {
     // type to heuristic if any result is heuristic.
     if (!type && this.results?.some(r => r.heuristic)) {
       this._type = UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
+    }
+
+    if (getViewTemplate) {
+      this.getViewTemplate = getViewTemplate.bind(this);
+    }
+
+    if (getViewUpdate) {
+      this.getViewUpdate = getViewUpdate.bind(this);
     }
 
     if (onEngagement) {

@@ -12,8 +12,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Logging.h"
 #include "mozilla/SyncRunnable.h"
-#include "mozilla/Unused.h"
-#include "mozilla/WeakPtr.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "nsThreadUtils.h"

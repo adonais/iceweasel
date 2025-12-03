@@ -7,8 +7,6 @@ import { CollapsibleSection } from "content-src/components/CollapsibleSection/Co
 import { connect } from "react-redux";
 import { DSMessage } from "content-src/components/DiscoveryStreamComponents/DSMessage/DSMessage";
 import { ReportContent } from "../DiscoveryStreamComponents/ReportContent/ReportContent";
-import { DSSignup } from "content-src/components/DiscoveryStreamComponents/DSSignup/DSSignup";
-import { DSTextPromo } from "content-src/components/DiscoveryStreamComponents/DSTextPromo/DSTextPromo";
 import { Highlights } from "content-src/components/DiscoveryStreamComponents/Highlights/Highlights";
 import { HorizontalRule } from "content-src/components/DiscoveryStreamComponents/HorizontalRule/HorizontalRule";
 import { Navigation } from "content-src/components/DiscoveryStreamComponents/Navigation/Navigation";
@@ -120,22 +118,6 @@ export class _DiscoveryStreamBase extends React.PureComponent {
           <div className="ds-top-sites">
             <TopSites isFixed={true} title={component.header?.title} />
           </div>
-        );
-      case "TextPromo":
-        return (
-          <DSTextPromo
-            dispatch={this.props.dispatch}
-            type={component.type}
-            data={component.data}
-          />
-        );
-      case "Signup":
-        return (
-          <DSSignup
-            dispatch={this.props.dispatch}
-            type={component.type}
-            data={component.data}
-          />
         );
       case "Message":
         return (

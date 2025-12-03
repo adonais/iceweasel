@@ -32,6 +32,9 @@ toolkit.jar:
    content/global/aboutwebrtc/disclosure.mjs (aboutwebrtc/disclosure.mjs)
    content/global/aboutwebrtc/copyButton.mjs (aboutwebrtc/copyButton.mjs)
    content/global/aboutwebrtc/aboutWebrtc.html (aboutwebrtc/aboutWebrtc.html)
+   content/global/aboutRestricted/aboutRestricted.mjs (aboutRestricted/aboutRestricted.mjs)
+   content/global/aboutRestricted/aboutRestricted.html (aboutRestricted/aboutRestricted.html)
+   content/global/aboutRestricted/aboutRestricted.css (aboutRestricted/aboutRestricted.css)
    content/global/aboutSupport.js
 *  content/global/aboutSupport.xhtml
 #ifndef MOZ_GLEAN_ANDROID
@@ -126,6 +129,8 @@ toolkit.jar:
    content/global/elements/moz-input-search.mjs    (widgets/moz-input-search/moz-input-search.mjs)
    content/global/elements/moz-input-text.css    (widgets/moz-input-text/moz-input-text.css)
    content/global/elements/moz-input-text.mjs    (widgets/moz-input-text/moz-input-text.mjs)
+   content/global/elements/moz-page-header.css    (widgets/moz-page-header/moz-page-header.css)
+   content/global/elements/moz-page-header.mjs    (widgets/moz-page-header/moz-page-header.mjs)
    content/global/elements/moz-page-nav.css    (widgets/moz-page-nav/moz-page-nav.css)
    content/global/elements/moz-page-nav-button.css    (widgets/moz-page-nav/moz-page-nav-button.css)
    content/global/elements/moz-page-nav.mjs    (widgets/moz-page-nav/moz-page-nav.mjs)

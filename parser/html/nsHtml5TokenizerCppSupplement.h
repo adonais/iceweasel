@@ -61,6 +61,18 @@ bool nsHtml5Tokenizer::EnsureBufferSpace(int32_t aLength) {
   return true;
 }
 
+MOZ_COLD MOZ_NEVER_INLINE void
+nsHtml5Tokenizer::EnsureBufferSpaceShouldNeverHappen(int32_t aLength) {
+  MOZ_DIAGNOSTIC_ASSERT(false,
+                        "This is never supposed to happen. Please file a bug "
+                        "with steps to reproduce!");
+  if (!EnsureBufferSpace(aLength)) {
+    MOZ_CRASH(
+        "Unrecovable allocation failure in situation that should never happen. "
+        "Please file a bug with steps to reproduce!");
+  }
+}
+
 bool nsHtml5Tokenizer::TemplatePushedOrHeadPopped() {
   if (encodingDeclarationHandler) {
     return encodingDeclarationHandler->TemplatePushedOrHeadPopped();

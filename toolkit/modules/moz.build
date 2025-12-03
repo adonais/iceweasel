@@ -211,6 +211,7 @@ EXTRA_JS_MODULES += [
     "Timer.sys.mjs",
     "Troubleshoot.sys.mjs",
     "UpdateUtils.sys.mjs",
+    "UrlUtils.sys.mjs",
     "WebChannel.sys.mjs",
 ]
 

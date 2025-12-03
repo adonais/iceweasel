@@ -173,6 +173,7 @@ fp-certerror-hide-advanced-button = Hide advanced
 fp-certerror-override-exception-button = Proceed to { $hostname } (Risky)
 fp-certerror-intro = { -brand-short-name } spotted a potentially serious security issue with <strong>{ $hostname }</strong>. Someone pretending to be the site could try to steal things like credit card info, passwords, or emails.
 fp-certerror-expired-into = { -brand-short-name } spotted a security issue with <strong>{ $hostname }</strong>. Either the site isn’t set up right or your device’s clock is set to the wrong date/time.
+fp-certerror-transparency-intro = Someone pretending to be <strong>{ $hostname }</strong> could try to steal things like credit card info, passwords, or emails.
 
 ##
 
@@ -220,6 +221,14 @@ fp-cert-error-code = Error Code: { $error }
 # Variables:
 #   $datetime (Date) - Current datetime.
 fp-datetime = { DATETIME($datetime, month: "short", year: "numeric", day: "numeric") } { DATETIME($datetime, timeStyle: "long") }
+
+# This string appears after the following string: "What makes the site look dangerous?" (fp-certerror-why-site-dangerous)
+# Variables:
+#   $hostname (String) - Hostname of the website to which the user was trying to connect.
+fp-certerror-transparency-why-dangerous-body = { -brand-short-name } doesn’t trust { $hostname } because it couldn’t prove it meets public certificate transparency requirements.
+# This string appears after the following string: "What can you do about it?" (fp-certerror-what-can-you-do)
+fp-certerror-transparency-what-can-you-do-body = Probably nothing, since it’s likely there’s a problem with the site itself.
+
 
 fp-learn-more-about-secure-connection-failures = Learn more about secure connection failures
 fp-learn-more-about-cert-issues = Learn more about these kinds of certificate issues

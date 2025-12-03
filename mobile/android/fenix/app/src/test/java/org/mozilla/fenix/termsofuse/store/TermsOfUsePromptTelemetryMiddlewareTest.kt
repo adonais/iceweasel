@@ -27,11 +27,17 @@ class TermsOfUsePromptTelemetryMiddlewareTest {
     @Test
     fun `WHEN the OnAcceptClicked action THEN the expected telemetry is recorded`() {
         assertNull(TermsOfUse.accepted.testGetValue())
+        assertNull(TermsOfUse.version.testGetValue())
+        assertNull(TermsOfUse.date.testGetValue())
 
         invokeMiddlewareWith(TermsOfUsePromptAction.OnAcceptClicked(Surface.HOMEPAGE_NEW_TAB))
 
         assertNotNull(TermsOfUse.accepted.testGetValue())
         assertEventExtraData(TermsOfUse.accepted.testGetValue()!!.last().extra!!)
+        assertNotNull(TermsOfUse.version.testGetValue())
+        assertEquals(5L, TermsOfUse.version.testGetValue())
+        // Glean SDK generates the date value so we can't compare date value directly.
+        assertNotNull(TermsOfUse.date.testGetValue())
     }
 
     @Test

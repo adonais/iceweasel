@@ -405,7 +405,7 @@ newtab-wallpaper-abstract-purple-green = Тобиши лоҷувард ва са
 newtab-wallpaper-abstract-blue-purple-waves = Шаклҳои мавҷноки кабуд ва норинҷӣ
 newtab-wallpaper-abstract-black-waves = Шаклҳои мавҷноки сиёҳ
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Суратҳо
 newtab-wallpaper-beach-at-sunrise = Соҳил дар тулӯи офтоб
@@ -434,6 +434,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -672,10 +676,6 @@ newtab-widget-timer-mode-focus =
     .label = Марказонидан
 newtab-widget-timer-mode-break =
     .label = Қатъ кардан
-newtab-widget-timer-play =
-    .title = Пахш кардан
-newtab-widget-timer-pause =
-    .title = Таваққуф кардан
 newtab-widget-timer-label-play =
     .label = Пахш кардан
 newtab-widget-timer-label-pause =

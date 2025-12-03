@@ -32,6 +32,7 @@
 
 #include "gc/Barrier.h"
 #include "gc/Memory.h"
+#include "jit/InlinableNatives.h"
 #include "js/ArrayBuffer.h"
 #include "js/Conversions.h"
 #include "js/experimental/TypedData.h"  // JS_IsArrayBufferViewObject
@@ -346,7 +347,8 @@ static const JSFunctionSpec arraybuffer_proto_functions[] = {
 };
 
 static const JSPropertySpec arraybuffer_proto_properties[] = {
-    JS_PSG("byteLength", ArrayBufferObject::byteLengthGetter, 0),
+    JS_INLINABLE_PSG("byteLength", ArrayBufferObject::byteLengthGetter, 0,
+                     ArrayBufferByteLength),
     JS_PSG("maxByteLength", ArrayBufferObject::maxByteLengthGetter, 0),
     JS_PSG("resizable", ArrayBufferObject::resizableGetter, 0),
     JS_PSG("detached", ArrayBufferObject::detachedGetter, 0),

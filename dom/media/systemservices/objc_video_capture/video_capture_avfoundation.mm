@@ -20,7 +20,6 @@
 #include "modules/video_capture/video_capture_defines.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Monitor.h"
-#include "mozilla/UniquePtr.h"
 #include "rtc_base/time_utils.h"
 
 using namespace mozilla;

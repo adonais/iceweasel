@@ -8,7 +8,6 @@
 #define mozilla_dom_MediaKeySystemAccess_h
 
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/KeySystemConfig.h"
 #include "mozilla/dom/MediaKeySystemAccessBinding.h"
 #include "mozilla/dom/MediaKeysRequestStatusBinding.h"

@@ -9,7 +9,6 @@
 
 #include "HttpTrafficAnalyzer.h"
 #include "mozilla/Array.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/net/NeqoHttp3Conn.h"
 #include "nsAHttpConnection.h"
@@ -469,6 +468,12 @@ class Http3Session final : public Http3SessionBase,
   // Also, implement the case when the  HTTP/3 session fails before settings
   // are exchanged.
   void FinishNegotiation(ExtendedConnectKind aKind, bool aSuccess);
+
+  inline bool HasNoActiveStreams() const {
+    return mStreamTransactionHash.Count() == 0 &&
+           mWebTransportSessions.IsEmpty() && mWebTransportStreams.IsEmpty() &&
+           mTunnelStreams.IsEmpty();
+  }
 
   nsTArray<RefPtr<Http3StreamBase>> mWebTransportSessions;
   nsTArray<RefPtr<Http3StreamBase>> mWebTransportStreams;

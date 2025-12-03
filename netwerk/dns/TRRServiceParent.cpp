@@ -10,7 +10,6 @@
 #include "mozilla/net/SocketProcessParent.h"
 #include "mozilla/psm/PSMIPCTypes.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/Unused.h"
 #include "nsHttpConnectionInfo.h"
 #include "nsICaptivePortalService.h"
 #include "nsIParentalControlsService.h"
@@ -89,7 +88,7 @@ TRRServiceParent::Observe(nsISupports* aSubject, const char* aTopic,
     if (link) {
       nsTArray<nsCString> suffixList;
       link->GetDnsSuffixList(suffixList);
-      Unused << SendUpdatePlatformDNSInformation(suffixList);
+      (void)SendUpdatePlatformDNSInformation(suffixList);
     }
 
     if (!strcmp(aTopic, NS_NETWORK_LINK_TOPIC) && mURISetByDetection) {
@@ -136,7 +135,7 @@ void TRRServiceParent::SetDetectedTrrURI(const nsACString& aURI) {
   mURISetByDetection = MaybeSetPrivateURI(aURI);
   gIOService->CallOrWaitForSocketProcess(
       [self = RefPtr{this}, uri = nsAutoCString(aURI)]() {
-        Unused << self->SendSetDetectedTrrURI(uri);
+        (void)self->SendSetDetectedTrrURI(uri);
       });
 }
 
@@ -151,7 +150,7 @@ void TRRServiceParent::ReloadParentalControlsEnabled() {
   bool enabled = TRRService::ReloadParentalControlsEnabled();
   RefPtr<TRRServiceParent> self = this;
   gIOService->CallOrWaitForSocketProcess([self, enabled]() {
-    Unused << self->SendUpdateParentalControlEnabled(enabled);
+    (void)self->SendUpdateParentalControlEnabled(enabled);
   });
 }
 
@@ -196,13 +195,13 @@ void TRRServiceParent::SetDefaultTRRConnectionInfo(
   }
 
   if (!aConnInfo) {
-    Unused << SendSetDefaultTRRConnectionInfo(Nothing());
+    (void)SendSetDefaultTRRConnectionInfo(Nothing());
     return;
   }
 
   HttpConnectionInfoCloneArgs infoArgs;
   nsHttpConnectionInfo::SerializeHttpConnectionInfo(aConnInfo, infoArgs);
-  Unused << SendSetDefaultTRRConnectionInfo(Some(infoArgs));
+  (void)SendSetDefaultTRRConnectionInfo(Some(infoArgs));
 }
 
 mozilla::ipc::IPCResult TRRServiceParent::RecvInitTRRConnectionInfo(
@@ -226,13 +225,13 @@ void TRRServiceParent::ReadEtcHostsFile() {
     RefPtr<TRRServiceParent> service(sTRRServiceParentPtr);
     if (service && aArray) {
       nsTArray<nsCString> hosts(aArray->Clone());
-      NS_DispatchToMainThread(NS_NewRunnableFunction(
-          "TRRServiceParent::ReadEtcHostsFile",
-          [service, hosts = std::move(hosts)]() mutable {
-            if (service->CanSend()) {
-              Unused << service->SendUpdateEtcHosts(hosts);
-            }
-          }));
+      NS_DispatchToMainThread(
+          NS_NewRunnableFunction("TRRServiceParent::ReadEtcHostsFile",
+                                 [service, hosts = std::move(hosts)]() mutable {
+                                   if (service->CanSend()) {
+                                     (void)service->SendUpdateEtcHosts(hosts);
+                                   }
+                                 }));
     }
     return !!service;
   });

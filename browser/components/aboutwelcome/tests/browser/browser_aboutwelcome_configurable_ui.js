@@ -1017,3 +1017,94 @@ add_task(async function test_secondary_button_top_configuration() {
   await doExperimentCleanup();
   browser.closeBrowser();
 });
+
+/**
+ * Test rendering a fullscreen split screen that supports lengthy content
+ */
+add_task(async function test_aboutwelcome_fullscreen_split_layout_styles() {
+  let screens = [
+    makeTestContent("TEST_FULLSCREEN_SPLIT", {
+      fullscreen: true,
+      position: "split",
+      background:
+        "var(--mr-secondary-position) var(--mr-screen-background-color)",
+      secondary_button_top: [
+        {
+          label: {
+            raw: "Sign in",
+          },
+          action: {
+            navigate: true,
+          },
+        },
+      ],
+    }),
+  ];
+
+  let doExperimentCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: "aboutwelcome",
+    value: { enabled: true, screens },
+  });
+
+  let browser = await openAboutWelcome();
+
+  await test_screen_content(
+    browser,
+    "render fullscreen split screen",
+    // Expected selectors:
+    ["main.TEST_FULLSCREEN_SPLIT[pos='split'][fullscreen]"]
+  );
+
+  await test_element_styles(
+    browser,
+    ".onboardingContainer",
+    // Expected styles:
+    {
+      display: "flex",
+      flexDirection: "column",
+    }
+  );
+
+  await test_element_styles(
+    browser,
+    ".section-main",
+    // Expected styles:
+    {
+      margin: "0px",
+      display: "flex",
+    }
+  );
+
+  await test_element_styles(
+    browser,
+    ".section-main .main-content",
+    // Expected styles:
+    {
+      flex: "1 1 0%",
+      borderRadius: "0px",
+      padding: "0px",
+    }
+  );
+
+  await test_element_styles(
+    browser,
+    ".section-main .main-content .main-content-inner",
+    // Expected styles:
+    {
+      paddingTop: "40px",
+      paddingBottom: "40px",
+    }
+  );
+
+  await test_element_styles(
+    browser,
+    ".secondary-buttons-top-container",
+    // Expected styles:
+    {
+      zIndex: "2",
+    }
+  );
+
+  await doExperimentCleanup();
+  browser.closeBrowser();
+});

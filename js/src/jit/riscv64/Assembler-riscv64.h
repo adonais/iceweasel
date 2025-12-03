@@ -203,7 +203,9 @@ class Assembler : public AssemblerShared,
     MOZ_ASSERT(!isFinished);
     isFinished = true;
   }
-  void enterNoPool(size_t maxInst) { m_buffer.enterNoPool(maxInst); }
+  void enterNoPool(size_t maxInst, size_t maxNewDeadlines = 0) {
+    m_buffer.enterNoPool(maxInst, maxNewDeadlines);
+  }
   void leaveNoPool() { m_buffer.leaveNoPool(); }
   bool swapBuffer(wasm::Bytes& bytes);
   // Size of the instruction stream, in bytes.
@@ -248,7 +250,7 @@ class Assembler : public AssemblerShared,
       Header(int size_, bool isNatural_)
           : size(size_), isNatural(isNatural_), ONES(0xffff) {}
 
-      Header(uint32_t data) : data(data) {
+      explicit Header(uint32_t data) : data(data) {
         static_assert(sizeof(Header) == sizeof(uint32_t));
         MOZ_ASSERT(ONES == 0xffff);
       }
@@ -354,8 +356,6 @@ class Assembler : public AssemblerShared,
     DoubleGreaterThanOrEqualOrUnordered,
     DoubleLessThanOrUnordered,
     DoubleLessThanOrEqualOrUnordered,
-    FIRST_UNORDERED = DoubleUnordered,
-    LAST_UNORDERED = DoubleLessThanOrEqualOrUnordered
   };
 
   Register getStackPointer() const { return StackPointer; }
@@ -499,8 +499,6 @@ class Assembler : public AssemblerShared,
     return &scratch_register_list_;
   }
 
-  void EmitConstPoolWithJumpIfNeeded(size_t margin = 0) {}
-
   // As opposed to x86/x64 version, the data relocation has to be executed
   // before to recover the pointer, and not after.
   void writeDataRelocation(ImmGCPtr ptr) {
@@ -567,9 +565,10 @@ class ABIArgGenerator : public ABIArgGeneratorShared {
 // will assert.
 class BlockTrampolinePoolScope {
  public:
-  explicit BlockTrampolinePoolScope(Assembler* assem, int margin)
+  explicit BlockTrampolinePoolScope(Assembler* assem, size_t margin,
+                                    size_t maxBranches = 0)
       : assem_(assem) {
-    assem_->enterNoPool(margin);
+    assem_->enterNoPool(margin, maxBranches);
   }
   ~BlockTrampolinePoolScope() { assem_->leaveNoPool(); }
 

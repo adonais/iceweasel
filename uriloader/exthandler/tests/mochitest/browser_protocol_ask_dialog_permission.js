@@ -61,18 +61,6 @@ function getSkipProtoDialogPermissionKey(aProtocolScheme) {
   );
 }
 
-function getSystemProtocol() {
-  // TODO add a scheme for Windows 10 or greater once support is added (see bug 1764599).
-  if (AppConstants.platform == "macosx") {
-    return "itunes";
-  }
-
-  info(
-    "Skipping this test since there isn't a suitable default protocol on this platform"
-  );
-  return null;
-}
-
 /**
  * Creates dummy web protocol handlers used for testing.
  */

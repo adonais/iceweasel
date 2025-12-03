@@ -7,7 +7,6 @@
 #ifndef nsIDocumentViewerPrint_h___
 #define nsIDocumentViewerPrint_h___
 
-#include "mozilla/UniquePtr.h"
 #include "nsISupports.h"
 
 namespace mozilla {

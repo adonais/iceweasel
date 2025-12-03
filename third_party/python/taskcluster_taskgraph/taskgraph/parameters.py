@@ -33,7 +33,7 @@ class ParameterMismatch(Exception):
 base_schema = Schema(
     {
         Required("base_repository"): str,
-        Required("base_ref"): str,
+        Optional("base_ref"): str,
         Required("base_rev"): str,
         Required("build_date"): int,
         Required("build_number"): int,

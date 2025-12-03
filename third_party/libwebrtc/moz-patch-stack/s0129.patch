@@ -1,45 +1,40 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Thu, 11 Sep 2025 14:17:00 -0500
-Subject: Bug 1988042 - add BSD support to new version of libwebrtc's
- cpu_info.cc r?ng!
+Date: Wed, 8 Oct 2025 17:49:00 +0000
+Subject: Bug 1980501 - enable c++20 builds in libwebrtc. r?ng!
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/e3b37acb8816aefb9134a68cafad8c7d5e145179
+Differential Revision: https://phabricator.services.mozilla.com/D267994
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/43de54a6e52daf0a06956ae01951ef1e29d46e82
 ---
- rtc_base/cpu_info.cc | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+ BUILD.gn | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
 
-diff --git a/rtc_base/cpu_info.cc b/rtc_base/cpu_info.cc
-index 0923e7aca7..2f2108464b 100644
---- a/rtc_base/cpu_info.cc
-+++ b/rtc_base/cpu_info.cc
-@@ -21,8 +21,10 @@
- #include <unistd.h>
- #elif defined(WEBRTC_FUCHSIA)
- #include <zircon/syscalls.h>
--#elif defined(WEBRTC_LINUX)
-+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)
-+#if defined(WEBRTC_LINUX)
- #include <features.h>
-+#endif
- #include <stdlib.h>
- #include <string.h>  // IWYU pragma: keep
- #include <unistd.h>
-@@ -50,7 +52,7 @@
- #if defined(WEBRTC_ARCH_X86_FAMILY) && defined(_MSC_VER)
- #include <intrin.h>
- #endif
--#if defined(WEBRTC_ARCH_ARM_FAMILY) && defined(WEBRTC_LINUX)
-+#if defined(WEBRTC_ARCH_ARM_FAMILY) && (defined(WEBRTC_LINUX) || defined(WEBRTC_BSD))
- #include <asm/hwcap.h>
- #endif
+diff --git a/BUILD.gn b/BUILD.gn
+index 600993950b..3ba008076e 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -315,6 +315,16 @@ config("common_config") {
+   cflags_objc = []
+   defines = []
  
-@@ -189,6 +191,9 @@ bool Supports(ISA instruction_set_architecture) {
-   if (instruction_set_architecture == ISA::kNeon) {
- #if defined(WEBRTC_ANDROID)
-     return 0 != (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON);
-+#elif defined(WEBRTC_BSD)
-+    // OpenBSD does not have getauxval() and does not have /proc reading
-+    return false;
- #elif defined(WEBRTC_LINUX)
-     uint64_t hwcap = 0;
- #if WEBRTC_GLIBC_PREREQ(2, 16)
++  # We should be able to remove this after c++20 is enabled
++  # across the Mozilla tree.
++  if (build_with_mozilla) {
++    if (is_win) {
++      cflags_cc += [ "-std:c++20" ]
++    } else {
++      cflags_cc += [ "-std=gnu++20" ]
++    }
++  }
++
+   if (rtc_enable_protobuf) {
+     defines += [ "WEBRTC_ENABLE_PROTOBUF=1" ]
+   } else {
+@@ -416,7 +426,7 @@ config("common_config") {
+         # "-Wnested-externs",  (C/Obj-C only)
+       ]
+       cflags_objc += [ "-Wstrict-prototypes" ]
+-      cflags_cc = [
++      cflags_cc += [
+         "-Wnon-virtual-dtor",
+ 
+         # This is enabled for clang; enable for gcc as well.

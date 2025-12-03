@@ -7,8 +7,10 @@ typescript:
         # to this list.
         # These should be kept in sync with the list in
         # taskcluster/kinds/source-test/mozlint.yml
-        - browser/components/urlbar/
+        - browser/components/places/
         - browser/components/search/
+        - browser/components/urlbar/
+        - toolkit/components/places/
         - toolkit/components/search/
     exclude: []
     # TODO: Figure out if we can add sjs type support.

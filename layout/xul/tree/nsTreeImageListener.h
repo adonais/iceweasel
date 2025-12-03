@@ -7,7 +7,6 @@
 #ifndef nsTreeImageListener_h__
 #define nsTreeImageListener_h__
 
-#include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsTreeBodyFrame.h"

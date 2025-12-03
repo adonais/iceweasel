@@ -15,7 +15,6 @@
 #include "mozilla/Services.h"
 #include "mozilla/ChaosMode.h"
 #include "mozilla/ArenaAllocator.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/StaticPrefs_timer.h"
 
@@ -834,7 +833,7 @@ void TimerThread::Wait(TimeDuration aWaitFor) MOZ_REQUIRES(mMonitor) {
   mWaiting = true;
   mNotified = false;
   {
-    AUTO_PROFILER_TRACING_MARKER("TimerThread", "Wait", OTHER);
+    AUTO_PROFILER_MARKER("TimerThread::Wait", OTHER);
     mMonitor.Wait(aWaitFor);
   }
   mWaiting = false;

@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -149,7 +156,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s дае вам кантроль.</p> <p>Выкарыстоўвайце яго як прыватны браўзер: <ul> <li>Шукайце і аглядайце наўпрост з праграмы</li> <li>Блакіруйце трэкеры (або змяніце налады, каб дазволіць трэкеры)</li> <li>Сцірайце сеанс, каб выдаліць кукі разам з пошукамі і гісторыяй аглядання</li> </ul> </p> <p>%1$s створаны Mozilla. Наша місія — спрыяць здароваму, адкрытаму Інтэрнэту.<br/> <a href=\"%2$s\">Даведацца больш</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s дае вам кантроль.</p>\n<p>Выкарыстоўвайце яго як прыватны браўзер:\n<ul>\n<li>Шукайце і аглядайце наўпрост з праграмы</li>\n<li>Блакіруйце трэкеры (або змяніце налады, каб дазволіць трэкеры)</li>\n<li>Сцірайце сеанс, каб выдаліць кукі разам з пошукамі і гісторыяй аглядання</li>\n</ul> </p>\n<p>%1$s створаны Mozilla. Наша місія — спрыяць здароваму, адкрытаму Інтэрнэту.<br/>\n<a href=\"%2$s\">Даведацца больш</a></p>]]></string>
   <!-- A link to SUMO at the bottom of About Focus screen. -->
   <string name="about_screen_learn_more">Падрабязней</string>
   <!-- Header for the Privacy and Security settings menu -->
@@ -875,7 +882,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Гэта можа быць праблемай наладкі сервера ці, магчыма, хтосьці спрабуе прыкінуцца гэтым серверам. <br/><br/> Калі вы паспяхова злучаліся з гэтым серверам раней, памылка можа быць часовай.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Хтосьці можа спрабаваць падмяніць гэты сайт, і працягваць можа быць рызыкоўна.</label> <br><br> <label>%1$s не давярае <b>%2$s</b>, таму што выдавец яго сертыфіката нявызначаны, сертыфікат самападпісаны, або сервер не дае спраўных прамежкавых сертыфікатаў.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Хтосьці можа спрабаваць падмяніць гэты сайт, і працягваць можа быць рызыкоўна.</label> <br><br>\n<label>%1$s не давярае <b>%2$s</b>, таму што выдавец яго сертыфіката нявызначаны, сертыфікат самападпісаны, або сервер не дае спраўных прамежкавых сертыфікатаў.</label>]]></string>
   <!--
     Sessions List
 

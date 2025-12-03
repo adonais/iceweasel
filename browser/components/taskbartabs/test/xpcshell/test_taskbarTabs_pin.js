@@ -15,7 +15,7 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyServiceGetters(this, {
-  imgTools: ["@mozilla.org/image/tools;1", "imgITools"],
+  imgTools: ["@mozilla.org/image/tools;1", Ci.imgITools],
 });
 
 // We want to mock the native XPCOM interfaces of the initialized

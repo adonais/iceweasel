@@ -29,6 +29,7 @@ class EatResolverThunk : public ResolverThunk {
                  const char* target_name,
                  const char* interceptor_name,
                  const void* interceptor_entry_point,
+                 void* local_thunk_storage,
                  void* thunk_storage,
                  size_t storage_bytes,
                  size_t* storage_used) override;

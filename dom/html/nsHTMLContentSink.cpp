@@ -11,7 +11,6 @@
  */
 
 #include "mozAutoDocUpdate.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/CustomElementRegistry.h"

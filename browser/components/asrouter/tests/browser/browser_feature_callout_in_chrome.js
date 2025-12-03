@@ -625,7 +625,7 @@ add_task(async function callout_not_shown_if_dialog_open() {
     },
     isSubDialog: true,
   });
-  DefaultBrowserCheck.prompt(win);
+  await DefaultBrowserCheck.prompt(win);
   await dialogPromise;
 
   await BrowserTestUtils.closeWindow(win);

@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">%s privadu</string>
@@ -82,7 +89,12 @@
     %1$s is the name of the app (for example "Firefox").
     %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
   -->
-  <string name="felt_privacy_info_card_subtitle_2">%1$s cantzellat testimòngios, cronologia e datos de is sitos cando serras totu is ventanas privadas. %2$s</string>
+  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s cantzellat testimòngios, cronologia e datos de is sitos cando serras totu is ventanas privadas. %2$s</string>
+  <!--
+    Description of private browsing mode displayed to users on the homepage when they enable private mode.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="felt_privacy_info_card_subtitle_3">%1$s cantzellat testimòngios, cronologia e datos de is sitos cando serras totu is ventanas privadas.</string>
   <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
@@ -199,8 +211,6 @@
   <string name="browser_menu_manage_extensions">Gesti is estensiones</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
   <string name="browser_menu_more_settings">Àteru</string>
-  <!-- Browser menu group that contains additional settings in expanded state -->
-  <string name="browser_menu_less_settings" moz:removedIn="144" tools:ignore="UnusedResources">Prus pagu</string>
   <!--
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
@@ -244,6 +254,8 @@
   <string name="browser_menu_save_to_collection_2">Sarva in una colletzione</string>
   <!-- Browser menu button that open a share menu to share the current site -->
   <string name="browser_menu_share">Cumpartzi</string>
+  <!-- Browser menu button that goes to the homepage screen -->
+  <string name="browser_menu_homepage">Pàgina printzipale</string>
   <!--
     Browser menu button shown in custom tabs that opens the current tab in Fenix
     %1$s is the name of the app (for example "Firefox").
@@ -527,12 +539,71 @@
   <string name="onboarding_term_of_service_line_one_2">Si sighis, atzetas is %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
   <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Cunditziones de su servìtziu de Firefox</string>
+  <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
+  <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox si òcupat de sa riservadesa tua. Àteras informatziones in s’%1$s nostru.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
   <string name="onboarding_term_of_service_line_two_link_text">Avisu de riservadesa</string>
+  <!-- Line three of the terms of service onboarding page. 'Firefox' and 'Mozilla' are intentionally hardcoded. %1$s is replaced by an active link using onboarding_term_of_service_line_three_link_text as text (“Manage”). -->
+  <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">Pro agiudare a megiorare su navigadore, Firefox imbiat datos de diagnòsticu e de interatziones cun Mozilla. %1$s</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Gesti</string>
+  <!-- Terms of use (ToU) onboarding redesign title. -->
+  <string name="onboarding_redesign_tou_title">Avia su navigadore definitivu pro Android</string>
+  <!-- Terms of use (ToU) first subheader. -->
+  <string name="onboarding_redesign_tou_subheader_one">Càrriga sitos a sa lestresa de sa lughe</string>
+  <!-- Terms of use (ToU) second subheader. -->
+  <string name="onboarding_redesign_tou_subheader_two">Amparu automàticu contra a is sighiduras</string>
+  <!-- Terms of use (ToU) third subheader. -->
+  <string name="onboarding_redesign_tou_subheader_three">Mìgias de personalizatziones</string>
+  <!--
+    Terms of use (ToU) first body text. %1$s is replaced by an active link,
+    using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
+  -->
+  <string name="onboarding_redesign_tou_body_one">Si sighis, atzetas is %1$s.</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">cunditziones de su servìtziu de Firefox</string>
+  <!--
+    Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
+  -->
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage">Firefox si òcupat de sa riservadesa tua. Àteras informatziones in s’%1$s nostru.</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
+  <string name="onboarding_redesign_tou_body_two_link_text">avisu de riservadesa</string>
+  <!--
+    Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
+  -->
+  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage">Pro agiudare a megiorare su navigadore, Firefox imbiat datos de diagnòsticu e de interatziones cun Mozilla. %1$s</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
+  <string name="onboarding_redesign_tou_body_three_link_text">Gesti sa cunfiguratzione</string>
+  <!-- Terms of use (ToU) onboarding page continue button label. -->
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label">Sighi</string>
+  <!-- Onboarding header for the toolbar selection card. -->
+  <string name="onboarding_redesign_customize_toolbar_title">In ue boles tènnere sa barra de indiritzos?</string>
+  <!-- Onboarding label for 'Continue' button. -->
+  <string name="onboarding_redesign_continue_button">Sighi</string>
+  <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Agiuda·nos a fàghere crèschere Firefox</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_redesign_learn_more">Comente impreamus is datos</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_redesign_positive_button">Cunfirma</string>
+  <!-- Set to default browser onboarding redesign title. -->
+  <string name="onboarding_redesign_set_default_browser_title">Amparu contra a is sighiduras in automàticu</string>
+  <!-- Set to default browser onboarding redesign body. -->
+  <string name="onboarding_redesign_set_default_browser_body">Cun unu tocu ebbia podes impedire a is aziendas chi ispient in ue incarcas.</string>
+  <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Sincroniza dae onni logu cun Firefox</string>
+  <!-- Sync onboarding redesign body. -->
+  <string name="onboarding_redesign_sync_body">Atzede a is ischedas, craes e sinnalibros tuos dae cale si siat dispositivu. Totu est amparadu cun tzifradu.</string>
+  <!-- Sync onboarding redesign positive button text. -->
+  <string name="onboarding_redesign_sync_positive_button">Avia sa sincronizatzione</string>
+  <!-- Sync onboarding redesign negative button text. -->
+  <string name="onboarding_redesign_sync_negative_button">Immoe nono</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Agiuda·nos a fàghere crèschere Firefox</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_opt_out_checkbox">Cumpartzi is datos cun is sòtzios de tecnologia cummertziale de Mozilla. Custos datos non sunt mai bèndidos o impreados pro ti mustrare publitzidade.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
   <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Comente impreamus is datos</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
@@ -647,7 +718,6 @@
   <string name="preferences_https_only_title">Modalidade «isceti HTTPS»</string>
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">Imprea su blocu de ischermu pro cuare ischedas in sa navigatzione privada</string>
-  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">Podes bìdere is ischedas a pustis de isblocare su dispositivu cun s’imprenta, cun sa cara o cun su PIN.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Blocu de is avisos de testimòngios</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -713,11 +783,17 @@
   <!-- Preference for showing the tab strip -->
   <string name="preferences_tab_strip">Visualizatzione de sa barra de is ischedas</string>
   <!-- Preference for gestures based actions -->
+  <string name="preferences_toolbar_shortcut">Curtzadòrgiu a sa barra de ainas</string>
+  <!-- Preference for gestures based actions -->
+  <string name="preferences_toolbar_select_shortcut">Seletziona unu curtzadòrgiu</string>
+  <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">Gestos</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Personaliza</string>
   <!-- Preference description for banner about signing in -->
   <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Intra pro sincronizare ischedas, sinnalibros, craes e àteru.</string>
+  <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
+  <string name="preferences_sign_in_description">Sincroniza ischedas, sinnalibros, craes e àteru.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Contu de Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -747,7 +823,7 @@
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Chirca in is sinnalibros</string>
   <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts">Ammustra curtzadòrgios</string>
+  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Ammustra curtzadòrgios</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Chirca ischedas sincronizadas</string>
   <!-- Preference for account settings -->
@@ -873,10 +949,6 @@
     Content description for various wallpapers. %1$s is the name of the wallpaper.
   -->
   <string name="wallpapers_item_name_content_description">Elementu de isfundu de ischermu: %1$s</string>
-  <!-- Snackbar message for when wallpaper is selected -->
-  <string name="wallpaper_updated_snackbar_message" tools:ignore="UnusedResources" moz:removedIn="144">Isfundu de ischermu atualizadu.</string>
-  <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">Visualiza</string>
   <!-- Snackbar message for when wallpaper couldn't be downloaded -->
   <string name="wallpaper_download_error_snackbar_message">Impossìbile iscarrigare s’isfundu de ischermu</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
@@ -927,14 +999,10 @@
   <string name="alternative_app_icon_option_gradient_midnight">Mesunote</string>
   <!-- Title for the "Retro 2004" themed alternative app icon variant in the icon picker screen. This app icon uses the classic Firefox logo from 2004. -->
   <string name="alternative_app_icon_option_retro_2004">Retro 2004</string>
-  <!-- Title for the "Retro 2017" themed alternative app icon variant in the icon picker screen. This app icon uses the Firefox logo from 2017, with a more modernized design. -->
-  <string name="alternative_app_icon_option_retro_2017" tools:ignore="UnusedResources" moz:removedIn="144">Retro 2017</string>
   <!-- Title for the "Minimal" themed alternative app icon variant in the icon picker screen. The app icon presents a simplified, flat and monochrome version of the Firefox logo. -->
   <string name="alternative_app_icon_option_minimal">Minimalista</string>
   <!-- Title for the "Pride" themed alternative app icon variant in the icon picker screen. The app icon incorporates a rainbow color scheme in support of the LGBTQ+ community. -->
   <string name="alternative_app_icon_option_pride">Orgòlliu</string>
-  <!-- Title for the "Cute" themed alternative app icon variant in the icon picker screen. The app icon features a playful design with an adorable aesthetic. -->
-  <string name="alternative_app_icon_option_cute" tools:ignore="UnusedResources" moz:removedIn="144">Bella</string>
   <!-- Title for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
   <string name="alternative_app_icon_option_momo">Momo</string>
   <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
@@ -942,13 +1010,11 @@
   <!-- Title for the "Solid colors" group of alternative app icon variants in the icon picker screen. This group contains icons with flat, uniform color backgrounds. -->
   <string name="alternative_app_icon_group_solid_colors">Colores uniformes</string>
   <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other">Àteras</string>
+  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">Àteras</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
   <string name="restart_warning_dialog_title">Boles modificare s’icona de s’aplicatzione?</string>
-  <!-- Message to warn users that applying an alternative app icon requires an app restart -->
-  <string name="restart_warning_dialog_body" tools:ignore="UnusedResources" moz:removedIn="144">Sa modìfica de s’icona rechedet su riaviu de s’aplicatzione.</string>
-  <!-- Dialog button text for confirming the app restart to apply the selected icon -->
-  <string name="restart_warning_dialog_button_positive" tools:ignore="UnusedResources" moz:removedIn="144">Torra a aviare immoe</string>
+  <!-- Dialog button text for confirming the possible app restart and new icon selection -->
+  <string name="restart_warning_dialog_button_positive_2">Modifica s’icona</string>
   <!-- Dialog button text for cancelling app icon change -->
   <string name="restart_warning_dialog_button_negative">Annulla</string>
   <!--
@@ -1079,6 +1145,8 @@
     Header of the Sync and save your data preference view
   -->
   <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Sincroniza e sarva datos</string>
+  <!-- Header of the Sign in preference view -->
+  <string name="preferences_sign_in">Identìfica·ti</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Identìfica·ti pro torrare a connètere</string>
   <!-- Preference for removing FxA account -->
@@ -1101,6 +1169,20 @@
   <string name="preference_simple_toolbar">Sèmplitze</string>
   <!-- Preference for using expanded toolbar -->
   <string name="preference_expanded_toolbar">Ismanniada</string>
+  <!-- Preference description indicating the toolbar location preference is disabled when the tab strip is enabled -->
+  <string name="preference_toolbar_pref_disabled_explanation">Sa barra de indiritzu depet èssere in pitzus cando s’ammustrat sa barra de ischedas.</string>
+  <!-- New tab shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_new_tab">Aberi un’ischeda noa</string>
+  <!-- Share shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_share">Cumpartzi</string>
+  <!-- Add bookmark shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_add_bookmark">Agiunghe sinnalibru</string>
+  <!-- Translate shortcut in toolbar customization. "Translate" is a verb -->
+  <string name="toolbar_customize_shortcut_translate">Tradue</string>
+  <!-- Homepage shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_homepage">Pàgina printzipale</string>
+  <!-- Back shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_back">A coa</string>
   <!--
     App icon Preferences
 
@@ -1115,6 +1197,8 @@
   <string name="preference_light_theme">Craru</string>
   <!-- Preference for using dark theme -->
   <string name="preference_dark_theme">Iscuru</string>
+  <!-- Preference for using using dark or light theme automatically set by battery -->
+  <string name="preference_auto_battery_theme">Cunfiguradu dae su Rispàrmiu de bateria</string>
   <!-- Preference for using following device theme -->
   <string name="preference_follow_device_theme">Sighi su nòmine de su dispositivu</string>
   <!--
@@ -1223,6 +1307,8 @@
   <string name="close_tabs_after_one_month">A pustis de unu mese</string>
   <!-- Title of preference that allows a user to specify the auto-close settings for open tabs -->
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Serrada de is ischedas in automàticu</string>
+  <!-- Content description (not visible, for screen readers etc.): Close tab button -->
+  <string name="tab_manager_close_tabs">Serra</string>
   <!--
     Opening screen
 
@@ -1338,6 +1424,8 @@
   <string name="tab_tray_multiselect_menu_content_description">Menù de ischedas seletzionadas</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
   <string name="tab_tray_homepage_tab">Pàgina printzipale</string>
+  <!-- Title text displayed for a homepage tab in the tabs tray. %s is a placeholder that will be replaced by app name. -->
+  <string name="tab_tray_homepage_tab_2" tools:ignore="UnusedResources" moz:removedIn="145">Pàgina printzipale de %s</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">Boga is ischedas dae sa colletzione</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
@@ -1561,17 +1649,17 @@
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
   <string name="webcompat_reporter_label_description">Descrie su problema (optzionale)</string>
   <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
-  <string name="webcompat_reporter_send_more_info" moz:removedIn="144" tools:ignore="UnusedResources">Imbia àteras informatziones</string>
-  <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
   <string name="webcompat_reporter_add_more_info">Agiunghe àteras informatziones</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">Annulla</string>
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Imbia</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Informe imbiadu</string>
-  <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Serra</string>
+  <string name="webcompat_reporter_success_snackbar_text_2">Informe imbiadu</string>
+  <!-- Placeholder text for the description field to prompt the user on what they should type. -->
+  <string name="webcompat_reporter_problem_description_placeholder_text">Ite est sutzèdidu? Ite diat dèpere èssere sutzèdidu?</string>
+  <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
+  <string name="webcompat_reporter_etp_checkbox_text">Imbia is URL blocados dae s’amparu contra is sighiduras</string>
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
@@ -1633,6 +1721,14 @@
   <string name="bookmark_add_folder">Agiunghe una cartella</string>
   <!-- Snackbar title that confirms a bookmark was saved into a folder. %s is the name of the folder the bookmark was saved into. -->
   <string name="bookmark_saved_in_folder_snackbar">Sarvadu in “%s”</string>
+  <!-- Snackbar title describing failure to add a new folder -->
+  <string name="bookmark_error_add_folder">Non si podet agiùnghere sa cartella</string>
+  <!-- Snackbar title describing failure to edit an existing folder -->
+  <string name="bookmark_error_edit_folder">Non si podet modificare sa cartella</string>
+  <!-- Snackbar title describing failure to select a new parent folder for a bookmark or folder -->
+  <string name="bookmark_error_select_folder">Non si podet modificare sa cartella superiore</string>
+  <!-- Snackbar title describing failure to edit a bookmark -->
+  <string name="bookmark_error_edit_bookmark">Non si podet modificare su sinnalibru</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">MODÌFICA</string>
   <!-- Bookmark menu move button -->
@@ -1715,6 +1811,8 @@
   <string name="bookmark_close_button_content_description">Serra is sinnalibros</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Ancora nissunu sinnalibru</string>
+  <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
+  <string name="bookmarks_folder_description">Sinnalibros in sa cartella: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
   <string name="bookmark_empty_list_guest_description">Sarva sitos comente ses navighende. Identìfica·ti pro pigare sinnalibros dae àteros dispositivos sincronizados.</string>
   <!-- Text for the button to navigate to sync authentication -->
@@ -1755,6 +1853,10 @@
   <string name="clear_permissions_on_all_sites">Cantzella is permissos pro totu is sitos</string>
   <!-- Preference for altering video and audio autoplay for all websites -->
   <string name="preference_browser_feature_autoplay">Riprodutzione in automàticu</string>
+  <!-- Preference for local device access for all websites -->
+  <string name="preference_browser_feature_local_device_access">Aplicatziones e servìtzios de su dispositivu</string>
+  <!-- Preference for local network access for all websites -->
+  <string name="preference_browser_feature_local_network_access">Dispositivos de sa rete locale</string>
   <!-- Preference for altering the camera access for all websites -->
   <string name="preference_phone_feature_camera">Fotocàmera</string>
   <!-- Preference for altering the microphone access for all websites -->
@@ -1856,9 +1958,9 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ischeda sarvada</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Colletzione sarvada.</string>
+  <string name="create_collection_tabs_saved_new_collection_2">Colletzione sarvada</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Ischeda sarvada.</string>
+  <string name="create_collection_tab_saved_2">Ischeda sarvada</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Serra</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1906,6 +2008,8 @@
   <string name="sync_sign_in">Identìfica·ti a Sync</string>
   <!-- An option from the three dot menu to sync and save data -->
   <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Sincroniza e sarva datos</string>
+  <!-- An option from the three dot menu to sign in -->
+  <string name="sync_menu_sign_in">Identìfica·ti</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Imbia a totu is dispositivos</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -1967,6 +2071,8 @@
   <string name="notification_re_engagement_A_text">Sa navigatzione privada in %1$s non sarvat s’informatzione tua.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
   <string name="notification_re_engagement_B_title">Faghe sa prima chirca</string>
+  <!-- Preference for taking the short survey. -->
+  <string name="preferences_take_survey">Piga parte a su sondàgiu</string>
   <!-- Preference for not taking the short survey. -->
   <string name="preferences_not_take_survey">No, gràtzias</string>
   <!--
@@ -1979,6 +2085,8 @@
   <string name="snackbar_tabs_closed">Ischedas serradas</string>
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Ischedas serradas: %1$s</string>
+  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
+  <string name="snackbar_message_bookmarks_saved_in_2">Sinnalibros sarvados in “%s”</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Agiuntu a is curtzadòrgios.</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -1987,8 +2095,6 @@
   <string name="snackbar_private_data_deleted">Datos de sa navigatzione privada cantzellados</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">ISCONTZA</string>
-  <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">Situ bogadu</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -2004,12 +2110,18 @@
   <string name="qr_scanner_dialog_invalid_ok">AB</string>
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">Seguru chi boles cantzellare %1$s?</string>
+  <!-- Sample text for accessibility font size -->
+  <string name="accessibility_text_size_sample_text_1">Custu est testu de mustra. Est inoghe pro t’ammustrare comente si bidet su testu cando nde cresches o nde mìnimas sa mannària cun custu paràmetru.</string>
+  <!-- Summary for Accessibility Text Size Scaling Preference -->
+  <string name="preference_accessibility_text_size_summary">Ismànnia o mìnima su testu de is sitos web</string>
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">Mannària de su caràtere</string>
   <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
   <string name="a11y_preference_accessibility_font_size_percentage">%d %%.</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
   <string name="preference_accessibility_auto_size_2">Mannària de su caràtere in automàticu</string>
+  <!-- Summary for Accessibility Text Automatic Size Scaling Preference -->
+  <string name="preference_accessibility_auto_size_summary">Sa mannària de su testu at a currispòndere cun sa cunfiguratzione de Android. Disativa custu pro definire sa mannària de su testu inoghe.</string>
   <!-- Title for the Delete browsing data preference -->
   <string name="preferences_delete_browsing_data">Cantzella is datos de navigatzione</string>
   <!-- Title for the tabs item in Delete browsing data -->
@@ -2033,6 +2145,8 @@
   <string name="preferences_delete_browsing_data_cookies_subtitle">As a serrare sa sessione in sa majoria de is sitos</string>
   <!-- Title for the cached images and files item in Delete browsing data -->
   <string name="preferences_delete_browsing_data_cached_files">Immàgines e archìvios in sa memòria temporànea</string>
+  <!-- Subtitle for the cached images and files item in Delete browsing data -->
+  <string name="preferences_delete_browsing_data_cached_files_subtitle">Lìberat ispàtziu de archiviatzione</string>
   <!-- Title for the site permissions item in Delete browsing data -->
   <string name="preferences_delete_browsing_data_site_permissions">Permissos de is sitos</string>
   <!-- Title for the downloads item in Delete browsing data -->
@@ -2047,6 +2161,8 @@
   <string name="delete_browsing_data_on_quit_action">Essi</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Perìodu de tempus pro cantzellare</string>
+  <!-- Body text of a delete browsing data dialog. -->
+  <string name="delete_history_prompt_body_2">Cantzellat sa cronologia (puru cussa sincronizada dae àteros dispositivos)</string>
   <!-- Radio button in the delete browsing data dialog to delete history items for the last hour. -->
   <string name="delete_history_prompt_button_last_hour">Ùrtima ora</string>
   <!-- Radio button in the delete browsing data dialog to delete history items for today and yesterday. -->
@@ -2082,9 +2198,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Ischedas imbiadas.</string>
+  <string name="sync_sent_tabs_snackbar_2">Ischedas imbiadas</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Ischeda imbiada.</string>
+  <string name="sync_sent_tab_snackbar_2">Ischeda imbiada</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Impossìbile imbiare</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2121,8 +2237,20 @@
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Àteras informatziones</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Istàndard (predefinidu)</string>
+  <!-- Preference description for enhanced tracking protection for the standard protection settings -->
+  <string name="preference_enhanced_tracking_protection_standard_description_5">Is pàginas ant a èssere carrigadas cun normalidade, però ant a blocare prus pagu sighiduras.</string>
   <!-- Preference for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict">Restrinta</string>
+  <!--
+    Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
+
+    Title for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection
+  -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_title">Seguru chi boles disativare is curretziones?</string>
+  <!-- Confirmation button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_confirm">Disativa is curretziones</string>
+  <!-- Cancel button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. This dismisses the dialog and re-enables the preference. -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_cancel">Mantene is curretziones ativadas</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
   <string name="preference_enhanced_tracking_protection_custom">Personalizada</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
@@ -2141,6 +2269,8 @@
   <string name="preference_enhanced_tracking_protection_custom_cookies_3">Totu is testimòngios de àteras partes (diat pòdere causare chi unos cantos sitos non funtzionent)</string>
   <!-- Option for enhanced tracking protection for the custom protection settings for cookies -->
   <string name="preference_enhanced_tracking_protection_custom_cookies_4">Totu is testimòngios (unos cantos sitos no ant a funtzionare)</string>
+  <!-- Preference for Global Privacy Control for the custom privacy settings for Global Privacy Control. '&amp;' is replaced with the ampersand symbol: & -->
+  <string name="preference_enhanced_tracking_protection_custom_global_privacy_control">Nara a is sitos web de non cumpartzire nen bèndere is datos</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings for tracking content -->
   <string name="preference_enhanced_tracking_protection_custom_tracking_content">Cuntenutu chi ti sighit</string>
   <!-- Option for enhanced tracking protection for the custom protection settings for tracking content -->
@@ -2149,6 +2279,8 @@
   <string name="preference_enhanced_tracking_protection_custom_tracking_content_2">Isceti in is ischedas privadas</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
   <string name="preference_enhanced_tracking_protection_custom_cryptominers">Cripto-minadores</string>
+  <!-- Preference for enhanced tracking protection for the custom protection settings -->
+  <string name="preference_enhanced_tracking_protection_custom_known_fingerprinters">Generadores de imprentas digitales connotos</string>
   <!-- Button label for navigating to the Enhanced Tracking Protection details -->
   <string name="enhanced_tracking_protection_details">Detàllios</string>
   <!-- Header for categories that are being being blocked by current Enhanced Tracking Protection settings -->
@@ -2201,6 +2333,14 @@
     Enhanced tracking protection exception preference icon for ETP settings.
   -->
   <string name="preference_etp_exceptions_icon_description">Icona de sa preferèntzia de etzetzione a s’amparu megioradu contra a is sighiduras</string>
+  <!--
+    DNS over HTTPS (DoH)
+
+    Preference title for DNS over HTTPS settings
+  -->
+  <string name="preference_doh_title">DNS pro mèdiu de HTTPS</string>
+  <!-- Description of the preference to enable "DNS over HTTPS". %1$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
+  <string name="preference_doh_summary">DNS (Sistema de Nòmine de Domìniu) pro mèdiu de HTTPS imbiat is rechestas tuas pro unu nòmine de domìniu a traessu de una connessione tzifrada, frunende unu DNS seguru e faghende prus difìtzile pro àtere a bìdere in cales sitos ses intrende. %1$s</string>
   <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
   <string name="preference_doh_learn_more">Àteras informatziones</string>
   <!-- Content description for the "Exceptions" button -->
@@ -2221,6 +2361,8 @@
   <string name="preference_doh_default_protection_info_3">Imprea unu frunidore locale, si faghet. %1$s</string>
   <!-- Bullet point 4 for "Default Protection" information page under "DNS over HTTPS" -->
   <string name="preference_doh_default_protection_info_4">Istuda cando VPN, controllos parentales o polìticas aziendales sunt ativos</string>
+  <!-- Bullet point 5 for "Default Protection" information page under "DNS over HTTPS". %1$s is the name of the application (e.g. Fenix). %2$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
+  <string name="preference_doh_default_protection_info_5">Disativa cando una rete nàrgiat a %1$s de no impreare DNS seguros. %2$s</string>
   <!-- Title displayed for "Increased Protection" option under "DNS over HTTPS" -->
   <string name="preference_doh_increased_protection">Protetzione megiorada</string>
   <!-- Summary displayed for "Increased Protection" option under "DNS over HTTPS" -->
@@ -2343,6 +2485,8 @@
   <string name="preferences_passwords_sync_logins_across_devices_2">Sincroniza is craes intre dispositivos</string>
   <!-- Preference to access list of saved passwords -->
   <string name="preferences_passwords_saved_logins_2">Craes sarvadas</string>
+  <!-- Description of empty list of saved passwords. %s is the name of the app (for example "Firefox"). -->
+  <string name="preferences_passwords_saved_logins_description_empty_text_2">Is craes chi sarves o sincronizes in %s ant a èssere ammustradas inoghe. Totu is craes chi sarvas sunt tzifradas.</string>
   <!-- Clickable text for opening an external link for more information about Sync. -->
   <string name="preferences_passwords_saved_logins_description_empty_learn_more_link_2">Àteras informatziones in pitzus de sa sincronizatzione</string>
   <!-- Preference to access list of login exceptions that we never save logins for -->
@@ -2385,6 +2529,14 @@
   <string name="login_detail_menu_edit_button">Modifica</string>
   <!-- Delete text for the login detail menu delete button -->
   <string name="login_detail_menu_delete_button">Cantzella</string>
+  <!-- Content description, used by tools like screenreaders, to go back and exit the add login view. -->
+  <string name="add_login_navigate_back_button_content_description">Nàviga a coa</string>
+  <!-- Content description, used by tools like screenreaders, to press on the save new login button. -->
+  <string name="add_login_save_new_login_button_content_description">Sarva s’identificatzione noa</string>
+  <!-- Content description, used by tools like screenreaders, to go back and exit the edit login view. -->
+  <string name="edit_login_navigate_back_button_content_description">Nàviga a coa</string>
+  <!-- Content description, used by tools like screenreaders, to press on the edit login button. -->
+  <string name="edit_login_button_content_description">Modifica su registru</string>
   <!-- Content Description (for screenreaders etc) read for the button to open a site in logins -->
   <string name="saved_login_open_site">Aberi su situ in su navigadore</string>
   <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
@@ -2393,8 +2545,14 @@
   <string name="saved_login_hide_password">Cua sa crae</string>
   <!-- Message displayed in biometric prompt displayed for authentication before allowing users to view their passwords -->
   <string name="logins_biometric_prompt_message_2">Isbloca pro bìdere is craes sarvadas tuas</string>
+  <!-- Button for unlocking logins on the biometric lock screen -->
+  <string name="logins_biometric_unlock_button">Isbloca</string>
+  <!-- Button for leaving logins on the biometric lock screen -->
+  <string name="logins_biometric_leave_button">Lassa</string>
   <!-- Title of warning dialog if users have no device authentication set up -->
   <string name="logins_warning_dialog_title_2">Ampara is craes sarvadas</string>
+  <!-- Message of warning dialog if users have no device authentication set up -->
+  <string name="logins_warning_dialog_message_2">Cunfigura una secuèntzia de blocu, PIN o crae pro amparare is craes sarvadas de s’atzessu de àtera gente chi tèngiat su dispositivu tuo.</string>
   <!-- Negative button to ignore warning dialog if users have no device authentication set up -->
   <string name="logins_warning_dialog_later">A pustis</string>
   <!-- Positive button to send users to set up a pin of warning dialog if users have no device authentication set up -->
@@ -2403,6 +2561,8 @@
   <string name="logins_biometric_prompt_message_pin">Isbloca su disposivitu tuo</string>
   <!-- Title for Accessibility Force Enable Zoom Preference -->
   <string name="preference_accessibility_force_enable_zoom">Ingrandimentu pro totu is sitos web</string>
+  <!-- Summary for Accessibility Force Enable Zoom Preference -->
+  <string name="preference_accessibility_force_enable_zoom_summary">Ativa pro permìtere de ismanniare su testu cun duos pòddighes, fintzas in sitos chi impedant custos gestos.</string>
   <!-- Saved logins sorting strategy menu item -by name- (if selected, it will sort saved logins alphabetically) -->
   <string name="saved_logins_sort_strategy_alphabetically">Nòmine (A-Z)</string>
   <!-- Saved logins sorting strategy menu item -by last used- (if selected, it will sort saved logins by last used) -->
@@ -2437,14 +2597,16 @@
   <string name="preferences_addresses_save_and_autofill_addresses_2">Sarva e cumpleta cun is indiritzos</string>
   <!-- Preference summary for saving and filling address data -->
   <string name="preferences_addresses_save_and_autofill_addresses_summary_2">Includet nùmeros de telèfonu e indiritzos eletrònicos</string>
+  <!-- Preference option for syncing addresses across devices. This is displayed when the user is not signed into sync -->
+  <string name="preferences_addresses_sync_addresses_across_devices">Sincroniza is indiritzos intre is dispositivos tuos</string>
+  <!-- Preference option for syncing addresses across devices. This is displayed when the user is signed into sync -->
+  <string name="preferences_addresses_sync_addresses">Sincroniza is indiritzos</string>
   <!-- Title of the "Add card" screen -->
   <string name="credit_cards_add_card">Agiunghe una carta</string>
   <!-- Title of the "Edit card" screen -->
   <string name="credit_cards_edit_card">Modìfica sa carta</string>
   <!-- The header for the card number of a credit card -->
   <string name="credit_cards_card_number">Nùmeru de carta</string>
-  <!-- The header for the expiration date of a credit card -->
-  <string name="credit_cards_expiration_date">Data de iscadèntzia</string>
   <!-- The label for the expiration date month of a credit card to be used by a11y services -->
   <string name="credit_cards_expiration_date_month">Mese de sa data iscadèntzia</string>
   <!-- The label for the expiration date year of a credit card to be used by a11y services -->
@@ -2493,6 +2655,8 @@
   <string name="addresses_manage_addresses">Gesti is indiritzos</string>
   <!-- The header for the name of an address. Name represents a person's full name, typically made up of a first, middle and last name, e.g. John Joe Doe. -->
   <string name="addresses_name">Nòmine</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The organization's name related to the address helps in distinguishing addresses used for business or personal purposes. -->
+  <string name="addresses_organization" tools:ignore="UnusedResources">Organizatzione</string>
   <!-- The header for the street address of an address -->
   <string name="addresses_street_address">Indiritzu postale</string>
   <!-- The header for the city of an address -->
@@ -2509,6 +2673,44 @@
   <string name="addresses_phone">Telèfonu</string>
   <!-- The header for the email of an address -->
   <string name="addresses_email">Indiritzu de posta eletrònica</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. This specific field is used for addresses in Iran, Mexico. -->
+  <string name="addresses_neighborhood" tools:ignore="UnusedResources">Bighinadu</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The Village or Township field, specific to Malaysia is crucial for addresses in rural areas. -->
+  <string name="addresses_village_township" tools:ignore="UnusedResources">Bidda o munitzìpiu</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The Island field, used in places like the Cayman Islands and the Bahamas if an address is located on a specific island. -->
+  <string name="addresses_island" tools:ignore="UnusedResources">Ìsula</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The Townland field, specific to Ireland is a specific type of land division used in rural areas. -->
+  <string name="addresses_townland" tools:ignore="UnusedResources">Townland</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. This specific field is used as secondary address information (below the country level, e.g. county) in Honk Kong, Sudan, Syria, Türkiye, and as sublocality (civil entity below a locality, e.g. district) in Korea. -->
+  <string name="addresses_district" tools:ignore="UnusedResources">Distretu</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Used in the United Kingdom, Norway and Sweden -->
+  <string name="addresses_post_town" tools:ignore="UnusedResources">Post town</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. This specific field is used as a tertiary address information (below the state level, e.g. Tasmania in Australia -->
+  <string name="addresses_suburb" tools:ignore="UnusedResources">Suburb</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. This specific field is crucial for addressing in regions where county lines play a key role in postal services. -->
+  <string name="addresses_county" tools:ignore="UnusedResources">Contea</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Significant in places where parishes are used for local administration and addressing. Ensures users can specify parish details for better autofill accuracy. Used in Barbados and Jamaica. -->
+  <string name="addresses_parish" tools:ignore="UnusedResources">Parish</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Essential for addresses in countries like Japan where prefectures are a major administrative division. -->
+  <string name="addresses_prefecture" tools:ignore="UnusedResources">Prefetura</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Allowing users to specify a particular area within a city or region. Used in Hong Kong -->
+  <string name="addresses_area" tools:ignore="UnusedResources">Àrea</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The header for the Do/Si of the address. Do/Si refers to provincial level divisions, pertinent to addresses in South Korea. -->
+  <string name="addresses_do_si" tools:ignore="UnusedResources">Do/Si</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Used in countries like Nicaragua and Colombia where departments are a key administrative division. -->
+  <string name="addresses_department" tools:ignore="UnusedResources">Dipartimentu</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Essential for addresses in the United Arab Emirates. -->
+  <string name="addresses_emirate" tools:ignore="UnusedResources">Emiradu</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Relevant for addresses in countries like Russia and Ukraine. -->
+  <string name="addresses_oblast" tools:ignore="UnusedResources">Oblast</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The PIN (Postal Index Number) field, used in India is a code representing a specific area. -->
+  <string name="addresses_pin" tools:ignore="UnusedResources">Còdighe postale (Pin)</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The postal code field is universally used in address forms to specify the area code for mail sorting. -->
+  <string name="addresses_postal_code" tools:ignore="UnusedResources">Còdighe postale</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. the Eircode field, specific to Ireland is a unique postal code system that helps in precise location identification. -->
+  <string name="addresses_eircode" tools:ignore="UnusedResources">Còdighe postale (Eircode)</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Used in cases we want to only display the word "Country" over "Country or Region". -->
+  <string name="addresses_country_only" tools:ignore="UnusedResources">Istadu</string>
   <!-- The text for the "Save" button for saving an address -->
   <string name="addresses_save_button">Sarva</string>
   <!-- The text for the "Cancel" button for cancelling adding, updating or deleting an address -->
@@ -2668,6 +2870,11 @@
     Title text displayed for the shortcuts home screen section.
   -->
   <string name="homepage_shortcuts_title">Curtzadòrgios</string>
+  <!--
+    Context description text for the "Show all" button in the shortcuts home screen section
+    which navigates the user to a screen displaying all the shortcuts.
+  -->
+  <string name="homepage_shortcuts_show_all_content_description">Ammustra totu is incurtzaduras</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Lìmite de curtzadòrgios barigadu</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -2706,6 +2913,11 @@
     Title text displayed in the tabs tray when a tab has been unused for 14 days.
   -->
   <string name="inactive_tabs_title">Ischedas inativas</string>
+  <!--
+    Text displayed in the tabs tray, indicating the number of inactive tabs.
+    %d is the number of inactive tabs.
+  -->
+  <string name="inactive_tabs_num_items">Elementos: %d</string>
   <!-- Content description for closing all inactive tabs -->
   <string name="inactive_tabs_delete_all">Serra is ischedas inativas</string>
   <!-- Content description for expanding the inactive tabs section. -->
@@ -2730,10 +2942,17 @@
     Search suggestions title for Firefox Suggest.
   -->
   <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox cussìgiat</string>
+  <!--
+    Search suggestions title for trending search suggestions.
+    %s is a placeholder for the name of the search engine providing the trending search suggestions.
+  -->
+  <string name="trending_searches_header_2">Est tendèntzia in %s</string>
   <!-- Title for search suggestions when Google is the default search suggestion engine. -->
   <string name="google_search_engine_suggestion_header">Chirca de Google</string>
   <!-- Title for search suggestions when the default search suggestion engine is anything other than Google. %s is default search engine name. -->
   <string name="other_default_search_engine_suggestion_header">Chirca cun %s</string>
+  <!-- Title for recent search suggestions. -->
+  <string name="recent_searches_header">Chircas reghentes</string>
   <!--
     Default browser experiment
 
@@ -2754,6 +2973,13 @@
     Header text for a section on the home screen.
   -->
   <string name="pocket_stories_header_2">Istòrias</string>
+  <!--
+    Context description text for the "Discover more" button in the stories home screen section
+    which navigates the user to a screen displaying more stories.
+  -->
+  <string name="stories_discover_more_content_description">Iscoberi àteras istòrias</string>
+  <!-- Content description for the "Navigate back" button on the top app bar of the Stories screen. -->
+  <string name="stories_back_button_content_description">Nàviga a coa</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Patrotzinadu</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -2784,6 +3010,8 @@
   <string name="a11y_state_label_expanded">ismanniadu</string>
   <!-- Action label for links to a website containing documentation about a wallpaper collection. Talkback will append this to say "Double tap to open link to learn more about this collection". -->
   <string name="a11y_action_label_wallpaper_collection_learn_more">aberi su ligòngiu pro àteras informatziones in pitzus de custa colletzione</string>
+  <!-- Content description for headings announced by accessibility service. %s is the text of the heading. Talkback will announce the text and then speak the word "Heading" indicating to the user that this text is a heading for a section. -->
+  <string name="a11y_heading">%s, intestatzione</string>
   <!-- Title for dialog displayed when trying to access links present in a text. -->
   <string name="a11y_links_title">Ligòngios</string>
   <!-- Additional content description for text bodies that contain urls. -->
@@ -2879,6 +3107,8 @@
     Title of the translation settings dialog that allows a user to set their preferred translation settings.
   -->
   <string name="translation_settings_toolbar_title">Tradutziones</string>
+  <!-- Toggle switch label that indicates that the browser should signal or indicate when a translation is possible for any page. -->
+  <string name="translation_settings_offer_to_translate">Fruni·nde sa tradutzione cando siat possìbile</string>
   <!-- Toggle switch label that indicates that downloading files required for translating is permitted when using data saver mode in Android. -->
   <string name="translation_settings_always_download">Iscàrriga semper is lìnguas in modalidade de rispàrmiu de datos</string>
   <!-- Section header text that begins the section of a list of different options the user may select to adjust their translation preferences. -->
@@ -2899,16 +3129,30 @@
   <string name="automatic_translation_header_preference">Sèbera una limba pro gestire is preferèntzias de ”tradue semper“ e de ”non traduas mai“.</string>
   <!-- The title of the warning card informs the user that the system could not load languages for translation settings. -->
   <string name="automatic_translation_error_warning_text">Impossìbile carrigare is limbas. Torra a proare a pustis.</string>
+  <!--
+    Automatic translation options preference screen
+
+    Preference option for offering to translate. Radio button title text.
+  -->
+  <string name="automatic_translation_option_offer_to_translate_title_preference">Fruni·nde sa tradutzione (predefinidu)</string>
+  <!-- Preference option for offering to translate. Radio button summary text. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="automatic_translation_option_offer_to_translate_summary_preference">%1$s at a frunire sa tradutzione de is sitos in custa limba.</string>
   <!-- Preference option for always translate. Radio button title text. -->
   <string name="automatic_translation_option_always_translate_title_preference">Tradue semper</string>
+  <!-- Preference option for always translate. Radio button summary text. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="automatic_translation_option_always_translate_summary_preference">%1$s at a tradùere custa limba in automàticu cando sa pàgina siat carrigada.</string>
   <!-- Preference option for never translate. Radio button title text. -->
   <string name="automatic_translation_option_never_translate_title_preference">Non traduas mai</string>
+  <!-- Preference option for never translate. Radio button summary text. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="automatic_translation_option_never_translate_summary_preference">%1$s no at a frunire mai sa tradutzione de is sitos in custa limba.</string>
   <!--
     Never translate site preference screen
 
     Title of the never translate site preference screen that will appear on the toolbar.
   -->
   <string name="never_translate_site_toolbar_title_preference">Non traduas mai custos sitos</string>
+  <!-- Screen header presenting the never translate site preference feature. It will appear under the toolbar. -->
+  <string name="never_translate_site_header_preference">Pro agiùnghere unu situ nou: bìsita·ddu e seletziona «Non traduas mai custu situ» dae su menù de tradutzione.</string>
   <!--
     Content description (not visible, for screen readers etc.): For a never-translated site list item that is selected.
     %1$s is web site url (for example:"wikipedia.com")
@@ -3002,6 +3246,8 @@
     %1$s is the size in kilobytes or megabytes of the language file.
   -->
   <string name="download_language_file_dialog_title">Boles iscarrigare in modalidade de rispàrmiu de energia (%1$s)?</string>
+  <!-- Additional information for the data saving mode warning dialog used by the translations feature. This text explains the reason a download is required for a translation. -->
+  <string name="download_language_file_dialog_message_all_languages">Is limbas sunt iscarrigadas in manera partziale a sa memòria temporànea pro chi is tradutziones abarrent privadas.</string>
   <!-- Checkbox label text on the data saving mode warning dialog used by the translations feature. This checkbox allows users to ignore the data usage warnings. -->
   <string name="download_language_file_dialog_checkbox_text">Iscàrriga semper in modalidade de rispàrmiu de datos</string>
   <!-- Button text on the data saving mode warning dialog used by the translations feature to allow users to confirm they wish to continue and download the language file. -->
@@ -3020,6 +3266,16 @@
   <string name="protection_panel_banner_not_secure_description">Sa connessione tua no est segura.</string>
   <!-- Title text for the protection panel banner when tracking protection is disabled. -->
   <string name="protection_panel_banner_not_protected_title">As disativadu is protetziones</string>
+  <!--
+    Description text for the protection panel banner when tracking protection is disabled.
+    %s is the name of the app (for example "Firefox").
+  -->
+  <string name="protection_panel_banner_not_protected_description">%s est in foras de servìtziu. Ti cussigiamus de torrare a ativare s’amparu.</string>
+  <!--
+    Title text for the protection panel banner when tracking protection is enabled.
+    %s is the name of the app (for example "Firefox").
+  -->
+  <string name="protection_panel_banner_protected_title">%s t’amparat</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
   <string name="protection_panel_etp_toggle_label">Amparu megioradu contra sa sighidura</string>
   <!--
@@ -3050,8 +3306,6 @@
   <string name="clear_site_data_dialog_positive_button_text">Isbòida</string>
   <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
   <string name="clear_site_data_dialog_negative_button_text">Annulla</string>
-  <!-- Snackbar title shown when the site data has been cleared. -->
-  <string name="clear_site_data_snackbar" moz:removedIn="144" tools:ignore="UnusedResources">Testimòngios e datos de is sitos cantzellados</string>
   <!-- Text for the connection security panel when the site is secure. -->
   <string name="connection_security_panel_secure">Connessione segura</string>
   <!-- Text for the connection security panel when the site is not secure. -->

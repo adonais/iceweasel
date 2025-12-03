@@ -81,7 +81,7 @@ accessibility.ActionableRoles = new Set([
 ]);
 
 /**
- * Factory function that constructs a new {@code accessibility.Checks}
+ * Factory function that constructs a new `accessibility.Checks`
  * object with enforced strictness or not.
  */
 accessibility.get = function (strict = false) {
@@ -289,13 +289,13 @@ accessibility.Checks = class {
   }
 
   /**
-   * Test if an accessible has a {@code hidden} attribute.
+   * Test if an accessible has a `hidden` attribute.
    *
    * @param {nsIAccessible} accessible
    *     Accessible object.
    *
    * @returns {boolean}
-   *     True if the accessible object has a {@code hidden} attribute,
+   *     True if the accessible object has a `hidden` attribute,
    *     false otherwise.
    */
   hasHiddenAttribute(accessible) {

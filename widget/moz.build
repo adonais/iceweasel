@@ -164,7 +164,6 @@ EXPORTS += [
     "nsBaseColorPicker.h",
     "nsBaseDragService.h",
     "nsBaseFilePicker.h",
-    "nsBaseWidget.h",
     "nsDragServiceProxy.h",
     "nsIDeviceContextSpec.h",
     "nsIRollupListener.h",
@@ -323,11 +322,11 @@ if CONFIG["NS_PRINTING"]:
             "nsPrinterListCUPS.cpp",
         ]
 
-# nsBaseWidget.cpp needs to be built separately because of name clashes in the OS X headers
+# nsIWidget.cpp needs to be built separately because of name clashes in the OS X headers
 # nsBaseDragService.cpp moved out of UNIFIED to fix xgill crash (bug 1259850) after moving widget/ContentHelper -> apz/util/TouchActionHelper
 SOURCES += [
     "nsBaseDragService.cpp",
-    "nsBaseWidget.cpp",
+    "nsIWidget.cpp",
     "ScreenManager.cpp",
 ]
 

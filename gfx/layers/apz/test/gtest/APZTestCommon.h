@@ -15,7 +15,6 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "mozilla/Attributes.h"
 #include "mozilla/layers/GeckoContentController.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/DoubleTapToZoom.h"
@@ -773,7 +772,7 @@ void APZCTesterBase::Pan(const RefPtr<InputReceiver>& aTarget,
   auto stepVector = (aTouchEnd - aTouchStart) / numSteps;
   for (int k = 1; k < numSteps; k++) {
     auto stepPoint = aTouchStart + stepVector * k;
-    Unused << TouchMove(aTarget, stepPoint, mcc->Time());
+    (void)TouchMove(aTarget, stepPoint, mcc->Time());
 
     mcc->AdvanceBy(TIME_BETWEEN_TOUCH_EVENT);
   }
@@ -975,7 +974,7 @@ void APZCTesterBase::PinchWithTouchInput(const RefPtr<InputReceiver>& aTarget,
         CreateSingleTouchData(inputId, stepPoint1));
     mtiMoveStep.mTouches.AppendElement(
         CreateSingleTouchData(inputId + 1, stepPoint2));
-    Unused << aTarget->ReceiveInputEvent(mtiMoveStep);
+    (void)aTarget->ReceiveInputEvent(mtiMoveStep);
 
     mcc->AdvanceBy(aOptions.mTimeBetweenTouchEvents);
   }

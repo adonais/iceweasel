@@ -12,7 +12,6 @@
 #include "MediaTrackGraph.h"
 #include "MediaTrackListener.h"
 #include "TrackEncoder.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/UniquePtr.h"

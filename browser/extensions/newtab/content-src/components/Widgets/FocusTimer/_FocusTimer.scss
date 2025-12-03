@@ -3,9 +3,10 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 .focus-timer {
+  @include newtab-card-style;
+
   grid-column: span 1;
   width: var(--newtab-card-width-medium);
-  background: var(--newtab-background-card);
   border-radius: var(--border-radius-large);
   padding-block: var(--space-medium);
   height: var(--newtab-card-height);
@@ -60,7 +61,7 @@
 
   h3 {
     font-size: var(--button-font-size);
-    font-weight: var(--font-weight-bold);
+    font-weight: var(--heading-font-weight);
     margin-block: 0;
   }
 }
@@ -177,7 +178,13 @@
     display: flex;
     // Bug 1880518 - Large font-size number (32px)
     font-size: calc(var(--font-size-large) * 2);
-    font-weight: var(--font-weight-bold);
+
+    /**
+     * @backward-compat { version 146 }
+     *
+     * Replace this with `--font-weight-semibold` once 146 hits release.
+     */
+    font-weight: var(--heading-font-weight);
     font-variant-numeric: tabular-nums;
     height: 100%;
     inset-block-start: 0;

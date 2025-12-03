@@ -2195,8 +2195,14 @@ class MOZ_STACK_CLASS ModuleValidator : public ModuleValidatorShared {
       return nullptr;
     }
 
+    // We must give the generator a reference to an error to fill in. We don't
+    // use it ourselves though because the only error we should get is for
+    // implementation limits like 'stack frame too big' which we couldn't guard
+    // against ahead of time. Returning nullptr is the right thing to do in
+    // these cases.
+    UniqueChars error;
     ModuleGenerator mg(*codeMeta_, compilerEnv_, compilerEnv_.initialState(),
-                       nullptr, nullptr, nullptr);
+                       nullptr, &error, nullptr);
     if (!mg.initializeCompleteTier(codeMetaForAsmJS_.get())) {
       return nullptr;
     }

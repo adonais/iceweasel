@@ -887,7 +887,7 @@ Download.prototype = {
     return this._promiseConfirmBlock;
   },
 
-  /*
+  /**
    * Launches the file after download has completed. This can open
    * the file with the default application for the target MIME type
    * or file extension, or with a custom application if launcherPath
@@ -921,7 +921,7 @@ Download.prototype = {
     return lazy.DownloadIntegration.launchDownload(this, options);
   },
 
-  /*
+  /**
    * Shows the folder containing the target file, or where the target file
    * will be saved. This may be called at any time, even if the download
    * failed or is currently in progress.

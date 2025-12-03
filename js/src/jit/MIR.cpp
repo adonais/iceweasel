@@ -10,7 +10,6 @@
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/ScopeExit.h"
 
 #include <array>
 #include <utility>
@@ -4250,6 +4249,7 @@ static void AssertKnownClass(TempAllocator& alloc, MInstruction* ins,
 
 MDefinition* MBoxNonStrictThis::foldsTo(TempAllocator& alloc) {
   MDefinition* in = input();
+
   if (!in->isBox()) {
     return this;
   }
@@ -4257,6 +4257,10 @@ MDefinition* MBoxNonStrictThis::foldsTo(TempAllocator& alloc) {
   MDefinition* unboxed = in->toBox()->input();
   if (unboxed->type() == MIRType::Object) {
     return unboxed;
+  }
+
+  if (unboxed->typeIsOneOf({MIRType::Undefined, MIRType::Null})) {
+    return MConstant::NewObject(alloc, this->globalThis());
   }
 
   return this;
@@ -7163,21 +7167,18 @@ MDefinition* MGuardSpecificInt32::foldsTo(TempAllocator& alloc) {
   return this;
 }
 
-bool MCallBindVar::congruentTo(const MDefinition* ins) const {
-  if (!ins->isCallBindVar()) {
-    return false;
+MDefinition* MGuardShape::foldsTo(TempAllocator& alloc) {
+  if (object()->isGuardShape() &&
+      shape() == object()->toGuardShape()->shape() && dependency() &&
+      object()->dependency() == dependency()) {
+    return object();
   }
-  return congruentIfOperandsEqual(ins);
+  return this;
 }
 
 bool MGuardShape::congruentTo(const MDefinition* ins) const {
-  if (!ins->isGuardShape()) {
-    return false;
-  }
-  if (shape() != ins->toGuardShape()->shape()) {
-    return false;
-  }
-  return congruentIfOperandsEqual(ins);
+  return congruentIfOperandsEqual(ins) &&
+         shape() == ins->toGuardShape()->shape();
 }
 
 AliasSet MGuardShape::getAliasSet() const {

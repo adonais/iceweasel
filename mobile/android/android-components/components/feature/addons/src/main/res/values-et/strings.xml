@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this file,
+  You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
   <string name="mozac_feature_addons_permissions_one_site_description">ligipääs saidi %1$s andmetele</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
   <string name="mozac_feature_addons_permissions_sites_in_domain_description">ligipääs aadressil %1$s töötavate saitide andmetele</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
-  <string name="mozac_feature_addons_permissions_all_domain_count_description" tools:ignore="PluralsCandidate">Pääseb ligi su andmetele %1$d domeeni lehtedel</string>
+  <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">Pääseb ligi su andmetele %1$d domeeni lehtedel</string>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d. kokku %3$dst</string>
   <!-- Description for the "privacy" WebExtensions API permission. -->
@@ -183,7 +190,7 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">Laiendust %1$s ei saanud paigaldada, kuna seda saab paigaldada ainult organisatsioon, mis kasutab sel platvormil toetamata ettevõtte eeskirju.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1">Laiendus %1$s rikub Mozilla eeskirju ja seda ei saa rakendusse %2$s paigaldada.</string>
+  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Laiendus %1$s rikub Mozilla eeskirju ja seda ei saa rakendusse %2$s paigaldada.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Lisa %1$s lubamine ebaõnnestus</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -223,9 +230,9 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">See laiendus on Mozilla eeskirjade rikkumise tõttu blokeeritud ja keelatud.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1">See laiendus on Mozilla eeskirjade rikkumise tõttu piiratud ja seetõttu keelatud. Saad selle lubada, kuid see võib olla riskantne.</string>
+  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">See laiendus on Mozilla eeskirjade rikkumise tõttu piiratud ja seetõttu keelatud. Saad selle lubada, kuid see võib olla riskantne.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled">See laiendus rikub Mozilla eeskirju. Selle kasutamine võib olla riskantne.</string>
+  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">See laiendus rikub Mozilla eeskirju. Selle kasutamine võib olla riskantne.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">%1$s turvalisust ei saanud kinnitada ja see on keelatud.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

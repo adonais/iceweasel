@@ -8,7 +8,6 @@
 #define mozilla_image_DecoderFactory_h
 
 #include "DecoderFlags.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/gfx/2D.h"

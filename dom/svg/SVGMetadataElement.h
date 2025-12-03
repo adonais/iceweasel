@@ -8,7 +8,6 @@
 #define DOM_SVG_SVGMETADATAELEMENT_H_
 
 #include "SVGElement.h"
-#include "mozilla/Attributes.h"
 
 nsresult NS_NewSVGMetadataElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);

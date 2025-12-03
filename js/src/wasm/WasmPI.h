@@ -199,7 +199,7 @@ class SuspenderObjectData
 #endif
 
 #if defined(JS_SIMULATOR_ARM64) || defined(JS_SIMULATOR_ARM) || \
-    defined(JS_SIMULATOR_RISCV64)
+    defined(JS_SIMULATOR_RISCV64) || defined(JS_SIMULATOR_LOONG64)
   void switchSimulatorToMain();
   void switchSimulatorToSuspendable();
 #endif

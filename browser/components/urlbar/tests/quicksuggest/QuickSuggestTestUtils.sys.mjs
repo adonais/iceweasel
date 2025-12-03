@@ -189,10 +189,10 @@ class _QuickSuggestTestUtils {
    *       the record should be added to. Defaults to "quicksuggest-other".
    * @param {Array} [options.merinoSuggestions]
    *   Array of Merino suggestion objects. If given, this function will start
-   *   the mock Merino server and set `quicksuggest.dataCollection.enabled` to
-   *   true so that `UrlbarProviderQuickSuggest` will fetch suggestions from it.
-   *   Otherwise Merino will not serve suggestions, but you can still set up
-   *   Merino without using this function by using `MerinoTestUtils` directly.
+   *   the mock Merino server and set appropriate online prefs so that Suggest
+   *   will fetch suggestions from it. Otherwise Merino will not serve
+   *   suggestions, but you can still set up Merino without using this function
+   *   by using `MerinoTestUtils` directly.
    * @param {object} [options.config]
    *   The Suggest configuration object. This should not be the full remote
    *   settings record; only pass the object that should be set to the nested
@@ -280,7 +280,8 @@ class _QuickSuggestTestUtils {
       this.#log("ensureQuickSuggestInit", "Setting up Merino server");
       await lazy.MerinoTestUtils.server.start();
       lazy.MerinoTestUtils.server.response.body.suggestions = merinoSuggestions;
-      lazy.UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
+      lazy.UrlbarPrefs.set("quicksuggest.online.available", true);
+      lazy.UrlbarPrefs.set("quicksuggest.online.enabled", true);
       this.#log("ensureQuickSuggestInit", "Done setting up Merino server");
     }
 
@@ -303,7 +304,7 @@ class _QuickSuggestTestUtils {
     return cleanup;
   }
 
-  async #uninitQuickSuggest(prefs, clearDataCollectionEnabled) {
+  async #uninitQuickSuggest(prefs, clearOnlinePrefs) {
     this.#log("#uninitQuickSuggest", "Started");
 
     // Reset prefs, which can cause the Rust backend to start syncing. Wait for
@@ -316,8 +317,9 @@ class _QuickSuggestTestUtils {
     this.#log("#uninitQuickSuggest", "Stopping remote settings server");
     await this.#remoteSettingsServer.stop();
 
-    if (clearDataCollectionEnabled) {
-      lazy.UrlbarPrefs.clear("quicksuggest.dataCollection.enabled");
+    if (clearOnlinePrefs) {
+      lazy.UrlbarPrefs.clear("quicksuggest.online.available");
+      lazy.UrlbarPrefs.clear("quicksuggest.online.enabled");
     }
 
     await lazy.QuickSuggest.rustBackend._test_setRemoteSettingsService(null);
@@ -938,7 +940,10 @@ class _QuickSuggestTestUtils {
         displayUrl: url.replace(/^https:\/\//, ""),
         isSponsored: false,
         shouldShowUrl: true,
-        bottomTextL10n: { id: "firefox-suggest-addons-recommended" },
+        bottomTextL10n: {
+          id: "firefox-suggest-addons-recommended",
+          cacheable: true,
+        },
         helpUrl: lazy.QuickSuggest.HELP_URL,
         telemetryType: "amo",
       },
@@ -993,7 +998,10 @@ class _QuickSuggestTestUtils {
         description,
         icon: "chrome://global/skin/icons/mdn.svg",
         shouldShowUrl: true,
-        bottomTextL10n: { id: "firefox-suggest-mdn-bottom-text" },
+        bottomTextL10n: {
+          id: "firefox-suggest-mdn-bottom-text",
+          cacheable: true,
+        },
         source: "rust",
         provider: "Mdn",
         suggestionObject: new lazy.Suggestion.Mdn({
@@ -1020,9 +1028,10 @@ class _QuickSuggestTestUtils {
     source = "rust",
     provider = "Yelp",
     isTopPick = false,
-    // The default Yelp suggestedIndex is 0, unlike most other Suggest
-    // suggestion types, which use -1. Note that many callers still use
-    // -1 here because they test without the search suggestion provider.
+    // The logic for the default Yelp `suggestedIndex` is complex and depends on
+    // whether `UrlbarProviderSearchSuggestions` is active and whether search
+    // suggestions are shown first. By default -- when the answer to both of
+    // those questions is Yes -- Yelp's `suggestedIndex` is 0.
     suggestedIndex = 0,
     isSuggestedIndexRelativeToGroup = true,
     originalUrl = undefined,
@@ -1053,7 +1062,10 @@ class _QuickSuggestTestUtils {
         source,
         provider,
         telemetryType: "yelp",
-        bottomTextL10n: { id: "firefox-suggest-yelp-bottom-text" },
+        bottomTextL10n: {
+          id: "firefox-suggest-yelp-bottom-text",
+          cacheable: true,
+        },
         url,
         originalUrl,
         title,
@@ -1426,102 +1438,195 @@ class _QuickSuggestTestUtils {
   }
 
   /**
-   * Sets the app's home region and locales, calls your callback, and resets
-   * the region and locales.
+   * Sets the app's home region and locale, calls your callback, and resets the
+   * region and locale.
    *
    * @param {object} options
    *   Options object.
-   * @param {Array} options.locales
-   *   An array of locale strings. The entire array will be set as the available
-   *   locales, and the first locale in the array will be set as the requested
-   *   locale.
    * @param {Function} options.callback
-   *  The callback to be called with the {@link locales} set. This function can
-   *  be async.
-   * @param {string} options.homeRegion
-   *   The home region to set, an all-caps country code, e.g., "US", "CA", "DE".
-   *   Leave undefined to skip setting a region.
+   *  The callback to call.
+   * @param {string} [options.region]
+   *   The region to set. See `setRegionAndLocale`.
+   * @param {string} [options.locale]
+   *   The locale to set. See `setRegionAndLocale`.
+   * @param {boolean} [options.skipSuggestReset]
+   *   Whether Suggest reset should be skipped after setting the new region and
+   *   locale. See `setRegionAndLocale`.
    */
-  async withLocales({ locales, callback, homeRegion = undefined }) {
-    let promiseChanges = async desiredLocales => {
+  async withRegionAndLocale({
+    callback,
+    region = undefined,
+    locale = undefined,
+    skipSuggestReset = false,
+  }) {
+    this.#log("withRegionAndLocale", "Calling setRegionAndLocale");
+    let cleanup = await this.setRegionAndLocale({
+      region,
+      locale,
+      skipSuggestReset,
+    });
+
+    this.#log("withRegionAndLocale", "Calling callback");
+    await callback();
+
+    this.#log("withRegionAndLocale", "Calling cleanup");
+    await cleanup();
+
+    this.#log("withRegionAndLocale", "Done");
+  }
+
+  /**
+   * Sets the app's home region and locale and waits for all relevant
+   * notifications. Returns an async cleanup function that should be called to
+   * restore the previous region and locale.
+   *
+   * See also `withRegionAndLocale`.
+   *
+   * @param {object} options
+   *   Options object.
+   * @param {string} [options.region]
+   *   The home region to set. If falsey, the current region will remain
+   *   unchanged.
+   * @param {string} [options.locale]
+   *   The locale to set. If falsey, the current locale will remain unchanged.
+   * @param {Array} [options.availableLocales]
+   *   Normally this should be left undefined. If defined,
+   *   `Services.locale.availableLocales` will be set to this array. Otherwise
+   *   it will be set to `[locale]`.
+   * @param {boolean} [options.skipSuggestReset]
+   *   Normally this function resets `QuickSuggest` after the new region and
+   *   locale are set, which will cause all Suggest prefs to be set according to
+   *   the new region and locale. That's undesirable in some cases, for example
+   *   when you're testing region/locale combinations where Suggest or one of
+   *   its features isn't enabled by default. Pass in true to skip reset.
+   * @returns {Promise<Function>}
+   *   An async cleanup function.
+   */
+  async setRegionAndLocale({
+    region = undefined,
+    locale = undefined,
+    availableLocales = undefined,
+    skipSuggestReset = false,
+  }) {
+    let oldRegion = lazy.Region.home;
+    let newRegion = region ?? oldRegion;
+    let regionPromise = this.#waitForAllRegionChanges(newRegion);
+    if (region) {
+      this.#log("setRegionAndLocale", "Setting region: " + region);
+      lazy.Region._setHomeRegion(region, true);
+    }
+
+    let {
+      availableLocales: oldAvailableLocales,
+      requestedLocales: oldRequestedLocales,
+    } = Services.locale;
+    let newLocale = locale ?? oldRequestedLocales[0];
+    let localePromise = this.#waitForAllLocaleChanges(newLocale);
+    if (locale) {
+      this.#log("setRegionAndLocale", "Setting locale: " + locale);
+      Services.locale.availableLocales = availableLocales ?? [locale];
+      Services.locale.requestedLocales = [locale];
+    }
+
+    this.#log("setRegionAndLocale", "Waiting for region and locale changes");
+    await Promise.all([regionPromise, localePromise]);
+
+    this.Assert.equal(
+      lazy.Region.home,
+      newRegion,
+      "Region is now " + newRegion
+    );
+    this.Assert.equal(
+      Services.locale.appLocaleAsBCP47,
+      newLocale,
+      "App locale is now " + newLocale
+    );
+
+    if (!skipSuggestReset) {
+      this.#log("setRegionAndLocale", "Waiting for _test_reset");
+      await lazy.QuickSuggest._test_reset();
+    }
+
+    if (this.#remoteSettingsServer) {
+      this.#log("setRegionAndLocale", "Waiting for forceSync");
+      await this.forceSync();
+    }
+
+    this.#log("setRegionAndLocale", "Done");
+
+    return async () => {
       this.#log(
-        "withLocales",
-        "Changing locales from " +
-          JSON.stringify(Services.locale.requestedLocales) +
-          " to " +
-          JSON.stringify(desiredLocales)
+        "setRegionAndLocale",
+        "Cleanup started, calling setRegionAndLocale with old region and locale"
       );
+      await this.setRegionAndLocale({
+        skipSuggestReset,
+        region: oldRegion,
+        locale: oldRequestedLocales[0],
+        availableLocales: oldAvailableLocales,
+      });
+      this.#log("setRegionAndLocale", "Cleanup done");
+    };
+  }
 
-      if (desiredLocales[0] == Services.locale.requestedLocales[0]) {
-        // Nothing happens when the locale doesn't actually change.
-        this.#log("withLocales", "Locale is already " + desiredLocales[0]);
-        return;
-      }
+  async #waitForAllRegionChanges(region) {
+    await lazy.TestUtils.waitForCondition(
+      () => lazy.SharedRemoteSettingsService.country == region,
+      "Waiting for SharedRemoteSettingsService.country to be " + region
+    );
+  }
 
-      this.#log("withLocales", "Waiting for intl:requested-locales-changed");
-      await lazy.TestUtils.topicObserved("intl:requested-locales-changed");
-      this.#log("withLocales", "Observed intl:requested-locales-changed");
+  async #waitForAllLocaleChanges(locale) {
+    let promises = [
+      lazy.TestUtils.waitForCondition(
+        () => lazy.SharedRemoteSettingsService.locale == locale,
+        "#waitForAllLocaleChanges: Waiting for SharedRemoteSettingsService.locale to be " +
+          locale
+      ),
+    ];
+
+    if (locale == Services.locale.requestedLocales[0]) {
+      // "intl:app-locales-changed" isn't sent when the locale doesn't change.
+      this.#log("#waitForAllLocaleChanges", "Locale is already " + locale);
+    } else {
+      this.#log(
+        "#waitForAllLocaleChanges",
+        "Waiting for intl:app-locales-changed"
+      );
+      promises.push(lazy.TestUtils.topicObserved("intl:app-locales-changed"));
 
       // Wait for the search service to reload engines. Otherwise tests can fail
       // in strange ways due to internal search service state during shutdown.
       // It won't always reload engines but it's hard to tell in advance when it
       // won't, so also set a timeout.
-      this.#log("withLocales", "Waiting for TOPIC_SEARCH_SERVICE");
-      await Promise.race([
-        lazy.TestUtils.topicObserved(
-          lazy.SearchUtils.TOPIC_SEARCH_SERVICE,
-          (subject, data) => {
-            this.#log(
-              "withLocales",
-              "Observed TOPIC_SEARCH_SERVICE with data: " + data
-            );
-            return data == "engines-reloaded";
-          }
-        ),
-        new Promise(resolve => {
-          lazy.setTimeout(() => {
-            this.#log(
-              "withLocales",
-              "Timed out waiting for TOPIC_SEARCH_SERVICE"
-            );
-            resolve();
-          }, 2000);
-        }),
-      ]);
-
-      this.#log("withLocales", "Done waiting for locale changes");
-    };
-
-    let originalHome = lazy.Region.home;
-    if (homeRegion) {
-      lazy.Region._setHomeRegion(homeRegion, true);
+      this.#log("#waitForAllLocaleChanges", "Waiting for TOPIC_SEARCH_SERVICE");
+      promises.push(
+        Promise.race([
+          lazy.TestUtils.topicObserved(
+            lazy.SearchUtils.TOPIC_SEARCH_SERVICE,
+            (subject, data) => {
+              this.#log(
+                "#waitForAllLocaleChanges",
+                "Observed TOPIC_SEARCH_SERVICE with data: " + data
+              );
+              return data == "engines-reloaded";
+            }
+          ),
+          new Promise(resolve => {
+            lazy.setTimeout(() => {
+              this.#log(
+                "#waitForAllLocaleChanges",
+                "Timed out waiting for TOPIC_SEARCH_SERVICE (not an error)"
+              );
+              resolve();
+            }, 1000);
+          }),
+        ])
+      );
     }
 
-    let available = Services.locale.availableLocales;
-    let requested = Services.locale.requestedLocales;
-
-    let newRequested = locales.slice(0, 1);
-    let promise = promiseChanges(newRequested);
-    Services.locale.availableLocales = locales;
-    Services.locale.requestedLocales = newRequested;
-    await promise;
-
-    this.Assert.equal(
-      Services.locale.appLocaleAsBCP47,
-      locales[0],
-      "App locale is now " + locales[0]
-    );
-
-    await callback();
-
-    if (homeRegion) {
-      lazy.Region._setHomeRegion(originalHome, true);
-    }
-
-    promise = promiseChanges(requested);
-    Services.locale.availableLocales = available;
-    Services.locale.requestedLocales = requested;
-    await promise;
+    await Promise.all(promises);
+    this.#log("#waitForAllLocaleChanges", "Done");
   }
 
   #log(fnName, msg) {

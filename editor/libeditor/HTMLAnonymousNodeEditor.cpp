@@ -7,7 +7,6 @@
 #include "CSSEditUtils.h"
 #include "HTMLEditUtils.h"
 
-#include "mozilla/Attributes.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/dom/BindContext.h"

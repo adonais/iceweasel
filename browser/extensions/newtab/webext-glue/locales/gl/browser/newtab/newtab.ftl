@@ -401,7 +401,7 @@ newtab-wallpaper-abstract-purple-green = Degradado de luz violeta e verde
 newtab-wallpaper-abstract-blue-purple-waves = Formas onduladas azuis e moradas
 newtab-wallpaper-abstract-black-waves = Formas onduladas negras
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotografías
 newtab-wallpaper-beach-at-sunrise = Praia ao amencer

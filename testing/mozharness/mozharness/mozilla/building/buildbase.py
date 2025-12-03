@@ -254,6 +254,7 @@ class BuildOptionParser:
         "fuzzing-tsan-tc": path_base + "%s_fuzzing_tsan_tc.py",
         "cross-debug": path_base + "%s_cross_debug.py",
         "cross-debug-searchfox": path_base + "%s_cross_debug_searchfox.py",
+        "cross-opt-searchfox": path_base + "%s_cross_opt_searchfox.py",
         "cross-noopt-debug": path_base + "%s_cross_noopt_debug.py",
         "cross-fuzzing-asan": path_base + "%s_cross_fuzzing_asan.py",
         "cross-fuzzing-debug": path_base + "%s_cross_fuzzing_debug.py",

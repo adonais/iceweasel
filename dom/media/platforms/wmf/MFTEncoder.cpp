@@ -1243,17 +1243,21 @@ void MFTEncoder::EventHandler(MediaEventType aEventType, HRESULT aStatus) {
     return;
   }
 
+  const bool waitForOutput =
+      StaticPrefs::media_wmf_encoder_realtime_wait_for_output();
+
   ProcessedResult result = processed.unwrap();
   MFT_ENC_LOGV(
       "%s processed: %s\n\tpending inputs: %zu\n\tinput needed: %zu\n\tpending "
-      "outputs: %zu",
+      "outputs: %zu (waitForOutput=%s)",
       MediaEventTypeStr(aEventType), MFTEncoder::EnumValueToString(result),
-      mPendingInputs.size(), mNumNeedInput, mOutputs.Length());
+      mPendingInputs.size(), mNumNeedInput, mOutputs.Length(),
+      waitForOutput ? "yes" : "no");
   switch (result) {
     case ProcessedResult::AllAvailableInputsProcessed:
-      // Since mNumNeedInput was incremented in ProcessInput(), a result
-      // indicating no input was processed means there were not enough pending
-      // inputs in the queue.
+      // Since mNumNeedInput was incremented in ProcessEvent(), before calling
+      // ProcessInput(), a result indicating no input was processed means there
+      // were not enough pending inputs in the queue.
       MOZ_ASSERT(mPendingInputs.empty());
       // If EventHandler is in the PreDraining state here, it means there were
       // pending inputs to process before draining started. Processing those
@@ -1266,16 +1270,26 @@ void MFTEncoder::EventHandler(MediaEventType aEventType, HRESULT aStatus) {
       if (mState == State::Encoding) {
         // In realtime mode, we could resolve the encode promise only upon
         // receiving an output. However, since the performance gain is minor,
-        // it's not worth risking a scenario where the encode promise is
-        // resolved by the timer callback if no output is produced in time.
-        MaybeResolveOrRejectEncodePromise();
+        // unless the wait-for-output setting is enabled, it's better to prevent
+        // the encode promise from being resolved by the timer callback if no
+        // output is produced in time.
+        if (!waitForOutput) {
+          MaybeResolveOrRejectEncodePromise();
+        }
       } else if (mState == State::PreDraining) {
         if (mPendingInputs.empty()) {
           MaybeResolveOrRejectPreDrainPromise();
         }
       }
       break;
-    case ProcessedResult::OutputYielded:
+    case ProcessedResult::OutputHeaderYielded:
+      if (mState == State::Encoding) {
+        if (!waitForOutput) {
+          MaybeResolveOrRejectEncodePromise();
+        }
+      }
+      break;
+    case ProcessedResult::OutputDataYielded:
       if (mState == State::Encoding) {
         MaybeResolveOrRejectEncodePromise();
       }
@@ -1479,7 +1493,7 @@ Result<MFTEncoder::ProcessedResult, HRESULT> MFTEncoder::ProcessOutput() {
   if (result.IsHeader()) {
     mOutputHeader = result.TakeHeader();
     MFT_ENC_LOGD("Got new MPEG header, size: %zu", mOutputHeader.Length());
-    return ProcessedResult::OutputYielded;
+    return ProcessedResult::OutputHeaderYielded;
   }
 
   MOZ_ASSERT(result.IsSample());
@@ -1487,7 +1501,7 @@ Result<MFTEncoder::ProcessedResult, HRESULT> MFTEncoder::ProcessOutput() {
   if (!mOutputHeader.IsEmpty()) {
     mOutputs.LastElement().mHeader = std::move(mOutputHeader);
   }
-  return ProcessedResult::OutputYielded;
+  return ProcessedResult::OutputDataYielded;
 }
 
 Result<MFTEncoder::ProcessedResult, HRESULT>
@@ -1543,6 +1557,7 @@ Result<MFTEncoder::OutputResult, HRESULT> MFTEncoder::GetOutputOrNewHeader() {
     }
     // TODO: We should query for updated stream identifiers here. For now,
     // handle this as an error.
+    MFT_ENC_LOGE("Stream identifiers changed");
     return Err(hr);
   }
 
@@ -1612,12 +1627,12 @@ HRESULT MFTEncoder::ProcessInput(InputSample&& aInput) {
   MOZ_ASSERT(mscom::IsCurrentThreadMTA());
   MOZ_ASSERT(mEncoder);
 
-  MFT_RETURN_IF_FAILED(
-      mEncoder->ProcessInput(mInputStreamID, aInput.mSample, 0));
   if (aInput.mKeyFrameRequested) {
     VARIANT v = {.vt = VT_UI4, .ulVal = 1};
     mConfig->SetValue(&CODECAPI_AVEncVideoForceKeyFrame, &v);
   }
+  MFT_RETURN_IF_FAILED(
+      mEncoder->ProcessInput(mInputStreamID, aInput.mSample, 0));
   return S_OK;
 }
 

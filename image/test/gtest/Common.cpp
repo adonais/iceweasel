@@ -1070,7 +1070,7 @@ RefPtr<Image> TestCaseToDecodedImage(const ImageTestCase& aTestCase) {
   // Use GetFrame() to force a sync decode of the image.
   RefPtr<SourceSurface> surface = image->GetFrame(
       imgIContainer::FRAME_CURRENT, imgIContainer::FLAG_SYNC_DECODE);
-  Unused << surface;
+  (void)surface;
   return image;
 }
 

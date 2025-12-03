@@ -18,7 +18,6 @@
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerRunnable.h"
 #include "mozilla/SchedulerGroup.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StickyTimeDuration.h"
 #include "nsThreadSyncDispatch.h"

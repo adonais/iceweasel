@@ -11,7 +11,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_extensions.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/CacheBinding.h"
 #include "mozilla/dom/CacheStorageBinding.h"
 #include "mozilla/dom/Document.h"

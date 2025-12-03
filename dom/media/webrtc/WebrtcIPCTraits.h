@@ -10,7 +10,6 @@
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtils.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
-#include "mozilla/MacroForEach.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BindingIPCUtils.h"
 #include "mozilla/dom/CandidateInfo.h"

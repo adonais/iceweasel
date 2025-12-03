@@ -47,15 +47,6 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
         requirePreference<Preference>(R.string.pref_key_learn_about_fx_suggest).apply {
             isVisible = context.settings().enableFxSuggest
         }
-        requirePreference<CheckBoxPreference>(R.string.pref_key_show_trending_search_suggestions).apply {
-            isVisible = context.settings().isTrendingSearchesVisible
-        }
-        requirePreference<SwitchPreference>(R.string.pref_key_show_recent_search_suggestions).apply {
-            isVisible = context.settings().isRecentSearchesVisible
-        }
-        requirePreference<SwitchPreference>(R.string.pref_key_show_shortcuts_suggestions).apply {
-            isVisible = context.settings().isShortcutSuggestionsVisible
-        }
 
         view?.hideKeyboard()
     }
@@ -81,7 +72,7 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
 
         val trendingSearchSuggestionsPreference =
             requirePreference<CheckBoxPreference>(R.string.pref_key_show_trending_search_suggestions).apply {
-                isVisible = context.settings().isTrendingSearchesVisible
+                isChecked = context.settings().trendingSearchSuggestionsEnabled
                 isEnabled = getSelectedSearchEngine(requireContext())?.trendingUrl != null &&
                     context.settings().shouldShowSearchSuggestions
             }
@@ -110,11 +101,6 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
         val showBookmarkSuggestions =
             requirePreference<SwitchPreference>(R.string.pref_key_search_bookmarks).apply {
                 isChecked = context.settings().shouldShowBookmarkSuggestions
-            }
-
-        val showShortcutsSuggestions =
-            requirePreference<SwitchPreference>(R.string.pref_key_show_shortcuts_suggestions).apply {
-                isChecked = context.settings().shouldShowShortcutSuggestions
             }
 
         val showSyncedTabsSuggestions =
@@ -148,7 +134,6 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
         searchSuggestionsPreference.onPreferenceChangeListener = SharedPreferenceUpdater()
         showHistorySuggestions.onPreferenceChangeListener = SharedPreferenceUpdater()
         showBookmarkSuggestions.onPreferenceChangeListener = SharedPreferenceUpdater()
-        showShortcutsSuggestions.onPreferenceChangeListener = SharedPreferenceUpdater()
         showSyncedTabsSuggestions.onPreferenceChangeListener = SharedPreferenceUpdater()
         showClipboardSuggestions.onPreferenceChangeListener = SharedPreferenceUpdater()
         searchSuggestionsInPrivatePreference.onPreferenceChangeListener = SharedPreferenceUpdater()

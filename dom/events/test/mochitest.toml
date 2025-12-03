@@ -407,7 +407,10 @@ support-files = ["green.png"]
 ["test_draggableprop.html"]
 
 ["test_dragstart.html"]
-skip-if = ["os == 'android' && verify"]
+skip-if = [
+  "os == 'android' && verify",
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt && xorigin && verify-standalone",
+]
 
 ["test_error_events.html"]
 skip-if = ["os == 'android'"] # TIMED_OUT
@@ -480,10 +483,11 @@ skip-if = [
 support-files = ["file_mouse_enterleave.html"]
 skip-if = [
   "!debug", # Bug 1781668
+  "http2",
+  "http3",
   "os == 'android'", # timeout
   "os == 'linux' && os_version == '22.04' && display == 'wayland'", # Bug 1857022
-  "http3",
-  "http2",
+  "verify-standalone",
 ]
 
 ["test_mouse_events_after_touchend.html"]
@@ -545,3 +549,4 @@ skip-if = [
 
 ["test_wheel_zoom_on_form_controls.html"]
 run-if = ["os != 'android'"] # wheel isn't supported
+skip-if = ["verify-standalone"]

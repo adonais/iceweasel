@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/adaptation/resource.h"
 #include "api/async_dns_resolver.h"
@@ -235,6 +236,7 @@ class PeerConnection : public PeerConnectionInternal,
   bool AddIceCandidate(const IceCandidate* candidate) override;
   void AddIceCandidate(std::unique_ptr<IceCandidate> candidate,
                        std::function<void(RTCError)> callback) override;
+  bool RemoveIceCandidate(const IceCandidate* candidate) override;
   bool RemoveIceCandidates(const std::vector<Candidate>& candidates) override;
 
   RTCError SetBitrate(const BitrateSettings& bitrate) override;
@@ -308,8 +310,15 @@ class PeerConnection : public PeerConnectionInternal,
 
   // Functions needed by DataChannelController
   void NoteDataAddedEvent() override { NoteUsageEvent(UsageEvent::DATA_ADDED); }
-  // Returns the observer. Will crash on CHECK if the observer is removed.
-  PeerConnectionObserver* Observer() const override;
+
+  void RunWithObserver(
+      absl::AnyInvocable<void(webrtc::PeerConnectionObserver*) &&>) override
+      RTC_RUN_ON(signaling_thread());
+
+  void RunWithMaybeNullObserver(
+      absl::AnyInvocable<void(webrtc::PeerConnectionObserver*) &&>) const
+      RTC_RUN_ON(signaling_thread());
+
   bool IsClosed() const override {
     RTC_DCHECK_RUN_ON(signaling_thread());
     return !sdp_handler_ ||
@@ -405,8 +414,8 @@ class PeerConnection : public PeerConnectionInternal,
   RTCError StartSctpTransport(const SctpOptions& options) override;
 
   // Returns the CryptoOptions for this PeerConnection. This will always
-  // return the RTCConfiguration.crypto_options if set and will only default
-  // back to the PeerConnectionFactory settings if nothing was set.
+  // return the RTCConfiguration.crypto_options if set and return a stock
+  // configuration if nothing was set.
   CryptoOptions GetCryptoOptions() override;
 
   // Internal implementation for AddTransceiver family of methods. If
@@ -512,7 +521,8 @@ class PeerConnection : public PeerConnectionInternal,
                            const std::string& error_text)
       RTC_RUN_ON(signaling_thread());
   // Some local ICE candidates have been removed.
-  void OnIceCandidatesRemoved(const std::vector<Candidate>& candidates)
+  void OnIceCandidatesRemoved(absl::string_view mid,
+                              const std::vector<Candidate>& candidates)
       RTC_RUN_ON(signaling_thread());
 
   void OnSelectedCandidatePairChanged(const CandidatePairChangeEvent& event)
@@ -573,6 +583,7 @@ class PeerConnection : public PeerConnectionInternal,
   void OnTransportControllerCandidateError(const IceCandidateErrorEvent& event)
       RTC_RUN_ON(signaling_thread());
   void OnTransportControllerCandidatesRemoved(
+      absl::string_view mid,
       const std::vector<Candidate>& candidates) RTC_RUN_ON(signaling_thread());
   void OnTransportControllerCandidateChanged(
       const CandidatePairChangeEvent& event) RTC_RUN_ON(signaling_thread());
@@ -618,7 +629,7 @@ class PeerConnection : public PeerConnectionInternal,
   std::function<void(const RtpPacketReceived& parsed_packet)>
   InitializeUnDemuxablePacketHandler();
 
-  bool CanAttemptDtlsStunPiggybacking(const RTCConfiguration& configuration);
+  bool CanAttemptDtlsStunPiggybacking();
 
   const Environment env_;
   const scoped_refptr<ConnectionContext> context_;

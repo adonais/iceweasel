@@ -106,7 +106,7 @@ impl PartialEq for Ck<'_> {
     }
 }
 
-fn class(i: &str) -> IResult<&str, Ck> {
+fn class(i: &str) -> IResult<&str, Ck<'_>> {
     let (i, _) = tag("CK_OBJECT_CLASS")(i)?;
     let (i, _) = space1(i)?;
     let (i, class) = alt((
@@ -119,7 +119,7 @@ fn class(i: &str) -> IResult<&str, Ck> {
     Ok((i, Ck::Class(class)))
 }
 
-fn trust(i: &str) -> IResult<&str, Ck> {
+fn trust(i: &str) -> IResult<&str, Ck<'_>> {
     let (i, _) = tag("CK_TRUST")(i)?;
     let (i, _) = space1(i)?;
     let (i, trust) = alt((
@@ -134,7 +134,7 @@ fn trust(i: &str) -> IResult<&str, Ck> {
 
 // Parses a CK_BBOOL and wraps it with Ck::OptionBool so that it gets printed as
 // "Some(CK_TRUE_BYTES)" instead of "CK_TRUE_BYTES".
-fn option_bbool(i: &str) -> IResult<&str, Ck> {
+fn option_bbool(i: &str) -> IResult<&str, Ck<'_>> {
     let (i, _) = tag("CK_BBOOL")(i)?;
     let (i, _) = space1(i)?;
     let (i, b) = alt((tag("CK_TRUE"), tag("CK_FALSE")))(i)?;
@@ -143,7 +143,7 @@ fn option_bbool(i: &str) -> IResult<&str, Ck> {
     Ok((i, Ck::OptionBool(b)))
 }
 
-fn bbool_true(i: &str) -> IResult<&str, Ck> {
+fn bbool_true(i: &str) -> IResult<&str, Ck<'_>> {
     let (i, _) = tag("CK_BBOOL")(i)?;
     let (i, _) = space1(i)?;
     let (i, _) = tag("CK_TRUE")(i)?;
@@ -152,7 +152,7 @@ fn bbool_true(i: &str) -> IResult<&str, Ck> {
     Ok((i, Ck::Empty))
 }
 
-fn bbool_false(i: &str) -> IResult<&str, Ck> {
+fn bbool_false(i: &str) -> IResult<&str, Ck<'_>> {
     let (i, _) = tag("CK_BBOOL")(i)?;
     let (i, _) = space1(i)?;
     let (i, _) = tag("CK_FALSE")(i)?;
@@ -161,7 +161,7 @@ fn bbool_false(i: &str) -> IResult<&str, Ck> {
     Ok((i, Ck::Empty))
 }
 
-fn utf8(i: &str) -> IResult<&str, Ck> {
+fn utf8(i: &str) -> IResult<&str, Ck<'_>> {
     let (i, _) = tag("UTF8")(i)?;
     let (i, _) = space1(i)?;
     let (i, _) = char('"')(i)?;
@@ -172,7 +172,7 @@ fn utf8(i: &str) -> IResult<&str, Ck> {
     Ok((i, Ck::Utf8(utf8)))
 }
 
-fn certificate_type(i: &str) -> IResult<&str, Ck> {
+fn certificate_type(i: &str) -> IResult<&str, Ck<'_>> {
     let (i, _) = tag("CK_CERTIFICATE_TYPE")(i)?;
     let (i, _) = space1(i)?;
     let (i, _) = tag("CKC_X_509")(i)?;
@@ -183,7 +183,7 @@ fn certificate_type(i: &str) -> IResult<&str, Ck> {
 
 // A CKA_NSS_{EMAIL,SERVER}_DISTRUST_AFTER line in certdata.txt is encoded either as a CK_BBOOL
 // with value CK_FALSE (when there is no distrust after date) or as a MULTILINE_OCTAL block.
-fn distrust_after(i: &str) -> IResult<&str, Ck> {
+fn distrust_after(i: &str) -> IResult<&str, Ck<'_>> {
     let (i, value) = alt((multiline_octal, bbool_false))(i)?;
     match value {
         Ck::Empty => Ok((i, Ck::DistrustAfter(None))),
@@ -201,7 +201,7 @@ fn octal_octet(i: &str) -> IResult<&str, &str> {
     )))(i)
 }
 
-fn multiline_octal(i: &str) -> IResult<&str, Ck> {
+fn multiline_octal(i: &str) -> IResult<&str, Ck<'_>> {
     let (i, _) = tag("MULTILINE_OCTAL")(i)?;
     let (i, _) = space0(i)?;
     let (i, _) = newline(i)?;
@@ -212,7 +212,7 @@ fn multiline_octal(i: &str) -> IResult<&str, Ck> {
     return Ok((i, Ck::MultilineOctal(lines)));
 }
 
-fn distrust_comment(i: &str) -> IResult<&str, (&str, Ck)> {
+fn distrust_comment(i: &str) -> IResult<&str, (&str, Ck<'_>)> {
     let (i, comment) = recognize(delimited(
         alt((
             tag("# For Email Distrust After: "),
@@ -224,12 +224,12 @@ fn distrust_comment(i: &str) -> IResult<&str, (&str, Ck)> {
     Ok((i, ("DISTRUST_COMMENT", Ck::Comment(comment))))
 }
 
-fn comment(i: &str) -> IResult<&str, (&str, Ck)> {
+fn comment(i: &str) -> IResult<&str, (&str, Ck<'_>)> {
     let (i, comment) = recognize(many1(delimited(char('#'), not_line_ending, newline)))(i)?;
     Ok((i, ("COMMENT", Ck::Comment(comment))))
 }
 
-fn certdata_line(i: &str) -> IResult<&str, (&str, Ck)> {
+fn certdata_line(i: &str) -> IResult<&str, (&str, Ck<'_>)> {
     let (i, (attr, value)) = alt((
         distrust_comment, // must be listed before `comment`
         comment,
@@ -286,7 +286,7 @@ fn attr<'a>(block: &'a Block, attr: &str) -> &'a Ck<'a> {
     block.get(attr).unwrap_or(&Ck::Empty)
 }
 
-fn parse(i: &str) -> IResult<&str, Vec<Block>> {
+fn parse(i: &str) -> IResult<&str, Vec<Block<'_>>> {
     let mut out: Vec<Block> = vec![];
     let (i, _) = take_until("BEGINDATA\n")(i)?;
     let (i, _) = tag("BEGINDATA\n")(i)?;

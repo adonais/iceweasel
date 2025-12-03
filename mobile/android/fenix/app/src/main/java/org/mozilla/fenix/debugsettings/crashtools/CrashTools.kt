@@ -4,6 +4,8 @@
 
 package org.mozilla.fenix.debugsettings.crashtools
 
+import android.content.Intent
+import android.os.Process
 import android.text.format.DateUtils
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,15 +23,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
-import org.mozilla.fenix.crashes.StartupCrashCanary
+import org.mozilla.fenix.startupCrash.StartupCrashActivity
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
 
@@ -38,9 +37,9 @@ private const val SECOND_IN_MILLISECOND = 1000L
 @Composable
 internal fun CrashTools(
     settings: Settings = components.settings,
-    canary: StartupCrashCanary =
-        StartupCrashCanary.build(LocalContext.current.applicationContext),
 ) {
+    val appContext = LocalContext.current.applicationContext
+
     var now = System.currentTimeMillis()
     var genericDeferPeriod by remember { mutableLongStateOf(settings.crashReportDeferredUntil - now) }
     LaunchedEffect(Unit) {
@@ -88,14 +87,14 @@ internal fun CrashTools(
             style = FirefoxTheme.typography.subtitle2,
         )
         FilledButton(
-            text = stringResource(R.string.crash_debug_crash_on_next_startup),
+            text = stringResource(R.string.crash_debug_show_startup_crash_screen),
             modifier = Modifier.fillMaxWidth(),
             onClick = {
-                CoroutineScope(Dispatchers.IO).launch {
-                    canary.createCanary()
-                }.invokeOnCompletion {
-                    throw ArithmeticException("Debug drawer triggered exception.")
-                }
+                val intent = Intent(appContext, StartupCrashActivity::class.java)
+
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                appContext.startActivity(intent)
+                Process.killProcess(Process.myPid())
             },
         )
     }

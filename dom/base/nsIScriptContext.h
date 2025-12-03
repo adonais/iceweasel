@@ -9,7 +9,6 @@
 
 #include "js/experimental/JSStencil.h"
 #include "jspubtd.h"
-#include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsISupports.h"
 #include "nsString.h"

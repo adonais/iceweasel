@@ -5601,7 +5601,7 @@ DEFINE_IC(NewObject, 0, {
 DEFINE_IC(GetProp, 1, {
   IC_LOAD_VAL(value0, 0);
   PUSH_FALLBACK_IC_FRAME();
-  if (!DoGetPropFallback(cx, ctx.frame, fallback, &value0, &ctx.state.res)) {
+  if (!DoGetPropFallback(cx, ctx.frame, fallback, value0, &ctx.state.res)) {
     goto error;
   }
 });
@@ -5610,7 +5610,7 @@ DEFINE_IC(GetPropSuper, 2, {
   IC_LOAD_VAL(value0, 1);
   IC_LOAD_VAL(value1, 0);
   PUSH_FALLBACK_IC_FRAME();
-  if (!DoGetPropSuperFallback(cx, ctx.frame, fallback, value0, &value1,
+  if (!DoGetPropSuperFallback(cx, ctx.frame, fallback, value0, value1,
                               &ctx.state.res)) {
     goto error;
   }

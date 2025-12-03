@@ -405,15 +405,7 @@ this.AccessibilityUtils = (function () {
       node.previousElementSibling,
       node.nextElementSibling,
     ]) {
-      if (!sibling) {
-        continue;
-      }
-      const siblingAcc = getAccessible(sibling);
-      if (
-        siblingAcc &&
-        siblingAcc.role == Ci.nsIAccessibleRole.ROLE_SPINBUTTON &&
-        matchState(siblingAcc, STATE_FOCUSABLE)
-      ) {
+      if (sibling && sibling.tabIndex >= 0 && sibling.role == "spinbutton") {
         return true;
       }
     }

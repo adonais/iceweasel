@@ -222,7 +222,9 @@ impl MemoryDistribution for MemoryDistributionMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<DistributionData> for MemoryDistributionMetric {
+impl glean::TestGetValue for MemoryDistributionMetric {
+    type Output = DistributionData;
+
     /// **Test-only API.**
     ///
     /// Get the currently-stored histogram as a DistributionData of the serialized value.

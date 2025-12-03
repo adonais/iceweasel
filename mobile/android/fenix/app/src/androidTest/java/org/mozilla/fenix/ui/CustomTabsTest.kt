@@ -17,7 +17,8 @@ import org.mozilla.fenix.helpers.DataGenerationHelper.createCustomTabIntent
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
-import org.mozilla.fenix.helpers.TestAssetHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.pdfFormAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestHelper.mDevice
@@ -93,7 +94,7 @@ class CustomTabsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2334762
     @Test
     fun copyCustomTabToolbarUrlTest() {
-        val customTabPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val customTabPage = mockWebServer.getGenericAsset(1)
 
         intentReceiverActivityTestRule.launchActivity(
             createCustomTabIntent(
@@ -156,7 +157,7 @@ class CustomTabsTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyCustomTabMenuItemsTest() {
-        val customTabPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val customTabPage = mockWebServer.getGenericAsset(1)
 
         intentReceiverActivityTestRule.launchActivity(
             createCustomTabIntent(
@@ -184,7 +185,7 @@ class CustomTabsTest : TestSetup() {
     @SmokeTest
     @Test
     fun openCustomTabInFirefoxTest() {
-        val customTabPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val customTabPage = mockWebServer.getGenericAsset(1)
 
         intentReceiverActivityTestRule.launchActivity(
             createCustomTabIntent(
@@ -203,7 +204,7 @@ class CustomTabsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2239548
     @Test
     fun shareCustomTabUsingToolbarButtonTest() {
-        val customTabPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val customTabPage = mockWebServer.getGenericAsset(1)
 
         intentReceiverActivityTestRule.launchActivity(
             createCustomTabIntent(
@@ -220,7 +221,7 @@ class CustomTabsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/249643
     @Test
     fun verifyCustomTabViewItemsTest() {
-        val customTabPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val customTabPage = mockWebServer.getGenericAsset(1)
 
         intentReceiverActivityTestRule.launchActivity(
             createCustomTabIntent(
@@ -247,8 +248,8 @@ class CustomTabsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2239544
     @Test
     fun verifyPDFViewerInACustomTabTest() {
-        val customTabPage = TestAssetHelper.getGenericAsset(mockWebServer, 3)
-        val pdfFormResource = TestAssetHelper.getPdfFormAsset(mockWebServer)
+        val customTabPage = mockWebServer.getGenericAsset(3)
+        val pdfFormResource = mockWebServer.pdfFormAsset
 
         intentReceiverActivityTestRule.launchActivity(
             createCustomTabIntent(
@@ -277,7 +278,7 @@ class CustomTabsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2239117
     @Test
     fun verifyCustomTabETPSheetAndToggleTest() {
-        val customTabPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val customTabPage = mockWebServer.getGenericAsset(1)
 
         intentReceiverActivityTestRule.launchActivity(
             createCustomTabIntent(

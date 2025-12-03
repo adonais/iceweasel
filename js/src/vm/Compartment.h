@@ -236,6 +236,7 @@ class ObjectWrapperMap {
         e.removeFront();
       }
     }
+    map.compact();
   }
 };
 

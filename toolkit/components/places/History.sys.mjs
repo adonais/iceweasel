@@ -83,7 +83,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "asyncHistory",
   "@mozilla.org/browser/history;1",
-  "mozIAsyncHistory"
+  Ci.mozIAsyncHistory
 );
 
 /**

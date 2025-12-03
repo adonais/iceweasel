@@ -23,14 +23,22 @@ export const EmbeddedFxBackupOptIn = ({
 
   useEffect(() => {
     const { current } = backupRef;
-
-    const handleBackupEvent = () => {
+    const handleEnableScheduledBackups = () => {
       handleAction({
         currentTarget: { value: "tile_button" },
         action: { navigate: true },
         source: "backup_enabled",
       });
     };
+
+    const handleAdvanceScreens = () => {
+      handleAction({
+        currentTarget: { value: "tile_button" },
+        action: { navigate: true },
+        source: "advance_screens",
+      });
+    };
+
     const handleStateUpdate = ({ detail: { state } }) => {
       if (!current || !state) {
         return;
@@ -45,16 +53,25 @@ export const EmbeddedFxBackupOptIn = ({
     current?.addEventListener("BackupUI:StateWasUpdated", handleStateUpdate);
     current?.addEventListener(
       "BackupUI:EnableScheduledBackups",
-      handleBackupEvent
+      handleEnableScheduledBackups
     );
+    current?.addEventListener(
+      "SpotlightOnboardingAdvanceScreens",
+      handleAdvanceScreens
+    );
+
     return () => {
       current?.removeEventListener(
         "BackupUI:EnableScheduledBackups",
-        handleBackupEvent
+        handleEnableScheduledBackups
       );
       current?.removeEventListener(
         "BackupUI:StateWasUpdated",
         handleStateUpdate
+      );
+      current?.removeEventListener(
+        "SpotlightOnboardingAdvanceScreens",
+        handleAdvanceScreens
       );
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -73,6 +90,7 @@ export const EmbeddedFxBackupOptIn = ({
         isEncryptedBackup && !hide_password_input ? "" : undefined
       }
       embedded-fx-backup-opt-in={""}
+      backup-is-encrypted={isEncryptedBackup ? "" : undefined}
       file-path-label-l10n-id={file_path_label}
       turn-on-backup-header-l10n-id={turn_on_backup_header}
       create-password-label-l10n-id={create_password_label}

@@ -21,7 +21,6 @@
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EnumeratedArray.h"
-#include "mozilla/PodOperations.h"
 #include "mozilla/Span.h"
 
 #include <stdint.h>

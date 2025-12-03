@@ -120,8 +120,8 @@ class AddonPermissionsScreenTest {
         assertNull(request)
         composeTestRule.onNodeWithText("Read and modify bookmarks").performClick()
         assertArrayEquals(listOf("bookmarks").toTypedArray(), request!!.optionalPermissions.toTypedArray())
-        assertTrue(request!!.originPermissions.isEmpty())
-        assertTrue(request!!.dataCollectionPermissions.isEmpty())
+        assertTrue(request.originPermissions.isEmpty())
+        assertTrue(request.dataCollectionPermissions.isEmpty())
 
         composeTestRule.onNodeWithText("This extension doesn’t require any permissions.").assertIsNotDisplayed()
     }
@@ -264,8 +264,8 @@ class AddonPermissionsScreenTest {
         assertNull(request)
         composeTestRule.onNodeWithText("Share health information with extension developer").performClick()
         assertTrue(request!!.optionalPermissions.isEmpty())
-        assertTrue(request!!.originPermissions.isEmpty())
-        assertArrayEquals(listOf("healthInfo").toTypedArray(), request!!.dataCollectionPermissions.toTypedArray())
+        assertTrue(request.originPermissions.isEmpty())
+        assertArrayEquals(listOf("healthInfo").toTypedArray(), request.dataCollectionPermissions.toTypedArray())
 
         composeTestRule.onNodeWithText("This extension doesn’t require any permissions.").assertIsNotDisplayed()
     }

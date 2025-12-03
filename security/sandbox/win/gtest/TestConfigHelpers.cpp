@@ -11,6 +11,7 @@
 #include <windows.h>
 
 #include "nsLiteralString.h"
+#include "nsWindowsHelpers.h"
 #include "sandbox/win/src/sandbox.h"
 #include "sandbox/win/src/app_container.h"
 #include "sandbox/win/src/policy_engine_opcodes.h"
@@ -96,6 +97,16 @@ class MockConfig : public TargetConfig {
   EXPECT_CALL(mConfig, AllowFileAccess(Eq(FileSemantics::kAllowReadonly), \
                                        StartsWith(aRulePath)))
 
+static void SetUpPathsInKey(HKEY aKey,
+                            const std::vector<std::wstring_view>& aFontPaths) {
+  for (size_t i = 0; i < aFontPaths.size(); ++i) {
+    const auto* pathBytes = reinterpret_cast<const BYTE*>(aFontPaths[i].data());
+    size_t sizeInBytes = (aFontPaths[i].length() + 1) * sizeof(wchar_t);
+    ::RegSetValueExW(aKey, std::to_wstring(i).c_str(), 0, REG_SZ, pathBytes,
+                     sizeInBytes);
+  }
+}
+
 class UserFontConfigHelperTest : public testing::Test {
  protected:
   // We always expect the Windows User font dir rule to be added.
@@ -110,17 +121,11 @@ class UserFontConfigHelperTest : public testing::Test {
     if (mTestUserFontKey) {
       ::RegCloseKey(mTestUserFontKey);
     }
-    ::RegDeleteKeyW(HKEY_CURRENT_USER, sTestRegKey);
+    ::RegDeleteTreeW(HKEY_CURRENT_USER, sTestRegKey);
   }
 
   void SetUpPaths(const std::vector<std::wstring_view>& aFontPaths) {
-    for (size_t i = 0; i < aFontPaths.size(); ++i) {
-      const auto* pathBytes =
-          reinterpret_cast<const BYTE*>(aFontPaths[i].data());
-      size_t sizeInBytes = (aFontPaths[i].length() + 1) * sizeof(wchar_t);
-      ::RegSetValueExW(mTestUserFontKey, std::to_wstring(i).c_str(), 0, REG_SZ,
-                       pathBytes, sizeInBytes);
-    }
+    SetUpPathsInKey(mTestUserFontKey, aFontPaths);
   }
 
   void CreateHelperAndCallAddRules() {
@@ -178,6 +183,25 @@ TEST_F(UserFontConfigHelperTest, PathsOutsideUsersDirAdded) {
   CreateHelperAndCallAddRules();
 }
 
+TEST_F(UserFontConfigHelperTest, SubKeyPathsInsideUsersDirAdded) {
+  SetUpPaths({LR"(C:\Users\Moz User\Fonts\FontFile1.ttf)"});
+  std::unique_ptr<HKEY, RegCloseKeyDeleter> subKey;
+  auto lStatus = ::RegCreateKeyExW(mTestUserFontKey, L"SubKey", 0, nullptr,
+                                   REG_OPTION_VOLATILE, KEY_ALL_ACCESS, nullptr,
+                                   getter_Transfers(subKey), nullptr);
+  ASSERT_EQ(lStatus, ERROR_SUCCESS);
+  SetUpPathsInKey(subKey.get(), {LR"(C:\Users\Moz User\Fonts\FontFile2.ttf)"});
+
+  // We expect the windows user font rule to be added first.
+  auto& fontFile1 =
+      EXPECT_READONLY_EQ(LR"(C:\Users\Moz User\Fonts\FontFile1.ttf)")
+          .After(mWinUserFontCall);
+  EXPECT_READONLY_EQ(LR"(C:\Users\Moz User\Fonts\FontFile2.ttf)")
+      .After(fontFile1);
+
+  CreateHelperAndCallAddRules();
+}
+
 TEST_F(UserFontConfigHelperTest, PathsOutsideUsersDirAddedAtEnd) {
   // We set up the paths in a particular order, but this doesn't guarantee the
   // order returned from registry calls. However the rule adding code should
@@ -197,6 +221,36 @@ TEST_F(UserFontConfigHelperTest, PathsOutsideUsersDirAddedAtEnd) {
   auto& userDirFont3 = EXPECT_READONLY_EQ(userFont3).After(mWinUserFontCall);
   EXPECT_READONLY_EQ(pdFont1).After(userDirFont1, userDirFont2, userDirFont3);
   EXPECT_READONLY_EQ(pdFont2).After(userDirFont1, userDirFont2, userDirFont3);
+
+  CreateHelperAndCallAddRules();
+}
+
+TEST_F(UserFontConfigHelperTest, SubKeyPathsOutsideUsersDirAddedAtEnd) {
+  // We set up the paths in a particular order, but this doesn't guarantee the
+  // order returned from registry calls. However the rule adding code should
+  // guarantee that non-user dir fonts are added at the end.
+  const auto* userFont1 = LR"(C:\Users\Moz User\Fonts\FontFile1.ttf)";
+  const auto* userFont2 = LR"(C:\Users\Moz User\Fonts\FontFile2.ttf)";
+  const auto* userFont3 = LR"(C:\Users\Moz User\Fonts\FontFile3.ttf)";
+  const auto* pdFont1 = LR"(C:\ProgramData\Fonts\FontFile1.ttf)";
+  const auto* pdFont2 = LR"(C:\ProgramData\Fonts\FontFile2.ttf)";
+  SetUpPaths({pdFont1, userFont1, userFont2});
+  std::unique_ptr<HKEY, RegCloseKeyDeleter> subKey;
+  auto lStatus = ::RegCreateKeyExW(mTestUserFontKey, L"SubKey", 0, nullptr,
+                                   REG_OPTION_VOLATILE, KEY_ALL_ACCESS, nullptr,
+                                   getter_Transfers(subKey), nullptr);
+  ASSERT_EQ(lStatus, ERROR_SUCCESS);
+  SetUpPathsInKey(subKey.get(), {pdFont2, userFont3});
+
+  // These font rules won't fit in 1 page.
+  mNumberOfStoragePages = 2;
+
+  auto& userDirFont1 = EXPECT_READONLY_EQ(userFont1).After(mWinUserFontCall);
+  auto& userDirFont2 = EXPECT_READONLY_EQ(userFont2).After(mWinUserFontCall);
+  auto& userDirFont3 =
+      EXPECT_READONLY_EQ(userFont3).After(userDirFont1, userDirFont2);
+  EXPECT_READONLY_EQ(pdFont1).After(userDirFont3);
+  EXPECT_READONLY_EQ(pdFont2).After(userDirFont3);
 
   CreateHelperAndCallAddRules();
 }

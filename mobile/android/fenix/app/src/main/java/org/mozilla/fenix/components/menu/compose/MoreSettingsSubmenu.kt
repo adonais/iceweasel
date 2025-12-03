@@ -7,6 +7,8 @@ package org.mozilla.fenix.components.menu.compose
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -34,6 +36,7 @@ internal fun MoreSettingsSubmenu(
     isOpenInAppMenuHighlighted: Boolean,
     translationInfo: TranslationInfo,
     showShortcuts: Boolean,
+    isAndroidAutomotiveAvailable: Boolean,
     onWebCompatReporterClick: () -> Unit,
     onShortcutsMenuClick: () -> Unit,
     onAddToHomeScreenMenuClick: () -> Unit,
@@ -111,12 +114,13 @@ internal fun MoreSettingsSubmenu(
             beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_save_file_24),
             onClick = onSaveAsPDFMenuClick,
         )
-
-        MenuItem(
-            label = stringResource(id = R.string.browser_menu_print_2),
-            beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_print_24),
-            onClick = onPrintMenuClick,
-        )
+        if (!isAndroidAutomotiveAvailable) {
+            MenuItem(
+                label = stringResource(id = R.string.browser_menu_print_2),
+                beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_print_24),
+                onClick = onPrintMenuClick,
+            )
+        }
     }
 }
 
@@ -136,7 +140,7 @@ private fun TranslationMenuItem(
             Badge(
                 badgeText = translationInfo.translatedLanguage,
                 state = state,
-                badgeBackgroundColor = FirefoxTheme.colors.badgeActive,
+                badgeBackgroundColor = MaterialTheme.colorScheme.primaryContainer,
             )
         }
     } else {
@@ -179,7 +183,9 @@ private fun ShortcutsMenuItem(
 private fun MoreSettingsSubmenuPreview() {
     FirefoxTheme {
         Column(
-            modifier = Modifier.background(color = FirefoxTheme.colors.layer3),
+            modifier = Modifier
+                .background(color = MaterialTheme.colorScheme.surface)
+                .padding(all = FirefoxTheme.layout.space.static200),
         ) {
             MenuGroup {
                 MoreSettingsSubmenu(
@@ -200,6 +206,7 @@ private fun MoreSettingsSubmenuPreview() {
                         onTranslatePageMenuClick = {},
                     ),
                     showShortcuts = true,
+                    isAndroidAutomotiveAvailable = false,
                     onWebCompatReporterClick = {},
                     onShortcutsMenuClick = {},
                     onAddToHomeScreenMenuClick = {},
@@ -218,7 +225,9 @@ private fun MoreSettingsSubmenuPreview() {
 private fun MoreSettingsSubmenuPrivatePreview() {
     FirefoxTheme(theme = Theme.Private) {
         Column(
-            modifier = Modifier.background(color = FirefoxTheme.colors.layer3),
+            modifier = Modifier
+                .background(color = MaterialTheme.colorScheme.surface)
+                .padding(all = FirefoxTheme.layout.space.static200),
         ) {
             MenuGroup {
                 MoreSettingsSubmenu(
@@ -239,6 +248,7 @@ private fun MoreSettingsSubmenuPrivatePreview() {
                         onTranslatePageMenuClick = {},
                     ),
                     showShortcuts = true,
+                    isAndroidAutomotiveAvailable = false,
                     onWebCompatReporterClick = {},
                     onShortcutsMenuClick = {},
                     onAddToHomeScreenMenuClick = {},

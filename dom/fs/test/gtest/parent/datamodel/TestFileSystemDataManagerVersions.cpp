@@ -21,7 +21,6 @@
 #include "mozStorageCID.h"
 #include "mozStorageHelper.h"
 #include "mozilla/ErrorNames.h"
-#include "mozilla/Result.h"
 #include "mozilla/dom/FileSystemTypes.h"
 #include "mozilla/dom/PFileSystemManager.h"
 #include "mozilla/dom/quota/CommonMetadata.h"

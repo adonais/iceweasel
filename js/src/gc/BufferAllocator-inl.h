@@ -9,7 +9,6 @@
 
 #include "gc/BufferAllocator.h"
 
-#include "mozilla/Atomics.h"
 #include "mozilla/MathAlgorithms.h"
 
 #include "ds/SlimLinkedList.h"

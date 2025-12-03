@@ -47,6 +47,8 @@ skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt"] #
 
 ["browser_combobox.js"]
 
+["browser_custom_actions.js"]
+
 ["browser_description.js"]
 
 ["browser_details_summary.js"]

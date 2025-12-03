@@ -123,7 +123,7 @@ function setImageTooltip(tooltip, doc, imageUrl, options) {
   tooltip.setContentSize({ width, height });
 }
 
-/*
+/**
  * Set the tooltip content of a provided HTMLTooltip instance to display a
  * fallback error message when an image preview tooltip can not be displayed.
  *

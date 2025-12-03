@@ -22,6 +22,8 @@ from mozlog.commandline import add_logging_group
     "chrome-m",
     "cstm-car-m",
 ]
+ANDROID_APPS = FIREFOX_ANDROID_APPS + CHROME_ANDROID_APPS
+
 FIREFOX_APPS = FIREFOX_ANDROID_APPS + [FIREFOX]
 
 CHROMIUM_DISTROS = [CHROME, CHROMIUM_RELEASE]

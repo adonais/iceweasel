@@ -339,7 +339,7 @@ class FaviconLoad {
   }
 }
 
-/*
+/**
  * Extract the icon width from the size attribute. It also sends the telemetry
  * about the size type and size dimension info.
  *
@@ -382,7 +382,7 @@ function extractIconSize(aSizes) {
   return width;
 }
 
-/*
+/**
  * Get link icon URI from a link dom node.
  *
  * @param {DOMNode} aLink A link dom node.
@@ -423,7 +423,7 @@ function guessType(icon) {
   return icon.type == "image/vnd.microsoft.icon" ? TYPE_ICO : icon.type || "";
 }
 
-/*
+/**
  * Selects the best rich icon and tab icon from a list of IconInfo objects.
  *
  * @param {Array} iconInfos A list of IconInfo objects.

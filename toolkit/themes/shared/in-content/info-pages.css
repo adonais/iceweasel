@@ -86,7 +86,7 @@ ul {
 }
 
 dt {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 ul.columns {

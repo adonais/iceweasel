@@ -10,7 +10,7 @@
 //! registering fonts found in the blob (see `prepare_request`).
 
 use bindings::{wr_moz2d_render_cb, ArcVecU8, ByteSlice, MutByteSlice};
-use gecko_profiler::auto_profiler_marker_tracing;
+use gecko_profiler::auto_profiler_marker;
 use gecko_profiler::gecko_profiler_label;
 use rayon::prelude::*;
 use rayon::ThreadPool;
@@ -507,11 +507,10 @@ impl AsyncBlobImageRasterizer for Moz2dBlobRasterizer {
     ) -> Vec<(BlobImageRequest, BlobImageResult)> {
         // All we do here is spin up our workers to callback into gecko to replay the drawing commands.
         gecko_profiler_label!(Graphics, Rasterization);
-        auto_profiler_marker_tracing!(
+        auto_profiler_marker!(
             "BlobRasterization",
             gecko_profiler::gecko_profiler_category!(Graphics),
-            Default::default(),
-            "Webrender".into()
+            Default::default()
         );
 
         let requests: Vec<Job> = requests

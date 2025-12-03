@@ -7,7 +7,6 @@
 #ifndef nsMathMLContainerFrame_h___
 #define nsMathMLContainerFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
 #include "nsBlockFrame.h"
 #include "nsContainerFrame.h"

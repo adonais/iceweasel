@@ -8,7 +8,6 @@
 #define mozilla_dom_AuthenticatorResponse_h
 
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "nsCOMPtr.h"

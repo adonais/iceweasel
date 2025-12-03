@@ -273,7 +273,8 @@ function closeMenus(node) {
   }
 }
 
-/** This function takes in a key element and compares it to the keys pressed during an event.
+/**
+ * This function takes in a key element and compares it to the keys pressed during an event.
  *
  * @param aEvent
  *        The KeyboardEvent event you want to compare against your key.

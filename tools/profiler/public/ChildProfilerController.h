@@ -7,7 +7,6 @@
 #define ChildProfilerController_h
 
 #include "base/process.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/RefPtr.h"

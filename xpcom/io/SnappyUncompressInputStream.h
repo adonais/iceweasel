@@ -7,7 +7,6 @@
 #ifndef mozilla_SnappyUncompressInputStream_h__
 #define mozilla_SnappyUncompressInputStream_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsIInputStream.h"

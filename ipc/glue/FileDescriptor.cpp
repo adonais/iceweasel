@@ -6,8 +6,6 @@
 
 #include "FileDescriptor.h"
 
-#include "mozilla/Assertions.h"
-#include "mozilla/ipc/IPDLParamTraits.h"
 #include "mozilla/ipc/ProtocolMessageUtils.h"
 #include "nsDebug.h"
 
@@ -92,26 +90,28 @@ FileDescriptor::UniquePlatformHandle FileDescriptor::Clone(
   return UniqueFileHandle();
 }
 
-void IPDLParamTraits<FileDescriptor>::Write(IPC::MessageWriter* aWriter,
-                                            IProtocol* aActor,
-                                            const FileDescriptor& aParam) {
-  WriteIPDLParam(aWriter, aActor, aParam.ClonePlatformHandle());
+}  // namespace ipc
+}  // namespace mozilla
+
+namespace IPC {
+
+void ParamTraits<mozilla::ipc::FileDescriptor>::Write(
+    MessageWriter* aWriter, const mozilla::ipc::FileDescriptor& aParam) {
+  WriteParam(aWriter, aParam.ClonePlatformHandle());
 }
 
-bool IPDLParamTraits<FileDescriptor>::Read(IPC::MessageReader* aReader,
-                                           IProtocol* aActor,
-                                           FileDescriptor* aResult) {
-  UniqueFileHandle handle;
-  if (!ReadIPDLParam(aReader, aActor, &handle)) {
+bool ParamTraits<mozilla::ipc::FileDescriptor>::Read(
+    MessageReader* aReader, mozilla::ipc::FileDescriptor* aResult) {
+  mozilla::UniqueFileHandle handle;
+  if (!ReadParam(aReader, &handle)) {
     return false;
   }
 
-  *aResult = FileDescriptor(std::move(handle));
+  *aResult = mozilla::ipc::FileDescriptor(std::move(handle));
   if (!aResult->IsValid()) {
     printf_stderr("IPDL protocol Error: Received an invalid file descriptor\n");
   }
   return true;
 }
 
-}  // namespace ipc
-}  // namespace mozilla
+}  // namespace IPC

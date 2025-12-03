@@ -149,6 +149,36 @@ def test_get_no_variant_conditions():
         == " && !test_variant1 && fission"
     )
 
+    # Handle composite variants
+    fp = FailedPlatform(
+        {
+            "build_type1": {
+                "test_variant1": {},
+                "socketprocess_networking+!fission": {},
+                "no_variant": {},
+            }
+        }
+    )
+    assert (
+        fp.get_no_variant_conditions(" && ", "build_type1")
+        == " && !test_variant1 && !socketprocess_networking && fission"
+    )
+
+    # Handle mutually exclusive variants
+    fp = FailedPlatform(
+        {
+            "build_type1": {
+                "fission": {},
+                "socketprocess_networking+!fission": {},
+                "no_variant": {},
+            }
+        }
+    )
+    assert (
+        fp.get_no_variant_conditions(" && ", "build_type1")
+        == " && !socketprocess_networking"
+    )
+
 
 def test_get_test_variant_condition():
     """Test get_no_variant_conditions"""

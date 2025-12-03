@@ -491,6 +491,13 @@ bool WarpCacheIRTranspiler::emitGuardFuse(RealmFuses::FuseIndex fuseIndex) {
   }
 }
 
+bool WarpCacheIRTranspiler::emitGuardRuntimeFuse(
+    RuntimeFuses::FuseIndex fuseIndex) {
+  // This is a no-op because WarpOracle has added a compilation dependency.
+  MOZ_ASSERT(RuntimeFuses::isInvalidatingFuse(fuseIndex));
+  return true;
+}
+
 bool WarpCacheIRTranspiler::emitGuardObjectFuseProperty(
     ObjOperandId objId, uint32_t objFuseOwnerOffset, uint32_t objFuseOffset,
     uint32_t expectedGenerationOffset, uint32_t propIndexOffset,
@@ -6611,7 +6618,10 @@ bool WarpCacheIRTranspiler::emitBindFunctionResult(
   MDefinition* target = getOperand(targetId);
   JSObject* templateObj = tenuredObjectStubField(templateObjectOffset);
 
-  MOZ_ASSERT(callInfo_->argc() == argc);
+  // callInfo_ can be null when `bind` is inlined through a getter access, but
+  // in that case `argc` is guaranteed to be zero.
+  MOZ_ASSERT_IF(callInfo_, callInfo_->argc() == argc);
+  MOZ_ASSERT_IF(!callInfo_, argc == 0);
 
   auto* bound = MBindFunction::New(alloc(), target, argc, templateObj);
   if (!bound) {
@@ -6632,7 +6642,10 @@ bool WarpCacheIRTranspiler::emitSpecializedBindFunctionResult(
   MDefinition* target = getOperand(targetId);
   JSObject* templateObj = tenuredObjectStubField(templateObjectOffset);
 
-  MOZ_ASSERT(callInfo_->argc() == argc);
+  // callInfo_ can be null when `bind` is inlined through a getter access, but
+  // in that case `argc` is guaranteed to be zero.
+  MOZ_ASSERT_IF(callInfo_, callInfo_->argc() == argc);
+  MOZ_ASSERT_IF(!callInfo_, argc == 0);
 
   auto* bound = MNewBoundFunction::New(alloc(), templateObj);
   add(bound);

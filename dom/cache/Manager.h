@@ -8,7 +8,6 @@
 #define mozilla_dom_cache_Manager_h
 
 #include "CacheCommon.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/dom/SafeRefPtr.h"
 #include "mozilla/dom/cache/Types.h"
 #include "mozilla/dom/quota/Client.h"

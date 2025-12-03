@@ -8,7 +8,6 @@
 
 #include "nsCSSPseudoElements.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/ServoBindings.h"
 #include "nsCSSAnonBoxes.h"
 #include "nsDOMString.h"

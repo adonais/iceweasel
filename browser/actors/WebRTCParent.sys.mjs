@@ -16,7 +16,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "OSPermissions",
   "@mozilla.org/ospermissionrequest;1",
-  "nsIOSPermissionRequest"
+  Ci.nsIOSPermissionRequest
 );
 
 export class WebRTCParent extends JSWindowActorParent {

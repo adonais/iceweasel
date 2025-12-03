@@ -7,7 +7,6 @@
 #ifndef nsEnvironment_h__
 #define nsEnvironment_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/Mutex.h"
 #include "nsIEnvironment.h"
 

@@ -22,6 +22,15 @@ const YELP_MERINO_SINGLE = [
   {
     provider: "yelp",
     is_sponsored: true,
+    custom_details: {
+      yelp: {
+        values: [
+          {
+            some_value: "foo",
+          },
+        ],
+      },
+    },
   },
 ];
 
@@ -49,6 +58,41 @@ add_task(async function telemetry_type_on_realtime() {
     "yelpRealtime",
     "Telemetry type should be 'yelpRealtime'"
   );
+});
+
+add_task(async function disabledPrefs() {
+  let prefs = [
+    "quicksuggest.enabled",
+    "suggest.yelpRealtime",
+    "suggest.quicksuggest.all",
+  ];
+
+  for (let pref of prefs) {
+    info("Testing pref: " + pref);
+
+    // First make sure the suggestion is added.
+    await check_results({
+      context: createContext("coffee", {
+        providers: [UrlbarProviderQuickSuggest.name],
+        isPrivate: false,
+      }),
+      matches: [yelpMerinoResult()],
+    });
+
+    // Now disable them.
+    UrlbarPrefs.set(pref, false);
+    await check_results({
+      context: createContext("coffee", {
+        providers: [UrlbarProviderQuickSuggest.name],
+        isPrivate: false,
+      }),
+      matches: [],
+    });
+
+    // Revert.
+    UrlbarPrefs.set(pref, true);
+    await QuickSuggestTestUtils.forceSync();
+  }
 });
 
 add_task(async function not_interested_on_realtime() {
@@ -194,7 +238,7 @@ add_task(async function opt_in_on_opt_in_prompt() {
   });
 
   info("Check the prefs after triggering");
-  Assert.ok(UrlbarPrefs.get("quicksuggest.dataCollection.enabled"));
+  Assert.ok(UrlbarPrefs.get("quicksuggest.online.enabled"));
 
   info("Check the result after triggering");
   await check_results({
@@ -358,7 +402,8 @@ add_task(async function not_interested_on_opt_in_prompt() {
 
 function setupOptInPromptTest() {
   UrlbarPrefs.set("suggest.realtimeOptIn", true);
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", false);
   UrlbarPrefs.set("quicksuggest.realtimeOptIn.dismissTypes", "");
   UrlbarPrefs.set("quicksuggest.realtimeOptIn.notNowTimeSeconds", 0);
   UrlbarPrefs.set("quicksuggest.realtimeOptIn.notNowTypes", "");
@@ -440,9 +485,14 @@ function yelpMerinoResult() {
     payload: {
       source: "merino",
       provider: "yelp",
-      dynamicType: "yelpRealtime",
+      dynamicType: "realtime-yelpRealtime",
       telemetryType: "yelpRealtime",
       isSponsored: true,
+      items: [
+        {
+          some_value: "foo",
+        },
+      ],
     },
   };
 }

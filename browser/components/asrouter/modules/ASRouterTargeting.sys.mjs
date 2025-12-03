@@ -202,14 +202,20 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
-  AUS: ["@mozilla.org/updates/update-service;1", "nsIApplicationUpdateService"],
-  BrowserHandler: ["@mozilla.org/browser/clh;1", "nsIBrowserHandler"],
-  ScreenManager: ["@mozilla.org/gfx/screenmanager;1", "nsIScreenManager"],
+  AUS: [
+    "@mozilla.org/updates/update-service;1",
+    Ci.nsIApplicationUpdateService,
+  ],
+  BrowserHandler: ["@mozilla.org/browser/clh;1", Ci.nsIBrowserHandler],
+  ScreenManager: ["@mozilla.org/gfx/screenmanager;1", Ci.nsIScreenManager],
   TrackingDBService: [
     "@mozilla.org/tracking-db-service;1",
-    "nsITrackingDBService",
+    Ci.nsITrackingDBService,
   ],
-  UpdateCheckSvc: ["@mozilla.org/updates/update-checker;1", "nsIUpdateChecker"],
+  UpdateCheckSvc: [
+    "@mozilla.org/updates/update-checker;1",
+    Ci.nsIUpdateChecker,
+  ],
 });
 
 const FXA_USERNAME_PREF = "services.sync.username";
@@ -541,11 +547,7 @@ export function getSortedMessages(messages, options = {}) {
  *                    its type (web extenstion or custom url) and the parsed url(s)
  *
  * @param {string} url - A URL string for home page or newtab page
- * @returns {Object} {
- *   isWebExt: boolean,
- *   isCustomUrl: boolean,
- *   urls: Array<{url: string, host: string}>
- * }
+ * @returns  {{isWebExt: boolean, isCustomUrl: boolean, urls: {url: string, host: string}[]}}
  */
 function parseAboutPageURL(url) {
   let ret = {
@@ -1131,7 +1133,8 @@ const TargetingGetters = {
       .getCharPref("distribution.id", "");
   },
 
-  /** Where the Firefox View button is shown, if at all.
+  /**
+   * Where the Firefox View button is shown, if at all.
    * @return {string} container of the button if it is shown in the toolbar/overflow menu
    * @return {string} `null` if the button has been removed
    */

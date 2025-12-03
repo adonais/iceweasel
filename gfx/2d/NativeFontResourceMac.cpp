@@ -82,7 +82,7 @@ void NativeFontResourceMac::RegisterMemoryReporter() {
 
 /* static */
 already_AddRefed<NativeFontResourceMac> NativeFontResourceMac::Create(
-    uint8_t* aFontData, uint32_t aDataLength) {
+    const uint8_t* aFontData, uint32_t aDataLength) {
   uint8_t* fontData = (uint8_t*)malloc(aDataLength);
   if (!fontData) {
     return nullptr;

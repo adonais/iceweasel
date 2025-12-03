@@ -189,6 +189,7 @@ class NotificationRobot {
 
                 var retries = 0
                 while (itemContainingText(appName).exists() && retries++ < 3) {
+                    Log.i(TAG, "swipeDownloadNotification: Started try #$retries to swipe $direction the download notification")
                     // Swipe left the download system notification
                     if (direction == "Left") {
                         itemContainingText(appName)
@@ -235,7 +236,7 @@ class NotificationRobot {
                 }
 
                 break
-            } catch (e: AssertionError) {
+            } catch (e: Throwable) {
                 Log.i(TAG, "swipeDownloadNotification: AssertionError caught, executing fallback methods")
                 if (i == RETRY_COUNT) {
                     throw e

@@ -100,7 +100,7 @@
 }
 
 .pointerlockfswarning-domain {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   margin: 0;
 }
 

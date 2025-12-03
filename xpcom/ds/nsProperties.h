@@ -10,7 +10,6 @@
 #include "nsIProperties.h"
 #include "nsInterfaceHashtable.h"
 #include "nsHashKeys.h"
-#include "mozilla/Attributes.h"
 
 typedef nsInterfaceHashtable<nsCharPtrHashKey, nsISupports>
     nsProperties_HashBase;

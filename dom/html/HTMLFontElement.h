@@ -6,7 +6,6 @@
 #ifndef HTMLFontElement_h___
 #define HTMLFontElement_h___
 
-#include "mozilla/Attributes.h"
 #include "nsGenericHTMLElement.h"
 
 namespace mozilla::dom {

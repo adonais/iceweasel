@@ -195,7 +195,7 @@ class TabPriorityWatcher {
     };
   }
 
-  /** nsIObserver **/
+  /** nsIObserver */
   observe(subject, topic, data) {
     if (topic != PRIORITY_SET_TOPIC) {
       Assert.ok(false, "TabPriorityWatcher is observing the wrong topic");

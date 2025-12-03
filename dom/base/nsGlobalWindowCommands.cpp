@@ -8,7 +8,6 @@
 
 #include "ContentEventHandler.h"
 #include "ErrorList.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/ControllerCommand.h"

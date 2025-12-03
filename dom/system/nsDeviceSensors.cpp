@@ -8,7 +8,6 @@
 
 #include <cmath>
 
-#include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Hal.h"
 #include "mozilla/HalSensor.h"

@@ -18,8 +18,6 @@
 
 #include "wasm/WasmCompile.h"
 
-#include "mozilla/Maybe.h"
-
 #include <algorithm>
 #include <cstdint>
 

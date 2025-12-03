@@ -9,7 +9,6 @@
 
 #include "EventListenerManager.h"
 #include "jsapi.h"
-#include "mozilla/Attributes.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsGkAtoms.h"
 #include "nsIEventListenerService.h"

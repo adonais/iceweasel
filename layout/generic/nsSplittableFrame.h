@@ -12,7 +12,6 @@
 #ifndef nsSplittableFrame_h___
 #define nsSplittableFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "nsIFrame.h"
 
 // Derived class that allows splitting

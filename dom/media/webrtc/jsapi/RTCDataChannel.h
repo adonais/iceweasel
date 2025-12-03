@@ -7,7 +7,6 @@
 #ifndef DOM_MEDIA_WEBRTC_RTCDATACHANNEL_H_
 #define DOM_MEDIA_WEBRTC_RTCDATACHANNEL_H_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/RTCDataChannelBinding.h"

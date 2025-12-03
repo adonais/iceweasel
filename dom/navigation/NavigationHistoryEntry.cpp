@@ -107,24 +107,31 @@ bool NavigationHistoryEntry::SameDocument() const {
 void NavigationHistoryEntry::GetState(JSContext* aCx,
                                       JS::MutableHandle<JS::Value> aResult,
                                       ErrorResult& aRv) const {
-  if (!mSHInfo) {
-    return;
-  }
-  RefPtr<nsStructuredCloneContainer> state = mSHInfo->GetNavigationState();
-  if (!state) {
-    aResult.setUndefined();
+  // Step 1
+  aResult.setUndefined();
+  if (!HasActiveDocument()) {
     return;
   }
 
+  // Step 2
+  RefPtr<nsIStructuredCloneContainer> state = mSHInfo->GetNavigationAPIState();
+  if (!state) {
+    return;
+  }
   nsresult rv = state->DeserializeToJsval(aCx, aResult);
   if (NS_FAILED(rv)) {
-    // TODO change this to specific exception
+    // nsStructuredCloneContainer::DeserializeToJsval suppresses exceptions, so
+    // the best we can do is just re-throw the NS_ERROR_DOM_DATA_CLONE_ERR. When
+    // nsStructuredCloneContainer::DeserializeToJsval throws better exceptions
+    // this should too.
+    // See also: NavigationDestination::GetState
     aRv.Throw(rv);
   }
 }
 
-void NavigationHistoryEntry::SetState(nsStructuredCloneContainer* aState) {
-  mSHInfo->SetNavigationState(aState);
+void NavigationHistoryEntry::SetNavigationAPIState(
+    nsIStructuredCloneContainer* aState) {
+  mSHInfo->SetNavigationAPIState(aState);
 }
 
 bool NavigationHistoryEntry::IsSameEntry(
@@ -159,12 +166,13 @@ const nsID& NavigationHistoryEntry::Key() const {
   return mSHInfo->NavigationKey();
 }
 
-nsStructuredCloneContainer* NavigationHistoryEntry::GetNavigationState() const {
+nsIStructuredCloneContainer* NavigationHistoryEntry::GetNavigationAPIState()
+    const {
   if (!mSHInfo) {
     return nullptr;
   }
 
-  return mSHInfo->GetNavigationState();
+  return mSHInfo->GetNavigationAPIState();
 }
 
 void NavigationHistoryEntry::ResetIndexForDisposal() { mIndex = -1; }

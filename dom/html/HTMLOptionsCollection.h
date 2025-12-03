@@ -6,7 +6,6 @@
 #ifndef mozilla_dom_HTMLOptionsCollection_h
 #define mozilla_dom_HTMLOptionsCollection_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "nsCOMPtr.h"
 #include "nsError.h"

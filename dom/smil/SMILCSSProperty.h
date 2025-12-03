@@ -9,7 +9,6 @@
 #ifndef DOM_SMIL_SMILCSSPROPERTY_H_
 #define DOM_SMIL_SMILCSSPROPERTY_H_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "nsAtom.h"
 #include "nsCSSPropertyID.h"

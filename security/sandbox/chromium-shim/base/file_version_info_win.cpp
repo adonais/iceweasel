@@ -13,7 +13,6 @@
 #include "base/memory/ptr_util.h"
 #include "base/threading/scoped_blocking_call.h"
 
-#include "mozilla/Unused.h"
 
 namespace {
 
@@ -85,6 +84,6 @@ FileVersionInfoWin::FileVersionInfoWin(std::vector<uint8_t>&& data,
       fixed_file_info_(GetVsFixedFileInfo(data_)) {
   DCHECK(!owned_data_.empty());
 
-  mozilla::Unused << language_;
-  mozilla::Unused << code_page_;
+  (void)language_;
+  (void)code_page_;
 }

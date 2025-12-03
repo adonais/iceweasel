@@ -13,7 +13,6 @@
 
 #include "nsCOMPtr.h"
 #include "nsCOMArray.h"
-#include "mozilla/Attributes.h"
 #ifdef MOZ_BACKGROUNDTASKS
 #  include "mozilla/BackgroundTasks.h"
 #endif

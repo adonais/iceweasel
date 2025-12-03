@@ -13,7 +13,6 @@ prefs = [
  "security.webauthn.ctap2=true",
  "security.webauthn.enable_conditional_mediation=true",
  "security.webauthn.enable_macos_passkeys=false",
- "security.certerrors.felt-privacy-v1=true"
 ]
 
 ["browser_abort_visibility.js"]

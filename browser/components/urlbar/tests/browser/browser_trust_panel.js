@@ -23,9 +23,13 @@ add_setup(async function setup() {
       ["browser.urlbar.trustPanel.featureGate", true],
     ],
   });
+  registerCleanupFunction(async () => {
+    await PlacesUtils.history.clear();
+  });
 });
 
 let urlbarBtn = win => win.document.getElementById("trust-icon");
+let urlbarLabel = win => win.document.getElementById("trust-label");
 let urlbarIcon = win =>
   gBrowser.ownerGlobal
     .getComputedStyle(urlbarBtn(win))
@@ -55,6 +59,10 @@ add_task(async function basic_test() {
   await BrowserTestUtils.waitForCondition(() => urlbarIcon(window) != "none");
 
   Assert.equal(urlbarIcon(window), ETP_ACTIVE_ICON, "Showing trusted icon");
+  Assert.ok(
+    !BrowserTestUtils.isVisible(urlbarLabel(window)),
+    "Not showing Not Secure label"
+  );
 
   await toggleETP(tab);
   Assert.equal(
@@ -67,5 +75,22 @@ add_task(async function basic_test() {
   Assert.equal(urlbarIcon(window), ETP_ACTIVE_ICON, "Showing trusted icon");
 
   await BrowserTestUtils.removeTab(tab);
-  await PlacesUtils.history.clear();
+});
+
+add_task(async function test_notsecure_label() {
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    opening: "http://example.com",
+    waitForLoad: true,
+  });
+
+  await BrowserTestUtils.waitForCondition(() => urlbarIcon(window) != "none");
+
+  Assert.ok(
+    BrowserTestUtils.isVisible(urlbarLabel(window)),
+    "Showing Not Secure label"
+  );
+
+  await BrowserTestUtils.removeTab(tab);
 });

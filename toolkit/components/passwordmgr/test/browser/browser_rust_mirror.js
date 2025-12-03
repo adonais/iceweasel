@@ -11,6 +11,9 @@ const { LoginManagerRustStorage } = ChromeUtils.importESModule(
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
+const { LoginCSVImport } = ChromeUtils.importESModule(
+  "resource://gre/modules/LoginCSVImport.sys.mjs"
+);
 
 /**
  * Tests addLogin gets synced to Rust Storage
@@ -24,12 +27,15 @@ add_task(async function test_mirror_addLogin() {
     username: "username",
     password: "password",
   });
+  const addLoginFinishedPromise = TestUtils.topicObserved(
+    "rust-mirror.event.addLogin.finished"
+  );
   await Services.logins.addLoginAsync(loginInfo);
+  await addLoginFinishedPromise;
 
   // note LoginManagerRustStorage is a singleton and already initialized when
   // Services.logins gets initialized.
   const rustStorage = new LoginManagerRustStorage();
-
   const storedLoginInfos = await Services.logins.getAllLogins();
   const rustStoredLoginInfos = await rustStorage.getAllLogins();
   LoginTestUtils.assertLoginListsEqual(storedLoginInfos, rustStoredLoginInfos);
@@ -51,9 +57,11 @@ add_task(async function test_mirror_modifyLogin() {
     username: "username",
     password: "password",
   });
+  const addLoginFinishedPromise = TestUtils.topicObserved(
+    "rust-mirror.event.addLogin.finished"
+  );
   await Services.logins.addLoginAsync(loginInfo);
-
-  const rustStorage = new LoginManagerRustStorage();
+  await addLoginFinishedPromise;
 
   const [storedLoginInfo] = await Services.logins.getAllLogins();
 
@@ -63,13 +71,17 @@ add_task(async function test_mirror_modifyLogin() {
     usernameField: "new_form_field_username",
     passwordField: "new_form_field_password",
   });
+  const modifyLoginFinishedPromise = TestUtils.topicObserved(
+    "rust-mirror.event.modifyLogin.finished"
+  );
   Services.logins.modifyLogin(storedLoginInfo, modifiedLoginInfo);
+  await modifyLoginFinishedPromise;
 
+  const rustStorage = new LoginManagerRustStorage();
   const [storedModifiedLoginInfo] = await Services.logins.getAllLogins();
   const [rustStoredModifiedLoginInfo] = await rustStorage.searchLoginsAsync({
     guid: storedLoginInfo.guid,
   });
-
   LoginTestUtils.assertLoginListsEqual(
     [storedModifiedLoginInfo],
     [rustStoredModifiedLoginInfo]
@@ -92,16 +104,97 @@ add_task(async function test_mirror_removeLogin() {
     username: "username",
     password: "password",
   });
+  const addLoginFinishedPromise = TestUtils.topicObserved(
+    "rust-mirror.event.addLogin.finished"
+  );
   await Services.logins.addLoginAsync(loginInfo);
-
-  const rustStorage = new LoginManagerRustStorage();
+  await addLoginFinishedPromise;
 
   const [storedLoginInfo] = await Services.logins.getAllLogins();
-
+  const removeLoginFinishedPromise = TestUtils.topicObserved(
+    "rust-mirror.event.removeLogin.finished"
+  );
   Services.logins.removeLogin(storedLoginInfo);
+  await removeLoginFinishedPromise;
 
+  const rustStorage = new LoginManagerRustStorage();
   const allLogins = await rustStorage.getAllLogins();
   Assert.equal(allLogins.length, 0);
+
+  LoginTestUtils.clearData();
+  rustStorage.removeAllLogins();
+  await SpecialPowers.flushPrefEnv();
+});
+
+/**
+ * Tests CSV import: addition gets synced to Rust Storage
+ */
+add_task(async function test_mirror_csv_import_add() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["signon.rustMirror.enabled", true]],
+  });
+
+  let csvFile = await LoginTestUtils.file.setupCsvFileWithLines([
+    "url,username,password,httpRealm,formActionOrigin,guid,timeCreated,timeLastUsed,timePasswordChanged",
+    `https://example.com,joe@example.com,qwerty,My realm,,{5ec0d12f-e194-4279-ae1b-d7d281bb46f0},1589617814635,1589710449871,1589617846802`,
+  ]);
+  const importLoginsFinishedPromise = TestUtils.topicObserved(
+    "rust-mirror.event.importLogins.finished"
+  );
+  await LoginCSVImport.importFromCSV(csvFile.path);
+  // wait for the mirror to complete
+  await importLoginsFinishedPromise;
+
+  const rustStorage = new LoginManagerRustStorage();
+  const storedLoginInfos = await Services.logins.getAllLogins();
+  const rustStoredLoginInfos = await rustStorage.getAllLogins();
+  LoginTestUtils.assertLoginListsEqual(storedLoginInfos, rustStoredLoginInfos);
+
+  LoginTestUtils.clearData();
+  rustStorage.removeAllLogins();
+  await SpecialPowers.flushPrefEnv();
+});
+
+/**
+ * Tests CSV import: modification gets synced to Rust Storage
+ */
+add_task(async function test_mirror_csv_import_modify() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["signon.rustMirror.enabled", true]],
+  });
+
+  // create a login
+  const loginInfo = LoginTestUtils.testData.formLogin({
+    origin: "https://example.com",
+    username: "username",
+    password: "password",
+  });
+  const addLoginFinishedPromise = TestUtils.topicObserved(
+    "rust-mirror.event.addLogin.finished"
+  );
+  const login = await Services.logins.addLoginAsync(loginInfo);
+  await addLoginFinishedPromise;
+
+  // and import it, so we update
+  let csvFile = await LoginTestUtils.file.setupCsvFileWithLines([
+    "url,username,password,httpRealm,formActionOrigin,guid,timeCreated,timeLastUsed,timePasswordChanged",
+    `https://example.com,username,qwerty,My realm,,${login.guid},1589617814635,1589710449871,1589617846802`,
+  ]);
+  const importLoginsFinishedPromise = TestUtils.topicObserved(
+    "rust-mirror.event.importLogins.finished"
+  );
+  await LoginCSVImport.importFromCSV(csvFile.path);
+  // wait for the mirror to complete
+  await importLoginsFinishedPromise;
+
+  const rustStorage = new LoginManagerRustStorage();
+  const [storedLoginInfo] = await Services.logins.getAllLogins();
+  const [rustStoredLoginInfo] = await rustStorage.getAllLogins();
+  Assert.equal(
+    storedLoginInfo.password,
+    rustStoredLoginInfo.password,
+    "password has been updated via csv import"
+  );
 
   LoginTestUtils.clearData();
   rustStorage.removeAllLogins();
@@ -156,10 +249,13 @@ add_task(async function test_migration_is_idempotent() {
     username: "test-user",
     password: "secure-password",
   });
+  const addLoginFinishedPromise = TestUtils.topicObserved(
+    "rust-mirror.event.addLogin.finished"
+  );
   await Services.logins.addLoginAsync(login);
+  await addLoginFinishedPromise;
 
   const rustStorage = new LoginManagerRustStorage();
-
   let rustLogins = await rustStorage.getAllLogins();
   Assert.equal(
     rustLogins.length,
@@ -171,14 +267,13 @@ add_task(async function test_migration_is_idempotent() {
   await SpecialPowers.pushPrefEnv({
     set: [["signon.rustMirror.enabled", false]],
   });
-  // using the migrationNeeded pref change as an indicator that the migration did run
-  const prefChangePromise = TestUtils.waitForPrefChange(
-    "signon.rustMirror.migrationNeeded"
+  const migrationFinishedPromise = TestUtils.topicObserved(
+    "rust-mirror.migration.finished"
   );
   await SpecialPowers.pushPrefEnv({
     set: [["signon.rustMirror.enabled", true]],
   });
-  await prefChangePromise;
+  await migrationFinishedPromise;
 
   rustLogins = await rustStorage.getAllLogins();
   Assert.equal(rustLogins.length, 1, "No duplicate after second migration");
@@ -221,16 +316,13 @@ add_task(async function test_migration_partial_failure() {
   await Services.logins.addLoginAsync(login_bad);
 
   // trigger again
-  await SpecialPowers.pushPrefEnv({
-    set: [["signon.rustMirror.enabled", false]],
-  });
+  const migrationFinishedPromise = TestUtils.topicObserved(
+    "rust-mirror.migration.finished"
+  );
   await SpecialPowers.pushPrefEnv({
     set: [["signon.rustMirror.enabled", true]],
   });
-
-  // and wait a little, due to the lack of a migration-complete event.
-  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
-  await new Promise(resolve => setTimeout(resolve, 200));
+  await migrationFinishedPromise;
 
   const rustLogins = await rustStorage.getAllLogins();
   Assert.equal(rustLogins.length, 1, "only valid login migrated");
@@ -262,16 +354,13 @@ add_task(async function test_migration_rejects_when_bulk_add_rejects() {
   await Services.logins.addLoginAsync(login);
 
   // trigger again
-  await SpecialPowers.pushPrefEnv({
-    set: [["signon.rustMirror.enabled", false]],
-  });
+  const migrationFinishedPromise = TestUtils.topicObserved(
+    "rust-mirror.migration.finished"
+  );
   await SpecialPowers.pushPrefEnv({
     set: [["signon.rustMirror.enabled", true]],
   });
-
-  // and wait a little, due to the lack of a migration-complete event.
-  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
-  await new Promise(resolve => setTimeout(resolve, 200));
+  await migrationFinishedPromise;
 
   const rustLogins = await rustStorage.getAllLogins();
   Assert.equal(rustLogins.length, 0, "zero logins migrated");
@@ -353,7 +442,7 @@ add_task(async function test_rust_migration_failure_event() {
 /**
  * Ensures that migrating a large number of logins (100) from the JSON store to
  * the Rust store completes within a reasonable time frame (under 1 second).
- **/
+ */
 add_task(async function test_migration_time_under_threshold() {
   // ensure mirror is off
   await SpecialPowers.pushPrefEnv({

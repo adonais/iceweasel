@@ -44,7 +44,7 @@ void PostTraversalTask::Run() {
       break;
 
     case Type::InitializeFamily:
-      Unused << gfxPlatformFontList::PlatformFontList()->InitializeFamily(
+      (void)gfxPlatformFontList::PlatformFontList()->InitializeFamily(
           static_cast<fontlist::Family*>(mTarget));
       break;
 

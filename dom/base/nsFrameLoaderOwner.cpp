@@ -146,7 +146,7 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
           MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
                   ("nsFrameLoaderOwner::ChangeRemotenessCommon: store the old "
                    "page in bfcache"));
-          Unused << bc->SetIsInBFCache(true);
+          (void)bc->SetIsInBFCache(true);
           bfcacheEntry->SetFrameLoader(mFrameLoader);
           // Session history owns now the frameloader.
           mFrameLoader = nullptr;

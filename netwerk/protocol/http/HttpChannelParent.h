@@ -96,6 +96,12 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   // Calls SendSetPriority if mIPCClosed is false.
   void DoSendSetPriority(int16_t aValue);
 
+  // Calls SendReportLNAToConsole if mIPCClosed is false.
+  void DoSendReportLNAToConsole(const NetAddr& aPeerAddr,
+                                const nsACString& aMessageType,
+                                const nsACString& aPromptAction,
+                                const nsACString& aTopLevelSite);
+
   // Callback while background channel is ready.
   void OnBackgroundParentReady(HttpBackgroundChannelParent* aBgParent);
   // Callback while background channel is destroyed.
@@ -242,6 +248,12 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   // That is, we may suspend the channel if the ODA-s to child process are not
   // consumed quickly enough. Otherwise, memory explosion could happen.
   bool NeedFlowControl();
+
+  // Get the appropriate event target for background parent operations based on
+  // channel's class of service flags: synchronous event target for urgent
+  // channels, queued for others to balance responsiveness and prevent
+  // head-of-line blocking.
+  nsCOMPtr<nsISerialEventTarget> GetEventTargetForBgParentWait();
 
   bool IsRedirectDueToAuthRetry(uint32_t redirectFlags);
 

@@ -6,7 +6,6 @@
 
 #include "mozilla/dom/ToJSValue.h"
 
-#include "mozilla/StringBuffer.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/Exceptions.h"
 #include "mozilla/dom/Promise.h"

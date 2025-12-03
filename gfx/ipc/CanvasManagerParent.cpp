@@ -100,7 +100,7 @@ MOZ_RUNINIT CanvasManagerParent::ManagerSet CanvasManagerParent::sManagers;
   }
 
   for (const auto& actor : actors) {
-    Unused << NS_WARN_IF(!actor->SendDeactivate());
+    (void)NS_WARN_IF(!actor->SendDeactivate());
   }
 }
 
@@ -164,8 +164,7 @@ mozilla::ipc::IPCResult CanvasManagerParent::RecvInitialize(
 
 already_AddRefed<layers::PCanvasParent>
 CanvasManagerParent::AllocPCanvasParent() {
-  if (NS_WARN_IF(!gfx::gfxVars::RemoteCanvasEnabled() &&
-                 !gfx::gfxVars::UseAcceleratedCanvas2D())) {
+  if (NS_WARN_IF(!gfx::gfxVars::UseAcceleratedCanvas2D())) {
     MOZ_ASSERT_UNREACHABLE("AllocPCanvasParent without remote canvas");
     return nullptr;
   }

@@ -14,7 +14,6 @@
 #include "mozilla/Casting.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Services.h"
-#include "mozilla/Unused.h"
 #include "mozpkix/Time.h"
 #include "mozpkix/pkixnss.h"
 #include "mozpkix/pkixtypes.h"
@@ -393,7 +392,7 @@ nsresult nsNSSCertificateDB::handleCACertDownload(NotNull<nsIArray*> x509Certs,
       continue;
     }
 
-    Unused << tmpCert2.release();
+    (void)tmpCert2.release();
   }
 
   return ImportCertsIntoPermanentStorage(certList);
@@ -475,7 +474,7 @@ static nsresult ImportCertsIntoTempStorage(
 
     if (CERT_AddCertToListTail(temporaryCerts.get(), cert.get()) ==
         SECSuccess) {
-      Unused << cert.release();
+      (void)cert.release();
     }
   }
 
@@ -1139,7 +1138,7 @@ NS_IMETHODIMP nsNSSCertificateDB::AsPKCS7Blob(
     return NS_ERROR_FAILURE;
   }
   // cmsg owns sigd now.
-  Unused << sigd.release();
+  (void)sigd.release();
 
   UniquePLArenaPool arena(PORT_NewArena(1024));
   if (!arena) {
@@ -1255,8 +1254,7 @@ nsresult VerifyCertAtTime(nsIX509Cert* aCert, nsIX509CertDB::VerifyUsage aUsage,
                                           OriginAttributes(), &evStatus);
   } else {
     const nsCString& flatHostname = PromiseFlatCString(aHostname);
-    VerifyUsage vu;
-    MOZ_TRY_VAR(vu, MapX509UsageToVerifierUsage(aUsage));
+    VerifyUsage vu = MOZ_TRY(MapX509UsageToVerifierUsage(aUsage));
     result = certVerifier->VerifyCert(
         certBytes, vu, aTime,
         nullptr,  // Assume no context
@@ -1318,11 +1316,11 @@ class VerifyCertAtTimeTask final : public CryptoTask {
   virtual void CallCallback(nsresult rv) override {
     if (NS_FAILED(rv)) {
       nsTArray<RefPtr<nsIX509Cert>> tmp;
-      Unused << mCallback->VerifyCertFinished(SEC_ERROR_LIBRARY_FAILURE, tmp,
-                                              false);
+      (void)mCallback->VerifyCertFinished(SEC_ERROR_LIBRARY_FAILURE, tmp,
+                                          false);
     } else {
-      Unused << mCallback->VerifyCertFinished(mPRErrorCode, mVerifiedCertList,
-                                              mHasEVPolicy);
+      (void)mCallback->VerifyCertFinished(mPRErrorCode, mVerifiedCertList,
+                                          mHasEVPolicy);
     }
   }
 

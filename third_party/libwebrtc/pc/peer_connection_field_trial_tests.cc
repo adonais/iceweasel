@@ -17,9 +17,10 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/strings/string_view.h"
+#include "api/create_modular_peer_connection_factory.h"
 #include "api/enable_media_with_defaults.h"
 #include "api/environment/environment_factory.h"
-#include "api/field_trials.h"
+#include "api/jsep.h"
 #include "api/media_types.h"
 #include "api/peer_connection_interface.h"
 #include "api/rtp_parameters.h"
@@ -66,8 +67,7 @@ class PeerConnectionFieldTrialTest : public ::testing::Test {
   void CreatePCFactory(absl::string_view field_trials) {
     PeerConnectionFactoryDependencies pcf_deps;
     pcf_deps.signaling_thread = Thread::Current();
-    pcf_deps.env = CreateEnvironment(
-        std::make_unique<FieldTrials>(CreateTestFieldTrials(field_trials)));
+    pcf_deps.env = CreateEnvironment(CreateTestFieldTrialsPtr(field_trials));
     pcf_deps.adm = FakeAudioCaptureModule::Create();
     EnableMediaWithDefaults(pcf_deps);
     pc_factory_ = CreateModularPeerConnectionFactory(std::move(pcf_deps));
@@ -106,7 +106,7 @@ TEST_F(PeerConnectionFieldTrialTest, EnableDependencyDescriptorAdvertised) {
   WrapperPtr caller = CreatePeerConnection();
   caller->AddTransceiver(MediaType::VIDEO);
 
-  auto offer = caller->CreateOffer();
+  std::unique_ptr<SessionDescriptionInterface> offer = caller->CreateOffer();
   auto contents1 = offer->description()->contents();
   ASSERT_EQ(1u, contents1.size());
 
@@ -139,7 +139,7 @@ TEST_F(PeerConnectionFieldTrialTest, MAYBE_InjectDependencyDescriptor) {
   WrapperPtr callee = CreatePeerConnection();
   caller->AddTransceiver(MediaType::VIDEO);
 
-  auto offer = caller->CreateOffer();
+  std::unique_ptr<SessionDescriptionInterface> offer = caller->CreateOffer();
   ContentInfos& contents1 = offer->description()->contents();
   ASSERT_EQ(1u, contents1.size());
 
@@ -182,7 +182,7 @@ TEST_F(PeerConnectionFieldTrialTest, MAYBE_InjectDependencyDescriptor) {
   caller->SetLocalDescription(offer->Clone());
 
   ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));
-  auto answer = callee->CreateAnswer();
+  std::unique_ptr<SessionDescriptionInterface> answer = callee->CreateAnswer();
 
   ContentInfos& contents2 = answer->description()->contents();
   ASSERT_EQ(1u, contents2.size());

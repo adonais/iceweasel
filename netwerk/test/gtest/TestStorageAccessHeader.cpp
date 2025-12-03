@@ -35,24 +35,23 @@ TEST_P(SAParseTest, Simple) {
   Result<ActivateStorageAccess, nsresult> activate =
       ParseActivateStorageAccess(test.header);
 
-  Unused << activate
-                .map([&test](const ActivateStorageAccess& got) {
-                  EXPECT_EQ(test.result, NS_OK);
-                  EXPECT_EQ(test.variant, got.variant);
-                  EXPECT_EQ(test.origin, got.origin);
-                  if (got.variant !=
-                      ActivateStorageAccessVariant::RetryOrigin) {
-                    // origin only gets set in the RetryOrigin variant
-                    EXPECT_EQ(got.origin, ""_ns);
-                  }
-                  return 0;
-                })
-                .mapErr([&test](nsresult gotResult) {
-                  EXPECT_EQ(test.result, gotResult);
-                  EXPECT_EQ(test.origin, ""_ns);
+  (void)activate
+      .map([&test](const ActivateStorageAccess& got) {
+        EXPECT_EQ(test.result, NS_OK);
+        EXPECT_EQ(test.variant, got.variant);
+        EXPECT_EQ(test.origin, got.origin);
+        if (got.variant != ActivateStorageAccessVariant::RetryOrigin) {
+          // origin only gets set in the RetryOrigin variant
+          EXPECT_EQ(got.origin, ""_ns);
+        }
+        return 0;
+      })
+      .mapErr([&test](nsresult gotResult) {
+        EXPECT_EQ(test.result, gotResult);
+        EXPECT_EQ(test.origin, ""_ns);
 
-                  return gotResult;
-                });
+        return gotResult;
+      });
 }
 
 MOZ_RUNINIT const SAParseTestData sa_parse_tests[] = {

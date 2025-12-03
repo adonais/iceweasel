@@ -14,7 +14,6 @@
 #include "SVGGraphicsElement.h"
 #include "SVGPoint.h"
 #include "SVGPreserveAspectRatio.h"
-#include "mozilla/Attributes.h"
 #include "nsIContentInlines.h"
 
 namespace mozilla {

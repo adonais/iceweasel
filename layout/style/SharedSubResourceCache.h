@@ -581,7 +581,7 @@ void SharedSubResourceCache<Traits, Derived>::LoadCompleted(
   Maybe<LoadingValue*> value = mLoading.Extract(key);
   MOZ_DIAGNOSTIC_ASSERT(value);
   MOZ_DIAGNOSTIC_ASSERT(value.value() == &aValue);
-  Unused << value;
+  (void)value;
   aValue.SetLoadCompleted();
   MOZ_ASSERT(!aValue.IsLoading(), "Check that SetLoadCompleted is effectful.");
 }

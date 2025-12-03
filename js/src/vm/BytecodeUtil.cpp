@@ -2769,8 +2769,8 @@ static bool GetPCCountJSON(JSContext* cx, const ScriptAndCounts& sac,
   json.beginListProperty("opcodes");
 
   uint64_t hits = 0;
-  for (BytecodeRangeWithPosition range(cx, script); !range.empty();
-       range.popFront()) {
+  for (BytecodeRangeWithPosition range(cx, script, SkipPrologueOps::Yes);
+       !range.empty(); range.popFront()) {
     jsbytecode* pc = range.frontPC();
     size_t offset = script->pcToOffset(pc);
     JSOp op = JSOp(*pc);

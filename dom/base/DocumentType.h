@@ -11,7 +11,6 @@
 #ifndef DocumentType_h
 #define DocumentType_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/CharacterData.h"
 #include "nsCOMPtr.h"
 #include "nsIContent.h"

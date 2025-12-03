@@ -35,7 +35,7 @@ import org.mozilla.focus.state.AppAction
 fun TopSitesOverlay(modifier: Modifier = Modifier) {
     val components = components
     val topSitesState = components.appStore.observeAsComposableState { state -> state.topSites }
-    val topSites = topSitesState.value ?: listOf()
+    val topSites = topSitesState.value
     val showRenameDialog: MutableState<Boolean> = remember { mutableStateOf(false) }
     val topSiteItem: MutableState<TopSite?> = remember { mutableStateOf(null) }
 

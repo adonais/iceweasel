@@ -39,7 +39,7 @@ export default [
   "**/reftest/",
   "**/reftests/",
   // Don't ignore the reftest harness files.
-  "!/layout/tools/reftest/",
+  "!layout/tools/reftest/",
 
   // Exclude expected objdirs.
   "obj*/",
@@ -153,6 +153,7 @@ export default [
 
   // Intentional broken files
   "dom/base/test/file_js_cache_syntax_error.js",
+  "dom/base/test/file_js_cache_large_syntax_error.js",
   "dom/base/test/jsmodules/test_scriptNotParsedAsModule.html",
   "dom/base/test/jsmodules/test_syntaxError.html",
   "dom/base/test/jsmodules/test_syntaxErrorAsync.html",
@@ -170,6 +171,10 @@ export default [
   "dom/workers/test/importScripts_worker_imported3.js",
   "dom/workers/test/invalid.js",
   "dom/workers/test/threadErrors_worker1.js",
+
+  // Test files for serialization tests
+  "dom/serializers/tests/mochitest/file_htmlserializer_1*",
+  "dom/serializers/tests/mochitest/file_xhtmlserializer_1*",
 
   // Tests the module loader's path handling.
   // Dynamic imports contains non-optimal paths.

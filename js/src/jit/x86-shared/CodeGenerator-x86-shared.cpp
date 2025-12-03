@@ -662,20 +662,21 @@ void CodeGeneratorX86Shared::emitUndoALUOperationOOL(LInstruction* ins) {
 }
 
 void CodeGenerator::visitAddI(LAddI* ins) {
-  if (ins->rhs()->isConstant()) {
-    if (MOZ_UNLIKELY(ins->numDefs() == 1 &&
-                     ins->getDef(0)->policy() !=
-                         LDefinition::MUST_REUSE_INPUT &&
-                     ToRegister(ins->lhs()) != ToRegister(ins->output()))) {
+  Register lhs = ToRegister(ins->lhs());
+  const LAllocation* rhs = ins->rhs();
+  Register out = ToRegister(ins->output());
+
+  if (rhs->isConstant()) {
+    if (lhs != out) {
       MOZ_ASSERT(!ins->snapshot());
       // Special case to lower the add to LEA instruction.
-      masm.add32(Imm32(ToInt32(ins->rhs())), ToRegister(ins->lhs()),
-                 ToRegister(ins->output()));
+      masm.add32(Imm32(ToInt32(rhs)), lhs, out);
     } else {
-      masm.addl(Imm32(ToInt32(ins->rhs())), ToOperand(ins->lhs()));
+      masm.addl(Imm32(ToInt32(rhs)), lhs);
     }
   } else {
-    masm.addl(ToOperand(ins->rhs()), ToRegister(ins->lhs()));
+    MOZ_ASSERT(out == lhs);
+    masm.addl(ToOperand(rhs), lhs);
   }
 
   if (ins->snapshot()) {
@@ -691,24 +692,29 @@ void CodeGenerator::visitAddI(LAddI* ins) {
 }
 
 void CodeGenerator::visitAddI64(LAddI64* lir) {
-  LInt64Allocation lhs = lir->lhs();
+  Register64 lhs = ToRegister64(lir->lhs());
   LInt64Allocation rhs = lir->rhs();
 
-  MOZ_ASSERT(ToOutRegister64(lir) == ToRegister64(lhs));
+  MOZ_ASSERT(ToOutRegister64(lir) == lhs);
 
   if (IsConstant(rhs)) {
-    masm.add64(Imm64(ToInt64(rhs)), ToRegister64(lhs));
+    masm.add64(Imm64(ToInt64(rhs)), lhs);
     return;
   }
 
-  masm.add64(ToOperandOrRegister64(rhs), ToRegister64(lhs));
+  masm.add64(ToOperandOrRegister64(rhs), lhs);
 }
 
 void CodeGenerator::visitSubI(LSubI* ins) {
-  if (ins->rhs()->isConstant()) {
-    masm.subl(Imm32(ToInt32(ins->rhs())), ToOperand(ins->lhs()));
+  Register lhs = ToRegister(ins->lhs());
+  const LAllocation* rhs = ins->rhs();
+
+  MOZ_ASSERT(ToRegister(ins->output()) == lhs);
+
+  if (rhs->isConstant()) {
+    masm.subl(Imm32(ToInt32(rhs)), lhs);
   } else {
-    masm.subl(ToOperand(ins->rhs()), ToRegister(ins->lhs()));
+    masm.subl(ToOperand(rhs), lhs);
   }
 
   if (ins->snapshot()) {
@@ -738,8 +744,10 @@ void CodeGenerator::visitSubI64(LSubI64* lir) {
 }
 
 void CodeGenerator::visitMulI(LMulI* ins) {
-  const LAllocation* lhs = ins->lhs();
+  Register lhs = ToRegister(ins->lhs());
   const LAllocation* rhs = ins->rhs();
+  Register out = ToRegister(ins->output());
+
   MMul* mul = ins->mir();
   MOZ_ASSERT_IF(mul->mode() == MMul::Integer,
                 !mul->canBeNegativeZero() && !mul->canOverflow());
@@ -750,33 +758,78 @@ void CodeGenerator::visitMulI(LMulI* ins) {
     if (mul->canBeNegativeZero() && constant <= 0) {
       Assembler::Condition bailoutCond =
           (constant == 0) ? Assembler::Signed : Assembler::Equal;
-      masm.test32(ToRegister(lhs), ToRegister(lhs));
+      masm.test32(lhs, lhs);
       bailoutIf(bailoutCond, ins->snapshot());
+    }
+
+    if (!mul->canOverflow()) {
+      switch (constant) {
+        case 2:
+          if (lhs == out) {
+            masm.addl(lhs, lhs);
+          } else {
+            masm.leal(Operand(lhs, lhs, TimesOne), out);
+          }
+          return;
+        case 3:
+          masm.leal(Operand(lhs, lhs, TimesTwo), out);
+          return;
+        case 4:
+          if (lhs == out) {
+            masm.shll(Imm32(2), lhs);
+          } else {
+            masm.leal(Operand(lhs, TimesFour, 0), out);
+          }
+          return;
+        case 5:
+          masm.leal(Operand(lhs, lhs, TimesFour), out);
+          return;
+        case 8:
+          if (lhs == out) {
+            masm.shll(Imm32(3), lhs);
+          } else {
+            masm.leal(Operand(lhs, TimesEight, 0), out);
+          }
+          return;
+        case 9:
+          masm.leal(Operand(lhs, lhs, TimesEight), out);
+          return;
+        default:
+          // Use shift if cannot overflow and constant is power of 2
+          int32_t shift = FloorLog2(constant);
+          if (constant > 0 && (1 << shift) == constant) {
+            if (lhs != out) {
+              masm.movl(lhs, out);
+            }
+            masm.shll(Imm32(shift), out);
+            return;
+          }
+      }
     }
 
     switch (constant) {
       case -1:
-        masm.negl(ToOperand(lhs));
+        if (lhs != out) {
+          masm.movl(lhs, out);
+        }
+        masm.negl(out);
         break;
       case 0:
-        masm.xorl(ToOperand(lhs), ToRegister(lhs));
+        masm.xorl(out, out);
         return;  // escape overflow check;
       case 1:
-        // nop
+        if (lhs != out) {
+          masm.movl(lhs, out);
+        }
         return;  // escape overflow check;
       case 2:
-        masm.addl(ToOperand(lhs), ToRegister(lhs));
-        break;
-      default:
-        if (!mul->canOverflow() && constant > 0) {
-          // Use shift if cannot overflow and constant is power of 2
-          int32_t shift = FloorLog2(constant);
-          if ((1 << shift) == constant) {
-            masm.shll(Imm32(shift), ToRegister(lhs));
-            return;
-          }
+        if (lhs == out) {
+          masm.addl(lhs, lhs);
+          break;
         }
-        masm.imull(Imm32(ToInt32(rhs)), ToRegister(lhs));
+        [[fallthrough]];
+      default:
+        masm.imull(Imm32(constant), lhs, out);
     }
 
     // Bailout on overflow
@@ -784,7 +837,9 @@ void CodeGenerator::visitMulI(LMulI* ins) {
       bailoutIf(Assembler::Overflow, ins->snapshot());
     }
   } else {
-    masm.imull(ToOperand(rhs), ToRegister(lhs));
+    MOZ_ASSERT(out == lhs);
+
+    masm.imull(ToOperand(rhs), lhs);
 
     // Bailout on overflow
     if (mul->canOverflow()) {
@@ -810,49 +865,10 @@ void CodeGenerator::visitMulI(LMulI* ins) {
       });
       addOutOfLineCode(ool, mul);
 
-      masm.test32(ToRegister(lhs), ToRegister(lhs));
+      masm.test32(lhs, lhs);
       masm.j(Assembler::Zero, ool->entry());
       masm.bind(ool->rejoin());
     }
-  }
-}
-
-void CodeGenerator::visitMulI64(LMulI64* lir) {
-  LInt64Allocation lhs = lir->lhs();
-  LInt64Allocation rhs = lir->rhs();
-
-  MOZ_ASSERT(ToRegister64(lhs) == ToOutRegister64(lir));
-
-  if (IsConstant(rhs)) {
-    int64_t constant = ToInt64(rhs);
-    switch (constant) {
-      case -1:
-        masm.neg64(ToRegister64(lhs));
-        return;
-      case 0:
-        masm.xor64(ToRegister64(lhs), ToRegister64(lhs));
-        return;
-      case 1:
-        // nop
-        return;
-      case 2:
-        masm.add64(ToRegister64(lhs), ToRegister64(lhs));
-        return;
-      default:
-        if (constant > 0) {
-          // Use shift if constant is power of 2.
-          int32_t shift = mozilla::FloorLog2(constant);
-          if (int64_t(1) << shift == constant) {
-            masm.lshift64(Imm32(shift), ToRegister64(lhs));
-            return;
-          }
-        }
-        Register temp = ToTempRegisterOrInvalid(lir->temp0());
-        masm.mul64(Imm64(constant), ToRegister64(lhs), temp);
-    }
-  } else {
-    Register temp = ToTempRegisterOrInvalid(lir->temp0());
-    masm.mul64(ToOperandOrRegister64(rhs), ToRegister64(lhs), temp);
   }
 }
 
@@ -1087,11 +1103,11 @@ void CodeGenerator::visitDivOrModConstantI(LDivOrModConstantI* ins) {
 
   // The absolute value of the denominator isn't a power of 2 (see LDivPowTwoI
   // and LModPowTwoI).
-  MOZ_ASSERT((Abs(d) & (Abs(d) - 1)) != 0);
+  MOZ_ASSERT(!mozilla::IsPowerOfTwo(mozilla::Abs(d)));
 
   // We will first divide by Abs(d), and negate the answer if d is negative.
   // If desired, this can be avoided by generalizing computeDivisionConstants.
-  auto rmc = ReciprocalMulConstants::computeSignedDivisionConstants(Abs(d));
+  auto rmc = ReciprocalMulConstants::computeSignedDivisionConstants(d);
 
   // We first compute (M * n) >> 32, where M = rmc.multiplier.
   masm.movl(Imm32(rmc.multiplier), eax);
@@ -1437,36 +1453,38 @@ void CodeGenerator::visitModI(LModI* ins) {
 }
 
 void CodeGenerator::visitBitNotI(LBitNotI* ins) {
-  const LAllocation* input = ins->input();
-  MOZ_ASSERT(!input->isConstant());
+  Register input = ToRegister(ins->input());
+  MOZ_ASSERT(input == ToRegister(ins->output()));
 
-  masm.notl(ToOperand(input));
+  masm.notl(input);
 }
 
 void CodeGenerator::visitBitOpI(LBitOpI* ins) {
-  const LAllocation* lhs = ins->lhs();
+  Register lhs = ToRegister(ins->lhs());
   const LAllocation* rhs = ins->rhs();
+
+  MOZ_ASSERT(lhs == ToRegister(ins->output()));
 
   switch (ins->bitop()) {
     case JSOp::BitOr:
       if (rhs->isConstant()) {
-        masm.orl(Imm32(ToInt32(rhs)), ToOperand(lhs));
+        masm.orl(Imm32(ToInt32(rhs)), lhs);
       } else {
-        masm.orl(ToOperand(rhs), ToRegister(lhs));
+        masm.orl(ToOperand(rhs), lhs);
       }
       break;
     case JSOp::BitXor:
       if (rhs->isConstant()) {
-        masm.xorl(Imm32(ToInt32(rhs)), ToOperand(lhs));
+        masm.xorl(Imm32(ToInt32(rhs)), lhs);
       } else {
-        masm.xorl(ToOperand(rhs), ToRegister(lhs));
+        masm.xorl(ToOperand(rhs), lhs);
       }
       break;
     case JSOp::BitAnd:
       if (rhs->isConstant()) {
-        masm.andl(Imm32(ToInt32(rhs)), ToOperand(lhs));
+        masm.andl(Imm32(ToInt32(rhs)), lhs);
       } else {
-        masm.andl(ToOperand(rhs), ToRegister(lhs));
+        masm.andl(ToOperand(rhs), lhs);
       }
       break;
     default:
@@ -1475,31 +1493,31 @@ void CodeGenerator::visitBitOpI(LBitOpI* ins) {
 }
 
 void CodeGenerator::visitBitOpI64(LBitOpI64* lir) {
-  LInt64Allocation lhs = lir->lhs();
+  Register64 lhs = ToRegister64(lir->lhs());
   LInt64Allocation rhs = lir->rhs();
 
-  MOZ_ASSERT(ToOutRegister64(lir) == ToRegister64(lhs));
+  MOZ_ASSERT(ToOutRegister64(lir) == lhs);
 
   switch (lir->bitop()) {
     case JSOp::BitOr:
       if (IsConstant(rhs)) {
-        masm.or64(Imm64(ToInt64(rhs)), ToRegister64(lhs));
+        masm.or64(Imm64(ToInt64(rhs)), lhs);
       } else {
-        masm.or64(ToOperandOrRegister64(rhs), ToRegister64(lhs));
+        masm.or64(ToOperandOrRegister64(rhs), lhs);
       }
       break;
     case JSOp::BitXor:
       if (IsConstant(rhs)) {
-        masm.xor64(Imm64(ToInt64(rhs)), ToRegister64(lhs));
+        masm.xor64(Imm64(ToInt64(rhs)), lhs);
       } else {
-        masm.xor64(ToOperandOrRegister64(rhs), ToRegister64(lhs));
+        masm.xor64(ToOperandOrRegister64(rhs), lhs);
       }
       break;
     case JSOp::BitAnd:
       if (IsConstant(rhs)) {
-        masm.and64(Imm64(ToInt64(rhs)), ToRegister64(lhs));
+        masm.and64(Imm64(ToInt64(rhs)), lhs);
       } else {
-        masm.and64(ToOperandOrRegister64(rhs), ToRegister64(lhs));
+        masm.and64(ToOperandOrRegister64(rhs), lhs);
       }
       break;
     default:
@@ -1510,8 +1528,11 @@ void CodeGenerator::visitBitOpI64(LBitOpI64* lir) {
 void CodeGenerator::visitShiftI(LShiftI* ins) {
   Register lhs = ToRegister(ins->lhs());
   const LAllocation* rhs = ins->rhs();
+  Register out = ToRegister(ins->output());
 
   if (rhs->isConstant()) {
+    MOZ_ASSERT(out == lhs);
+
     int32_t shift = ToInt32(rhs) & 0x1F;
     switch (ins->bitop()) {
       case JSOp::Lsh:
@@ -1538,18 +1559,32 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
     }
   } else {
     Register shift = ToRegister(rhs);
+    MOZ_ASSERT_IF(out != lhs, Assembler::HasBMI2());
+
     switch (ins->bitop()) {
       case JSOp::Lsh:
-        masm.lshift32(shift, lhs);
+        if (out != lhs) {
+          masm.shlxl(lhs, shift, out);
+        } else {
+          masm.lshift32(shift, lhs);
+        }
         break;
       case JSOp::Rsh:
-        masm.rshift32Arithmetic(shift, lhs);
+        if (out != lhs) {
+          masm.sarxl(lhs, shift, out);
+        } else {
+          masm.rshift32Arithmetic(shift, lhs);
+        }
         break;
       case JSOp::Ursh:
-        masm.rshift32(shift, lhs);
+        if (out != lhs) {
+          masm.shrxl(lhs, shift, out);
+        } else {
+          masm.rshift32(shift, lhs);
+        }
         if (ins->mir()->toUrsh()->fallible()) {
           // x >>> 0 can overflow.
-          masm.test32(lhs, lhs);
+          masm.test32(out, out);
           bailoutIf(Assembler::Signed, ins->snapshot());
         }
         break;
@@ -1559,117 +1594,31 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
   }
 }
 
-void CodeGenerator::visitShiftIntPtr(LShiftIntPtr* ins) {
-  Register lhs = ToRegister(ins->lhs());
-  const LAllocation* rhs = ins->rhs();
-
-  if (rhs->isConstant()) {
-    constexpr intptr_t mask = (sizeof(intptr_t) * CHAR_BIT) - 1;
-    int32_t shift = ToIntPtr(rhs) & mask;
-    switch (ins->bitop()) {
-      case JSOp::Lsh:
-        if (shift) {
-          masm.lshiftPtr(Imm32(shift), lhs);
-        }
-        break;
-      case JSOp::Rsh:
-        if (shift) {
-          masm.rshiftPtrArithmetic(Imm32(shift), lhs);
-        }
-        break;
-      case JSOp::Ursh:
-        if (shift) {
-          masm.rshiftPtr(Imm32(shift), lhs);
-        }
-        break;
-      default:
-        MOZ_CRASH("Unexpected shift op");
-    }
-  } else {
-    Register shift = ToRegister(rhs);
-    switch (ins->bitop()) {
-      case JSOp::Lsh:
-        masm.lshiftPtr(shift, lhs);
-        break;
-      case JSOp::Rsh:
-        masm.rshiftPtrArithmetic(shift, lhs);
-        break;
-      case JSOp::Ursh:
-        masm.rshiftPtr(shift, lhs);
-        break;
-      default:
-        MOZ_CRASH("Unexpected shift op");
-    }
-  }
-}
-
-void CodeGenerator::visitShiftI64(LShiftI64* lir) {
-  LInt64Allocation lhs = lir->lhs();
-  const LAllocation* rhs = lir->rhs();
-
-  MOZ_ASSERT(ToOutRegister64(lir) == ToRegister64(lhs));
-
-  if (rhs->isConstant()) {
-    int32_t shift = int32_t(rhs->toConstant()->toInt64() & 0x3F);
-    switch (lir->bitop()) {
-      case JSOp::Lsh:
-        if (shift) {
-          masm.lshift64(Imm32(shift), ToRegister64(lhs));
-        }
-        break;
-      case JSOp::Rsh:
-        if (shift) {
-          masm.rshift64Arithmetic(Imm32(shift), ToRegister64(lhs));
-        }
-        break;
-      case JSOp::Ursh:
-        if (shift) {
-          masm.rshift64(Imm32(shift), ToRegister64(lhs));
-        }
-        break;
-      default:
-        MOZ_CRASH("Unexpected shift op");
-    }
-    return;
-  }
-
-  Register shift = ToRegister(rhs);
-#ifdef JS_CODEGEN_X86
-  MOZ_ASSERT(shift == ecx);
-#endif
-  switch (lir->bitop()) {
-    case JSOp::Lsh:
-      masm.lshift64(shift, ToRegister64(lhs));
-      break;
-    case JSOp::Rsh:
-      masm.rshift64Arithmetic(shift, ToRegister64(lhs));
-      break;
-    case JSOp::Ursh:
-      masm.rshift64(shift, ToRegister64(lhs));
-      break;
-    default:
-      MOZ_CRASH("Unexpected shift op");
-  }
-}
-
 void CodeGenerator::visitUrshD(LUrshD* ins) {
   Register lhs = ToRegister(ins->lhs());
-  MOZ_ASSERT(ToRegister(ins->temp0()) == lhs);
-
   const LAllocation* rhs = ins->rhs();
   FloatRegister out = ToFloatRegister(ins->output());
+  Register temp = ToRegister(ins->temp0());
 
   if (rhs->isConstant()) {
+    MOZ_ASSERT(temp == lhs);
+
     int32_t shift = ToInt32(rhs) & 0x1F;
     if (shift) {
       masm.shrl(Imm32(shift), lhs);
     }
   } else {
+    MOZ_ASSERT_IF(temp != lhs, Assembler::HasBMI2());
+
     Register shift = ToRegister(rhs);
-    masm.rshift32(shift, lhs);
+    if (temp != lhs) {
+      masm.shrxl(lhs, shift, temp);
+    } else {
+      masm.rshift32(shift, lhs);
+    }
   }
 
-  masm.convertUInt32ToDouble(lhs, out);
+  masm.convertUInt32ToDouble(temp, out);
 }
 
 Operand CodeGeneratorX86Shared::ToOperand(const LAllocation& a) {
@@ -1684,10 +1633,6 @@ Operand CodeGeneratorX86Shared::ToOperand(const LAllocation& a) {
 
 Operand CodeGeneratorX86Shared::ToOperand(const LAllocation* a) {
   return ToOperand(*a);
-}
-
-Operand CodeGeneratorX86Shared::ToOperand(const LDefinition* def) {
-  return ToOperand(def->output());
 }
 
 MoveOperand CodeGeneratorX86Shared::toMoveOperand(LAllocation a) const {
@@ -1868,16 +1813,18 @@ void CodeGenerator::visitNegI64(LNegI64* ins) {
 
 void CodeGenerator::visitNegD(LNegD* ins) {
   FloatRegister input = ToFloatRegister(ins->input());
-  MOZ_ASSERT(input == ToFloatRegister(ins->output()));
+  FloatRegister output = ToFloatRegister(ins->output());
 
-  masm.negateDouble(input);
+  // XOR the float in a float register with -0.0.
+  masm.vxorpdSimd128(SimdConstant::SplatX2(-0.0), input, output);
 }
 
 void CodeGenerator::visitNegF(LNegF* ins) {
   FloatRegister input = ToFloatRegister(ins->input());
-  MOZ_ASSERT(input == ToFloatRegister(ins->output()));
+  FloatRegister output = ToFloatRegister(ins->output());
 
-  masm.negateFloat(input);
+  // XOR the float in a float register with -0.0.
+  masm.vxorpsSimd128(SimdConstant::SplatX4(-0.0f), input, output);
 }
 
 void CodeGenerator::visitCompareExchangeTypedArrayElement(
@@ -2016,38 +1963,6 @@ Operand CodeGeneratorX86Shared::toMemoryAccessOperand(T* lir, int32_t disp) {
                          : Operand(baseReg, ToRegister(ptr), TimesOne, disp);
 #endif
   return destAddr;
-}
-
-void CodeGenerator::visitCopySignF(LCopySignF* lir) {
-  FloatRegister lhs = ToFloatRegister(lir->lhs());
-  FloatRegister rhs = ToFloatRegister(lir->rhs());
-
-  FloatRegister out = ToFloatRegister(lir->output());
-
-  if (lhs == rhs) {
-    if (lhs != out) {
-      masm.moveFloat32(lhs, out);
-    }
-    return;
-  }
-
-  masm.copySignFloat32(lhs, rhs, out);
-}
-
-void CodeGenerator::visitCopySignD(LCopySignD* lir) {
-  FloatRegister lhs = ToFloatRegister(lir->lhs());
-  FloatRegister rhs = ToFloatRegister(lir->rhs());
-
-  FloatRegister out = ToFloatRegister(lir->output());
-
-  if (lhs == rhs) {
-    if (lhs != out) {
-      masm.moveDouble(lhs, out);
-    }
-    return;
-  }
-
-  masm.copySignDouble(lhs, rhs, out);
 }
 
 void CodeGenerator::visitSimd128(LSimd128* ins) {

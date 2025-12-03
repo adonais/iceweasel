@@ -969,13 +969,6 @@ export default class LoginItem extends HTMLElement {
   }
 
   _updatePasswordRevealState() {
-    if (
-      window.AboutLoginsUtils &&
-      window.AboutLoginsUtils.passwordRevealVisible === false
-    ) {
-      this._revealCheckbox.hidden = true;
-    }
-
     let { checked } = this._revealCheckbox;
     let inputType = checked ? "text" : "password";
     this._passwordInput.type = inputType;
@@ -986,6 +979,13 @@ export default class LoginItem extends HTMLElement {
     } else {
       this._passwordDisplayInput.setAttribute("tabindex", -1);
       this._revealCheckbox.hidden = false;
+    }
+
+    if (
+      window.AboutLoginsUtils &&
+      window.AboutLoginsUtils.passwordRevealVisible === false
+    ) {
+      this._revealCheckbox.hidden = true;
     }
 
     // Swap which <input> is in the document depending on whether we need the

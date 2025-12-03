@@ -15,7 +15,6 @@
 
 #include "FileChannelChild.h"
 
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/net/NeckoCommon.h"
 
 // URL file handling, copied and modified from

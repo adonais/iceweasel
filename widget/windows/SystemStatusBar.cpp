@@ -186,8 +186,7 @@ LRESULT StatusBarEntry::OnMessage(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
     }
 
     nsIWidget* widget = popupFrame->GetNearestWidget();
-    MOZ_DIAGNOSTIC_ASSERT(widget);
-    if (!widget) {
+    if (NS_WARN_IF(!widget)) {
       return TRUE;
     }
 

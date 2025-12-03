@@ -296,6 +296,10 @@ support-files = ["preserve3d_sorting_hit_testing_iframe.html"]
 ["test_preserve3d_sorting_hit_testing2.html"]
 support-files = ["preserve3d_sorting_hit_testing2_iframe.html"]
 
+["test_re_enable_apz_on_blur.html"]
+support-files = ["helper_re_enable_apz_on_blur.html"]
+skip-if = ["os == 'win'"]
+
 ["test_refreshDriver_hasPendingTick.html"]
 
 ["test_reftests_with_caret.html"]

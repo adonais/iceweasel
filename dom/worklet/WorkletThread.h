@@ -7,10 +7,8 @@
 #ifndef mozilla_dom_worklet_WorkletThread_h
 #define mozilla_dom_worklet_WorkletThread_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/CondVar.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/WorkletImpl.h"
 #include "nsIObserver.h"
 #include "nsThread.h"

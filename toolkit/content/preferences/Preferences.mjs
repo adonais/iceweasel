@@ -81,9 +81,31 @@ import { Setting } from "chrome://global/content/preferences/Setting.mjs";
  */
 
 /**
+ * @typedef {Record<string, any>} PreferencesSettingConfigControlAttributes
+ */
+
+/**
+ * @typedef {Omit<PreferencesSettingConfigNestedControlOption, 'id | value'>} PreferencesSettingConfigNestedElementOption
+ */
+
+/**
+ * A set of properties that represent a nested control or element.
+ *
+ * @typedef {object} PreferencesSettingConfigNestedControlOption
+ * @property {string} [control] - The {@link HTMLElement#localName} of any HTML element that will be nested as a direct descendant of the control element. A moz-checkbox will be rendered by default.
+ * @property {PreferencesSettingConfigControlAttributes} [controlAttrs] - A map of any attributes to add to the control
+ * @property {string} [l10nId] - The fluent ID of the control
+ * @property {Array<PreferencesSettingConfigNestedElementOption>} [options] - Options for additional nested HTML elements. This will be overridden if items property is used.
+ * @property {string} [id]
+ * @property {string} [value] - An optional initial value used for the control element if it's an input element that supports a value property
+ * @property {Array<PreferencesSettingsConfig>} [items] - A list of setting control items that will get rendered as direct descendants of the setting control. This overrides the options property.
+ */
+
+/**
  * @typedef {object} PreferencesSettingsConfig
  * @property {string} id - The ID for the Setting, this should match the layout id
- * @property {string} [l10nId]
+ * @property {string} [l10nId] - The Fluent l10n ID for the setting
+ * @property {Record<string, string>} [l10nArgs] - An object containing l10n IDs and their values that will be translated with Fluent
  * @property {string} [pref] - A {@link Services.prefs} id that will be used as the backend if it is provided
  * @property {PreferenceSettingVisibleFunction} [visible] - Function to determine if a setting is visible in the UI
  * @property {PreferenceSettingGetter} [get] - Function to get the value of the setting. Optional if {@link PreferencesSettingsConfig#pref} is set.
@@ -94,7 +116,7 @@ import { Setting } from "chrome://global/content/preferences/Setting.mjs";
  *    additional work that needs to happen, such as recording telemetry.
  *    If you want to set the value of the Setting then use the {@link PreferencesSettingsConfig.set} function.
  * @property {Array<PreferencesSettingsConfig> | undefined} [items]
- * @property {string | undefined} [control]
+ * @property {PreferencesSettingConfigNestedControlOption['control']} [control] - The {@link HTMLElement#localName} of any HTML element that will be rendered as a control in the UI for the setting.
  * @property {PreferencesSettingConfigSetupFunction} [setup] -  A function to be called to register listeners for
  *    the setting. It should return a {@link PreferencesSettingConfigTeardownFunction} function to
  *    remove the listeners if necessary. This should emit change events when the setting has changed to
@@ -105,7 +127,11 @@ import { Setting } from "chrome://global/content/preferences/Setting.mjs";
  *    in {@link file://./../../browser/components/preferences/widgets/setting-group/setting-group.mjs}. This should be
  *    used for controls that aren’t regular form controls but instead perform an action when clicked, like a button or link.
  * @property {Array<string> | void} [deps] - An array of setting IDs that this setting depends on, when these settings change this setting will emit a change event to update the UI
- * @property {Record<string, any>} [controlAttrs] - An object of additional attributes to be set on the control. These can be used to further customize the control for example a message bar of the warning type, or what dialog a button should open
+ * @property {PreferencesSettingConfigControlAttributes} [controlAttrs] - An object of additional attributes to be set on the control. These can be used to further customize the control for example a message bar of the warning type, or what dialog a button should open
+ * @property {Array<PreferencesSettingConfigNestedControlOption>} [options] - An optional list of nested controls for this setting (select options, radio group radios, etc)
+ * @property {string} [iconSrc] - A path to the icon for the control (if the control supports one)
+ * @property {string} [supportPage] - The SUMO support page slug for the setting
+ * @property {string} [subcategory] - The sub-category slug used for direct linking to a setting from SUMO
  */
 
 const lazy = {};

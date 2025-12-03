@@ -27,7 +27,7 @@ XPCOMUtils.defineLazyServiceGetter(
   this,
   "TouchBarHelper",
   "@mozilla.org/widget/touchbarhelper;1",
-  "nsITouchBarHelper"
+  Ci.nsITouchBarHelper
 );
 
 /**

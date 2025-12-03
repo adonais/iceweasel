@@ -10,10 +10,9 @@
 
 #include "modules/audio_coding/neteq/nack_tracker.h"
 
-#include <stdint.h>
-
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -24,10 +23,10 @@
 namespace webrtc {
 namespace {
 
-const int kSampleRateHz = 16000;
-const int kPacketSizeMs = 30;
-const uint32_t kTimestampIncrement = 480;  // 30 ms.
-const int64_t kShortRoundTripTimeMs = 1;
+constexpr int kSampleRateHz = 16000;
+constexpr int kPacketSizeMs = 30;
+constexpr uint32_t kTimestampIncrement = 480;  // 30 ms.
+constexpr int64_t kShortRoundTripTimeMs = 1;
 
 bool IsNackListCorrect(const std::vector<uint16_t>& nack_list,
                        const uint16_t* lost_sequence_numbers,

@@ -36,7 +36,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "styleSheetService",
   "@mozilla.org/content/style-sheet-service;1",
-  "nsIStyleSheetService"
+  Ci.nsIStyleSheetService
 );
 
 // Query selector for selectable elements in results.
@@ -113,7 +113,7 @@ export class UrlbarView {
   }
 
   get oneOffSearchButtons() {
-    if (!this.input.isAddressbar) {
+    if (this.input.sapName != "urlbar") {
       return null;
     }
     if (!this.#oneOffSearchButtons) {
@@ -205,7 +205,7 @@ export class UrlbarView {
   }
 
   /**
-   * @returns {Element}
+   * @returns {HTMLElement}
    *   The currently selected element.
    */
   get selectedElement() {
@@ -1711,19 +1711,64 @@ export class UrlbarView {
     item._elements.set("bottom", bottom);
   }
 
-  #addRowButtons(item, result) {
-    let container = this.#createElement("div");
-    container.className = "urlbarView-row-buttons";
-    item._elements.set("buttons", container);
-    item.appendChild(container);
+  #needsNewButtons(item, oldResult, newResult) {
+    if (!oldResult) {
+      return true;
+    }
 
+    if (
+      !!this.#getResultMenuCommands(newResult) !=
+      item._buttons.has("result-menu")
+    ) {
+      return true;
+    }
+
+    if (!!oldResult.showFeedbackMenu != !!newResult.showFeedbackMenu) {
+      return true;
+    }
+
+    if (
+      oldResult.payload.buttons?.length != newResult.payload.buttons?.length ||
+      !lazy.ObjectUtils.deepEqual(
+        oldResult.payload.buttons,
+        newResult.payload.buttons
+      )
+    ) {
+      return true;
+    }
+
+    return newResult.testForceNewContent;
+  }
+
+  #updateRowButtons(item, oldResult, result) {
     for (let i = 0; i < result.payload.buttons?.length; i++) {
-      let button = result.payload.buttons[i];
       // We hold the name to each button data in payload to enable to get the
       // data from button element by the name. This name is mainly used for
       // button that has menu (Split Button).
+      let button = result.payload.buttons[i];
       button.name ??= i.toString();
-      this.#addRowButton(item, button);
+    }
+
+    if (!this.#needsNewButtons(item, oldResult, result)) {
+      return;
+    }
+
+    let container = item._elements.get("buttons");
+    if (container) {
+      container.innerHTML = "";
+    } else {
+      container = this.#createElement("div");
+      container.className = "urlbarView-row-buttons";
+      item.appendChild(container);
+      item._elements.set("buttons", container);
+    }
+
+    item._buttons.clear();
+
+    if (result.payload.buttons) {
+      for (let button of result.payload.buttons) {
+        this.#addRowButton(item, button);
+      }
     }
 
     // TODO: `buttonText` is intended only for WebExtensions. We should remove
@@ -1740,11 +1785,14 @@ export class UrlbarView {
       this.#addRowButton(item, {
         name: "result-menu",
         classList: ["urlbarView-button-menu"],
-        l10n: {
-          id: result.showFeedbackMenu
-            ? "urlbar-result-menu-button-feedback"
-            : "urlbar-result-menu-button",
-        },
+        l10n: result.showFeedbackMenu
+          ? {
+              id: "urlbar-result-menu-button-feedback",
+              cacheable: true,
+            }
+          : {
+              id: "urlbar-result-menu-button",
+            },
         attributes: lazy.UrlbarPrefs.get("resultMenu.keyboardAccessible")
           ? null
           : {
@@ -1862,52 +1910,94 @@ export class UrlbarView {
     return actionContainer;
   }
 
+  #needsNewContent(item, oldResult, newResult) {
+    if (!oldResult) {
+      return true;
+    }
+
+    if (
+      (oldResult.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC) !=
+      (newResult.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC)
+    ) {
+      return true;
+    }
+
+    if (
+      oldResult.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC &&
+      newResult.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC &&
+      oldResult.payload.dynamicType != newResult.payload.dynamicType
+    ) {
+      return true;
+    }
+
+    if (oldResult.isRichSuggestion != newResult.isRichSuggestion) {
+      return true;
+    }
+
+    // Reusing a non-heuristic as a heuristic is risky as it may have DOM
+    // nodes/attributes/classes that are normally not present in a heuristic
+    // result. This may happen for example when switching from a zero-prefix
+    // search not having a heuristic to a search string one.
+    if (oldResult.heuristic != newResult.heuristic) {
+      return true;
+    }
+
+    // Container switch-tab results have a more complex DOM content that is
+    // only updated correctly by another switch-tab result.
+    if (
+      oldResult.type == lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH &&
+      newResult.type != oldResult.type &&
+      lazy.UrlbarProviderOpenTabs.isContainerUserContextId(
+        oldResult.payload.userContextId
+      )
+    ) {
+      return true;
+    }
+
+    if (
+      newResult.providerName == lazy.UrlbarProviderQuickSuggest.name &&
+      // Check if the `RESULT_TYPE` is `DYNAMIC` because otherwise the
+      // `suggestionType` and `items` checks aren't relevant.
+      newResult.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC &&
+      (oldResult.payload.suggestionType != newResult.payload.suggestionType ||
+        oldResult.payload.items?.length != newResult.payload.items?.length)
+    ) {
+      return true;
+    }
+
+    if (newResult.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC) {
+      if (oldResult.providerName != newResult.providerName) {
+        return true;
+      }
+
+      let provider = this.#providersManager.getProvider(newResult.providerName);
+      if (
+        !lazy.ObjectUtils.deepEqual(
+          provider.getViewTemplate?.(oldResult),
+          provider.getViewTemplate?.(newResult)
+        )
+      ) {
+        return true;
+      }
+    }
+
+    return newResult.testForceNewContent;
+  }
+
   // eslint-disable-next-line complexity
   #updateRow(item, result) {
     let oldResult = item.result;
-    let oldResultType = item.result?.type;
-    let provider = this.#providersManager.getProvider(result.providerName);
     item.result = result;
     item.removeAttribute("stale");
     item.id = getUniqueId("urlbarView-row-");
 
-    let needsNewContent =
-      oldResultType === undefined ||
-      (oldResultType == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC) !=
-        (result.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC) ||
-      (oldResultType == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC &&
-        result.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC &&
-        oldResult.payload.dynamicType != result.payload.dynamicType) ||
-      // Dynamic results that implement getViewTemplate will
-      // always need updating.
-      provider?.getViewTemplate ||
-      oldResult.isRichSuggestion != result.isRichSuggestion ||
-      !!this.#getResultMenuCommands(result) != item._buttons.has("menu") ||
-      !!oldResult.showFeedbackMenu != !!result.showFeedbackMenu ||
-      !lazy.ObjectUtils.deepEqual(
-        oldResult.payload.buttons,
-        result.payload.buttons
-      ) ||
-      // Reusing a non-heuristic as a heuristic is risky as it may have DOM
-      // nodes/attributes/classes that are normally not present in a heuristic
-      // result. This may happen for example when switching from a zero-prefix
-      // search not having a heuristic to a search string one.
-      result.heuristic != oldResult.heuristic ||
-      // Container switch-tab results have a more complex DOM content that is
-      // only updated correctly by another switch-tab result.
-      (oldResultType == lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH &&
-        lazy.UrlbarProviderOpenTabs.isContainerUserContextId(
-          oldResult.payload.userContextId
-        ) &&
-        result.type != oldResultType) ||
-      result.testForceNewContent;
-
-    if (needsNewContent) {
+    if (this.#needsNewContent(item, oldResult, result)) {
+      // Recreate the row content except the buttons, which we'll reuse below.
+      let buttons = item._elements.get("buttons");
       while (item.lastChild) {
         item.lastChild.remove();
       }
       item._elements.clear();
-      item._buttons.clear();
       item._content = this.#createElement("span");
       item._content.className = "urlbarView-row-inner";
       item.appendChild(item._content);
@@ -1930,8 +2020,15 @@ export class UrlbarView {
       } else {
         this.#createRowContent(item, result);
       }
-      this.#addRowButtons(item, result);
+
+      if (buttons) {
+        item.appendChild(buttons);
+        item._elements.set("buttons", buttons);
+      }
     }
+
+    this.#updateRowButtons(item, oldResult, result);
+
     item._content.id = item.id + "-inner";
 
     let isFirstChild = item === this.#rows.children[0];
@@ -2328,12 +2425,19 @@ export class UrlbarView {
       this.#updateElementForDynamicType(node, update, item, result);
       if (update.style) {
         for (let [styleName, value] of Object.entries(update.style)) {
-          node.style[styleName] = value;
+          if (styleName.includes("-")) {
+            // Expect hyphen-case. e.g. "background-image", "--a-variable".
+            node.style.setProperty(styleName, value);
+          } else {
+            // Expect camel-case. e.g. "backgroundImage"
+            // NOTE: If want to define the variable, please use hyphen-case.
+            node.style[styleName] = value;
+          }
         }
       }
       if (update.l10n) {
         this.#l10nCache.setElementL10n(node, update.l10n);
-      } else if (update.textContent) {
+      } else if (update.hasOwnProperty("textContent")) {
         lazy.UrlbarUtils.addTextContentWithHighlights(
           node,
           update.textContent,

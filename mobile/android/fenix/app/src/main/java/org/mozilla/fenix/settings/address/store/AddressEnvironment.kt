@@ -4,74 +4,28 @@
 
 package org.mozilla.fenix.settings.address.store
 
+import mozilla.components.concept.engine.autofill.AddressStructure
 import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.UpdatableAddressFields
 
 /**
- * An interface for handling back navigation.
- */
-fun interface NavigateBack {
-    /**
-     * navigate back.
-     */
-    fun navigateBack()
-}
-
-/**
- * An interface for handling creating a new [Address]
- */
-fun interface CreateAddress {
-    /**
-     * Creates an [Address].
-     *
-     * @param address [UpdatableAddressFields] used to create an address
-     * @return the guid of the newly created [Address] as a [String]
-     */
-    suspend fun createAddress(address: UpdatableAddressFields): String
-}
-
-/**
- * An interface for updating an [Address]
- */
-fun interface UpdateAddress {
-    /**
-     * Updates an [Address].
-     *
-     * @param guid of the [Address] to update.
-     * @param address [UpdatableAddressFields] used to update an address
-     */
-    suspend fun updateAddress(guid: String, address: UpdatableAddressFields)
-}
-
-/**
- * An interface for handling deleting an [Address]
- */
-fun interface DeleteAddress {
-    /**
-     * Deletes an [Address].
-     *
-     * @param guid the id of the [Address] to delete.
-     */
-    suspend fun deleteAddress(guid: String)
-}
-
-/**
  * Groups together all of the [AddressStore] dependencies.
  *
- * @param navigateBack used to navigate back.
- * @param createAddress used to create a new [Address].
- * @param updateAddress used to update an existing [Address].
- * @param deleteAddress used to delete an [Address].
+ * @property navigateBack used to navigate back.
+ * @property createAddress used to create a new [Address].
+ * @property updateAddress used to update an existing [Address].
+ * @property deleteAddress used to delete an [Address].
+ * @property getAddressStructure used to fetch an [AddressStructure].
+ * @property submitCaughtException used to submit caught exceptions.
  */
 data class AddressEnvironment(
-    private val navigateBack: NavigateBack,
-    private val createAddress: CreateAddress,
-    private val updateAddress: UpdateAddress,
-    private val deleteAddress: DeleteAddress,
-) : NavigateBack by navigateBack,
-    CreateAddress by createAddress,
-    UpdateAddress by updateAddress,
-    DeleteAddress by deleteAddress {
+    val navigateBack: () -> Unit,
+    val createAddress: suspend (address: UpdatableAddressFields) -> String,
+    val updateAddress: suspend (guid: String, address: UpdatableAddressFields) -> Unit,
+    val deleteAddress: suspend (guid: String) -> Unit,
+    val getAddressStructure: suspend (countryCode: String) -> AddressStructure,
+    val submitCaughtException: (Throwable) -> Unit,
+) {
         internal companion object {
             val empty: AddressEnvironment
                 get() = AddressEnvironment(
@@ -79,6 +33,8 @@ data class AddressEnvironment(
                     createAddress = { "empty-guid" },
                     updateAddress = { _, _ -> },
                     deleteAddress = { },
+                    getAddressStructure = { AddressStructure(listOf()) },
+                    submitCaughtException = { _ -> },
                 )
         }
     }

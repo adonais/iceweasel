@@ -51,7 +51,6 @@
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/CanvasGradient.h"
 #include "mozilla/dom/CanvasPath.h"
 #include "mozilla/dom/CanvasPattern.h"
@@ -1292,7 +1291,7 @@ CanvasRenderingContext2D::ColorStyleCacheEntry
 CanvasRenderingContext2D::ParseColorSlow(const nsACString& aString) {
   ColorStyleCacheEntry result{nsCString(aString)};
   Document* document = mCanvasElement ? mCanvasElement->OwnerDoc() : nullptr;
-  css::Loader* loader = document ? document->CSSLoader() : nullptr;
+  css::Loader* loader = document ? document->GetExistingCSSLoader() : nullptr;
 
   PresShell* presShell = GetPresShell();
   ServoStyleSet* set = presShell ? presShell->StyleSet() : nullptr;
@@ -2792,7 +2791,8 @@ static already_AddRefed<StyleLockedDeclarationBlock> CreateDeclarationForServo(
     Document* aDocument) {
   ServoCSSParser::ParsingEnvironment env{aDocument->DefaultStyleAttrURLData(),
                                          aDocument->GetCompatibilityMode(),
-                                         aDocument->CSSLoader()};
+                                         // Loader only for error reporting
+                                         aDocument->GetExistingCSSLoader()};
   RefPtr<StyleLockedDeclarationBlock> servoDeclarations =
       ServoCSSParser::ParseProperty(aProperty, aPropertyValue, env,
                                     StyleParsingMode::DEFAULT);
@@ -4635,7 +4635,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
     explicit PropertyProvider(const CanvasBidiProcessor& aProcessor)
         : mProcessor(aProcessor) {}
 
-    void GetSpacing(gfxTextRun::Range aRange,
+    bool GetSpacing(gfxTextRun::Range aRange,
                     gfxFont::Spacing* aSpacing) const {
       for (auto i = aRange.start; i < aRange.end; ++i) {
         auto* charGlyphs = mProcessor.mTextRun->GetCharacterGlyphs();
@@ -4647,10 +4647,10 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
           // asymmetry seems unfortunate.
           if (mProcessor.mTextRun->IsRightToLeft()) {
             aSpacing->mAfter = 0;
-            aSpacing->mBefore = mProcessor.mLetterSpacing;
+            aSpacing->mBefore = NSToCoordRound(mProcessor.mLetterSpacing);
           } else {
             aSpacing->mBefore = 0;
-            aSpacing->mAfter = mProcessor.mLetterSpacing;
+            aSpacing->mAfter = NSToCoordRound(mProcessor.mLetterSpacing);
           }
         } else {
           aSpacing->mBefore = 0;
@@ -4658,13 +4658,14 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
         }
         if (charGlyphs[i].CharIsSpace()) {
           if (mProcessor.mTextRun->IsRightToLeft()) {
-            aSpacing->mBefore += mProcessor.mWordSpacing;
+            aSpacing->mBefore += NSToCoordRound(mProcessor.mWordSpacing);
           } else {
-            aSpacing->mAfter += mProcessor.mWordSpacing;
+            aSpacing->mAfter += NSToCoordRound(mProcessor.mWordSpacing);
           }
         }
         aSpacing++;
       }
+      return mProcessor.mLetterSpacing != 0.0 || mProcessor.mWordSpacing != 0.0;
     }
 
     mozilla::StyleHyphens GetHyphensOption() const {
@@ -6372,8 +6373,8 @@ void CanvasRenderingContext2D::DrawWindow(nsGlobalWindowInner& aWindow,
 
   RefPtr<PresShell> presShell = presContext->PresShell();
 
-  Unused << presShell->RenderDocument(r, renderDocFlags, *backgroundColor,
-                                      &thebes.ref());
+  (void)presShell->RenderDocument(r, renderDocFlags, *backgroundColor,
+                                  &thebes.ref());
   // If this canvas was contained in the drawn window, the pre-transaction
   // callback may have returned its DT. If so, we must reacquire it here.
   if (!EnsureTarget(aError, discardContent ? &drawRect : nullptr)) {

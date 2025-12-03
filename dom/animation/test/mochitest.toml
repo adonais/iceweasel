@@ -52,6 +52,7 @@ skip-if = ["os == 'win' && bits == 64"] # Bug 1363957
 ["mozilla/test_document_timeline_origin_time_range.html"]
 
 ["mozilla/test_event_listener_leaks.html"]
+skip-if = ["os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && xorigin && verify-standalone"]
 
 ["mozilla/test_get_animations_on_scroll_animations.html"]
 

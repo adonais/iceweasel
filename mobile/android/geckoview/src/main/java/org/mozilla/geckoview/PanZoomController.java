@@ -9,7 +9,6 @@ import android.app.UiModeManager;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Rect;
-import android.os.Build;
 import android.os.SystemClock;
 import android.util.Log;
 import android.util.Pair;
@@ -645,10 +644,6 @@ public class PanZoomController {
    */
   public boolean onDragEvent(@NonNull final DragEvent event) {
     ThreadUtils.assertOnUiThread();
-
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-      return false;
-    }
 
     if (!mAttached) {
       // This might be during start up, so we cannot handle drag event.

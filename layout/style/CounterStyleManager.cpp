@@ -15,7 +15,6 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSet.h"
-#include "mozilla/Types.h"
 #include "mozilla/WritingModes.h"
 #include "nsPresContext.h"
 #include "nsPresContextInlines.h"

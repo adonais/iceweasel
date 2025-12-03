@@ -143,6 +143,7 @@ struct WebAuthnMakeCredentialInfo {
   WebAuthnExtension[] Extensions;
   WebAuthnAuthenticatorSelection AuthenticatorSelection;
   nsString attestationConveyancePreference;
+  nsString[] Hints;
 };
 
 struct WebAuthnMakeCredentialResult {
@@ -168,6 +169,7 @@ struct WebAuthnGetAssertionInfo {
   WebAuthnExtension[] Extensions;
   nsString userVerificationRequirement;
   bool ConditionallyMediated;
+  nsString[] Hints;
 };
 
 struct WebAuthnGetAssertionResult {

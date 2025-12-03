@@ -139,11 +139,6 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !insertmacro WriteRegStr2
 !insertmacro WriteRegDWORD2
 
-; This needs to be inserted after InitHashAppModelId because it uses
-; $AppUserModelID and the compiler can't handle using variables lexically before
-; they've been declared.
-!insertmacro GetInstallerRegistryPref
-
 !include shared.nsh
 
 ; Helper macros for ui callbacks. Insert these after shared.nsh
@@ -607,7 +602,6 @@ Section "-Application" APP_IDX
         ${LogMsg} "Renamed existing shortcut to $SMPROGRAMS\${BrandShortName}.lnk"
       ${EndIf}
     ${Else}
-      ; This is where desktop shortcuts are created at install time.
       CreateShortCut "$SMPROGRAMS\${BrandShortName}.lnk" "$INSTDIR\${FileMainEXE}"
       ${If} ${FileExists} "$SMPROGRAMS\${BrandShortName}.lnk"
         ShellLink::SetShortCutDescription "$SMPROGRAMS\${BrandShortName}.lnk" "$(BRIEF_APP_DESC)"

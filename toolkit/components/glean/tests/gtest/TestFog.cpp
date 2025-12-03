@@ -9,7 +9,6 @@
 #include "mozilla/glean/GleanPings.h"
 #include "mozilla/glean/fog_ffi_generated.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/TimeStamp.h"
 #include "../../bindings/private/Common.h"
@@ -17,7 +16,6 @@
 #include "nsTArray.h"
 
 #include "mozilla/Preferences.h"
-#include "mozilla/Unused.h"
 #include "nsString.h"
 #include "prtime.h"
 
@@ -738,4 +736,27 @@ TEST_F(FOGFixture, IsCamelCaseWorks) {
   ASSERT_FALSE(IsCamelCase(u"SOMENAME"_ns));
   ASSERT_FALSE(IsCamelCase(u"1234"_ns));
   ASSERT_FALSE(IsCamelCase(u"some#Name"_ns));
+}
+
+TEST_F(FOGFixture, TestLabeledTestGetValue) {
+  test_only::mabels_labeled_counters.Get("next_to_the_fridge"_ns).Add(5);
+  test_only::mabels_labeled_counters.Get("clean"_ns).Add(10);
+
+  nsTHashMap<nsCString, int32_t> value;
+  value = test_only::mabels_labeled_counters.TestGetValue().unwrap().value();
+  ASSERT_EQ(5, value.Get("next_to_the_fridge"_ns));
+  ASSERT_EQ(10, value.Get("clean"_ns));
+}
+
+TEST_F(FOGFixture, TestLabeledTestGetValueReturnsNothingIfEmpty) {
+  auto result = test_only::mabels_labeled_counters.TestGetValue().unwrap();
+  ASSERT_TRUE(result.isNothing());
+}
+
+TEST_F(FOGFixture, TestLabeledTestGetValueWithError) {
+  test_only::mabels_labeled_counters.Get("clean"_ns).Add(-1);
+
+  nsCString error;
+  error = test_only::mabels_labeled_counters.TestGetValue().unwrapErr();
+  ASSERT_EQ("Metric had 1 error(s) of type invalid_value!"_ns, error);
 }

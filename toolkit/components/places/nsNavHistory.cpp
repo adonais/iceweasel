@@ -7,7 +7,6 @@
 #include <stdio.h>
 
 #include "mozilla/Components.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/StaticPrefs_places.h"

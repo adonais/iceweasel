@@ -379,11 +379,34 @@ RefPtr<MP4TrackDemuxer::SeekPromise> MP4TrackDemuxer::Seek(
 
   mIterator->Seek(seekTime);
 
+#ifdef MOZ_APPLEMEDIA
+  bool hasSeenValidSamples = false, seekingFromFirstSyncSample = false;
+#endif
   // Check what time we actually seeked to.
   do {
     auto next = GetNextSample();
     if (next.isErr()) {
-      return SeekPromise::CreateAndReject(next.unwrapErr(), __func__);
+      auto error = next.unwrapErr();
+#ifdef MOZ_APPLEMEDIA
+      // On macOS, only IDR frames are marked as key frames. This means some
+      // sync samples (e.g., Recovery SEI or I-slices) are not treated as key
+      // frames, as they may not be supported by Apple’s VideoToolbox H.264
+      // decoder. If we have seen samples but found no key frame, it indicates
+      // we need to look further back for an earlier sample where an IDR frame
+      // should exist per spec. In that case, we retry from the first sync
+      // sample in the GOP, which is typically an IDR frame. This situation
+      // suggests a poorly muxed file that wastes seek time, but unfortunately
+      // such cases do occur in real-world content.
+      if (mType == kH264 && error == NS_ERROR_DOM_MEDIA_END_OF_STREAM &&
+          hasSeenValidSamples && !seekingFromFirstSyncSample) {
+        LOG("Can not find a key frame from the closet sync sample, try again "
+            "from the first sync sample");
+        seekingFromFirstSyncSample = true;
+        mIterator->Seek(seekTime, SampleIterator::SyncSampleMode::First);
+        continue;
+      }
+#endif
+      return SeekPromise::CreateAndReject(error, __func__);
     }
     RefPtr<MediaRawData> sample = next.unwrap();
     if (!sample->Size()) {
@@ -395,6 +418,9 @@ RefPtr<MP4TrackDemuxer::SeekPromise> MP4TrackDemuxer::Seek(
       mQueuedSample = sample;
       seekTime = mQueuedSample->mTime;
     }
+#ifdef MOZ_APPLEMEDIA
+    hasSeenValidSamples = true;
+#endif
   } while (!mQueuedSample);
 
   SetNextKeyFrameTime();
@@ -418,8 +444,14 @@ MP4TrackDemuxer::GetNextSample() {
         case H264::FrameType::I_FRAME_IDR:
         case H264::FrameType::I_FRAME_OTHER:
         case H264::FrameType::OTHER: {
-          bool keyframe = type == H264::FrameType::I_FRAME_OTHER ||
-                          type == H264::FrameType::I_FRAME_IDR;
+          bool keyframe = type == H264::FrameType::I_FRAME_IDR;
+#ifndef MOZ_APPLEMEDIA
+          // The Apple VideoToolbox H.264 decoder could return a bad data error
+          // if a non-IDR I-frame is provided as the first sample to the decoder
+          // after seeking. Therefore, only IDR frames should be marked as key
+          // frames.
+          keyframe = keyframe || type == H264::FrameType::I_FRAME_OTHER;
+#endif
           if (sample->mKeyframe != keyframe) {
             NS_WARNING(nsPrintfCString("Frame incorrectly marked as %skeyframe "
                                        "@ pts:%" PRId64 " dur:%" PRId64

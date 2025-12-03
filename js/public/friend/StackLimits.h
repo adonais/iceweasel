@@ -163,6 +163,8 @@ class MOZ_RAII AutoCheckRecursionLimit {
       FrontendContext* fc) const;
   [[nodiscard]] MOZ_ALWAYS_INLINE bool checkWithExtra(JSContext* cx,
                                                       size_t extra) const;
+  [[nodiscard]] MOZ_ALWAYS_INLINE bool checkWithExtraDontReport(
+      JSContext* cx, size_t extra) const;
   [[nodiscard]] MOZ_ALWAYS_INLINE bool checkWithStackPointerDontReport(
       JSContext* cx, void* sp) const;
   [[nodiscard]] MOZ_ALWAYS_INLINE bool checkWithStackPointerDontReport(
@@ -285,17 +287,22 @@ MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkWithStackPointerDontReport(
 
 MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkWithExtra(
     JSContext* cx, size_t extra) const {
+  if (MOZ_UNLIKELY(!checkWithExtraDontReport(cx, extra))) {
+    ReportOverRecursed(cx);
+    return false;
+  }
+  return true;
+}
+
+MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkWithExtraDontReport(
+    JSContext* cx, size_t extra) const {
   char* sp = reinterpret_cast<char*>(__builtin_frame_address(0));
 #if JS_STACK_GROWTH_DIRECTION > 0
   sp += extra;
 #else
   sp -= extra;
 #endif
-  if (MOZ_UNLIKELY(!checkWithStackPointerDontReport(cx, sp))) {
-    ReportOverRecursed(cx);
-    return false;
-  }
-  return true;
+  return checkWithStackPointerDontReport(cx, sp);
 }
 
 MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkSystem(

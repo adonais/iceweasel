@@ -39,6 +39,7 @@ DIRS += [
     "crashes",
     "crashmonitor",
     "credentialmanagement",
+    "dap",
     "doh",
     "downloads",
     "enterprisepolicies",

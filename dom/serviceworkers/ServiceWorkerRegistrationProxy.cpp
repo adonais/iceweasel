@@ -66,7 +66,7 @@ void ServiceWorkerRegistrationProxy::UpdateStateOnBGThread(
   if (!mActor) {
     return;
   }
-  Unused << mActor->SendUpdateState(aDescriptor.ToIPC());
+  (void)mActor->SendUpdateState(aDescriptor.ToIPC());
 }
 
 void ServiceWorkerRegistrationProxy::FireUpdateFoundOnBGThread() {
@@ -74,7 +74,7 @@ void ServiceWorkerRegistrationProxy::FireUpdateFoundOnBGThread() {
   if (!mActor) {
     return;
   }
-  Unused << mActor->SendFireUpdateFound();
+  (void)mActor->SendFireUpdateFound();
 }
 
 void ServiceWorkerRegistrationProxy::InitOnMainThread() {

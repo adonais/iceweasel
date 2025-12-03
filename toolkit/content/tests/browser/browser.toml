@@ -12,6 +12,10 @@ support-files = [
   "file_nonAutoplayAudio.html",
   "file_redirect.html",
   "file_redirect_to.html",
+  "file_restricted.html",
+  "file_restricted_dynamic.html",
+  "file_restricted_frame.html",
+  "file_restricted_navigation.html",
   "file_silentAudioTrack.html",
   "file_webAudio.html",
   "gizmo.mp4",
@@ -35,6 +39,8 @@ fail-if = ["a11y_checks"] # Bug 1854538 clicked #category-dns may not be focusab
 skip-if = [
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && opt && socketprocess_networking",
 ]
+
+["browser_about_restricted.js"]
 
 ["browser_autoscroll_disabled.js"]
 
@@ -133,6 +139,13 @@ tags = "audiochannel"
 ["browser_findbar.js"]
 
 ["browser_findbar_disabled_manual.js"]
+
+["browser_findbar_hidden_beforematch.js"]
+skip-if = [
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && debug", # Bug 1995211
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && debug", # Bug 1995211
+  "os == 'win' && os_version == '11.26100' && processor == 'x86' && debug", # Bug 1995211
+]
 
 ["browser_findbar_hiddenframes.js"]
 

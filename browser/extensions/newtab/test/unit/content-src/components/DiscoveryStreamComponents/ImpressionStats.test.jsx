@@ -148,7 +148,6 @@ describe("<ImpressionStats>", () => {
         received_rank: undefined,
         topic: undefined,
         features: undefined,
-        is_list_card: undefined,
         format: "medium-card",
       },
       {
@@ -163,7 +162,6 @@ describe("<ImpressionStats>", () => {
         received_rank: undefined,
         topic: undefined,
         features: undefined,
-        is_list_card: undefined,
         format: "medium-card",
       },
       {
@@ -178,7 +176,6 @@ describe("<ImpressionStats>", () => {
         received_rank: undefined,
         topic: undefined,
         features: undefined,
-        is_list_card: undefined,
         format: "medium-card",
       },
     ]);
@@ -272,7 +269,6 @@ describe("<ImpressionStats>", () => {
         fetchTimestamp: TEST_FETCH_TIMESTAMP,
         topic: undefined,
         features: undefined,
-        is_list_card: undefined,
         format: "medium-card",
       },
       {
@@ -287,7 +283,6 @@ describe("<ImpressionStats>", () => {
         fetchTimestamp: TEST_FETCH_TIMESTAMP,
         topic: undefined,
         features: undefined,
-        is_list_card: undefined,
         format: "medium-card",
       },
       {
@@ -302,7 +297,6 @@ describe("<ImpressionStats>", () => {
         fetchTimestamp: TEST_FETCH_TIMESTAMP,
         topic: undefined,
         features: undefined,
-        is_list_card: undefined,
         format: "medium-card",
       },
     ]);

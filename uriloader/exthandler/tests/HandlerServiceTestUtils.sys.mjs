@@ -16,19 +16,19 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "gExternalProtocolService",
   "@mozilla.org/uriloader/external-protocol-service;1",
-  "nsIExternalProtocolService"
+  Ci.nsIExternalProtocolService
 );
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "gMIMEService",
   "@mozilla.org/mime;1",
-  "nsIMIMEService"
+  Ci.nsIMIMEService
 );
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "gHandlerService",
   "@mozilla.org/uriloader/handler-service;1",
-  "nsIHandlerService"
+  Ci.nsIHandlerService
 );
 
 export var HandlerServiceTestUtils = {

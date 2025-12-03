@@ -32,7 +32,7 @@ class MaybeLeakRefPtr : public RefPtr<T> {
     if (!mAutoRelease) {
       // If mAutoRelease is not set, take the value out of this and leak it
       // before the base class destructor would call Release().
-      (void)RefPtr<T>::forget().take();
+      RefPtr<T>::forget().leak();
     }
   }
 

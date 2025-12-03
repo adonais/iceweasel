@@ -315,10 +315,9 @@ export class UrlbarProviderOpenTabs extends UrlbarProvider {
   /**
    * Starts querying.
    *
-   * @param {object} queryContext The query context object
-   * @param {Function} addCallback Callback invoked by the provider to add a new
-   *        match.
-   * @returns {Promise} resolved when the query stops.
+   * @param {UrlbarQueryContext} queryContext
+   * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
+   *   Callback invoked by the provider to add a new result.
    */
   async startQuery(queryContext, addCallback) {
     // Note: this is not actually expected to be used as an internal provider,

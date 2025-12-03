@@ -269,7 +269,8 @@ class nsFlexContainerFrame final : public nsContainerFrame,
   int32_t GetNumLines() const final;
   bool IsLineIteratorFlowRTL() final;
   mozilla::Result<LineInfo, nsresult> GetLine(int32_t aLineNumber) final;
-  int32_t FindLineContaining(nsIFrame* aFrame, int32_t aStartLine = 0) final;
+  int32_t FindLineContaining(const nsIFrame* aFrame,
+                             int32_t aStartLine = 0) final;
   NS_IMETHOD FindFrameAt(int32_t aLineNumber, nsPoint aPos,
                          nsIFrame** aFrameFound, bool* aPosIsBeforeFirstFrame,
                          bool* aPosIsAfterLastFrame) final;

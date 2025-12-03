@@ -7,7 +7,12 @@ use wgt::{
 use alloc::{borrow::Cow, boxed::Box, sync::Arc, vec::Vec};
 use core::{convert::Infallible, fmt, str};
 
-use crate::{binding_model::BindError, resource::RawResourceAccess};
+use crate::{
+    api_log,
+    binding_model::BindError,
+    command::pass::flush_bindings_helper,
+    resource::{RawResourceAccess, Trackable},
+};
 use crate::{
     binding_model::{LateMinBufferBindingSizeMismatch, PushConstantUploadError},
     command::{
@@ -27,7 +32,7 @@ use crate::{
     resource::{
         self, Buffer, InvalidResourceError, Labeled, MissingBufferUsageError, ParentDevice,
     },
-    track::{ResourceUsageCompatibilityError, Tracker, TrackerIndex},
+    track::{ResourceUsageCompatibilityError, Tracker},
     Label,
 };
 use crate::{command::InnerCommandEncoder, resource::DestroyedResourceError};
@@ -280,34 +285,88 @@ impl<'scope, 'snatch_guard, 'cmd_enc> State<'scope, 'snatch_guard, 'cmd_enc> {
         }
     }
 
-    // `extra_buffer` is there to represent the indirect buffer that is also
-    // part of the usage scope.
-    fn flush_states(
+    /// Flush binding state in preparation for a dispatch.
+    ///
+    /// # Differences between render and compute passes
+    ///
+    /// There are differences between the `flush_bindings` implementations for
+    /// render and compute passes, because render passes have a single usage
+    /// scope for the entire pass, and compute passes have a separate usage
+    /// scope for each dispatch.
+    ///
+    /// For compute passes, bind groups are merged into a fresh usage scope
+    /// here, not into the pass usage scope within calls to `set_bind_group`. As
+    /// specified by WebGPU, for compute passes, we merge only the bind groups
+    /// that are actually used by the pipeline, unlike render passes, which
+    /// merge every bind group that is ever set, even if it is not ultimately
+    /// used by the pipeline.
+    ///
+    /// For compute passes, we call `drain_barriers` here, because barriers may
+    /// be needed before each dispatch if a previous dispatch had a conflicting
+    /// usage. For render passes, barriers are emitted once at the start of the
+    /// render pass.
+    ///
+    /// # Indirect buffer handling
+    ///
+    /// The `indirect_buffer` argument should be passed for any indirect
+    /// dispatch (with or without validation). It will be checked for
+    /// conflicting usages according to WebGPU rules. For the purpose of
+    /// these rules, the fact that we have actually processed the buffer in
+    /// the validation pass is an implementation detail.
+    ///
+    /// The `track_indirect_buffer` argument should be set when doing indirect
+    /// dispatch *without* validation. In this case, the indirect buffer will
+    /// be added to the tracker in order to generate any necessary transitions
+    /// for that usage.
+    ///
+    /// When doing indirect dispatch *with* validation, the indirect buffer is
+    /// processed by the validation pass and is not used by the actual dispatch.
+    /// The indirect validation code handles transitions for the validation
+    /// pass.
+    fn flush_bindings(
         &mut self,
-        indirect_buffer: Option<TrackerIndex>,
-    ) -> Result<(), ResourceUsageCompatibilityError> {
+        indirect_buffer: Option<&Arc<Buffer>>,
+        track_indirect_buffer: bool,
+    ) -> Result<(), ComputePassErrorInner> {
         for bind_group in self.pass.binder.list_active() {
             unsafe { self.pass.scope.merge_bind_group(&bind_group.used)? };
-            // Note: stateless trackers are not merged: the lifetime reference
-            // is held to the bind group itself.
         }
+
+        // Add the indirect buffer. Because usage scopes are per-dispatch, this
+        // is the only place where INDIRECT usage could be added, and it is safe
+        // for us to remove it below.
+        if let Some(buffer) = indirect_buffer {
+            self.pass
+                .scope
+                .buffers
+                .merge_single(buffer, wgt::BufferUses::INDIRECT)?;
+        }
+
+        // For compute, usage scopes are associated with each dispatch and not
+        // with the pass as a whole. However, because the cost of creating and
+        // dropping `UsageScope`s is significant (even with the pool), we
+        // add and then remove usage from a single usage scope.
 
         for bind_group in self.pass.binder.list_active() {
-            unsafe {
-                self.intermediate_trackers
-                    .set_and_remove_from_usage_scope_sparse(&mut self.pass.scope, &bind_group.used)
-            }
+            self.intermediate_trackers
+                .set_and_remove_from_usage_scope_sparse(&mut self.pass.scope, &bind_group.used);
         }
 
-        // Add the state of the indirect buffer if it hasn't been hit before.
-        unsafe {
+        if track_indirect_buffer {
             self.intermediate_trackers
                 .buffers
                 .set_and_remove_from_usage_scope_sparse(
                     &mut self.pass.scope.buffers,
-                    indirect_buffer,
+                    indirect_buffer.map(|buf| buf.tracker_index()),
                 );
+        } else if let Some(buffer) = indirect_buffer {
+            self.pass
+                .scope
+                .buffers
+                .remove_usage(buffer, wgt::BufferUses::INDIRECT);
         }
+
+        flush_bindings_helper(&mut self.pass)?;
 
         CommandEncoder::drain_barriers(
             self.pass.base.raw_encoder,
@@ -828,7 +887,7 @@ fn set_pipeline(
     }
 
     // Rebind resources
-    pass::rebind_resources::<ComputePassErrorInner, _>(
+    pass::change_pipeline_layout::<ComputePassErrorInner, _>(
         &mut state.pass,
         &pipeline.layout,
         &pipeline.late_sized_buffer_groups,
@@ -853,9 +912,11 @@ fn set_pipeline(
 }
 
 fn dispatch(state: &mut State, groups: [u32; 3]) -> Result<(), ComputePassErrorInner> {
+    api_log!("ComputePass::dispatch {groups:?}");
+
     state.is_ready()?;
 
-    state.flush_states(None)?;
+    state.flush_bindings(None, false)?;
 
     let groups_size_limit = state
         .pass
@@ -888,6 +949,8 @@ fn dispatch_indirect(
     buffer: Arc<Buffer>,
     offset: u64,
 ) -> Result<(), ComputePassErrorInner> {
+    api_log!("ComputePass::dispatch_indirect");
+
     buffer.same_device(device)?;
 
     state.is_ready()?;
@@ -1054,7 +1117,7 @@ fn dispatch_indirect(
                 }]);
         }
 
-        state.flush_states(None)?;
+        state.flush_bindings(Some(&buffer), false)?;
         unsafe {
             state
                 .pass
@@ -1063,14 +1126,7 @@ fn dispatch_indirect(
                 .dispatch_indirect(params.dst_buffer, 0);
         }
     } else {
-        state
-            .pass
-            .scope
-            .buffers
-            .merge_single(&buffer, wgt::BufferUses::INDIRECT)?;
-
-        use crate::resource::Trackable;
-        state.flush_states(Some(buffer.tracker_index()))?;
+        state.flush_bindings(Some(&buffer), true)?;
 
         let buf_raw = buffer.try_raw(state.pass.base.snatch_guard)?;
         unsafe {

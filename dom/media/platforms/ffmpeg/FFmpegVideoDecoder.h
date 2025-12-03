@@ -15,7 +15,6 @@
 #include "ImageContainer.h"
 #include "PerformanceRecorder.h"
 #include "SimpleMap.h"
-#include "mozilla/ScopeExit.h"
 #include "nsTHashSet.h"
 #if LIBAVCODEC_VERSION_MAJOR >= 57 && LIBAVUTIL_VERSION_MAJOR >= 56
 #  include "mozilla/layers/TextureClient.h"

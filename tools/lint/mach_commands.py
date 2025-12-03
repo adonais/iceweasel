@@ -4,11 +4,13 @@
 
 import argparse
 import copy
+import json
 import os
 
 from mach.decorators import Command, CommandArgument
 from mozbuild.base import BuildEnvironmentNotFoundException
 from mozbuild.base import MachCommandConditions as conditions
+from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
 
 here = os.path.abspath(os.path.dirname(__file__))
 EXCLUSION_FILES = [
@@ -103,7 +105,28 @@ def lint(command_context, *runargs, **lintargs):
     setupargs = {
         "mach_command_context": command_context,
     }
-    return cli.run(*runargs, setupargs=setupargs, **lintargs)
+
+    monitor = SystemResourceMonitor(poll_interval=0.1)
+    monitor.start()
+
+    try:
+        ret = cli.run(*runargs, setupargs=setupargs, **lintargs)
+    finally:
+        monitor.stop()
+
+        if os.environ.get("MOZ_AUTOMATION") == "1":
+            profile_path = "/builds/worker/profile_resource-usage.json"
+        else:
+            command_context._ensure_state_subdir_exists(".")
+            profile_path = command_context._get_state_filename(
+                "profile_build_resources.json"
+            )
+
+        with open(profile_path, "w", encoding="utf-8", newline="\n") as f:
+            to_write = json.dumps(monitor.as_profile(), separators=(",", ":"))
+            f.write(to_write)
+
+    return ret
 
 
 @Command(

@@ -7,7 +7,6 @@
 #ifndef nsMathMLTokenFrame_h___
 #define nsMathMLTokenFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "nsMathMLContainerFrame.h"
 
 namespace mozilla {

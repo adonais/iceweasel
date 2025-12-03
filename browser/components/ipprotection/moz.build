@@ -11,9 +11,12 @@ JAR_MANIFESTS += ["jar.mn"]
 
 EXTRA_JS_MODULES.ipprotection += [
     "GuardianClient.sys.mjs",
+    "IPPAutoStart.sys.mjs",
     "IPPChannelFilter.sys.mjs",
+    "IPPEnrollAndEntitleManager.sys.mjs",
     "IPPExceptionsManager.sys.mjs",
     "IPPNetworkErrorObserver.sys.mjs",
+    "IPPNimbusHelper.sys.mjs",
     "IPPProxyManager.sys.mjs",
     "IPProtection.sys.mjs",
     "IPProtectionHelpers.sys.mjs",
@@ -22,9 +25,12 @@ EXTRA_JS_MODULES.ipprotection += [
     "IPProtectionService.sys.mjs",
     "IPProtectionUsage.sys.mjs",
     "IPPSignInWatcher.sys.mjs",
+    "IPPStartupCache.sys.mjs",
 ]
 
 BROWSER_CHROME_MANIFESTS += [
     "tests/browser/browser.toml",
 ]
 XPCSHELL_TESTS_MANIFESTS += ["tests/xpcshell/xpcshell.toml"]
+
+SPHINX_TREES["/browser/ipprotection"] = "docs"

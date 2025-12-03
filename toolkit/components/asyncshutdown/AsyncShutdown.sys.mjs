@@ -44,7 +44,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "gDebug",
   "@mozilla.org/xpcom/debug;1",
-  "nsIDebug2"
+  Ci.nsIDebug2
 );
 
 // `true` if this is a content process, `false` otherwise.

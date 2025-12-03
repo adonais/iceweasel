@@ -38,7 +38,7 @@ const RemoteSettingsUtils = Utils;
 updateAppInfo({ name: "XPCShell", version: "48", platformVersion: "48" });
 
 // We generally also need a profile set-up, for saving search settings etc.
-do_get_profile();
+do_get_profile(true);
 
 SearchTestUtils.init(this);
 

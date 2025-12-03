@@ -76,11 +76,6 @@ parent:
 
 child:
   /**
-   * Notify that the canvas device used by the translator has changed.
-   */
-  async NotifyDeviceChanged();
-
-  /**
    * Notify that the canvas device used by the translator has been reset.
    */
   async NotifyDeviceReset(RemoteTextureOwnerId[] aOwners);

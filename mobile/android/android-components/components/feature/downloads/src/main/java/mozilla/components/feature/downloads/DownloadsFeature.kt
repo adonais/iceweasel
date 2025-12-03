@@ -51,6 +51,13 @@ import mozilla.components.support.utils.Browsers
 value class Filename(val value: String)
 
 /**
+ * The name of a file that was already downloaded with the same ETag.
+ * The value will be `null` if no such file exists.
+ */
+@JvmInline
+value class FileNameOfDuplicateIfAlreadyDownloaded(val value: String?)
+
+/**
  * The size of the file to be downloaded expressed as the number of `bytes`.
  * The value will be `0` if the size is unknown.
  */
@@ -80,6 +87,12 @@ value class PositiveActionCallback(val value: () -> Unit)
  */
 @JvmInline
 value class NegativeActionCallback(val value: () -> Unit)
+
+/**
+ * Callback for when the open file button was tapped.
+ */
+@JvmInline
+value class OpenFileCallback(val value: () -> Unit)
 
 /**
  * Feature implementation to provide download functionality for the selected
@@ -124,7 +137,14 @@ class DownloadsFeature(
     private val onDownloadStartedListener: ((String) -> Unit) = {},
     private val shouldForwardToThirdParties: () -> Boolean = { false },
     private val customFirstPartyDownloadDialog: (
-        (Filename, ContentSize, PositiveActionCallback, NegativeActionCallback) -> Unit
+        (
+        Filename,
+        ContentSize,
+        FileNameOfDuplicateIfAlreadyDownloaded,
+        PositiveActionCallback,
+        NegativeActionCallback,
+        OpenFileCallback,
+    ) -> Unit
     )? = null,
     private val customThirdPartyDownloadDialog: (
         (ThirdPartyDownloaderApps, ThirdPartyDownloaderAppChosenCallback, NegativeActionCallback) -> Unit
@@ -235,15 +255,24 @@ class DownloadsFeature(
             if (applicationContext.isPermissionGranted(downloadManager.permissions.asIterable())) {
                 when {
                     customFirstPartyDownloadDialog != null && !download.skipConfirmation -> {
+                        val downloadWithSameEtag = findDownloadWithSameEtag(download)
                         customFirstPartyDownloadDialog.invoke(
                             Filename(download.realFilenameOrGuessed),
                             ContentSize(download.contentLength ?: 0),
+                            FileNameOfDuplicateIfAlreadyDownloaded(downloadWithSameEtag?.fileName),
                             PositiveActionCallback {
                                 startDownload(download)
                                 useCases.consumeDownload.invoke(tab.id, download.id)
                             },
                             NegativeActionCallback {
                                 useCases.cancelDownloadRequest.invoke(tab.id, download.id)
+                            },
+                            OpenFileCallback {
+                                useCases.openAlreadyDownloadedFile.invoke(
+                                    tab.id,
+                                    download,
+                                    downloadWithSameEtag?.filePath,
+                                )
                             },
                         )
                         false
@@ -265,6 +294,19 @@ class DownloadsFeature(
             }
         }
     }
+
+    @VisibleForTesting
+    internal fun findDownloadWithSameEtag(download: DownloadState): DownloadState? =
+        store.state
+            .downloads
+            .values
+            .filter {
+                it.url == download.url &&
+                    it.status == DownloadState.Status.COMPLETED &&
+                    it.etag == download.etag &&
+                    fileSystemHelper.fileExists(it.filePath)
+            }
+            .minByOrNull { it.createdTime }
 
     @VisibleForTesting
     internal fun startDownload(download: DownloadState): Boolean {

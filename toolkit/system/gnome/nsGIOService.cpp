@@ -15,7 +15,6 @@
 #include "nsPrintfCString.h"
 #include "mozilla/GRefPtr.h"
 #include "mozilla/GUniquePtr.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WidgetUtilsGtk.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_widget.h"
@@ -1007,7 +1006,19 @@ static nsresult RevealFileViaDBusWithProxy(GDBusProxy* aProxy, nsIFile* aFile,
   MOZ_TRY(aFile->GetNativePath(path));
 
   RefPtr<mozilla::widget::DBusCallPromise> dbusPromise;
-  const char* startupId = "";
+
+  char* activationToken = nullptr;
+  auto releaseActivationToken = MakeScopeExit([&] { g_free(activationToken); });
+
+  // Try to get activation token from GdkDisplay
+  if (GdkDisplay* display = gdk_display_get_default()) {
+    if (GdkAppLaunchContext* context =
+            gdk_display_get_app_launch_context(display)) {
+      activationToken = g_app_launch_context_get_startup_notify_id(
+          G_APP_LAUNCH_CONTEXT(context), nullptr, nullptr);
+      g_object_unref(context);
+    }
+  }
 
   const int32_t timeout =
       StaticPrefs::widget_gtk_file_manager_show_items_timeout_ms();
@@ -1023,8 +1034,8 @@ static nsresult RevealFileViaDBusWithProxy(GDBusProxy* aProxy, nsIFile* aFile,
     g_variant_builder_init(&builder, G_VARIANT_TYPE_STRING_ARRAY);
     g_variant_builder_add(&builder, "s", uri.get());
 
-    RefPtr<GVariant> variant = dont_AddRef(
-        g_variant_ref_sink(g_variant_new("(ass)", &builder, startupId)));
+    RefPtr<GVariant> variant = dont_AddRef(g_variant_ref_sink(g_variant_new(
+        "(ass)", &builder, activationToken ? activationToken : "")));
     g_variant_builder_clear(&builder);
 
     dbusPromise = widget::DBusProxyCall(aProxy, aMethod, variant,
@@ -1048,8 +1059,8 @@ static nsresult RevealFileViaDBusWithProxy(GDBusProxy* aProxy, nsIFile* aFile,
     RefPtr<GUnixFDList> fd_list =
         dont_AddRef(g_unix_fd_list_new_from_array(&fd, 1));
 
-    RefPtr<GVariant> variant = dont_AddRef(
-        g_variant_ref_sink(g_variant_new("(sha{sv})", startupId, 0, &options)));
+    RefPtr<GVariant> variant = dont_AddRef(g_variant_ref_sink(g_variant_new(
+        "(sha{sv})", activationToken ? activationToken : "", 0, &options)));
     g_variant_builder_clear(&options);
 
     dbusPromise = widget::DBusProxyCallWithUnixFDList(

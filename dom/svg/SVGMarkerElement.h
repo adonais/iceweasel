@@ -12,7 +12,6 @@
 #include "SVGAnimatedOrient.h"
 #include "SVGAnimatedPreserveAspectRatio.h"
 #include "SVGAnimatedViewBox.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/SVGElement.h"
 #include "mozilla/dom/SVGMarkerElementBinding.h"

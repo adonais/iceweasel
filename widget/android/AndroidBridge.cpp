@@ -32,7 +32,6 @@
 #include "EventDispatcher.h"
 
 #include "mozilla/TimeStamp.h"
-#include "mozilla/UniquePtr.h"
 #include "WidgetUtils.h"
 
 #include "mozilla/java/EventDispatcherWrappers.h"

@@ -16,7 +16,7 @@ label {
   text-align: end;
   margin-inline-end: 0;
   color: var(--text-color-deemphasized);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   font-size: 1em;
 }
 

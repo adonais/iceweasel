@@ -450,11 +450,11 @@ OutputStreamTunnel::AsyncWait(nsIOutputStreamCallback* callback, uint32_t flags,
   // The following parametr are not used:
   MOZ_ASSERT(!flags);
   MOZ_ASSERT(!amount);
-  Unused << target;
+  (void)target;
 
   RefPtr<OutputStreamTunnel> self(this);
   if (NS_FAILED(mCondition)) {
-    Unused << NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+    (void)NS_DispatchToCurrentThread(NS_NewRunnableFunction(
         "OutputStreamTunnel::CallOnSocketReady",
         [self{std::move(self)}]() { self->OnSocketReady(NS_OK); }));
   } else if (callback) {
@@ -583,11 +583,11 @@ InputStreamTunnel::AsyncWait(nsIInputStreamCallback* callback, uint32_t flags,
   // The following parametr are not used:
   MOZ_ASSERT(!flags);
   MOZ_ASSERT(!amount);
-  Unused << target;
+  (void)target;
 
   RefPtr<InputStreamTunnel> self(this);
   if (NS_FAILED(mCondition)) {
-    Unused << NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+    (void)NS_DispatchToCurrentThread(NS_NewRunnableFunction(
         "InputStreamTunnel::CallOnSocketReady",
         [self{std::move(self)}]() { self->OnSocketReady(NS_OK); }));
   } else if (callback) {

@@ -352,18 +352,6 @@ class SettingsSubMenuHomepageRobot {
         Log.i(TAG, "clickOpeningScreenOption: Clicked \"Opening screen\" option: $openingScreenOption")
     }
 
-    fun openWallpapersMenu() {
-        Log.i(TAG, "openWallpapersMenu: Trying to click the \"Wallpapers\" option")
-        wallpapersMenuButton().click()
-        Log.i(TAG, "openWallpapersMenu: Clicked the \"Wallpapers\" option")
-    }
-
-    fun selectWallpaper(wallpaperName: String) {
-        Log.i(TAG, "selectWallpaper: Trying to click wallpaper: $wallpaperName")
-        mDevice.findObject(UiSelector().description(wallpaperName)).click()
-        Log.i(TAG, "selectWallpaper: Clicked wallpaper: $wallpaperName")
-    }
-
     fun verifySponsoredShortcutsCheckBox(checked: Boolean) {
         if (checked) {
             Log.i(TAG, "verifySponsoredShortcutsCheckBox: Trying to verify that the \"Sponsored shortcuts\" check box is checked")
@@ -485,5 +473,3 @@ private fun homepageAfterFourHoursButton() =
     )
 
 private fun goBackButton() = onView(allOf(withContentDescription(R.string.action_bar_up_description)))
-
-private fun wallpapersMenuButton() = onView(withText("Wallpapers"))

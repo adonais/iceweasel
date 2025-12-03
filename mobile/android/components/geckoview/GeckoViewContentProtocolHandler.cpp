@@ -13,8 +13,6 @@
 
 #include "nsNetUtil.h"
 
-#include "mozilla/ResultExtensions.h"
-
 //-----------------------------------------------------------------------------
 
 nsresult GeckoViewContentProtocolHandler::Init() { return NS_OK; }

@@ -30,6 +30,6 @@ codegenTestARM64_adhoc(`
   `and     x1, x0, #0x3
   cmp     w1, #0x2 \\(2\\)
   b.eq    #\\+0x8 \\(addr .*\\)
-  unimplemented \\(Exception\\)`,
+  dcps0   \\{#0x0\\} \\(Wasm Trap\\)`,
   {features: {builtins: ["js-string"]}}
 );

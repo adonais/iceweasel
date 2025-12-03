@@ -85,6 +85,7 @@ skip-if = [
 run-if = ["os != 'android'"] # mouse events not supported on mobile
 
 ["test_group_keyboard-2.html"]
+skip-if = ["os == 'win' && verify-standalone"]
 
 ["test_group_keyboard.html"]
 
@@ -161,7 +162,10 @@ skip-if = [
 ]
 
 ["test_group_touchevents-6.html"]
-skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug"] # Bug 1915078
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && debug && verify-standalone",
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug", # Bug 1915078
+]
 
 ["test_group_touchevents.html"]
 

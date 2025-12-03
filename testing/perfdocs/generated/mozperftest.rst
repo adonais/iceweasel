@@ -719,6 +719,30 @@ browser_ml_summarizer_perf.js
 **Template test for latency for Summarizer model**
 
 
+toolkit/components/places/tests/browser/performance
+---------------------------------------------------
+Performance tests for Toolkit: Places
+
+browser_calculate_frecency_speed.js
+===================================
+
+:owner: Places
+:name: Calculate Frecency Speed
+:Default options:
+
+::
+
+ --extra-args headless
+ --manifest perftest.toml
+ --manifest-flavor browser-chrome
+ --perfherder
+ --perfherder-metrics name:PlacesCalculateFrecencyHighFrequency,unit:ms,shouldAlert:False, name:PlacesCalculateFrecencyLowFrequency,unit:ms,shouldAlert:False, name:PlacesCalculateFrecencyChunked,unit:ms,shouldAlert:False
+ --try-platform linux, mac
+ --verbose
+
+**Audits the speed of running calculate_frecency.**
+
+
 toolkit/components/url-classifier/tests/performance
 ---------------------------------------------------
 Performance tests for the URL Classifier

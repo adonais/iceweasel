@@ -304,6 +304,7 @@ treeherder:
         'service-digitalassetlinks': 'service-digitalassetlinks'
         'service-experiments': 'service-experiments'
         'service-firefox-accounts': 'service-firefox-accounts'
+        'service-firefox-relay': 'service-firefox-relay'
         'service-fretboard': 'service-fretboard'
         'service-glean': 'service-glean'
         'service-location': 'service-location'
@@ -550,22 +551,7 @@ workers:
             implementation: generic-worker
             os: windows
             worker-type: 'win11-a64-24h2-builder'
-        image:
-            provisioner: '{trust-domain}-{level}'
-            implementation: docker-worker
-            os: linux
-            worker-type: '{alias}'
-        images:
-            provisioner: '{trust-domain}-{level}'
-            implementation: docker-worker
-            os: linux
-            worker-type: '{alias}'
-        images-gcp:
-            provisioner: '{trust-domain}-{level}'
-            implementation: docker-worker
-            os: linux
-            worker-type: '{alias}'
-        images-gcp-aarch64:
+        images.*:
             provisioner: '{trust-domain}-{level}'
             implementation: docker-worker
             os: linux
@@ -724,7 +710,7 @@ workers:
             implementation: generic-worker
             os: linux-lambda
             worker-type: 'gecko-{alias}'
-        t-linux-docker(|-noscratch|-noscratch-amd|-amd):
+        t-linux-docker(|-noscratch|-noscratch-amd|-16c32gb-amd|-amd):
             provisioner: '{trust-domain}-t'
             implementation: docker-worker
             os: linux

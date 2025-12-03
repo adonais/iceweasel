@@ -5,13 +5,12 @@
 package org.mozilla.fenix.tabstray
 
 import android.content.res.Configuration
-import android.util.DisplayMetrics
 import android.view.View
 import androidx.annotation.VisibleForTesting
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import mozilla.components.support.ktx.android.util.dpToPx
+import mozilla.components.support.ktx.android.util.DisplayUnitConverter
 
 @VisibleForTesting internal const val EXPANDED_OFFSET_IN_LANDSCAPE_DP = 0
 
@@ -34,14 +33,14 @@ private const val DIM_CONVERSION = 1000f
  * @param orientation current Configuration.ORIENTATION_* of the device.
  * @param maxNumberOfTabs highest number of tabs in each tray page.
  * @param numberForExpandingTray limit depending on which the tray should be collapsed or expanded.
- * @param displayMetrics [DisplayMetrics] used for adapting resources to the current display.
+ * @param displayUnitConverter [DisplayUnitConverter] used for adapting resources to the current display.
  */
 internal class TabSheetBehaviorManager(
     private val behavior: BottomSheetBehavior<out View>,
     orientation: Int,
     private val maxNumberOfTabs: Int,
     private val numberForExpandingTray: Int,
-    private val displayMetrics: DisplayMetrics,
+    private val displayUnitConverter: DisplayUnitConverter,
 ) {
     @VisibleForTesting
     internal var currentOrientation = orientation
@@ -77,9 +76,9 @@ internal class TabSheetBehaviorManager(
     @VisibleForTesting
     internal fun updateBehaviorExpandedOffset(isLandscape: Boolean) {
         behavior.expandedOffset = if (isLandscape) {
-            EXPANDED_OFFSET_IN_LANDSCAPE_DP.dpToPx(displayMetrics)
+            displayUnitConverter.dpToPx(EXPANDED_OFFSET_IN_LANDSCAPE_DP)
         } else {
-            EXPANDED_OFFSET_IN_PORTRAIT_DP.dpToPx(displayMetrics)
+            displayUnitConverter.dpToPx(EXPANDED_OFFSET_IN_PORTRAIT_DP)
         }
     }
 

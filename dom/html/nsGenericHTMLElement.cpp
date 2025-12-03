@@ -88,8 +88,6 @@
 #include "nsStyleUtil.h"
 #include "nsTextNode.h"
 #include "nsThreadUtils.h"
-#include "nsView.h"
-#include "nsViewManager.h"
 #include "nscore.h"
 
 using namespace mozilla;

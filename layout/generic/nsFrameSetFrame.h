@@ -9,7 +9,6 @@
 #ifndef nsHTMLFrameset_h___
 #define nsHTMLFrameset_h___
 
-#include "mozilla/Attributes.h"
 #include "nsColor.h"
 #include "nsContainerFrame.h"
 #include "nsTArray.h"

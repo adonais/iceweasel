@@ -24,7 +24,6 @@
 #include "VideoOutput.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/TimeRanges.h"
 #include "mozilla/dom/VideoPlaybackQuality.h"
@@ -624,8 +623,8 @@ void HTMLVideoElement::EndCloningVisually() {
     SetSecondaryMediaStreamRenderer(nullptr);
   }
 
-  Unused << mVisualCloneTarget->SetVisualCloneSource(nullptr);
-  Unused << SetVisualCloneTarget(nullptr);
+  (void)mVisualCloneTarget->SetVisualCloneSource(nullptr);
+  (void)SetVisualCloneTarget(nullptr);
 
   UpdateMediaControlAfterPictureInPictureModeChanged();
 

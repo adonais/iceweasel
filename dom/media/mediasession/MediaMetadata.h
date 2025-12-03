@@ -8,7 +8,6 @@
 #define mozilla_dom_MediaMetadata_h
 
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/MediaSessionBinding.h"
 #include "nsCycleCollectionParticipant.h"

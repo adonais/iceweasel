@@ -59,10 +59,6 @@ add_setup(async function () {
   evict_cache_entries("all", lci);
 });
 
-registerCleanupFunction(async () => {
-  Services.prefs.clearUserPref("network.http.dictionaries.enable");
-});
-
 // Utility function to calculate SHA-256 hash
 async function calculateSHA256(data) {
   let hasher = Cc["@mozilla.org/security/hash;1"].createInstance(

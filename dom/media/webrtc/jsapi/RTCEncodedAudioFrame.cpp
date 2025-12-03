@@ -18,7 +18,6 @@
 #include "jsapi/RTCRtpScriptTransform.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/RTCEncodedAudioFrameBinding.h"
 #include "mozilla/dom/RTCRtpScriptTransformer.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
@@ -57,7 +56,8 @@ RTCEncodedAudioFrame::RTCEncodedAudioFrame(
     nsIGlobalObject* aGlobal,
     std::unique_ptr<webrtc::TransformableFrameInterface> aFrame,
     uint64_t aCounter, RTCRtpScriptTransformer* aOwner)
-    : RTCEncodedAudioFrameData{{std::move(aFrame), aCounter, /*timestamp*/ 0}},
+    : RTCEncodedAudioFrameData{RTCEncodedFrameState{std::move(aFrame), aCounter,
+                                                    /*timestamp*/ 0}},
       RTCEncodedFrameBase(aGlobal, static_cast<RTCEncodedFrameState&>(*this)),
       mOwner(aOwner) {
   mMetadata.mSynchronizationSource.Construct(mFrame->GetSsrc());
@@ -66,8 +66,7 @@ RTCEncodedAudioFrame::RTCEncodedAudioFrame(
       static_cast<webrtc::TransformableAudioFrameInterface&>(*mFrame));
   mMetadata.mContributingSources.Construct();
   for (const auto csrc : audioFrame.GetContributingSources()) {
-    Unused << mMetadata.mContributingSources.Value().AppendElement(csrc,
-                                                                   fallible);
+    (void)mMetadata.mContributingSources.Value().AppendElement(csrc, fallible);
   }
   if (const auto optionalSeqNum = audioFrame.SequenceNumber()) {
     mMetadata.mSequenceNumber.Construct(*optionalSeqNum);
@@ -80,8 +79,9 @@ RTCEncodedAudioFrame::RTCEncodedAudioFrame(
 
 RTCEncodedAudioFrame::RTCEncodedAudioFrame(nsIGlobalObject* aGlobal,
                                            RTCEncodedAudioFrameData&& aData)
-    : RTCEncodedAudioFrameData{{std::move(aData.mFrame), aData.mCounter,
-                                aData.mTimestamp},
+    : RTCEncodedAudioFrameData{RTCEncodedFrameState{std::move(aData.mFrame),
+                                                    aData.mCounter,
+                                                    aData.mTimestamp},
                                std::move(aData.mMetadata)},
       RTCEncodedFrameBase(aGlobal, static_cast<RTCEncodedFrameState&>(*this)),
       mOwner(nullptr) {
@@ -133,7 +133,7 @@ already_AddRefed<RTCEncodedAudioFrame> RTCEncodedAudioFrame::Constructor(
 
 RTCEncodedAudioFrameData RTCEncodedAudioFrameData::Clone() const {
   return RTCEncodedAudioFrameData{
-      {webrtc::CloneAudioFrame(
+      RTCEncodedFrameState{webrtc::CloneAudioFrame(
           static_cast<webrtc::TransformableAudioFrameInterface*>(
               mFrame.get()))},
       RTCEncodedAudioFrameMetadata(mMetadata)};

@@ -71,6 +71,19 @@ if (!Services.prefs.getBoolPref("layout.css.scroll-anchoring.enabled")) {
   });
 }
 
+if (!Services.prefs.getBoolPref("layout.css.text-decoration-inset.enabled")) {
+  ignoreList.push({
+    sourceName: /html\.css$/i,
+    errorMessage: /Unknown property .*text-decoration-inset/i,
+    isFromDevTools: false,
+  });
+  ignoreList.push({
+    sourceName: /ua\.css$/i,
+    errorMessage: /Unknown property .*text-decoration-inset/i,
+    isFromDevTools: false,
+  });
+}
+
 if (!Services.prefs.getBoolPref("dom.viewTransitions.enabled")) {
   // view-transition selectors
   ignoreList.push({

@@ -10,7 +10,6 @@
 #include "DOMSVGAnimatedNumberList.h"
 #include "SVGAnimatedLengthList.h"
 #include "SVGContentUtils.h"
-#include "mozilla/ArrayUtils.h"
 
 namespace mozilla::dom {
 

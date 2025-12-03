@@ -132,6 +132,12 @@ newtab-menu-section-block = Blokeatu
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Ez jarraitu gaia
 
+## Context menu options for sponsored stories and new ad formats on New Tab.
+
+newtab-menu-manage-sponsored-content = Kudeatu babesleen edukia
+newtab-menu-our-sponsors-and-your-privacy = Gure babesleak eta zure pribatutasuna
+newtab-menu-report-this-ad = Eman iragarki honen berri
+
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
 
 newtab-privacy-modal-button-done = Eginda
@@ -223,6 +229,8 @@ newtab-section-header-recent-activity = Azken jarduera
 #   $provider (string) - Name of the corresponding content provider.
 newtab-section-header-pocket = { $provider } hornitzaileak gomendatuta
 newtab-section-header-stories = Hausnartzeko moduko istorioak
+# "picks" refers to recommended articles
+newtab-section-header-todays-picks = Gaurko hautua zuretzat
 
 ## Empty Section States: These show when there are no more items in a section. Ex. When there are no more Pocket story recommendations, in the space where there would have been stories, this is shown instead.
 
@@ -231,6 +239,8 @@ newtab-empty-section-highlights = Hasi nabigatzen eta azkenaldian bisitatutako e
 # Variables:
 #   $provider (string) - Name of the content provider for this section, e.g "Pocket".
 newtab-empty-section-topstories = Egunean zaude jada. Etorri berriro geroago { $provider } hornitzailearen istorio ezagun gehiagorako. Ezin duzu itxaron? Hautatu gai ezagun bat webeko istorio gehiago aurkitzeko.
+# Ex. When there are no more story recommendations, in the space where there would have been stories, this is shown instead.
+newtab-empty-section-topstories-generic = Egunean zaude jada. Etorri berriro geroago istorio gehiago jasotzeko. Ezin duzu itxaron? Hautatu gai ezagun bat webeko istorio gehiago aurkitzeko.
 
 ## Empty Section (Content Discovery Experience). These show when there are no more stories or when some stories fail to load.
 
@@ -377,7 +387,7 @@ newtab-wallpaper-abstract-orange = Forma laranjak
 newtab-wallpaper-gradient-orange = Gradiente laranja eta arrosa
 newtab-wallpaper-abstract-blue-purple = Forma urdin eta moreak
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Argazkiak
 newtab-wallpaper-beach-at-sunrise = Hondartza egunsentian
@@ -424,6 +434,10 @@ newtab-weather-menu-hide-weather = Ezkutatu eguraldia fitxa berrian
 newtab-weather-menu-learn-more = Argibide gehiago
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Eguraldiari buruzko daturik ez dago erabilgarri orain.
+newtab-weather-opt-in-not-now =
+    .label = Une honetan ez
+newtab-weather-opt-in-yes =
+    .label = Bai
 
 ## Topic Labels
 
@@ -499,6 +513,17 @@ newtab-report-submit = Bidali
 newtab-toast-thanks-for-reporting =
     .message = Eskerrik asko hau jakinarazteagatik.
 
+## Strings for trending searches
+
+newtab-trending-searches-show-trending =
+    .title = Erakutsi bilaketa-joerak
+newtab-trending-searches-hide-trending =
+    .title = Ezkutatu bilaketa-joerak
+newtab-trending-searches-learn-more = Argibide gehiago
+newtab-trending-searches-dismiss = Ezkutatu bilaketa-joerak
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Bilaketa-joerak
+
 ## Strings for task / to-do list productivity widget
 
 # A simple label next to the default list name letting users know this is a new / beta feature
@@ -521,6 +546,9 @@ newtab-widget-lists-input-menu-move-up = Eraman gora
 newtab-widget-lists-input-menu-move-down = Eraman behera
 newtab-widget-lists-input-menu-delete = Ezabatu
 newtab-widget-lists-input-menu-edit = Editatu
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Sortu zerrenda berria
 newtab-widget-lists-name-label-default =
     .label = Zereginen zerrenda
 newtab-widget-lists-name-placeholder-default =
@@ -540,10 +568,6 @@ newtab-widget-timer-mode-focus =
     .label = Kontzentratzeko denbora
 newtab-widget-timer-mode-break =
     .label = Atsedena
-newtab-widget-timer-play =
-    .title = Erreproduzitu
-newtab-widget-timer-pause =
-    .title = Pausatu
 newtab-widget-timer-label-play =
     .label = Erreproduzitu
 newtab-widget-timer-label-pause =
@@ -557,4 +581,9 @@ newtab-widget-timer-menu-learn-more = Argibide gehiago
 # Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
 newtab-widget-keep-scrolling = Korritu gehiagorako
 newtab-widget-message-title = Mantendu kontzentratuta zerrendekin eta tenporizadorearekin
+newtab-promo-card-title = Lagundu { -brand-product-name }
+newtab-promo-card-body = Gure babesleek web hobeagoa eraikitzeko misioan laguntzen gaituzte
 newtab-promo-card-cta = Argibide gehiago
+newtab-promo-card-dismiss-button =
+    .title = Baztertu
+    .aria-label = Baztertu

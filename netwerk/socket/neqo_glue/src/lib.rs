@@ -24,9 +24,9 @@ use firefox_on_glean::{
     metrics::networking,
     private::{LocalCustomDistribution, LocalMemoryDistribution},
 };
-use libc::{c_uchar, size_t};
 #[cfg(not(windows))]
 use libc::{c_int, AF_INET, AF_INET6};
+use libc::{c_uchar, size_t};
 use neqo_common::{
     event::Provider as _, qdebug, qerror, qlog::Qlog, qwarn, Datagram, DatagramBatch, Decoder,
     Encoder, Header, Role, Tos,
@@ -233,7 +233,7 @@ fn enable_zstd_decoder(c: &mut Connection) -> neqo_transport::Res<()> {
             };
 
             // ZSTD_isError return 1 if error, 0 otherwise
-            if unsafe {ZSTD_isError(output_len) != 0} {
+            if unsafe { ZSTD_isError(output_len) != 0 } {
                 qdebug!("zstd compression failed with {output_len}");
                 return Err(neqo_crypto::Error::CertificateDecoding);
             }
@@ -420,6 +420,13 @@ impl NeqoHttp3Conn {
             }
         };
 
+        let pmtud_enabled =
+            // Check if PMTUD is explicitly enabled,
+            pmtud_enabled
+            // but disable PMTUD if NSPR is used (socket == None) or
+            // transmitted UDP datagrams might get fragmented by the IP layer.
+            && socket.as_ref().map_or(false, |s| !s.may_fragment());
+
         let params = ConnectionParameters::default()
             .versions(quic_version, version_list)
             .cc_algorithm(cc_algorithm)
@@ -432,7 +439,8 @@ impl NeqoHttp3Conn {
             .pmtud_iface_mtu(cfg!(not(target_os = "openbsd")))
             // MLKEM support is configured further below. By default, disable it.
             .mlkem(false)
-            .datagram_size(1500).pmtud(pmtud_enabled);
+            .datagram_size(1500)
+            .pmtud(pmtud_enabled);
 
         // Set a short timeout when fuzzing.
         #[cfg(feature = "fuzzing")]
@@ -517,6 +525,7 @@ impl NeqoHttp3Conn {
                 Some("Firefox Client qlog".to_string()),
                 Some("Firefox Client qlog".to_string()),
                 format!("{}_{}.qlog", origin, Uuid::new_v4()),
+                Instant::now(),
             ) {
                 Ok(qlog) => conn.set_qlog(qlog),
                 Err(e) => {
@@ -1073,15 +1082,16 @@ pub extern "C" fn neqo_http3conn_process_output_and_send(
                 conn.datagram_size_sent.accumulate(dg.data().len() as u64);
                 conn.datagram_segments_sent
                     .accumulate(dg.num_datagrams() as u64);
-                if dg.datagram_size() > 0 {
-                    for _ in 0..(dg.data().len() / dg.datagram_size()) {
-                        conn.datagram_segment_size_sent
-                            .accumulate(dg.datagram_size() as u64);
-                    }
-                    if let Some(remainder) = dg.data().len().checked_rem(dg.datagram_size()) {
-                        conn.datagram_segment_size_sent.accumulate(remainder as u64);
-                    }
+                for _ in 0..(dg.data().len() / dg.datagram_size()) {
+                    conn.datagram_segment_size_sent
+                        .accumulate(dg.datagram_size().get() as u64);
                 }
+                conn.datagram_segment_size_sent.accumulate(
+                    dg.data()
+                        .len()
+                        .checked_rem(dg.datagram_size().get())
+                        .expect("datagram_size is a NonZeroUsize") as u64,
+                );
             }
             OutputBatch::Callback(to) => {
                 let timeout = if to.is_zero() {
@@ -1243,12 +1253,7 @@ pub extern "C" fn neqo_http3conn_connect(
         return NS_ERROR_INVALID_ARG;
     }
     let priority = Priority::new(urgency, incremental);
-    match conn.conn.connect(
-        Instant::now(),
-        host_tmp,
-        &hdrs,
-        priority,
-    ) {
+    match conn.conn.connect(Instant::now(), host_tmp, &hdrs, priority) {
         Ok(id) => {
             *stream_id = id.as_u64();
             NS_OK
@@ -1291,7 +1296,7 @@ pub unsafe extern "C" fn neqo_htttp3conn_send_request_body(
 ) -> nsresult {
     let array = slice::from_raw_parts(buf, len as usize);
     conn.conn
-        .send_data(StreamId::from(stream_id), array)
+        .send_data(StreamId::from(stream_id), array, Instant::now())
         .map_or(NS_ERROR_UNEXPECTED, |amount| {
             let Ok(amount) = u32::try_from(amount) else {
                 return NS_ERROR_UNEXPECTED;
@@ -1529,7 +1534,10 @@ pub extern "C" fn neqo_http3conn_close_stream(
     conn: &mut NeqoHttp3Conn,
     stream_id: u64,
 ) -> nsresult {
-    match conn.conn.stream_close_send(StreamId::from(stream_id)) {
+    match conn
+        .conn
+        .stream_close_send(StreamId::from(stream_id), Instant::now())
+    {
         Ok(()) => NS_OK,
         Err(_) => NS_ERROR_INVALID_ARG,
     }
@@ -2238,10 +2246,12 @@ pub extern "C" fn neqo_http3conn_webtransport_close_session(
     let Ok(message_tmp) = str::from_utf8(message) else {
         return NS_ERROR_INVALID_ARG;
     };
-    match conn
-        .conn
-        .webtransport_close_session(StreamId::from(session_id), error, message_tmp)
-    {
+    match conn.conn.webtransport_close_session(
+        StreamId::from(session_id),
+        error,
+        message_tmp,
+        Instant::now(),
+    ) {
         Ok(()) => NS_OK,
         Err(_) => NS_ERROR_INVALID_ARG,
     }
@@ -2257,10 +2267,12 @@ pub extern "C" fn neqo_http3conn_connect_udp_close_session(
     let Ok(message_tmp) = str::from_utf8(message) else {
         return NS_ERROR_INVALID_ARG;
     };
-    match conn
-        .conn
-        .connect_udp_close_session(StreamId::from(session_id), error, message_tmp)
-    {
+    match conn.conn.connect_udp_close_session(
+        StreamId::from(session_id),
+        error,
+        message_tmp,
+        Instant::now(),
+    ) {
         Ok(()) => NS_OK,
         Err(_) => NS_ERROR_INVALID_ARG,
     }

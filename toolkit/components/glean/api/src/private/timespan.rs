@@ -292,7 +292,9 @@ impl Timespan for TimespanMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<u64> for TimespanMetric {
+impl glean::TestGetValue for TimespanMetric {
+    type Output = u64;
+
     pub fn test_get_value(&self, ping_name: Option<String>) -> Option<u64> {
         match self {
             // Conversion is ok here:

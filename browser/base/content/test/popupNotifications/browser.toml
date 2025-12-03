@@ -24,8 +24,9 @@ skip-if = [
 ["browser_popupNotification_3.js"]
 https_first_disabled = true
 skip-if = [
-  "os == 'linux' && debug",
   "os == 'linux' && asan",
+  "os == 'linux' && debug",
+  "verify-standalone",
 ]
 
 ["browser_popupNotification_4.js"]

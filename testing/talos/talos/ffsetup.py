@@ -51,8 +51,14 @@ class FFSetup:
 
     def __init__(self, browser_config, test_config):
         self.browser_config, self.test_config = browser_config, test_config
-        self._tmp_dir = tempfile.mkdtemp()
         self.env = None
+
+        if "MOZ_AUTOMATION" in os.environ:
+            # Bug 1893092 - Windows is deleting temporary dirs during the test runs in CI
+            self._tmp_dir = os.path.join(os.environ["TASK_WORKDIR"], "temp")
+        else:
+            self._tmp_dir = tempfile.mkdtemp()
+
         # The profile dir must be named 'profile' because of xperf analysis
         # (in etlparser.py). TODO fix that ?
         self.profile_dir = os.path.join(self._tmp_dir, "profile")

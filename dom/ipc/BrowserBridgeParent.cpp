@@ -152,25 +152,25 @@ void BrowserBridgeParent::Destroy() {
     mBrowserParent = nullptr;
   }
   if (CanSend()) {
-    Unused << Send__delete__(this);
+    (void)Send__delete__(this);
   }
 }
 
 IPCResult BrowserBridgeParent::RecvShow(const OwnerShowInfo& aOwnerInfo) {
   mBrowserParent->AttachWindowRenderer();
-  Unused << mBrowserParent->SendShow(mBrowserParent->GetShowInfo(), aOwnerInfo);
+  (void)mBrowserParent->SendShow(mBrowserParent->GetShowInfo(), aOwnerInfo);
   return IPC_OK();
 }
 
 IPCResult BrowserBridgeParent::RecvScrollbarPreferenceChanged(
     ScrollbarPreference aPref) {
-  Unused << mBrowserParent->SendScrollbarPreferenceChanged(aPref);
+  (void)mBrowserParent->SendScrollbarPreferenceChanged(aPref);
   return IPC_OK();
 }
 
 IPCResult BrowserBridgeParent::RecvLoadURL(nsDocShellLoadState* aLoadState) {
-  Unused << mBrowserParent->SendLoadURL(WrapNotNull(aLoadState),
-                                        mBrowserParent->GetShowInfo());
+  (void)mBrowserParent->SendLoadURL(WrapNotNull(aLoadState),
+                                    mBrowserParent->GetShowInfo());
   return IPC_OK();
 }
 
@@ -186,24 +186,24 @@ IPCResult BrowserBridgeParent::RecvUpdateDimensions(
 }
 
 IPCResult BrowserBridgeParent::RecvUpdateEffects(const EffectsInfo& aEffects) {
-  Unused << mBrowserParent->SendUpdateEffects(aEffects);
+  (void)mBrowserParent->SendUpdateEffects(aEffects);
   return IPC_OK();
 }
 
 IPCResult BrowserBridgeParent::RecvUpdateRemotePrintSettings(
     const embedding::PrintData& aPrintData) {
-  Unused << mBrowserParent->SendUpdateRemotePrintSettings(aPrintData);
+  (void)mBrowserParent->SendUpdateRemotePrintSettings(aPrintData);
   return IPC_OK();
 }
 
 IPCResult BrowserBridgeParent::RecvRenderLayers(const bool& aEnabled) {
-  Unused << mBrowserParent->SendRenderLayers(aEnabled);
+  (void)mBrowserParent->SendRenderLayers(aEnabled);
   return IPC_OK();
 }
 
 IPCResult BrowserBridgeParent::RecvNavigateByKey(
     const bool& aForward, const bool& aForDocumentNavigation) {
-  Unused << mBrowserParent->SendNavigateByKey(aForward, aForDocumentNavigation);
+  (void)mBrowserParent->SendNavigateByKey(aForward, aForDocumentNavigation);
   return IPC_OK();
 }
 
@@ -243,7 +243,7 @@ IPCResult BrowserBridgeParent::RecvDispatchSynthesizedMouseEvent(
 }
 
 IPCResult BrowserBridgeParent::RecvWillChangeProcess() {
-  Unused << mBrowserParent->SendWillChangeProcess();
+  (void)mBrowserParent->SendWillChangeProcess();
   return IPC_OK();
 }
 
@@ -260,7 +260,7 @@ IPCResult BrowserBridgeParent::RecvDeactivate(const bool& aWindowLowering,
 
 mozilla::ipc::IPCResult BrowserBridgeParent::RecvUpdateRemoteStyle(
     const StyleImageRendering& aImageRendering) {
-  Unused << mBrowserParent->SendUpdateRemoteStyle(aImageRendering);
+  (void)mBrowserParent->SendUpdateRemoteStyle(aImageRendering);
   return IPC_OK();
 }
 

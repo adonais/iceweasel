@@ -368,7 +368,7 @@ StorageAccess StorageAllowedForChannel(nsIChannel* aChannel) {
   MOZ_DIAGNOSTIC_ASSERT(aChannel);
 
   nsCOMPtr<nsIPrincipal> principal;
-  Unused << nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
+  (void)nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
       aChannel, getter_AddRefs(principal));
   NS_ENSURE_TRUE(principal, StorageAccess::eDeny);
 

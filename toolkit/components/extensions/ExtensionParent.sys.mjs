@@ -469,7 +469,7 @@ GlobalManager = {
   extensionMap: new Map(),
   initialized: false,
 
-  /** @type {WeakMap<XULBrowserElement, object>} Extension Context init data. */
+  /** @type {WeakMap<MozBrowser, object>} Extension Context init data. */
   frameData: new WeakMap(),
 
   init(extension) {
@@ -1460,7 +1460,7 @@ class HiddenXULWindow {
    *        An object that contains the xul attributes to set of the newly
    *        created browser XUL element.
    *
-   * @returns {Promise<XULBrowserElement>}
+   * @returns {Promise<MozBrowser>}
    *          A Promise which resolves to the newly created browser XUL element.
    */
   async createBrowserElement(xulAttributes) {
@@ -1620,8 +1620,10 @@ class HiddenExtensionPage {
   }
 }
 
-/** @typedef {import("resource://devtools/server/actors/descriptors/webextension.js")
-              .WebExtensionDescriptorActor} WebExtensionDescriptorActor */
+/**
+ * @typedef {import("resource://devtools/server/actors/descriptors/webextension.js")
+ *         .WebExtensionDescriptorActor} WebExtensionDescriptorActor
+ */
 
 /**
  * This object provides utility functions needed by the devtools actors to
@@ -1633,9 +1635,9 @@ const DebugUtils = {
   // which are used to connect the webextension patent actor to the extension process.
   hiddenXULWindow: null,
 
-  /** @type {Map<string, Promise<XULBrowserElement> & { browser: XULBrowserElement }>} */
+  /** @type {Map<string, Promise<MozBrowser> & { browser: MozBrowser }>} */
   debugBrowserPromises: new Map(),
-  /** @type {WeakMap<Promise<XULBrowserElement>, Set<WebExtensionDescriptorActor>>} */
+  /** @type {WeakMap<Promise<MozBrowser>, Set<WebExtensionDescriptorActor>>} */
   debugActors: new DefaultWeakMap(() => new Set()),
 
   _extensionUpdatedWatcher: null,
@@ -1787,7 +1789,7 @@ const DebugUtils = {
    * @param {WebExtensionDescriptorActor} webExtensionParentActor
    *        The devtools actor that is retrieving the browser element.
    *
-   * @returns {Promise<XULBrowserElement>}
+   * @returns {Promise<MozBrowser>}
    *          A promise which resolves to the configured browser XUL element.
    */
   async getExtensionProcessBrowser(webExtensionParentActor) {
@@ -1914,7 +1916,7 @@ function promiseMessageFromChild(messageManager, messageName, abortSignal) {
  * Returns a Promise which rejects if the load in the browser is aborted.
  * Accepts an AbortSignal to allow early unregistration of the listeners.
  *
- * @param {XULBrowserElement} browser
+ * @param {MozBrowser} browser
  * @param {AbortSignal} abortSignal
  * @returns {Promise<void>} A promise that never resolves, but only rejects.
  */

@@ -14,7 +14,6 @@
 #include "mozilla/EffectSet.h"
 #include "mozilla/ElementAnimationData.h"
 #include "mozilla/EventDispatcher.h"
-#include "mozilla/MemoryReporting.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/StyleAnimationValue.h"

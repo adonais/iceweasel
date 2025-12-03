@@ -212,7 +212,7 @@ void UtilityProcessHost::InitAfterConnect(bool aSucceeded) {
         std::move(policy), GetActor()->OtherPid(), brokerFd.ref());
     // This is unlikely to fail and probably indicates OS resource
     // exhaustion, but we can at least try to recover.
-    Unused << NS_WARN_IF(mSandboxBroker == nullptr);
+    (void)NS_WARN_IF(mSandboxBroker == nullptr);
     MOZ_ASSERT(brokerFd.ref().IsValid());
   }
 #endif  // XP_LINUX && MOZ_SANDBOX
@@ -223,10 +223,10 @@ void UtilityProcessHost::InitAfterConnect(bool aSucceeded) {
   isReadyForBackgroundProcessing = dllSvc->IsReadyForBackgroundProcessing();
 #endif
 
-  Unused << GetActor()->SendInit(brokerFd, Telemetry::CanRecordReleaseData(),
-                                 isReadyForBackgroundProcessing);
+  (void)GetActor()->SendInit(brokerFd, Telemetry::CanRecordReleaseData(),
+                             isReadyForBackgroundProcessing);
 
-  Unused << GetActor()->SendInitProfiler(
+  (void)GetActor()->SendInitProfiler(
       ProfilerParent::CreateForProcess(GetActor()->OtherPid()));
 
   LOGD("[%p] UtilityProcessHost::InitAfterConnect succeeded", this);

@@ -6,13 +6,11 @@
 
 #include "ColorPickerParent.h"
 
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "nsComponentManagerUtils.h"
 
-using mozilla::Unused;
 using namespace mozilla::dom;
 
 NS_IMPL_ISUPPORTS(ColorPickerParent::ColorPickerShownCallback,
@@ -21,7 +19,7 @@ NS_IMPL_ISUPPORTS(ColorPickerParent::ColorPickerShownCallback,
 NS_IMETHODIMP
 ColorPickerParent::ColorPickerShownCallback::Update(const nsAString& aColor) {
   if (mColorPickerParent) {
-    Unused << mColorPickerParent->SendUpdate(aColor);
+    (void)mColorPickerParent->SendUpdate(aColor);
   }
   return NS_OK;
 }
@@ -29,7 +27,7 @@ ColorPickerParent::ColorPickerShownCallback::Update(const nsAString& aColor) {
 NS_IMETHODIMP
 ColorPickerParent::ColorPickerShownCallback::Done(const nsAString& aColor) {
   if (mColorPickerParent) {
-    Unused << ColorPickerParent::Send__delete__(mColorPickerParent, aColor);
+    (void)ColorPickerParent::Send__delete__(mColorPickerParent, aColor);
   }
   return NS_OK;
 }
@@ -54,7 +52,7 @@ bool ColorPickerParent::CreateColorPicker() {
 
 mozilla::ipc::IPCResult ColorPickerParent::RecvOpen() {
   if (!CreateColorPicker()) {
-    Unused << Send__delete__(this, mInitialColor);
+    (void)Send__delete__(this, mInitialColor);
     return IPC_OK();
   }
 

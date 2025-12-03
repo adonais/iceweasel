@@ -209,12 +209,6 @@ document.addEventListener(
         case "context-take-screenshot":
           gContextMenu.takeScreenshot();
           break;
-        case "context-keywordfield":
-          if (!gContextMenu) {
-            throw new Error("Context menu doesn't seem to be open.");
-          }
-          gContextMenu.addKeywordForSearchField();
-          break;
         case "context-add-engine":
           if (!gContextMenu) {
             throw new Error("Context menu doesn't seem to be open.");

@@ -11,7 +11,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "gDNSOverride",
   "@mozilla.org/network/native-dns-override;1",
-  "nsINativeDNSResolverOverride"
+  Ci.nsINativeDNSResolverOverride
 );
 
 add_task(async function setup() {

@@ -34,17 +34,16 @@ class [[nodiscard]] GenericErrorResult<TestFuncRetValue> {
   MOZ_IMPLICIT operator int() const { return mErrorValue; }
 };
 
-// This allows using MOZ_TRY_VAR to unpack data from the libFuzzer test buffer.
+// This allows using MOZ_TRY to unpack data from the libFuzzer test buffer.
 //
 //  static int testCallback(const uint8_t* buf, size_t size) {
 //    FuzzingBufferReader fuzzBuf(buf, size);
 //
-//    int32_t data;
-//    MOZ_TRY_VAR(data, fuzzBuf.Read<int32_t>());
+//    int32_t data = MOZ_TRY(fuzzBuf.Read<int32_t>());
 //    ...
 //  }
 //
-// If the remaining buffer data is less than requested, MOZ_TRY_VAR returns 0 to
+// If the remaining buffer data is less than requested, MOZ_TRY returns 0 to
 // end the iteration.
 class FuzzingBufferReader {
  public:

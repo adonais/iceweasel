@@ -20,6 +20,16 @@
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/full_screen_application_handler.h"
 
+// Used for metrics; Entries should not be renumbered and numeric values should
+// never be reused.
+enum class FullScreenDetectorResult {
+  kUnknown = 0,
+  kSuccess = 1,
+  kFailureDueToSameTitleWindows = 2,
+  kFailureDueToSlideShowWasNotChosen = 3,
+  kMaxValue = kFailureDueToSlideShowWasNotChosen
+};
+
 namespace webrtc {
 
 class FullScreenPowerPointHandler : public FullScreenApplicationHandler {
@@ -33,6 +43,9 @@ class FullScreenPowerPointHandler : public FullScreenApplicationHandler {
   DesktopCapturer::SourceId FindFullScreenWindow(
       const DesktopCapturer::SourceList& window_list,
       int64_t timestamp) const override;
+
+  void SetSlideShowCreationStateForTest(
+      bool fullscreen_slide_show_started_after_capture_start) override;
 
  private:
   WindowType GetWindowType(HWND window) const;
@@ -52,6 +65,10 @@ class FullScreenPowerPointHandler : public FullScreenApplicationHandler {
   bool IsEditorWindow(HWND window) const;
 
   bool IsSlideShowWindow(HWND window) const;
+
+  mutable bool was_slide_show_created_after_capture_started_;
+
+  mutable FullScreenDetectorResult full_screen_detector_result_;
 };
 
 std::unique_ptr<FullScreenApplicationHandler>

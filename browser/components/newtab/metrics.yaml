@@ -574,138 +574,6 @@ newtab:
       send_in_pings:
         - newtab
 
-  fakespot_dismiss:
-    type: event
-    description: >
-      Recorded when a user dissmisses TBR fakespot feed
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1924873
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1924873
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - nbarrett@mozilla.com
-    expires: never
-    extra_keys:
-      newtab_visit_id: *newtab_visit_id
-    send_in_pings:
-      - newtab
-
-  fakespot_about_click:
-    type: event
-    description: >
-      Recorded when a user the 'About Fakespot' link in TBR fakespot feed context menu
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1924873
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1924873
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - nbarrett@mozilla.com
-    expires: never
-    extra_keys:
-      newtab_visit_id: *newtab_visit_id
-    send_in_pings:
-      - newtab
-
-  fakespot_click:
-    type: event
-    description: >
-      Recorded when a user clicks on a card in TBR fakespot feed
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1924873
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1924873
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - nbarrett@mozilla.com
-    expires: never
-    extra_keys:
-      newtab_visit_id: *newtab_visit_id
-      product_id:
-        description: >
-          id of fakespot product
-        type: string
-      category:
-        description: >
-          category of fakespot product
-        type: string
-    send_in_pings:
-      - newtab
-
-  fakespot_product_impression:
-    type: event
-    description: >
-      Recorded when a user triggers an impression on a card in TBR fakespot feed
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1924873
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1924873
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - nbarrett@mozilla.com
-    expires: never
-    extra_keys:
-      newtab_visit_id: *newtab_visit_id
-      product_title:
-        description: >
-          title of fakespot product
-        type: string
-      product_id:
-        description: >
-          id of fakespot product
-        type: string
-      category:
-        description: >
-          category of fakespot product
-        type: string
-    send_in_pings:
-      - newtab
-
-  fakespot_cta_click:
-    type: event
-    description: >
-      Recorded when a user clicks on the CTA in TBR fakespot feed
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1924873
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1924873
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - nbarrett@mozilla.com
-    expires: never
-    extra_keys:
-      newtab_visit_id: *newtab_visit_id
-    send_in_pings:
-      - newtab
-
-  fakespot_category:
-    type: event
-    description: >
-      Recorded when a user changes the category in TBR fakespot feed
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1924873
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1924873
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - nbarrett@mozilla.com
-    expires: never
-    extra_keys:
-      newtab_visit_id: *newtab_visit_id
-      category:
-        description: >
-          category that user selected
-        type: string
-    send_in_pings:
-      - newtab
-
   sections_impression:
     type: event
     description: >
@@ -1389,6 +1257,26 @@ newtab:
       - mconley@mozilla.com
     expires: never
 
+  highlights_enabled:
+    lifetime: application
+    type: boolean
+    description: >
+      Whether "highlights" is enabled on the newtab.
+      AKA the "Recent Activity" section.
+      Corresponds to the value of the
+      `browser.newtabpage.activity-stream.feeds.section.highlights` pref.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1992486
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1992486
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - mconley@Mozilla.com
+    expires: never
+    send_in_pings:
+      - newtab
+
 newtab.search:
   enabled:
     lifetime: application
@@ -1509,6 +1397,7 @@ topsites:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1820707#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1821556#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1824842#c7
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1996666#c7
     data_sensitivity:
       - interaction
     notification_emails:
@@ -1540,6 +1429,12 @@ topsites:
       visible_topsites: &visible_topsites
         description: The quantity of visible topsites when event occurred
         type: quantity
+      smart_scores: &smart_scores
+        description: stringified json storing scores for each feature during smart shortcut ranking
+        type: string
+      smart_weights: &smart_weights
+        description: stringified json storing weights for each feature during smart shortcut ranking
+        type: string
     send_in_pings:
       - newtab
 
@@ -1561,6 +1456,7 @@ topsites:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1820707#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1821556#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1824842#c7
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1996666#c7
     data_sensitivity:
       - interaction
     notification_emails:
@@ -1578,6 +1474,8 @@ topsites:
       position: *topsite_position
       is_pinned: *is_pinned
       visible_topsites: *visible_topsites
+      smart_scores: *smart_scores
+      smart_weights: *smart_weights
     send_in_pings:
       - newtab
 
@@ -1989,10 +1887,6 @@ pocket:
         description: >
           The list of topics the user selected
         type: string
-      is_list_card:
-        description: >
-          Where the article card is in the list component
-        type: boolean
       section:
         description: >
           If click belongs in a section, the name of the section
@@ -2060,10 +1954,6 @@ pocket:
         description: >
           The list of topics the user selected
         type: string
-      is_list_card:
-        description: >
-          Where the article card is in the list component
-        type: boolean
       section:
         description: >
           If click belongs in a section, the name of the section
@@ -2108,10 +1998,6 @@ pocket:
       corpus_item_id: *corpus_item_id
       received_rank: *received_rank
       recommended_at: *recommended_at
-      is_list_card:
-        description: >
-          Where the article card is in the list component
-        type: boolean
       section:
         description: >
           If click belongs in a section, the name of the section
@@ -2178,10 +2064,6 @@ pocket:
         description: >
           The list of topics the user selected
         type: string
-      is_list_card:
-        description: >
-          Where the article card is in the list component
-        type: boolean
       section:
         description: >
           If click belongs in a section, the name of the section
@@ -2323,10 +2205,6 @@ pocket:
       topic:
         description: The topic of the recommendation. Like "entertainment".
         type: string
-      is_list_card:
-        description: >
-          Where the article card is in the list component
-        type: boolean
       section:
         description: >
           If event belongs in a section, the name of the section
@@ -2569,10 +2447,6 @@ newtab_content:
         description: >
           The list of topics the user selected
         type: string
-      is_list_card:
-        description: >
-          Where the article card is in the list component
-        type: boolean
       section:
         description: >
           If click belongs in a section, the name of the section
@@ -2625,10 +2499,6 @@ newtab_content:
         description: >
           The list of topics the user selected
         type: string
-      is_list_card:
-        description: >
-          Where the article card is in the list component
-        type: boolean
       section:
         description: >
           If click belongs in a section, the name of the section
@@ -2720,10 +2590,6 @@ newtab_content:
       topic:
         description: The topic of the recommendation. Like "entertainment".
         type: string
-      is_list_card:
-        description: >
-          Where the article card is in the list component
-        type: boolean
       section:
         description: >
           If event belongs in a section, the name of the section
@@ -2941,6 +2807,8 @@ newtab_content:
         type: string
     send_in_pings:
       - newtab-content
+    no_lint:
+      - HIGHER_DATA_SENSITIVITY_REQUIRED
 
 top_sites: # Replacement for PingCentre "topsites-impression|click" pings.
   ping_type:
@@ -3455,34 +3323,6 @@ activity_stream:
     expires: never
     extra_keys: *activity_stream_event_extra
     telemetry_mirror: Activity_stream_Event_PocketThumbsUp
-
-  event_fakespot_click:
-    type: event
-    description: >
-      This is recorded with every user interaction on Activity Stream
-      elements.
-      This event was generated to correspond to the Legacy Telemetry event
-      activity_stream.event#FAKESPOT_CLICK.
-    bugs: *activity_stream_event_bugs
-    data_reviews: *activity_stream_event_data_reviews
-    notification_emails: *activity_stream_event_emails
-    expires: never
-    extra_keys: *activity_stream_event_extra
-    telemetry_mirror: Activity_stream_Event_FakespotClick
-
-  event_fakespot_category:
-    type: event
-    description: >
-      This is recorded with every user interaction on Activity Stream
-      elements.
-      This event was generated to correspond to the Legacy Telemetry event
-      activity_stream.event#FAKESPOT_CATEGORY.
-    bugs: *activity_stream_event_bugs
-    data_reviews: *activity_stream_event_data_reviews
-    notification_emails: *activity_stream_event_emails
-    expires: never
-    extra_keys: *activity_stream_event_extra
-    telemetry_mirror: Activity_stream_Event_FakespotCategory
 
   event_pref_changed:
     type: event

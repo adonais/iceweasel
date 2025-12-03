@@ -3106,7 +3106,7 @@ nsresult NS_ShouldSecureUpgrade(
   }
   // The loadInfo indicates no HTTPS upgrade.
   bool skipHTTPSUpgrade = false;
-  Unused << aLoadInfo->GetSkipHTTPSUpgrade(&skipHTTPSUpgrade);
+  (void)aLoadInfo->GetSkipHTTPSUpgrade(&skipHTTPSUpgrade);
   if (skipHTTPSUpgrade) {
     aLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::SKIP_HTTPS_UPGRADE);
     aShouldUpgrade = false;
@@ -3369,7 +3369,7 @@ bool NS_ShouldClassifyChannel(nsIChannel* aChannel, ClassifyType aType) {
   }
 
   nsLoadFlags loadFlags;
-  Unused << aChannel->GetLoadFlags(&loadFlags);
+  (void)aChannel->GetLoadFlags(&loadFlags);
   //  If our load flags dictate that we must let this channel through without
   //  URL classification, obey that here without performing more checks.
   if (loadFlags & nsIChannel::LOAD_BYPASS_URL_CLASSIFIER) {
@@ -3424,7 +3424,7 @@ nsresult GetParameterHTTP(const nsACString& aHeaderVal, const char* aParamName,
 bool ChannelIsPost(nsIChannel* aChannel) {
   if (nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel)) {
     nsAutoCString method;
-    Unused << httpChannel->GetRequestMethod(method);
+    (void)httpChannel->GetRequestMethod(method);
     return method.EqualsLiteral("POST");
   }
   return false;
@@ -3510,7 +3510,7 @@ already_AddRefed<nsIURI> TryChangeProtocol(nsIURI* aURI,
   rv = clone->GetScheme(newScheme);
   if (NS_FAILED(rv) || !net::IsSchemeChangePermitted(aURI, newScheme)) {
     nsAutoCString url;
-    Unused << clone->GetSpec(url);
+    (void)clone->GetSpec(url);
     AutoTArray<nsString, 2> params;
     params.AppendElement(NS_ConvertUTF8toUTF16(url));
     params.AppendElement(NS_ConvertUTF8toUTF16(newScheme));
@@ -4264,7 +4264,7 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
 #ifdef DEBUG
     if (NS_IsMainThread()) {
       nsCOMPtr<nsIXPConnect> xpc = nsIXPConnect::XPConnect();
-      Unused << xpc->DebugDumpJSStack(false, false, false);
+      (void)xpc->DebugDumpJSStack(false, false, false);
     }
 #endif
     MOZ_CRASH_UNSAFE_PRINTF("Missing chrome or resource URLs: %s", spec.get());

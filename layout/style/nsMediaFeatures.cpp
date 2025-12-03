@@ -30,9 +30,6 @@
 #include "nsIWidget.h"
 #include "nsPresContext.h"
 #include "nsStyleConsts.h"
-#ifdef XP_WIN
-#  include "mozilla/WindowsVersion.h"
-#endif
 
 using namespace mozilla;
 using mozilla::dom::DisplayMode;

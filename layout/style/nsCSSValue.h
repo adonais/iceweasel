@@ -58,6 +58,8 @@ enum nsCSSUnit : uint32_t {
   eCSSUnit_VH = 951,
   eCSSUnit_VMin = 952,
   eCSSUnit_VMax = 953,
+
+  eCSSUnit_LastLength = eCSSUnit_VMax,
 };
 
 struct nsCSSValuePair;
@@ -86,7 +88,7 @@ class nsCSSValue {
 
   nsCSSUnit GetUnit() const { return mUnit; }
   bool IsLengthUnit() const {
-    return eCSSUnit_EM <= mUnit && mUnit <= eCSSUnit_Pixel;
+    return eCSSUnit_EM <= mUnit && mUnit <= eCSSUnit_LastLength;
   }
   /**
    * A "pixel" length unit is a some multiple of CSS pixels.

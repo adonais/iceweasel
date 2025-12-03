@@ -1,4 +1,7 @@
 [DEFAULT]
 run-if = ["os == 'win'"]
 
+["test_windowsTestDebug.js"]
+support-files=["test_keep_file_open.worker.js"]
+
 ["test_windows_alert_service.js"]

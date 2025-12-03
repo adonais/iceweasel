@@ -43,8 +43,9 @@ enum class ModuleType : uint32_t {
   JavaScript,
   JSON,
   CSS,
+  Bytes,
 
-  Limit = CSS,
+  Limit = Bytes,
 };
 
 /**
@@ -79,7 +80,8 @@ enum class ModuleType : uint32_t {
 using ModuleLoadHook = bool (*)(JSContext* cx, Handle<JSScript*> referrer,
                                 Handle<JSObject*> moduleRequest,
                                 Handle<Value> hostDefined,
-                                Handle<Value> payload);
+                                Handle<Value> payload, uint32_t lineNumber,
+                                JS::ColumnNumberOneOrigin columnNumber);
 
 /**
  * Get the HostLoadImportedModule hook for the runtime.
@@ -195,13 +197,15 @@ extern JS_PUBLIC_API JSObject* CompileJsonModule(
     SourceText<mozilla::Utf8Unit>& srcBuf);
 
 /**
- * Create a synthetic module record for a CSS module from the provided
- * CSSStyleSheet in cssValue. There's no capability to parse CSS in
- * the engine, so this must occur prior to calling this function.
+ * Create a synthetic module record that exports a single value as its default
+ * export. The caller is responsible for providing the already-constructed
+ * value to export.
+ *
+ * This matches the ECMAScript specification's definition:
+ * https://tc39.es/ecma262/#sec-create-default-export-synthetic-module
  */
-extern JS_PUBLIC_API JSObject* CreateCssModule(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    const Value& cssValue);
+extern JS_PUBLIC_API JSObject* CreateDefaultExportSyntheticModule(
+    JSContext* cx, const Value& defaultExport);
 
 /**
  * Set a private value associated with a source text module record.
@@ -274,27 +278,6 @@ enum ModuleErrorBehaviour {
 extern JS_PUBLIC_API bool ThrowOnModuleEvaluationFailure(
     JSContext* cx, Handle<JSObject*> evaluationPromise,
     ModuleErrorBehaviour errorBehaviour = ReportModuleErrorsAsync);
-
-/*
- * Functions to access the module specifiers of a source text module record used
- * to request module imports.
- *
- * Clients can use GetRequestedModulesCount() to get the number of specifiers
- * and GetRequestedModuleSpecifier() / GetRequestedModuleSourcePos() to get the
- * individual elements.
- */
-extern JS_PUBLIC_API uint32_t
-GetRequestedModulesCount(JSContext* cx, Handle<JSObject*> moduleRecord);
-
-extern JS_PUBLIC_API JSString* GetRequestedModuleSpecifier(
-    JSContext* cx, Handle<JSObject*> moduleRecord, uint32_t index);
-
-/*
- * Get the position of a requested module's name in the source.
- */
-extern JS_PUBLIC_API void GetRequestedModuleSourcePos(
-    JSContext* cx, Handle<JSObject*> moduleRecord, uint32_t index,
-    uint32_t* lineNumber, JS::ColumnNumberOneOrigin* columnNumber);
 
 /*
  * Get the module type of a requested module.

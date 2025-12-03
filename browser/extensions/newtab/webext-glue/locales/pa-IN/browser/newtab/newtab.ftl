@@ -406,7 +406,7 @@ newtab-wallpaper-abstract-purple-green = ਜਾਮਨੀ ਅਤੇ ਹਰਾ ਫ
 newtab-wallpaper-abstract-blue-purple-waves = ਨੀਲੀਆਂ ਤੇ ਜਾਮਨੀ ਲਹਿਰਦਾਰ ਸ਼ਕਲਾਂ
 newtab-wallpaper-abstract-black-waves = ਕਾਲੀਆਂ ਲਹਿਰਦਾਰ ਸ਼ਕਲਾਂ
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = ਫ਼ੋਟੋਗਰਾਫ਼
 newtab-wallpaper-beach-at-sunrise = ਬੀਚ ਉੱਤੇ ਚੜ੍ਹਦਾ ਸੂਰਜ
@@ -435,6 +435,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -675,10 +679,6 @@ newtab-widget-timer-mode-focus =
     .label = ਫੋਕਸ
 newtab-widget-timer-mode-break =
     .label = ਬਰੇਕ
-newtab-widget-timer-play =
-    .title = ਖੇਡਣ
-newtab-widget-timer-pause =
-    .title = ਵਿਰਾਮ
 newtab-widget-timer-label-play =
     .label = ਖੇਡਣ
 newtab-widget-timer-label-pause =
@@ -692,6 +692,8 @@ newtab-widget-timer-menu-learn-more = ਹੋਰ ਜਾਣੋ
 # Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
 newtab-widget-keep-scrolling = ਹੋਰ ਲਈ ਸਕਰੋਲ ਕਰੋ
 newtab-widget-message-title = ਸੂਚੀਆਂ ਅਤੇ ਵਿੱਚ ਮੌਜੂਦ ਟਾਈਮਰ ਨਾਲ ਫੋਕਸ ਰਹੋ
+# to-dos stands for "things to do".
+newtab-widget-message-copy = ਕਰਨ ਵਾਲੇ ਕੰਮਾਂ, ਫ਼ੋਕਸ ਵਾਲੇ ਸ਼ੈਸ਼ਨਾਂ ਤੋਂ ਲੈ ਕੇ ਛੋਟੀ ਬਰੇਕ ਲੈਣ ਲਈ ਫ਼ੌਰਨ ਯਾਦ ਕਰਵਾਉਣਾ — ਕੰਮ ਸਮੇਂ ਸਿਰ ਪੂਰੇ ਕਰੋ।
 newtab-promo-card-title = { -brand-product-name } ਲਈ ਸਹਿਯੋਗ
 newtab-promo-card-body = ਸਾਡੇ ਸਪੌਂਸ ਵਧੀਆ ਵੈੱਬ ਬਣਾਉਣ ਦੇ ਸਾਡੇ ਟੀਚੇ ਵਿੱਚ ਸਹਿਯੋਗ ਕਰਦੇ ਹਨ।
 newtab-promo-card-cta = ਹੋਰ ਜਾਣੋ

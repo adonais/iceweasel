@@ -79,7 +79,7 @@ PushDB.prototype = {
     }
   },
 
-  /*
+  /**
    * @param aRecord
    *        The record to be added.
    */
@@ -116,7 +116,7 @@ PushDB.prototype = {
     );
   },
 
-  /*
+  /**
    * @param aKeyID
    *        The ID of record to be deleted.
    */

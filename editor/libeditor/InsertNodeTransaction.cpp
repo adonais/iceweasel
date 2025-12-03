@@ -51,7 +51,7 @@ InsertNodeTransaction::InsertNodeTransaction(
       mEditorBase(&aEditorBase) {
   MOZ_ASSERT(mPointToInsert.IsSetAndValid());
   // Ensure mPointToInsert stores child at offset.
-  Unused << mPointToInsert.GetChild();
+  (void)mPointToInsert.GetChild();
 }
 
 std::ostream& operator<<(std::ostream& aStream,

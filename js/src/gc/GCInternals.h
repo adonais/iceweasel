@@ -106,18 +106,6 @@ class MOZ_RAII AutoEmptyNurseryAndPrepareForTracing : private AutoFinishGC,
         AutoTraceSession(cx->runtime()) {}
 };
 
-/*
- * Temporarily disable incremental barriers.
- */
-class AutoDisableBarriers {
- public:
-  explicit AutoDisableBarriers(GCRuntime* gc);
-  ~AutoDisableBarriers();
-
- private:
-  GCRuntime* gc;
-};
-
 // Set compartments' maybeAlive flags if anything is marked while this class is
 // live. This is used while marking roots.
 class AutoUpdateLiveCompartments {

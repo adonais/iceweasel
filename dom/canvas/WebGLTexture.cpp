@@ -18,7 +18,6 @@
 #include "mozilla/IntegerRange.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/WebGLRenderingContextBinding.h"
 #include "mozilla/gfx/Logging.h"
 

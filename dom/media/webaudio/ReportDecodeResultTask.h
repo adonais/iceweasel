@@ -8,7 +8,6 @@
 #define ReportDecodeResultTask_h_
 
 #include "MediaBufferDecoder.h"
-#include "mozilla/Attributes.h"
 
 namespace mozilla {
 

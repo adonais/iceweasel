@@ -217,7 +217,88 @@ export default [
     "frozen": false,
     "preview": {
       "kind": "MapLike",
-      "entries": [],
+      "entries": [
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "object",
+              "class": "Object",
+              "ownPropertyLength": 0,
+              "isError": false,
+              "extensible": false,
+              "sealed": false,
+              "frozen": false,
+              "preview": {
+                "kind": "Object",
+                "ownProperties": {},
+                "ownPropertiesLength": 1
+              }
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "object",
+              "class": "Object",
+              "ownPropertyLength": 0,
+              "isError": false,
+              "extensible": false,
+              "sealed": false,
+              "frozen": false,
+              "preview": {
+                "kind": "Object",
+                "ownProperties": {},
+                "ownPropertiesLength": 1
+              }
+            }
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "object",
+              "class": "Object",
+              "ownPropertyLength": 0,
+              "isError": false,
+              "extensible": false,
+              "sealed": false,
+              "frozen": false,
+              "preview": {
+                "kind": "Object",
+                "ownProperties": {},
+                "ownPropertiesLength": 1
+              }
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "object",
+              "class": "Object",
+              "ownPropertyLength": 0,
+              "isError": false,
+              "extensible": false,
+              "sealed": false,
+              "frozen": false,
+              "preview": {
+                "kind": "Object",
+                "ownProperties": {},
+                "ownPropertiesLength": 1
+              }
+            }
+          }
+        ]
+      ],
       "size": 2
     }
   },
@@ -233,7 +314,280 @@ export default [
     "frozen": false,
     "preview": {
       "kind": "MapLike",
-      "entries": [],
+      "entries": [
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "0"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 0
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "1"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 1
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "2"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 2
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "3"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 3
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "4"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 4
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "5"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 5
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "6"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 6
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "7"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 7
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "8"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 8
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "9"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 9
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "10"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 10
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "11"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 11
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "12"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 12
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "13"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 13
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "14"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 14
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "15"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 15
+          }
+        ]
+      ],
       "size": 20
     }
   },
@@ -249,7 +603,280 @@ export default [
     "frozen": false,
     "preview": {
       "kind": "MapLike",
-      "entries": [],
+      "entries": [
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "0"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 0
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "1"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 1
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "2"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 2
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "3"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 3
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "4"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 4
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "5"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 5
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "6"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 6
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "7"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 7
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "8"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 8
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "9"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 9
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "10"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 10
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "11"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 11
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "12"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 12
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "13"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 13
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "14"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 14
+          }
+        ],
+        [
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": {
+              "type": "symbol",
+              "name": "15"
+            }
+          },
+          {
+            "configurable": true,
+            "enumerable": true,
+            "writable": true,
+            "value": 15
+          }
+        ]
+      ],
       "size": 331
     }
   },

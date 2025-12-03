@@ -24,6 +24,20 @@ NavigationUtils::NavigationHistoryBehavior(NavigationType aNavigationType) {
   return Nothing();
 }
 
+/*static*/ Maybe<NavigationType>
+NavigationUtils::NavigationTypeFromNavigationHistoryBehavior(
+    enum NavigationHistoryBehavior aBehavior) {
+  switch (aBehavior) {
+    case NavigationHistoryBehavior::Push:
+      return Some(NavigationType::Push);
+    case NavigationHistoryBehavior::Replace:
+      return Some(NavigationType::Replace);
+    default:
+      break;
+  }
+  return Nothing();
+}
+
 /* static */
 Maybe<NavigationType> NavigationUtils::NavigationTypeFromLoadType(
     uint32_t aLoadType) {

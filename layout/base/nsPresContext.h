@@ -227,13 +227,8 @@ class nsPresContext : public nsISupports,
 
   /**
    * Returns the nearest widget for the root frame or view of this.
-   *
-   * @param aOffset     If non-null the offset from the origin of the root
-   *                    frame's view to the widget's origin (usually positive)
-   *                    expressed in appunits of this will be returned in
-   *                    aOffset.
    */
-  nsIWidget* GetNearestWidget(nsPoint* aOffset = nullptr);
+  nsIWidget* GetNearestWidget() const;
 
   /**
    * Returns the root widget for this.
@@ -639,20 +634,20 @@ class nsPresContext : public nsISupports,
     return NSAppUnitsToIntPixels(aAppUnits, float(AppUnitsPerDevPixel()));
   }
 
-  float AppUnitsToFloatDevPixels(nscoord aAppUnits) {
+  float AppUnitsToFloatDevPixels(nscoord aAppUnits) const {
     return aAppUnits / float(AppUnitsPerDevPixel());
   }
 
-  int32_t CSSPixelsToDevPixels(int32_t aPixels) {
+  int32_t CSSPixelsToDevPixels(int32_t aPixels) const {
     return AppUnitsToDevPixels(CSSPixelsToAppUnits(aPixels));
   }
 
-  float CSSPixelsToDevPixels(float aPixels) {
+  float CSSPixelsToDevPixels(float aPixels) const {
     return NSAppUnitsToFloatPixels(CSSPixelsToAppUnits(aPixels),
                                    float(AppUnitsPerDevPixel()));
   }
 
-  int32_t DevPixelsToIntCSSPixels(int32_t aPixels) {
+  int32_t DevPixelsToIntCSSPixels(int32_t aPixels) const {
     return AppUnitsToIntCSSPixels(DevPixelsToAppUnits(aPixels));
   }
 

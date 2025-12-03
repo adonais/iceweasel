@@ -28,21 +28,24 @@ add_task(async function test_header_content() {
   await panelShownPromise;
 
   let header = panelView.querySelector(
-    lazy.IPProtectionPanel.CONTENT_TAGNAME
-  ).headerEl;
-  Assert.ok(
-    BrowserTestUtils.isVisible(header),
-    "ipprotection-header component should be present"
+    `#${lazy.IPProtectionPanel.HEADER_AREA_ID}`
   );
   Assert.ok(
-    header.experimentBadgeEl,
+    BrowserTestUtils.isVisible(header),
+    "ipprotection-header should be present"
+  );
+  Assert.ok(
+    header.querySelector("moz-badge"),
     "ipprotection-header experiment badge should be present"
   );
   Assert.ok(
-    header.helpButtonEl,
+    header.querySelector(`#${IPProtectionPanel.HEADER_BUTTON_ID}`),
     "ipprotection-header help button should be present"
   );
-  Assert.ok(header.titleEl, "ipprotection-header title should be present");
+  Assert.ok(
+    header.querySelector("h1"),
+    "ipprotection-header title should be present"
+  );
 
   // Close the panel
   let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
@@ -66,28 +69,25 @@ add_task(async function test_help_button() {
   await panelShownPromise;
 
   let header = panelView.querySelector(
-    lazy.IPProtectionPanel.CONTENT_TAGNAME
-  ).headerEl;
+    `#${lazy.IPProtectionPanel.HEADER_AREA_ID}`
+  );
   Assert.ok(
     BrowserTestUtils.isVisible(header),
-    "ipprotection-header component should be present"
+    "ipprotection-header should be present"
   );
 
-  let helpButton = header.helpButtonEl;
+  let helpButton = header.querySelector(
+    `#${IPProtectionPanel.HEADER_BUTTON_ID}`
+  );
   Assert.ok(helpButton, "ipprotection-header help button should be present");
 
-  let helpPageEventPromise = BrowserTestUtils.waitForEvent(
-    document,
-    "IPProtection:ShowHelpPage"
-  );
+  let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
 
   helpButton.click();
 
-  await helpPageEventPromise;
-  Assert.ok(true, "Got IPProtection:ShowHelpPage event");
-
-  // Close the panel
-  let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
-  EventUtils.synthesizeKey("KEY_Escape");
   await panelHiddenPromise;
+  Assert.ok(
+    !BrowserTestUtils.isVisible(helpButton),
+    "ipprotection-header help button should have closed the panel"
+  );
 });

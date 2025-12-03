@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2025-10-03T16:08:47.342777+00:00'
+updated_at: '2025-11-06T19:13:23.782316+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -781,6 +781,10 @@ people:
     bmo_id: 547538
     name: Miko Mynttinen
     nick: mikokm
+  - &mixedpuppy
+    bmo_id: 443354
+    name: Shane Caraveo
+    nick: mixedpuppy
   - &mkaply
     bmo_id: 7313
     name: Mike Kaply
@@ -957,10 +961,6 @@ people:
     bmo_id: 704132
     name: Alexandra Borovova
     nick: Sasha
-  - &scaraveo
-    bmo_id: 443354
-    name: ''
-    nick: scaraveo
   - &sclements
     bmo_id: 603840
     name: Sarah Clements
@@ -3042,6 +3042,7 @@ modules:
       - *nical
       - *teoxoy
       - *aleiserson
+      - *jnicol
     machine_name: core_webgpu_graphics_submodule
 
   - name: 'Core: WebRTC'
@@ -3430,13 +3431,12 @@ modules:
             - Kris Maglione
           review_group: extension-reviewers
         owners:
-          - *scaraveo
           - *rpl
         peers:
-          - *rpl
           - *zombie
           - *robwu
           - *willdurand
+          - *mixedpuppy
         machine_name: addons_manager
 
       - name: Add-ons Manager UI
@@ -3447,15 +3447,15 @@ modules:
           owners_emeritus:
             - Robert Strong
             - Andrew Swan
+            - *mstriemer
           review_group: extension-reviewers
         owners:
-          - *scaraveo
-          - *mstriemer
-        peers:
           - *rpl
+        peers:
           - *zombie
           - *robwu
           - *willdurand
+          - *mixedpuppy
         machine_name: addons_manager_ui
 
       - machine_name: address_bar
@@ -3533,15 +3533,16 @@ modules:
           review_group: desktop-theme-reviewers
         owners:
           - *dao
+          - *hjones
         peers:
           - *emilio
-          - *hjones
           - *itielyn8
           - *Julian
           - *jules
           - *kcochrane
           - *sfoster
           - *tgiles
+          - *mstriemer
         machine_name: desktop_theme
 
       - name: Desktop UI
@@ -3630,6 +3631,7 @@ modules:
         description: Form detection and autocomplete.
         includes:
           - browser/extensions/formautofill/**/*
+          - toolkit/components/autocomplete/**/*
           - toolkit/components/satchel/**/*
         meta:
           owners_emeritus:
@@ -3637,6 +3639,10 @@ modules:
             - *serg
           peers_emeritus:
             - *tgiles
+          components:
+            - Toolkit::Autocomplete
+            - Toolkit::Form Autofill
+            - Toolkit::Form Manager
         owners:
           - *dimi
         peers:
@@ -3911,13 +3917,13 @@ modules:
             - *mconley
         owners:
           - *dao
+          - *sthompson
         peers:
           - *mak
           - *dwalker
           - *nikkis
           - *niklas
           - *jswinarton
-          - *sthompson
           - *sclements
           - *kcochrane
           - *jsudiaman
@@ -3953,7 +3959,6 @@ modules:
       - *jdescottes
       - *nchevobbe
       - *bomsy
-      - *whimboo
     meta:
       owners_emeritus:
         - Patrick Brosset
@@ -4031,6 +4036,7 @@ modules:
           components:
             - 'Firefox for Android :: WebExtensions'
             - 'WebExtensions :: Android'
+          review_group: android-addons-reviewers
         owners:
           - *willdurand
         peers:
@@ -4549,12 +4555,12 @@ modules:
             - Kris Maglione
           review_group: extension-reviewers
         owners:
-          - *scaraveo
           - *zombie
+          - *robwu
         peers:
           - *rpl
-          - *robwu
           - *willdurand
+          - *mixedpuppy
         machine_name: webextensions
     machine_name: toolkit
   - machine_name: translation
@@ -4627,5 +4633,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: e72ed229dd90927fbb8c7e8926f4a730351c990e
-  export: 22599ae6b8b0282ee14abeb998de1ff83c38c685
+  config: e27b32239a127b334a155bb8abffb2b429236d5b
+  export: 1d6764c9e1e0c2e0500f5b50903f9c68a098a0ad

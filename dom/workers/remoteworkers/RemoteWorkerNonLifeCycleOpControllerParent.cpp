@@ -20,7 +20,7 @@ RemoteWorkerNonLifeCycleOpControllerParent::
 
 void RemoteWorkerNonLifeCycleOpControllerParent::Shutdown() {
   if (CanSend()) {
-    Unused << SendShutdown();
+    (void)SendShutdown();
   }
   if (mController) {
     mController = nullptr;

@@ -372,6 +372,11 @@ abstract class Settings {
      * Setting to control the CRLite certificate blocklist channel
      */
     open var crliteChannel: String? by UnsupportedSetting()
+
+    /**
+     * Setting to control whether Safe Browsing V5 is enabled.
+     */
+    open var safeBrowsingV5Enabled: Boolean? by UnsupportedSetting()
 }
 
 /**
@@ -446,6 +451,7 @@ data class DefaultSettings(
     override var bannedPorts: String = "",
     override var lnaBlockingEnabled: Boolean = false,
     override var crliteChannel: String? = null,
+    override var safeBrowsingV5Enabled: Boolean? = null,
 ) : Settings() {
     override val desktopModeEnabled: Boolean
         get() = getDesktopMode()

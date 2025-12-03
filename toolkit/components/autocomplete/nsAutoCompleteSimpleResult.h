@@ -11,7 +11,6 @@
 #include "nsString.h"
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
-#include "mozilla/Attributes.h"
 
 struct AutoCompleteSimpleResultMatch {
   AutoCompleteSimpleResultMatch(const nsAString& aValue,

@@ -4,7 +4,11 @@ import { Provider } from "react-redux";
 import { mount } from "enzyme";
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { actionTypes as at } from "common/Actions.mjs";
-import { FocusTimer } from "content-src/components/Widgets/FocusTimer/FocusTimer";
+import {
+  FocusTimer,
+  isNumericValue,
+  isAtMaxLength,
+} from "content-src/components/Widgets/FocusTimer/FocusTimer";
 
 const PREF_WIDGETS_SYSTEM_NOTIFICATIONS_ENABLED =
   "widgets.focusTimer.showSystemNotifications";
@@ -563,5 +567,95 @@ describe("<FocusTimer>", () => {
       const [action] = dispatch.getCall(0).args;
       assert.equal(action.type, at.OPEN_LINK);
     });
+  });
+
+  // Tests for the focus timer input. It should only allow numbers
+  describe("isNumericValue", () => {
+    it("should return true for single digit numbers", () => {
+      assert.isTrue(isNumericValue("0"));
+      assert.isTrue(isNumericValue("1"));
+      assert.isTrue(isNumericValue("5"));
+      assert.isTrue(isNumericValue("9"));
+    });
+
+    it("should return true for multi-digit numbers", () => {
+      assert.isTrue(isNumericValue("10"));
+      assert.isTrue(isNumericValue("25"));
+      assert.isTrue(isNumericValue("99"));
+    });
+
+    it("should return false for non-numeric characters", () => {
+      assert.isFalse(isNumericValue("a"));
+      assert.isFalse(isNumericValue("Z"));
+      assert.isFalse(isNumericValue("!"));
+      assert.isFalse(isNumericValue("@"));
+      assert.isFalse(isNumericValue(" "));
+    });
+
+    it("should return false for special characters", () => {
+      assert.isFalse(isNumericValue("-"));
+      assert.isFalse(isNumericValue("+"));
+      assert.isFalse(isNumericValue("."));
+      assert.isFalse(isNumericValue(","));
+    });
+
+    it("should return false for mixed alphanumeric strings", () => {
+      assert.isFalse(isNumericValue("1a"));
+      assert.isFalse(isNumericValue("a1"));
+      assert.isFalse(isNumericValue("5x"));
+    });
+
+    it("should return false for empty string", () => {
+      assert.isFalse(isNumericValue(" "));
+    });
+  });
+
+  // Tests for the 2-character limit (enforces max 99 minutes, 59 seconds)
+  describe("isAtMaxLength", () => {
+    it("should return false for empty string", () => {
+      assert.isFalse(isAtMaxLength(""));
+    });
+
+    it("should return false for single character", () => {
+      assert.isFalse(isAtMaxLength("5"));
+      assert.isFalse(isAtMaxLength("9"));
+    });
+
+    it("should return true for 2 characters", () => {
+      assert.isTrue(isAtMaxLength("25"));
+      assert.isTrue(isAtMaxLength("99"));
+      assert.isTrue(isAtMaxLength("00"));
+    });
+
+    it("should return true for more than 2 characters", () => {
+      assert.isTrue(isAtMaxLength("123"));
+      assert.isTrue(isAtMaxLength("999"));
+    });
+  });
+
+  it("should clamp minutes to 99 and seconds to 59 when setting duration", () => {
+    // Find the editable fields
+    const minutes = wrapper.find(".timer-set-minutes").at(0);
+    const seconds = wrapper.find(".timer-set-seconds").at(0);
+
+    // Simulate user typing values beyond limits
+    minutes.getDOMNode().innerText = "100";
+    seconds.getDOMNode().innerText = "85";
+
+    // Trigger blur, which calls setTimerDuration()
+    seconds.simulate("blur");
+
+    // Clamp check
+    const clampedMinutes = Math.min(
+      parseInt(minutes.getDOMNode().innerText, 10),
+      99
+    );
+    const clampedSeconds = Math.min(
+      parseInt(seconds.getDOMNode().innerText, 10),
+      59
+    );
+
+    assert.equal(clampedMinutes, 99, "minutes should be clamped to 99");
+    assert.equal(clampedSeconds, 59, "seconds should be clamped to 59");
   });
 });

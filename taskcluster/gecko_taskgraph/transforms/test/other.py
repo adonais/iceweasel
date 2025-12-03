@@ -13,16 +13,14 @@ from taskgraph.util.attributes import keymatch
 from taskgraph.util.keyed_by import evaluate_keyed_by
 from taskgraph.util.readonlydict import ReadOnlyDict
 from taskgraph.util.schema import Schema, resolve_keyed_by
-from taskgraph.util.taskcluster import (
-    get_artifact_path,
-    get_index_url,
-)
+from taskgraph.util.taskcluster import get_artifact_path
 from taskgraph.util.templates import merge
 from voluptuous import Any, Optional, Required
 
 from gecko_taskgraph.transforms.test.variant import TEST_VARIANTS
 from gecko_taskgraph.util.perftest import is_external_browser
 from gecko_taskgraph.util.platforms import platform_family
+from gecko_taskgraph.util.taskcluster import get_index_url
 
 transforms = TransformSequence()
 
@@ -110,11 +108,6 @@ def setup_talos(config, tasks):
             "extra-options", []
         )
         extra_options.append("--use-talos-json")
-
-        # win7 needs to test skip
-        if task["build-platform"].startswith("win32"):
-            extra_options.append("--add-option")
-            extra_options.append("--setpref,gfx.direct2d.disabled=true")
 
         if config.params.get("project", None):
             extra_options.append("--project=%s" % config.params["project"])

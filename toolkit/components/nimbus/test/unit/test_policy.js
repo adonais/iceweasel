@@ -8,18 +8,44 @@ const { EnterprisePolicyTesting } = ChromeUtils.importESModule(
   "resource://testing-common/EnterprisePolicyTesting.sys.mjs"
 );
 
+const RECIPES = [
+  NimbusTestUtils.factories.recipe.withFeatureConfig("experiment", {
+    featureId: "no-feature-firefox-desktop",
+  }),
+  NimbusTestUtils.factories.recipe.withFeatureConfig(
+    "rollout",
+    { featureId: "no-feature-firefox-desktop" },
+    { isRollout: true }
+  ),
+  NimbusTestUtils.factories.recipe.withFeatureConfig(
+    "optin",
+    { featureId: "no-feature-firefox-desktop" },
+    {
+      isRollout: true,
+      isFirefoxLabsOptIn: true,
+      firefoxLabsTitle: "title",
+      firefoxLabsDescription: "description",
+      firefoxLabsGroup: "group",
+      requiresRestart: false,
+    }
+  ),
+];
+
 add_setup(function setup() {
   // Instantiate the enterprise policy service.
   void Cc["@mozilla.org/enterprisepolicies;1"].getService(Ci.nsIObserver);
 });
 
-add_task(async function testPolicyDisablesNimbus() {
+async function doTest({
+  policies,
+  labsEnabled,
+  studiesEnabled,
+  existingEnrollments = [],
+  expectedEnrollments,
+  expectedOptIns,
+}) {
   info("Enabling policy");
-  await EnterprisePolicyTesting.setupPolicyEngineWithJson({
-    policies: {
-      DisableFirefoxStudies: true,
-    },
-  });
+  await EnterprisePolicyTesting.setupPolicyEngineWithJson({ policies });
 
   info("Is policy engine active?");
   Assert.equal(
@@ -28,28 +54,122 @@ add_task(async function testPolicyDisablesNimbus() {
     "Policy engine is active"
   );
 
-  const loader = NimbusTestUtils.stubs.rsLoader();
-  const manager = loader.manager;
-  await manager.store.init();
-  await manager.onStartup();
+  let storePath = undefined;
+  if (existingEnrollments) {
+    const store = NimbusTestUtils.stubs.store();
+    await store.init();
 
-  Assert.ok(!manager.studiesEnabled, "ExperimentManager is disabled");
+    for (const slug of existingEnrollments) {
+      NimbusTestUtils.addEnrollmentForRecipe(
+        RECIPES.find(e => e.slug === slug),
+        { store }
+      );
+    }
 
-  const setTimerStub = sinon.stub(loader, "setTimer");
-  const updateRecipes = sinon.stub(loader, "updateRecipes");
+    storePath = await NimbusTestUtils.saveStore(store);
+  }
 
-  await loader.enable();
+  const { initExperimentAPI, cleanup, loader } =
+    await NimbusTestUtils.setupTest({
+      init: false,
+      experiments: RECIPES,
+      storePath,
+    });
 
-  Assert.ok(
-    !loader._initialized,
-    "RemoteSettingsExperimentLoader not initailized"
+  sinon.spy(loader, "updateRecipes");
+  sinon.spy(loader, "setTimer");
+
+  await initExperimentAPI();
+
+  Assert.equal(
+    ExperimentAPI.studiesEnabled,
+    studiesEnabled,
+    "Studies are enabled"
   );
-  Assert.ok(
-    setTimerStub.notCalled,
-    "RemoteSettingsExperimentLoader not polling for recipes"
+  Assert.equal(
+    ExperimentAPI.labsEnabled,
+    labsEnabled,
+    "FirefoxLabs is enabled"
   );
-  Assert.ok(
-    updateRecipes.notCalled,
-    "RemoteSettingsExperimentLoader not updating recipes after startup"
+
+  Assert.equal(
+    loader._enabled,
+    studiesEnabled || labsEnabled,
+    "RemoteSettingsExperimentLoader initialized"
   );
+
+  Assert.equal(
+    loader.setTimer.called,
+    studiesEnabled || labsEnabled,
+    "RemoteSettingsExperimentLoader polling for recipes"
+  );
+
+  Assert.equal(
+    loader.updateRecipes.called,
+    studiesEnabled || labsEnabled,
+    "RemoteSettingsExperimentLoader polling for recipes"
+  );
+
+  Assert.deepEqual(
+    ExperimentAPI.manager.store
+      .getAll()
+      .filter(e => e.active)
+      .map(e => e.slug)
+      .sort(),
+    expectedEnrollments.sort(),
+    "Should have expected enrollments"
+  );
+
+  Assert.deepEqual(
+    ExperimentAPI.manager.optInRecipes.map(e => e.slug).sort(),
+    expectedOptIns,
+    "Should have expected available opt-ins"
+  );
+
+  await NimbusTestUtils.cleanupManager(expectedEnrollments);
+  await cleanup();
+}
+
+add_task(async function testDisableStudiesPolicy() {
+  await doTest({
+    policies: { DisableFirefoxStudies: true },
+    labsEnabled: true,
+    studiesEnabled: false,
+    expectedEnrollments: [],
+    expectedOptIns: ["optin"],
+  });
+});
+
+add_task(async function testDisableLabsPolicy() {
+  await doTest({
+    policies: { UserMessaging: { FirefoxLabs: false } },
+    labsEnabled: false,
+    studiesEnabled: true,
+    expectedEnrollments: ["experiment", "rollout"],
+    expectedOptIns: [],
+  });
+});
+
+add_task(async function testNimbusDisabled() {
+  await doTest({
+    policies: {
+      DisableFirefoxStudies: true,
+      UserMessaging: { FirefoxLabs: false },
+    },
+    labsEnabled: false,
+    studiesEnabled: false,
+    expectedEnrollments: [],
+    expectedOptIns: [],
+  });
+});
+
+add_task(async function testDisableLabsPolicyCausesUnenrollments() {
+  await doTest({
+    policies: { UserMessaging: { FirefoxLabs: false } },
+    labsEnabled: false,
+    studiesEnabled: true,
+    expectedEnrollments: ["experiment", "rollout"],
+    existingEnrollments: ["optin"],
+    expectedOptIns: [],
+  });
 });

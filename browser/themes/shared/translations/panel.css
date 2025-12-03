@@ -71,7 +71,7 @@
 }
 
 #full-page-translations-panel-error-message {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .translations-panel-error-icon {

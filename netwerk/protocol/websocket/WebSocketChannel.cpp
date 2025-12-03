@@ -457,7 +457,7 @@ class nsWSAdmissionManager {
           "websocket closed while connecting w/o failing?");
     }
 #endif
-    Unused << aReason;
+    (void)aReason;
 
     sManager->RemoveFromQueue(aChannel);
 

@@ -143,8 +143,7 @@ LayoutDeviceIntRegion GtkCompositorWidget::GetTransparentRegion() {
 }
 
 #ifdef MOZ_WAYLAND
-RefPtr<mozilla::layers::NativeLayerRoot>
-GtkCompositorWidget::GetNativeLayerRoot() {
+mozilla::layers::NativeLayerRoot* GtkCompositorWidget::GetNativeLayerRoot() {
   if (gfx::gfxVars::UseWebRenderCompositor()) {
     if (!mNativeLayerRoot) {
       LOG("GtkCompositorWidget::GetNativeLayerRoot [%p] create",

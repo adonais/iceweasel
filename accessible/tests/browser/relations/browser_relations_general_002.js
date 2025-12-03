@@ -335,3 +335,22 @@ addAccessibleTask(
     is(combobox.childCount, 1, "combobox has listbox");
   }
 );
+
+/*
+ * Test relocated child preserves relation.
+ */
+addAccessibleTask(
+  `
+  <div id="relocated">World</div>
+  <div id="owner" aria-owns="relocated"></div>
+  <button id="btn" aria-labelledby="relocated">Hello</button>
+  `,
+  async function testRelocationRelation(browser, docAcc) {
+    const btn = findAccessibleChildByID(docAcc, "btn");
+    const relocated = findAccessibleChildByID(docAcc, "relocated");
+
+    await testCachedRelation(btn, RELATION_LABELLED_BY, relocated);
+    await testCachedRelation(relocated, RELATION_LABEL_FOR, btn);
+  },
+  { chrome: true, topLevel: true }
+);

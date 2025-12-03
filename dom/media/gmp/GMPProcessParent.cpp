@@ -325,7 +325,7 @@ bool GMPProcessParent::FillMacSandboxInfo(MacSandboxInfo& aInfo) {
       return false;
     }
     nsCString repoDirPath;
-    Unused << repoDir->GetNativePath(repoDirPath);
+    (void)repoDir->GetNativePath(repoDirPath);
     aInfo.testingReadPath1 = repoDirPath.get();
     GMP_LOG_DEBUG(
         "GMPProcessParent::FillMacSandboxInfo: "
@@ -341,7 +341,7 @@ bool GMPProcessParent::FillMacSandboxInfo(MacSandboxInfo& aInfo) {
       return false;
     }
     nsCString objDirPath;
-    Unused << objDir->GetNativePath(objDirPath);
+    (void)objDir->GetNativePath(objDirPath);
     aInfo.testingReadPath2 = objDirPath.get();
     GMP_LOG_DEBUG(
         "GMPProcessParent::FillMacSandboxInfo: "

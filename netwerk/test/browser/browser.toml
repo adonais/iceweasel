@@ -95,6 +95,7 @@ support-files = [
 skip-if = [
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", # Bug 1829935
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1829935
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt && verify-standalone",
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1829935
 ]
 
@@ -180,6 +181,8 @@ support-files = ["res_hello_h1.sjs"]
 
 ["browser_essential_domain_fallbacks.js"]
 
+["browser_fetch_after_suspending_request.js"]
+
 ["browser_fetch_lnk.js"]
 run-if = ["os == 'win'"]
 support-files = ["file_lnk.lnk",]
@@ -225,6 +228,7 @@ support-files = [
   "damonbowling.jpg^headers^",
   "file_favicon.html",
 ]
+skip-if = ["verify-standalone"]
 
 ["browser_test_file_channel_observer.js"]
 
@@ -243,3 +247,4 @@ support-files = [
 ]
 
 ["browser_test_offline_tab.js"]
+skip-if = ["os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && verify-standalone"]

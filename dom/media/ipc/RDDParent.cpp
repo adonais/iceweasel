@@ -143,7 +143,7 @@ mozilla::ipc::IPCResult RDDParent::RecvInit(
   gfxVars::ApplyUpdate(vars);
 
   auto supported = media::MCSInfo::GetSupportFromFactory();
-  Unused << SendUpdateMediaCodecsSupported(supported);
+  (void)SendUpdateMediaCodecsSupported(supported);
 
 #if defined(MOZ_SANDBOX)
 #  if defined(XP_MACOSX)
@@ -183,7 +183,7 @@ IPCResult RDDParent::RecvUpdateVar(const nsTArray<GfxVarUpdate>& aUpdate) {
                 [supported = media::MCSInfo::GetSupportFromFactory(
                      true /* force refresh */)]() {
                   if (auto* rdd = RDDParent::GetSingleton()) {
-                    Unused << rdd->SendUpdateMediaCodecsSupported(supported);
+                    (void)rdd->SendUpdateMediaCodecsSupported(supported);
                   }
                 }));
           }),
@@ -220,7 +220,6 @@ mozilla::ipc::IPCResult RDDParent::RecvInitVideoBridge(
           Feature::HW_COMPOSITING,
           Feature::D3D11_COMPOSITING,
           Feature::OPENGL_COMPOSITING,
-          Feature::DIRECT2D,
       },
       aContentDeviceData.prefs());
 #ifdef XP_WIN
@@ -247,7 +246,7 @@ mozilla::ipc::IPCResult RDDParent::RecvRequestMemoryReport(
   mozilla::dom::MemoryReportRequestClient::Start(
       aGeneration, aAnonymize, aMinimizeMemoryUsage, aDMDFile, processName,
       [&](const MemoryReport& aReport) {
-        Unused << GetSingleton()->SendAddMemoryReport(aReport);
+        (void)GetSingleton()->SendAddMemoryReport(aReport);
       },
       aResolver);
   return IPC_OK();

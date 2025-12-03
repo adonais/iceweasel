@@ -360,7 +360,7 @@ class nsCoreUtils {
    * 2. there is more than one anchor,
    * 3. or, there is one or more anchor used for sizing/margin only.
    */
-  static nsIFrame* GetAnchorForPositionedFrame(
+  static const nsIFrame* GetAnchorForPositionedFrame(
       const PresShell* aPresShell, const nsIFrame* aPositionedFrame);
 
   /**

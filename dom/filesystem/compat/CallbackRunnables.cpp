@@ -7,7 +7,6 @@
 #include "CallbackRunnables.h"
 
 #include "../GetFileOrDirectoryTask.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/Directory.h"
 #include "mozilla/dom/DirectoryBinding.h"

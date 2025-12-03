@@ -23,8 +23,12 @@ backup-file-name = { -brand-product-name }Backup
 
 settings-data-backup-header = Backup
 settings-data-backup-toggle = Manage backup
+settings-data-backup-toggle-on = Turn on backup
+settings-data-backup-toggle-off = Turn off backup
 settings-data-backup-trigger-button = Backup now
 settings-data-backup-in-progress-button = Backup in progress…
+settings-data-backup-in-progress-message =
+    .message = Backup in progress…
 settings-data-backup-scheduled-backups-on = Backup: ON
 settings-data-backup-scheduled-backups-off = Backup: OFF
 settings-data-backup-scheduled-backups-description = Automatically protect your bookmarks, history, and other data. <a data-l10n-name="support-link">Learn more</a>
@@ -161,9 +165,9 @@ backup-service-error-recovery-failed =
 
 # There was some error in the backup service but we don't have a more specific
 # idea of what went wrong
-backup-service-error-went-wrong =
-    .heading = Something went wrong
-    .message = There was a problem with the backup process for { -brand-short-name }. Please try again or restart { -brand-short-name }.
+backup-service-error-went-wrong2 =
+    .heading = Hmm, there was a problem backing up.
+    .message = Try again in a few minutes.
 
 ## These strings are displayed in a modal when users want to enable encryption or change the password for an existing backup.
 
@@ -269,3 +273,8 @@ other-backup-files-founds =
 #   $date (Datetime) - The date the backup was created
 #   $machineName (String) - Name of the machine that the backup was created on.
 backup-file-creation-date-and-device = Created on { DATETIME($date, year: "numeric", month: "numeric", day: "numeric") } on { $machineName }
+
+backup-file-restore-file-validation-error = This file isn’t working. Try picking a different file. <a data-l10n-name="restore-problems">Still having problems?</a>
+
+restore-from-backup-filepicker-input =
+    .placeholder = No file selected

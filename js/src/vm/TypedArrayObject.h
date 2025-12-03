@@ -136,12 +136,6 @@ class TypedArrayObject : public ArrayBufferViewObject {
   // Maximum allowed byte length for any typed array.
   static constexpr size_t ByteLengthLimit = ArrayBufferObject::ByteLengthLimit;
 
-  static bool isOriginalLengthGetter(Native native);
-
-  static bool isOriginalByteOffsetGetter(Native native);
-
-  static bool isOriginalByteLengthGetter(Native native);
-
   /* Accessors and functions */
 
   static bool sort(JSContext* cx, unsigned argc, Value* vp);

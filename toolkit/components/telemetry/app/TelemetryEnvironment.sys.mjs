@@ -40,7 +40,7 @@ if (AppConstants.MOZ_UPDATER) {
     lazy,
     "UpdateServiceStub",
     "@mozilla.org/updates/update-service-stub;1",
-    "nsIApplicationUpdateServiceStub"
+    Ci.nsIApplicationUpdateServiceStub
   );
 }
 
@@ -255,16 +255,8 @@ const DEFAULT_ENVIRONMENT_PREFS = new Map([
     "browser.urlbar.dnsResolveSingleWordsAfterSearch",
     { what: RECORD_DEFAULTPREF_VALUE },
   ],
-  [
-    "browser.urlbar.quicksuggest.dataCollection.enabled",
-    { what: RECORD_DEFAULTPREF_VALUE },
-  ],
   ["browser.urlbar.showSearchSuggestionsFirst", { what: RECORD_PREF_VALUE }],
   ["browser.urlbar.showSearchTerms.enabled", { what: RECORD_PREF_VALUE }],
-  [
-    "browser.urlbar.suggest.quicksuggest.nonsponsored",
-    { what: RECORD_DEFAULTPREF_VALUE },
-  ],
   [
     "browser.urlbar.suggest.quicksuggest.sponsored",
     { what: RECORD_DEFAULTPREF_VALUE },
@@ -297,8 +289,6 @@ const DEFAULT_ENVIRONMENT_PREFS = new Map([
   ["extensions.update.background.url", { what: RECORD_PREF_VALUE }],
   ["general.config.filename", { what: RECORD_DEFAULTPREF_STATE }],
   ["general.smoothScroll", { what: RECORD_PREF_VALUE }],
-  ["gfx.direct2d.disabled", { what: RECORD_PREF_VALUE }],
-  ["gfx.direct2d.force-enabled", { what: RECORD_PREF_VALUE }],
   ["gfx.webrender.all", { what: RECORD_PREF_VALUE }],
   ["layers.acceleration.disabled", { what: RECORD_PREF_VALUE }],
   ["layers.acceleration.force-enabled", { what: RECORD_PREF_VALUE }],
@@ -469,10 +459,7 @@ function getIntlSettings() {
     appLocales: Services.locale.appLocalesAsBCP47,
     systemLocales: getSystemLocales(),
     regionalPrefsLocales: getRegionalPrefsLocales(),
-    acceptLanguages: Services.prefs
-      .getComplexValue("intl.accept_languages", Ci.nsIPrefLocalizedString)
-      .data.split(",")
-      .map(str => str.trim()),
+    acceptLanguages: Services.locale.acceptLanguages.split(/\s*,\s*/g),
   };
   Glean.intl.requestedLocales.set(intl.requestedLocales);
   Glean.intl.availableLocales.set(intl.availableLocales);
@@ -1154,6 +1141,9 @@ EnvironmentCache.prototype = {
     try {
       let gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
       gfxData.features = gfxInfo.getFeatures();
+      for (const [name, value] of Object.entries(gfxData.features)) {
+        Glean.gfxFeatures[name].set(value);
+      }
     } catch (e) {
       this._log.error("nsIGfxInfo.getFeatures() caught error", e);
     }
@@ -1741,7 +1731,6 @@ EnvironmentCache.prototype = {
    */
   _getGFXData() {
     let gfxData = {
-      D2DEnabled: getGfxField("D2DEnabled", null),
       DWriteEnabled: getGfxField("DWriteEnabled", null),
       ContentBackend: getGfxField("ContentBackend", null),
       Headless: getGfxField("isHeadless", null),
@@ -1752,9 +1741,6 @@ EnvironmentCache.prototype = {
       monitors: [],
       features: {},
     };
-    if (gfxData.D2DEnabled !== null) {
-      Glean.gfx.d2dEnabled.set(gfxData.D2DEnabled);
-    }
     if (gfxData.DWriteEnabled !== null) {
       Glean.gfx.dwriteEnabled.set(gfxData.DWriteEnabled);
     }

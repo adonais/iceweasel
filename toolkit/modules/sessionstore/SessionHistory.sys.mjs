@@ -328,6 +328,9 @@ var SessionHistoryInternal = {
 
     entry.transient = shEntry.isTransient();
 
+    entry.navigationKey = shEntry.navigationKey.toString();
+    entry.navigationId = shEntry.navigationId.toString();
+
     return entry;
   },
 
@@ -601,6 +604,13 @@ var SessionHistoryInternal = {
     }
     if (entry.wireframe) {
       shEntry.wireframe = entry.wireframe;
+    }
+
+    if (entry.navigationKey) {
+      shEntry.navigationKey = Components.ID(entry.navigationKey);
+    }
+    if (entry.navigationId) {
+      shEntry.navigationId = Components.ID(entry.navigationId);
     }
 
     if (entry.children) {

@@ -134,6 +134,7 @@ def make_task_description(config, jobs):
             "run-on-projects": job.get(
                 "run-on-projects", dep_job.attributes.get("run_on_projects")
             ),
+            "run-on-repo-type": job.get("run-on-repo-type", ["git", "hg"]),
             "treeherder": treeherder,
         }
 

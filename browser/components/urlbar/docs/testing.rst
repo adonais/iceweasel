@@ -196,8 +196,7 @@ a specific preference to change, and etc.
 
 PlacesTestUtils
 ~~~~~~~~~~~~~~~
-:searchfox:`PlacesTestUtils.sys.mjs <toolkit/components/places/tests/PlacesTestU
-tils.sys.mjs>` is useful for adding visits, adding
+:searchfox:`PlacesTestUtils.sys.mjs <toolkit/components/places/tests/PlacesTestUtils.sys.mjs>` is useful for adding visits, adding
 bookmarks, waiting for notification of visited pages, and etc.
 
 EventUtils

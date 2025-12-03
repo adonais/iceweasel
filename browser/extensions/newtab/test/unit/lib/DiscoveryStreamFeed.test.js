@@ -3596,6 +3596,7 @@ describe("DiscoveryStreamFeed", () => {
       const expectedData = {
         lastUpdated: 0,
         personalized: false,
+        sectionsEnabled: undefined,
         data: {
           settings: {},
           sections: [],
@@ -3616,6 +3617,123 @@ describe("DiscoveryStreamFeed", () => {
               topic: "topic",
               url: "url",
               features: {},
+            },
+          ],
+          surfaceId: "NEW_TAB_EN_US",
+          status: "success",
+        },
+      };
+
+      assert.deepEqual(feedData, expectedData);
+    });
+    it("should fetch proper data from getComponentFeed with sections enabled", async () => {
+      setPref("discoverystream.sections.enabled", true);
+      const fakeCache = {};
+      sandbox.stub(feed.cache, "get").returns(Promise.resolve(fakeCache));
+      sandbox.stub(feed, "rotate").callsFake(val => val);
+      sandbox
+        .stub(feed, "scoreItems")
+        .callsFake(val => ({ data: val, filtered: [], personalized: false }));
+      sandbox.stub(feed, "fetchFromEndpoint").resolves({
+        recommendedAt: 1755834072383,
+        surfaceId: "NEW_TAB_EN_US",
+        data: [
+          {
+            corpusItemId: "decaf-c0ff33",
+            scheduledCorpusItemId: "matcha-latte-ff33c1",
+            excerpt: "excerpt",
+            iconUrl: "iconUrl",
+            imageUrl: "imageUrl",
+            isTimeSensitive: true,
+            publisher: "publisher",
+            receivedRank: 0,
+            tileId: 12345,
+            title: "title",
+            topic: "topic",
+            url: "url",
+            features: {},
+          },
+        ],
+        feeds: {
+          "section-1": {
+            title: "Section 1",
+            subtitle: "Subtitle 1",
+            receivedFeedRank: 1,
+            layout: "cards",
+            iab: "iab-category",
+            isInitiallyVisible: true,
+            recommendations: [
+              {
+                corpusItemId: "decaf-c0ff34",
+                scheduledCorpusItemId: "matcha-latte-ff33c2",
+                excerpt: "section excerpt",
+                iconUrl: "sectionIconUrl",
+                imageUrl: "sectionImageUrl",
+                isTimeSensitive: false,
+                publisher: "section publisher",
+                receivedRank: 1,
+                title: "section title",
+                topic: "section topic",
+                url: "section url",
+                features: {},
+              },
+            ],
+          },
+        },
+      });
+
+      const feedData = await feed.getComponentFeed("url");
+      const expectedData = {
+        lastUpdated: 0,
+        personalized: false,
+        sectionsEnabled: true,
+        data: {
+          settings: {},
+          sections: [
+            {
+              sectionKey: "section-1",
+              title: "Section 1",
+              subtitle: "Subtitle 1",
+              receivedRank: 1,
+              layout: "cards",
+              iab: "iab-category",
+              visible: true,
+            },
+          ],
+          interestPicker: {},
+          recommendations: [
+            {
+              id: "decaf-c0ff33",
+              corpus_item_id: "decaf-c0ff33",
+              scheduled_corpus_item_id: "matcha-latte-ff33c1",
+              excerpt: "excerpt",
+              icon_src: "iconUrl",
+              isTimeSensitive: true,
+              publisher: "publisher",
+              raw_image_src: "imageUrl",
+              received_rank: 0,
+              recommended_at: 1755834072383,
+              title: "title",
+              topic: "topic",
+              url: "url",
+              features: {},
+            },
+            {
+              id: "decaf-c0ff34",
+              corpus_item_id: "decaf-c0ff34",
+              scheduled_corpus_item_id: "matcha-latte-ff33c2",
+              excerpt: "section excerpt",
+              icon_src: "sectionIconUrl",
+              isTimeSensitive: false,
+              publisher: "section publisher",
+              raw_image_src: "sectionImageUrl",
+              received_rank: 1,
+              recommended_at: 1755834072383,
+              title: "section title",
+              topic: "section topic",
+              url: "section url",
+              features: {},
+              section: "section-1",
             },
           ],
           surfaceId: "NEW_TAB_EN_US",

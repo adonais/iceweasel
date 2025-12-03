@@ -7,6 +7,7 @@ package org.mozilla.fenix.compose
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -36,7 +37,7 @@ fun ClickableSubstringLink(
     text: String,
     textStyle: TextStyle = FirefoxTheme.typography.caption,
     textColor: Color = FirefoxTheme.colors.textPrimary,
-    linkTextColor: Color = FirefoxTheme.colors.textAccent,
+    linkTextColor: Color = MaterialTheme.colorScheme.tertiary,
     linkTextDecoration: TextDecoration? = null,
     clickableStartIndex: Int,
     clickableEndIndex: Int,

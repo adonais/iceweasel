@@ -77,7 +77,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
-  BrowserHandler: ["@mozilla.org/browser/clh;1", "nsIBrowserHandler"],
+  BrowserHandler: ["@mozilla.org/browser/clh;1", Ci.nsIBrowserHandler],
 });
 import { MESSAGING_EXPERIMENTS_DEFAULT_FEATURES } from "resource:///modules/asrouter/MessagingExperimentConstants.sys.mjs";
 import { CFRMessageProvider } from "resource:///modules/asrouter/CFRMessageProvider.sys.mjs";
@@ -1761,8 +1761,9 @@ export class _ASRouter {
     });
   }
 
-  /** _cleanupImpressionsForItems - Helper for cleanupImpressions - calculate the updated
-  /*                                impressions object for the given items, then store it and return it
+  /**
+   * Helper for cleanupImpressions - calculate the updated impressions object
+   * for the given items, then store it and return it.
    *
    * @param {obj} state Reference to ASRouter internal state
    * @param {array} items Can be messages, providers or groups that we count impressions for
@@ -1806,13 +1807,14 @@ export class _ASRouter {
     return impressions;
   }
 
-  /** _cleanupMultiProfileImpressions - Helper for cleanupImpressions. This method handles cleanup of impression data in
-   *                                    multi-profile environments where impression data is shared across all user profiles.
-   *                                    It performs the following cleanup:
-   *                                  - For deleted/invalid items: Removes impressions older than 6 months (gradual cleanup)
-   *                                  - For items with custom frequency caps: Removes impressions older than the longest period
-   *                                  - Handles corrupted or malformed impression data
-   *                                  - Updates the shared database after each cleanup operation
+  /**
+   * Helper for cleanupImpressions. This method handles cleanup of impression data in
+   * multi-profile environments where impression data is shared across all user profiles.
+   * It performs the following cleanup:
+   * - For deleted/invalid items: Removes impressions older than 6 months (gradual cleanup)
+   * - For items with custom frequency caps: Removes impressions older than the longest period
+   * - Handles corrupted or malformed impression data
+   * - Updates the shared database after each cleanup operation
    *
    * @param {obj} state Reference to ASRouter internal state
    * @param {array} items are messages that we count impressions for
@@ -2177,7 +2179,8 @@ export class _ASRouter {
     return this.sendTriggerMessage({ ...trigger, browser });
   }
 
-  /** Simple wrapper to make test mocking easier
+  /**
+   * Simple wrapper to make test mocking easier
    *
    * @returns {Promise} resolves when the attribution string has been set
    * succesfully.

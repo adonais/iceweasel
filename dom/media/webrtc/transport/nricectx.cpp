@@ -1044,7 +1044,7 @@ void NrIceCtx::gather_cb(NR_SOCKET s, int h, void* arg) {
 
 void NrIceCtx::SignalAllStreamsFailed() {
   for (auto& [id, stream] : streams_) {
-    Unused << id;
+    (void)id;
     stream->Failed();
     SignalConnectionStateChange(stream, ICE_CTX_FAILED);
   }

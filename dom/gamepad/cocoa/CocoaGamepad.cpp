@@ -15,7 +15,6 @@
 
 #include <vector>
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/Tainting.h"
 #include "mozilla/dom/GamepadHandle.h"
@@ -598,8 +597,8 @@ void DarwinGamepadService::StartupInternal() {
 
 void DarwinGamepadService::Startup() {
   mBackgroundThread = NS_GetCurrentThread();
-  Unused << NS_NewNamedThread("Gamepad", getter_AddRefs(mMonitorThread),
-                              new DarwinGamepadServiceStartupRunnable(this));
+  (void)NS_NewNamedThread("Gamepad", getter_AddRefs(mMonitorThread),
+                          new DarwinGamepadServiceStartupRunnable(this));
 }
 
 void DarwinGamepadService::Shutdown() {

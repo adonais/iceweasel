@@ -9,7 +9,6 @@
  * stream.
  */
 
-#include "mozilla/Attributes.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Mutex.h"

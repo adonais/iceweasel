@@ -8,7 +8,6 @@
 #define DOM_SVG_SVGANIMATEDNUMBERLIST_H_
 
 #include "SVGNumberList.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 

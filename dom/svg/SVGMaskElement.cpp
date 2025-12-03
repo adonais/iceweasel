@@ -7,7 +7,6 @@
 #include "mozilla/dom/SVGMaskElement.h"
 
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGMaskElementBinding.h"
 #include "mozilla/dom/SVGUnitTypesBinding.h"

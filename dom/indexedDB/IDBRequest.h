@@ -10,7 +10,6 @@
 #include "ReportInternalError.h"
 #include "SafeRefPtr.h"
 #include "js/RootingAPI.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/HoldDropJSObjects.h"

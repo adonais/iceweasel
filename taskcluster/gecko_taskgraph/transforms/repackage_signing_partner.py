@@ -28,6 +28,7 @@ repackage_signing_description_schema = Schema(
         Optional("shipping-phase"): task_description_schema["shipping-phase"],
         Optional("priority"): task_description_schema["priority"],
         Optional("task-from"): task_description_schema["task-from"],
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
     }
 )
 
@@ -156,6 +157,7 @@ def make_repackage_signing_description(config, jobs):
             "dependencies": dependencies,
             "attributes": attributes,
             "run-on-projects": dep_job.attributes.get("run_on_projects"),
+            "run-on-repo-type": job.get("run-on-repo-type", ["git", "hg"]),
             "extra": {
                 "repack_id": repack_id,
             },

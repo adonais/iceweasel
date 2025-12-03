@@ -253,7 +253,7 @@ sidebar:
       - https://phabricator.services.mozilla.com/D229405
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: never
     notification_emails:
       - vsabino@mozilla.com
     send_in_pings:

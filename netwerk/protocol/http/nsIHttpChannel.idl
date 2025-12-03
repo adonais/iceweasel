@@ -402,15 +402,6 @@ interface nsIHttpChannel : nsIIdentChannel
     [must_use] boolean isNoCacheResponse();
 
     /**
-     * Returns true if the server sent a "Cache-Control: private" response
-     * header.
-     *
-     * @throws NS_ERROR_NOT_AVAILABLE if called before the response
-     *         has been received (before onStartRequest).
-     */
-    [must_use] boolean isPrivateResponse();
-
-    /**
      * Instructs the channel to immediately redirect to a new destination.
      * Can only be called on channels that have not yet called their
      * listener's OnStartRequest(). Generally that means the latest time

@@ -57,8 +57,7 @@ pub trait Message {
     where
         Self: Sized;
     fn header(&self) -> Vec<u8>;
-    fn payload(&self) -> Vec<u8>;
-    fn ancillary_payload(&self) -> Option<AncillaryData>;
+    fn into_payload(self) -> (Vec<u8>, Option<AncillaryData>);
     fn decode(data: &[u8], ancillary_data: Option<AncillaryData>) -> Result<Self, MessageError>
     where
         Self: Sized;
@@ -126,16 +125,12 @@ impl Message for SetCrashReportPath {
         .encode()
     }
 
-    fn payload(&self) -> Vec<u8> {
+    fn into_payload(self) -> (Vec<u8>, Option<AncillaryData>) {
         let mut payload = Vec::with_capacity(self.payload_size());
         let path = self.path.serialize();
         payload.extend(path.len().to_ne_bytes());
         payload.extend(self.path.serialize());
-        payload
-    }
-
-    fn ancillary_payload(&self) -> Option<AncillaryData> {
-        None
+        (payload, None)
     }
 
     fn decode(
@@ -184,12 +179,8 @@ impl Message for TransferMinidump {
         .encode()
     }
 
-    fn payload(&self) -> Vec<u8> {
-        self.pid.to_ne_bytes().to_vec()
-    }
-
-    fn ancillary_payload(&self) -> Option<AncillaryData> {
-        None
+    fn into_payload(self) -> (Vec<u8>, Option<AncillaryData>) {
+        (self.pid.to_ne_bytes().to_vec(), None)
     }
 
     fn decode(
@@ -245,7 +236,7 @@ impl Message for TransferMinidumpReply {
         .encode()
     }
 
-    fn payload(&self) -> Vec<u8> {
+    fn into_payload(self) -> (Vec<u8>, Option<AncillaryData>) {
         let path_bytes = self.path.serialize();
         let mut buffer = Vec::with_capacity(self.payload_size());
         buffer.extend(path_bytes.len().to_ne_bytes());
@@ -262,11 +253,7 @@ impl Message for TransferMinidumpReply {
                 .as_ref()
                 .map_or(Vec::new(), |error| Vec::from(error.as_bytes())),
         );
-        buffer
-    }
-
-    fn ancillary_payload(&self) -> Option<AncillaryData> {
-        None
+        (buffer, None)
     }
 
     fn decode(
@@ -348,7 +335,7 @@ impl Message for WindowsErrorReportingMinidump {
         .encode()
     }
 
-    fn payload(&self) -> Vec<u8> {
+    fn into_payload(self) -> (Vec<u8>, Option<AncillaryData>) {
         let mut buffer = Vec::<u8>::with_capacity(self.payload_size());
         buffer.extend(self.pid.to_ne_bytes());
         buffer.extend(self.tid.to_ne_bytes());
@@ -360,11 +347,7 @@ impl Message for WindowsErrorReportingMinidump {
         }
         let bytes: [u8; size_of::<CONTEXT>()] = unsafe { std::mem::transmute(self.context) };
         buffer.extend(bytes);
-        buffer
-    }
-
-    fn ancillary_payload(&self) -> Option<AncillaryData> {
-        None
+        (buffer, None)
     }
 
     fn decode(
@@ -452,12 +435,8 @@ impl Message for WindowsErrorReportingMinidumpReply {
         .encode()
     }
 
-    fn payload(&self) -> Vec<u8> {
-        Vec::<u8>::new()
-    }
-
-    fn ancillary_payload(&self) -> Option<AncillaryData> {
-        None
+    fn into_payload(self) -> (Vec<u8>, Option<AncillaryData>) {
+        (Vec::<u8>::new(), None)
     }
 
     fn decode(
@@ -507,7 +486,7 @@ impl Message for RegisterAuxvInfo {
         .encode()
     }
 
-    fn payload(&self) -> Vec<u8> {
+    fn into_payload(self) -> (Vec<u8>, Option<AncillaryData>) {
         let mut payload = Vec::with_capacity(self.payload_size());
         payload.extend(self.pid.to_ne_bytes());
         payload.extend(self.auxv_info.program_header_count.to_ne_bytes());
@@ -515,11 +494,7 @@ impl Message for RegisterAuxvInfo {
         payload.extend(self.auxv_info.linux_gate_address.to_ne_bytes());
         payload.extend(self.auxv_info.entry_address.to_ne_bytes());
         debug_assert!(self.payload_size() == payload.len());
-        payload
-    }
-
-    fn ancillary_payload(&self) -> Option<AncillaryData> {
-        None
+        (payload, None)
     }
 
     fn decode(
@@ -598,15 +573,11 @@ impl Message for UnregisterAuxvInfo {
         .encode()
     }
 
-    fn payload(&self) -> Vec<u8> {
+    fn into_payload(self) -> (Vec<u8>, Option<AncillaryData>) {
         let mut payload = Vec::with_capacity(self.payload_size());
         payload.extend(self.pid.to_ne_bytes());
         debug_assert!(self.payload_size() == payload.len());
-        payload
-    }
-
-    fn ancillary_payload(&self) -> Option<AncillaryData> {
-        None
+        (payload, None)
     }
 
     fn decode(
@@ -635,7 +606,9 @@ pub struct RegisterChildProcess {
 
 impl RegisterChildProcess {
     pub fn new(ipc_endpoint: AncillaryData) -> RegisterChildProcess {
-        RegisterChildProcess { ipc_endpoint }
+        RegisterChildProcess {
+            ipc_endpoint,
+        }
     }
 
     fn payload_size(&self) -> usize {
@@ -656,12 +629,8 @@ impl Message for RegisterChildProcess {
         .encode()
     }
 
-    fn payload(&self) -> Vec<u8> {
-        Vec::<u8>::new()
-    }
-
-    fn ancillary_payload(&self) -> Option<AncillaryData> {
-        Some(self.ipc_endpoint)
+    fn into_payload(self) -> (Vec<u8>, Option<AncillaryData>) {
+        (Vec::<u8>::new(), Some(self.ipc_endpoint))
     }
 
     fn decode(
@@ -705,12 +674,8 @@ impl Message for ChildProcessRegistered {
         .encode()
     }
 
-    fn payload(&self) -> Vec<u8> {
-        self.crash_helper_pid.to_ne_bytes().to_vec()
-    }
-
-    fn ancillary_payload(&self) -> Option<AncillaryData> {
-        None
+    fn into_payload(self) -> (Vec<u8>, Option<AncillaryData>) {
+        (self.crash_helper_pid.to_ne_bytes().to_vec(), None)
     }
 
     fn decode(

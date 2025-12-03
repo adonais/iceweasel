@@ -10,6 +10,7 @@
 
 #include "DrawTargetWebglInternal.h"
 #include "SourceSurfaceWebgl.h"
+#include "mozilla/PodOperations.h"
 #include "mozilla/gfx/Blur.h"
 #include "mozilla/gfx/DrawTargetSkia.h"
 #include "mozilla/gfx/FilterNodeSoftware.h"

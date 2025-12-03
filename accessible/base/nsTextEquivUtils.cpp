@@ -59,6 +59,16 @@ nsresult nsTextEquivUtils::GetNameFromSubtree(
   }
   GetReferencedAccs().Insert(aAccessible);
 
+  if (nsIContent* content = aAccessible->GetContent()) {
+    AssociatedElementsIterator iter(aAccessible->Document(), content,
+                                    nsGkAtoms::aria_actions);
+    while (Accessible* actionTarget = iter.Next()) {
+      // aria-action targets are excluded from name calculation, so consider any
+      // of these targets as "referenced" for our purposes.
+      GetReferencedAccs().Insert(actionTarget);
+    }
+  }
+
   if (GetRoleRule(aAccessible->Role()) == eNameFromSubtreeRule) {
     // XXX: is it necessary to care the accessible is not a document?
     if (aAccessible->IsContent()) {

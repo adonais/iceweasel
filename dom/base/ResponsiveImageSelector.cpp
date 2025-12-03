@@ -9,7 +9,6 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/ServoStyleSetInlines.h"
-#include "mozilla/TextUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "nsCSSProps.h"

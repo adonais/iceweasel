@@ -9,7 +9,6 @@
 #include "FileUtilsImpl.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/SnappyCompressOutputStream.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/InternalResponse.h"
 #include "mozilla/dom/quota/DecryptingInputStream.h"
 #include "mozilla/dom/quota/DecryptingInputStream_impl.h"

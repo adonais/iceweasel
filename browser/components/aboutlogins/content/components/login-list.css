@@ -108,7 +108,7 @@ ol {
   position: sticky;
   top: 0;
   font-size: 0.85em;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--heading-font-weight);
   padding: 4px 16px;
   border-bottom: 1px solid var(--in-content-border-color);
   background-color: var(--background-color-box);
@@ -137,7 +137,7 @@ ol {
 }
 
 .login-list-item.selected .title {
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--heading-font-weight);
 }
 
 .labels {

@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_HTMLOptionElement_h__
 #define mozilla_dom_HTMLOptionElement_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "nsGenericHTMLElement.h"
 
@@ -109,18 +108,17 @@ class HTMLOptionElement final : public nsGenericHTMLElement {
   void SetText(const nsAString& aText, ErrorResult& aRv);
 
   int32_t Index();
-
- protected:
-  virtual ~HTMLOptionElement();
-
-  JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
-
   /**
    * Get the select content element that contains this option, this
    * intentionally does not return nsresult, all we care about is if
    * there's a select associated with this option or not.
    */
-  HTMLSelectElement* GetSelect();
+  HTMLSelectElement* GetSelect() const;
+
+ protected:
+  virtual ~HTMLOptionElement();
+
+  JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
   bool mSelectedChanged = false;
 

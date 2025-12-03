@@ -11,7 +11,6 @@
 #include <string>
 #include <vector>
 
-#include "mozilla/Maybe.h"
 #include "sdp/SdpAttributeList.h"
 #include "sdp/SdpEnum.h"
 

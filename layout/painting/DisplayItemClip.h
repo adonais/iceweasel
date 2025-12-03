@@ -7,7 +7,7 @@
 #ifndef DISPLAYITEMCLIP_H_
 #define DISPLAYITEMCLIP_H_
 
-#include "mozilla/RefPtr.h"
+#include "mozilla/AlreadyAddRefed.h"
 #include "nsRect.h"
 #include "nsTArray.h"
 

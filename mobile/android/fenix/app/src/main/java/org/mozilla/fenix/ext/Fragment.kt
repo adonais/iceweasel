@@ -183,11 +183,15 @@ fun Fragment.breadcrumb(
 
 /**
  * Sets the [WindowManager.LayoutParams.FLAG_SECURE] flag for the current activity window.
+ *
+ * When user preference allowScreenCaptureInSecureScreens is true, this function is a no-op
  */
 fun Fragment.secure() {
-    this.activity?.window?.addFlags(
-        WindowManager.LayoutParams.FLAG_SECURE,
-    )
+    if (context?.settings()?.allowScreenCaptureInSecureScreens != true) {
+        this.activity?.window?.addFlags(
+            WindowManager.LayoutParams.FLAG_SECURE,
+        )
+    }
 }
 
 /**

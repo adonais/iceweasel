@@ -68,14 +68,19 @@ impl PingUploader for ViaductUploader {
         match result {
             Ok(result) => result,
             Err(ViaductUploaderError::Viaduct(ve)) => match ve {
-                NonTlsUrl | UrlError(_) | BackendAlreadyInitialized => {
-                    UploadResult::unrecoverable_failure()
-                }
+                NonTlsUrl
+                | UrlError(_)
+                | BackendAlreadyInitialized
+                | OhttpNotSupported
+                | OhttpChannelNotConfigured(_) => UploadResult::unrecoverable_failure(),
                 RequestHeaderError(_)
                 | BackendError(_)
                 | NetworkError(_)
                 | BackendNotInitialized
-                | SetBackendError => UploadResult::recoverable_failure(),
+                | SetBackendError
+                | OhttpConfigFetchFailed(_)
+                | OhttpRequestError(_)
+                | OhttpResponseError(_) => UploadResult::recoverable_failure(),
             },
             Err(
                 ViaductUploaderError::Bhttp(_)

@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_MimeType_h
 #define mozilla_dom_MimeType_h
 
-#include "mozilla/TextUtils.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
 

@@ -28,6 +28,27 @@ nsresult SVGAnimatedPathSegList::SetBaseValueString(const nsAString& aValue) {
   return mBaseVal.SetValueFromString(NS_ConvertUTF16toUTF8(aValue));
 }
 
+enum class PositionType { Absolute, Relative };
+
+static StyleCommandEndPoint<float> MakeEndPoint(PositionType type, float x,
+                                                float y) {
+  if (type == PositionType::Absolute) {
+    return StyleCommandEndPoint<float>::ToPosition({x, y});
+  } else {
+    return StyleCommandEndPoint<float>::ByCoordinate({x, y});
+  }
+}
+
+static StyleControlPoint<float> MakeControlPoint(PositionType type, float x,
+                                                 float y) {
+  if (type == PositionType::Absolute) {
+    return StyleControlPoint<float>::Position({x, y});
+  } else {
+    return StyleControlPoint<float>::Relative(
+        StyleRelativeControlPoint<float>{{x, y}, StyleControlReference::None});
+  }
+}
+
 class MOZ_STACK_CLASS SVGPathSegmentInitWrapper final {
  public:
   explicit SVGPathSegmentInitWrapper(const SVGPathSegmentInit& aSVGPathSegment)
@@ -61,45 +82,57 @@ class MOZ_STACK_CLASS SVGPathSegmentInitWrapper final {
     MOZ_ASSERT(IsValid(), "Trying to convert invalid SVGPathSegment");
     switch (mInit.mType.First()) {
       case 'M':
-        return StylePathCommand::Move(StyleByTo::To,
-                                      {mInit.mValues[0], mInit.mValues[1]});
+        return StylePathCommand::Move(MakeEndPoint(
+            PositionType::Absolute, mInit.mValues[0], mInit.mValues[1]));
       case 'm':
-        return StylePathCommand::Move(StyleByTo::By,
-                                      {mInit.mValues[0], mInit.mValues[1]});
+        return StylePathCommand::Move(MakeEndPoint(
+            PositionType::Relative, mInit.mValues[0], mInit.mValues[1]));
       case 'L':
-        return StylePathCommand::Line(StyleByTo::To,
-                                      {mInit.mValues[0], mInit.mValues[1]});
+        return StylePathCommand::Line(MakeEndPoint(
+            PositionType::Absolute, mInit.mValues[0], mInit.mValues[1]));
       case 'l':
-        return StylePathCommand::Line(StyleByTo::By,
-                                      {mInit.mValues[0], mInit.mValues[1]});
+        return StylePathCommand::Line(MakeEndPoint(
+            PositionType::Relative, mInit.mValues[0], mInit.mValues[1]));
       case 'C':
         return StylePathCommand::CubicCurve(
-            StyleByTo::To, {mInit.mValues[4], mInit.mValues[5]},
-            {mInit.mValues[0], mInit.mValues[1]},
-            {mInit.mValues[2], mInit.mValues[3]});
+            MakeEndPoint(PositionType::Absolute, mInit.mValues[4],
+                         mInit.mValues[5]),
+            MakeControlPoint(PositionType::Absolute, mInit.mValues[0],
+                             mInit.mValues[1]),
+            MakeControlPoint(PositionType::Absolute, mInit.mValues[2],
+                             mInit.mValues[3]));
       case 'c':
         return StylePathCommand::CubicCurve(
-            StyleByTo::By, {mInit.mValues[4], mInit.mValues[5]},
-            {mInit.mValues[0], mInit.mValues[1]},
-            {mInit.mValues[2], mInit.mValues[3]});
+            MakeEndPoint(PositionType::Relative, mInit.mValues[4],
+                         mInit.mValues[5]),
+            MakeControlPoint(PositionType::Relative, mInit.mValues[0],
+                             mInit.mValues[1]),
+            MakeControlPoint(PositionType::Relative, mInit.mValues[2],
+                             mInit.mValues[3]));
       case 'Q':
         return StylePathCommand::QuadCurve(
-            StyleByTo::To, {mInit.mValues[2], mInit.mValues[3]},
-            {mInit.mValues[0], mInit.mValues[1]});
+            MakeEndPoint(PositionType::Absolute, mInit.mValues[2],
+                         mInit.mValues[3]),
+            MakeControlPoint(PositionType::Absolute, mInit.mValues[0],
+                             mInit.mValues[1]));
       case 'q':
         return StylePathCommand::QuadCurve(
-            StyleByTo::By, {mInit.mValues[2], mInit.mValues[3]},
-            {mInit.mValues[0], mInit.mValues[1]});
+            MakeEndPoint(PositionType::Relative, mInit.mValues[2],
+                         mInit.mValues[3]),
+            MakeControlPoint(PositionType::Relative, mInit.mValues[0],
+                             mInit.mValues[1]));
       case 'A':
         return StylePathCommand::Arc(
-            StyleByTo::To, {mInit.mValues[5], mInit.mValues[6]},
+            MakeEndPoint(PositionType::Absolute, mInit.mValues[5],
+                         mInit.mValues[6]),
             {mInit.mValues[0], mInit.mValues[1]},
             mInit.mValues[4] ? StyleArcSweep::Cw : StyleArcSweep::Ccw,
             mInit.mValues[3] ? StyleArcSize::Large : StyleArcSize::Small,
             mInit.mValues[2]);
       case 'a':
         return StylePathCommand::Arc(
-            StyleByTo::By, {mInit.mValues[5], mInit.mValues[6]},
+            MakeEndPoint(PositionType::Relative, mInit.mValues[5],
+                         mInit.mValues[6]),
             {mInit.mValues[0], mInit.mValues[1]},
             mInit.mValues[4] ? StyleArcSweep::Cw : StyleArcSweep::Ccw,
             mInit.mValues[3] ? StyleArcSize::Large : StyleArcSize::Small,
@@ -114,18 +147,22 @@ class MOZ_STACK_CLASS SVGPathSegmentInitWrapper final {
         return StylePathCommand::VLine(StyleByTo::By, mInit.mValues[0]);
       case 'S':
         return StylePathCommand::SmoothCubic(
-            StyleByTo::To, {mInit.mValues[2], mInit.mValues[3]},
-            {mInit.mValues[0], mInit.mValues[1]});
+            MakeEndPoint(PositionType::Absolute, mInit.mValues[2],
+                         mInit.mValues[3]),
+            MakeControlPoint(PositionType::Absolute, mInit.mValues[0],
+                             mInit.mValues[1]));
       case 's':
         return StylePathCommand::SmoothCubic(
-            StyleByTo::By, {mInit.mValues[2], mInit.mValues[3]},
-            {mInit.mValues[0], mInit.mValues[1]});
+            MakeEndPoint(PositionType::Relative, mInit.mValues[2],
+                         mInit.mValues[3]),
+            MakeControlPoint(PositionType::Relative, mInit.mValues[0],
+                             mInit.mValues[1]));
       case 'T':
-        return StylePathCommand::SmoothQuad(
-            StyleByTo::To, {mInit.mValues[0], mInit.mValues[1]});
+        return StylePathCommand::SmoothQuad(MakeEndPoint(
+            PositionType::Absolute, mInit.mValues[0], mInit.mValues[1]));
       case 't':
-        return StylePathCommand::SmoothQuad(
-            StyleByTo::By, {mInit.mValues[0], mInit.mValues[1]});
+        return StylePathCommand::SmoothQuad(MakeEndPoint(
+            PositionType::Relative, mInit.mValues[0], mInit.mValues[1]));
     }
     return StylePathCommand::Close();
   }

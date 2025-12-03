@@ -207,6 +207,9 @@ namespace JS {
 extern JS_PUBLIC_API TranscodeResult EncodeStencil(JSContext* cx,
                                                    Stencil* stencil,
                                                    TranscodeBuffer& buffer);
+extern JS_PUBLIC_API TranscodeResult EncodeStencil(JS::FrontendContext* fc,
+                                                   Stencil* stencil,
+                                                   TranscodeBuffer& buffer);
 
 // Deserialize data and create a new Stencil.
 extern JS_PUBLIC_API TranscodeResult

@@ -1,0 +1,68 @@
+From: Michael Froman <mfroman@mozilla.com>
+Date: Thu, 18 Sep 2025 12:09:00 -0500
+Subject: Bug 1985396 - Cherry-pick upstream libwebrtc commit 63a59de808
+
+Upstream commit: https://webrtc.googlesource.com/src/+/63a59de808ba7669e60bded703e71f360e5337e0
+       dcsctp: Avoid iterator invalidation
+
+       The ExpireOutstandingChunks method iterated through the
+       `outstanding_data_` container while conditionally calling
+       `AbandonAllFor`. The `AbandonAllFor` method can, in some cases, add new
+       elements to `outstanding_data_`, which invalidates the iterators used by
+       the loop in `ExpireOutstandingChunks`. This could lead to undefined
+       behavior.
+
+       This aligns the C++ implementation to the Rust dcsctp port, which
+       handles this correctly by using a two-pass approach.
+
+       Bug: chromium:443213199
+       Change-Id: Ib5ac73b743c5ed900a69806088780c213536a4a6
+       Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/408002
+       Reviewed-by: Emil Lundmark <lndmrk@webrtc.org>
+       Commit-Queue: Emil Lundmark <lndmrk@webrtc.org>
+       Auto-Submit: Victor Boivie <boivie@webrtc.org>
+       Cr-Commit-Position: refs/heads/main@{#45566}
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b85c57c2d6f0604075bf639a9a7342ece543cdf1
+---
+ net/dcsctp/tx/outstanding_data.cc | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/net/dcsctp/tx/outstanding_data.cc b/net/dcsctp/tx/outstanding_data.cc
+index 074e3c0461..63e750b5fc 100644
+--- a/net/dcsctp/tx/outstanding_data.cc
++++ b/net/dcsctp/tx/outstanding_data.cc
+@@ -402,6 +402,7 @@ std::vector<std::pair<TSN, Data>> OutstandingData::GetChunksToBeRetransmitted(
+ }
+ 
+ void OutstandingData::ExpireOutstandingChunks(Timestamp now) {
++  std::vector<UnwrappedTSN> tsns_to_expire;
+   UnwrappedTSN tsn = last_cumulative_tsn_ack_;
+   for (const Item& item : outstanding_data_) {
+     tsn.Increment();
+@@ -411,15 +412,22 @@ void OutstandingData::ExpireOutstandingChunks(Timestamp now) {
+     if (item.is_abandoned()) {
+       // Already abandoned.
+     } else if (item.is_nacked() && item.has_expired(now)) {
+-      RTC_DLOG(LS_VERBOSE) << "Marking nacked chunk " << *tsn.Wrap()
+-                           << " and message " << *item.data().mid
+-                           << " as expired";
+-      AbandonAllFor(item);
++      tsns_to_expire.push_back(tsn);
+     } else {
+       // A non-expired chunk. No need to iterate any further.
+       break;
+     }
+   }
++
++  for (UnwrappedTSN tsn_to_expire : tsns_to_expire) {
++    // The item is retrieved by TSN, as AbandonAllFor may have modified
++    // `outstanding_data_` and invalidated iterators from the first loop.
++    Item& item = GetItem(tsn_to_expire);
++    RTC_DLOG(LS_WARNING) << "Marking nacked chunk " << *tsn_to_expire.Wrap()
++                         << " and message " << *item.data().mid
++                         << " as expired";
++    AbandonAllFor(item);
++  }
+   RTC_DCHECK(IsConsistent());
+ }
+ 

@@ -270,7 +270,7 @@
     }
 
     > .ac-title .ac-emphasize-text-title {
-      font-weight: 600;
+      font-weight: var(--heading-font-weight);
     }
 
     > .ac-site-icon {

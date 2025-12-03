@@ -137,6 +137,18 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // When true, `javascript:` URLs are not included in search results.
   ["filter.javascript", true],
 
+  // Feature gate pref for flight status suggestions in the urlbar.
+  ["flightStatus.featureGate", false],
+
+  // The minimum prefix length of a flight status keyword the user must type to
+  // trigger the suggestion. 0 means the min length should be taken from Nimbus
+  // or remote settings.
+  ["flightStatus.minKeywordLength", 0],
+
+  // The number of times the user has clicked the "Show less frequently" command
+  // for flight status suggestions.
+  ["flightStatus.showLessFrequentlyCount", 0],
+
   // Focus the content document when pressing the Escape key, if there's no
   // remaining typed history.
   ["focusContentDocumentOnEsc", true],
@@ -280,7 +292,9 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // impression.
   ["quicksuggest.contextualOptIn.impressionDaysLimit", 5],
 
-  // Whether the user has opted in to data collection for quick suggest.
+  // TODO: Remove this pref, which is the old opt-in pref for online Firefox
+  // Suggest. We need to keep it for now because some live Nimbus experiments
+  // use a targeting filter that depends on it.
   ["quicksuggest.dataCollection.enabled", false],
 
   // Comma-separated list of Suggest dynamic suggestion types to enable.
@@ -306,25 +320,23 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
 
   // If the user has gone through a quick suggest prefs migration, then this
   // pref will have a user-branch value that records the latest prefs version.
-  // Version changelog:
-  //
-  // 0: (Unversioned) When `suggest.quicksuggest` is false, all quick suggest
-  //    results are disabled and `suggest.quicksuggest.sponsored` is ignored. To
-  //    show sponsored suggestions, both prefs must be true.
-  //
-  // 1: `suggest.quicksuggest` is removed, `suggest.quicksuggest.nonsponsored`
-  //    is introduced. `suggest.quicksuggest.nonsponsored` and
-  //    `suggest.quicksuggest.sponsored` are independent:
-  //    `suggest.quicksuggest.nonsponsored` controls non-sponsored results and
-  //    `suggest.quicksuggest.sponsored` controls sponsored results.
-  //    `quicksuggest.dataCollection.enabled` is introduced.
-  //
-  // 2: For online, the defaults for `suggest.quicksuggest.nonsponsored` and
-  //    `suggest.quicksuggest.sponsored` are true. Previously they were false.
+  // See `QuickSuggest` for details on each version.
   ["quicksuggest.migrationVersion", 0],
 
   // Whether Suggest will use the ML backend in addition to Rust.
   ["quicksuggest.mlEnabled", false],
+
+  // NOTE: You should most likely access this pref via its Nimbus variable
+  // instead: `UrlbarPrefs.get("quickSuggestOnlineAvailable"). It's listed here
+  // mainly so tests can access it easily via `UrlbarPrefs`.
+  //
+  // Whether online Suggest is available to the user. This is only relevant when
+  // Suggest overall is enabled.
+  ["quicksuggest.online.available", false],
+
+  // Whether online Suggest is enabled for the user. This is only relevant when
+  // Suggest overall is enabled and online Suggest is available to the user.
+  ["quicksuggest.online.enabled", true],
 
   // The last time (as seconds) the user selected 'Not Now' on Realtime
   // suggestion opt-in result.
@@ -440,6 +452,18 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // If true, top sites may include sponsored ones.
   ["sponsoredTopSites", false],
 
+  // Feature gate pref for realtime sports suggestions in the urlbar.
+  ["sports.featureGate", false],
+
+  // The minimum prefix length of sports keyword the user must type to trigger
+  // the suggestion. 0 means the min length should be taken from Nimbus or
+  // remote settings.
+  ["sports.minKeywordLength", 0],
+
+  // The number of times the user has clicked the "Show less frequently" command
+  // for sports suggestions.
+  ["sports.showLessFrequentlyCount", 0],
+
   // If `browser.urlbar.addons.featureGate` is true, this controls whether
   // addon suggestions are turned on.
   ["suggest.addons", true],
@@ -459,6 +483,10 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
 
   // Whether results will include search engines (e.g. tab-to-search).
   ["suggest.engines", true],
+
+  // If `browser.urlbar.flightStatus.featureGate` is true, this controls whether
+  // flight status suggestions are turned on.
+  ["suggest.flightStatus", true],
 
   // Whether results will include the user's history.
   ["suggest.history", true],
@@ -480,10 +508,11 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // Whether results will include QuickActions in the default search mode.
   ["suggest.quickactions", false],
 
-  // Whether results will include non-sponsored quick suggest suggestions.
-  ["suggest.quicksuggest.nonsponsored", false],
+  // Whether results will include Suggest suggestions.
+  ["suggest.quicksuggest.all", false],
 
-  // Whether results will include sponsored quick suggest suggestions.
+  // Whether results will include sponsored Suggest suggestions. Only relevant
+  // if the `all` pref is true.
   ["suggest.quicksuggest.sponsored", false],
 
   // Whether results will include Realtime suggestion opt-in result.
@@ -499,6 +528,9 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
 
   // Whether results will include search suggestions.
   ["suggest.searches", false],
+
+  // Whether results will include realtime sports suggestions.
+  ["suggest.sports", true],
 
   // Whether results will include top sites and the view will open on focus.
   ["suggest.topsites", true],
@@ -995,7 +1027,7 @@ class Preferences {
    *           `browser.urlbar.` branch, the name will be relative to the branch.
    *           For other prefs, the name will be the full name.
    *         - `onNimbusChanged` invoked when a Nimbus value changes. It will be
-   *           passed the name of the changed Nimbus variable.
+   *           passed the name of the changed Nimbus variable and the new value.
    */
   addObserver(observer) {
     this._observerWeakRefs.push(Cu.getWeakReference(observer));
@@ -1081,7 +1113,7 @@ class Preferences {
         oldNimbus.hasOwnProperty(name) != newNimbus.hasOwnProperty(name) ||
         oldNimbus[name] !== newNimbus[name]
       ) {
-        this.#notifyObservers("onNimbusChanged", name);
+        this.#notifyObservers("onNimbusChanged", name, newNimbus[name]);
       }
     }
   }
@@ -1310,7 +1342,7 @@ class Preferences {
     );
   }
 
-  #notifyObservers(method, changed) {
+  #notifyObservers(method, changed, ...rest) {
     for (let i = 0; i < this._observerWeakRefs.length; ) {
       let observer = this._observerWeakRefs[i].get();
       if (!observer) {
@@ -1320,7 +1352,7 @@ class Preferences {
       }
       if (method in observer) {
         try {
-          observer[method](changed);
+          observer[method](changed, ...rest);
         } catch (ex) {
           console.error(ex);
         }

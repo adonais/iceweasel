@@ -14,8 +14,7 @@
  * subclass). Keys whose definition ends in "LIST" return an nsISimpleEnumerator
  * which enumerates a list of file objects.
  *
- * Defines listed in this file are FROZEN.  This list may grow.  Each unique
- * string in this file should have a corresponding atom defined in
+ * Each unique string in this file should have a corresponding atom defined in
  * StaticAtoms.py (search for "DirectoryService"), regardless of whether it
  * is defined here due to conditional compilation.
  */

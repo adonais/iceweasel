@@ -404,13 +404,13 @@ nsHttpConnectionInfo::CloneAndAdoptHTTPSSVCRecord(
   clone->SetIPv6Disabled(GetIPv6Disabled());
 
   bool hasIPHint = false;
-  Unused << aRecord->GetHasIPHintAddress(&hasIPHint);
+  (void)aRecord->GetHasIPHintAddress(&hasIPHint);
   if (hasIPHint) {
     clone->SetHasIPHintAddress(hasIPHint);
   }
 
   nsAutoCString echConfig;
-  Unused << aRecord->GetEchConfig(echConfig);
+  (void)aRecord->GetEchConfig(echConfig);
   clone->SetEchConfig(echConfig);
 
   return clone.forget();

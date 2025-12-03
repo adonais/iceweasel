@@ -6,7 +6,6 @@
 
 #include "mozilla/dom/MerchantValidationEvent.h"
 
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Location.h"
 #include "mozilla/dom/PaymentRequest.h"
@@ -169,7 +168,7 @@ void MerchantValidationEvent::GetValidationURL(nsAString& aValidationURL) {
   nsAutoCString utf8href;
   nsresult rv = mValidationURL->GetSpec(utf8href);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
-  Unused << rv;
+  (void)rv;
   aValidationURL.Assign(NS_ConvertUTF8toUTF16(utf8href));
 }
 

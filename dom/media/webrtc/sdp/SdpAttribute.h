@@ -18,7 +18,6 @@
 
 #include "common/EncodingConstraints.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "nsString.h"

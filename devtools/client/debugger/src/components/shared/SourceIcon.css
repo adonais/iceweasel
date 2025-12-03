@@ -31,11 +31,6 @@
   mask-image: url(chrome://devtools/content/debugger/images/sources/backbone.svg);
 }
 
-.img.choo {
-  background-image: url(chrome://devtools/content/debugger/images/sources/choo.svg);
-  background-color: transparent !important;
-}
-
 .img.coffeescript {
   background-image: url(chrome://devtools/content/debugger/images/sources/coffeescript.svg);
   background-color: transparent !important;

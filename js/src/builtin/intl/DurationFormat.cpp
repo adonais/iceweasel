@@ -13,7 +13,6 @@
 #include "mozilla/intl/ListFormat.h"
 #include "mozilla/intl/NumberFormat.h"
 #include "mozilla/Span.h"
-#include "mozilla/UniquePtr.h"
 
 #include <array>
 #include <charconv>

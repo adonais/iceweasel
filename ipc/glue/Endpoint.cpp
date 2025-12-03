@@ -6,7 +6,7 @@
 
 #include "mozilla/ipc/Endpoint.h"
 #include "chrome/common/ipc_message.h"
-#include "mozilla/ipc/IPDLParamTraits.h"
+#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "nsThreadUtils.h"
 #include "mozilla/ipc/ProtocolMessageUtils.h"
 
@@ -95,12 +95,15 @@ bool UntypedManagedEndpoint::BindCommon(IProtocol* aActor,
   return true;
 }
 
+}  // namespace mozilla::ipc
+
+namespace IPC {
+
 /* static */
-void IPDLParamTraits<UntypedManagedEndpoint>::Write(IPC::MessageWriter* aWriter,
-                                                    IProtocol* aActor,
-                                                    paramType&& aParam) {
+void ParamTraits<mozilla::ipc::UntypedManagedEndpoint>::Write(
+    MessageWriter* aWriter, paramType&& aParam) {
   bool isValid = aParam.mInner.isSome();
-  WriteIPDLParam(aWriter, aActor, isValid);
+  WriteParam(aWriter, isValid);
   if (!isValid) {
     return;
   }
@@ -111,24 +114,23 @@ void IPDLParamTraits<UntypedManagedEndpoint>::Write(IPC::MessageWriter* aWriter,
   MOZ_RELEASE_ASSERT(inner.mOtherSide, "Has not been sent over IPC yet");
   MOZ_RELEASE_ASSERT(inner.mOtherSide->ActorEventTarget()->IsOnCurrentThread(),
                      "Must be being sent from the correct thread");
-  MOZ_RELEASE_ASSERT(
-      inner.mOtherSide->Get() && inner.mOtherSide->Get()->ToplevelProtocol() ==
-                                     aActor->ToplevelProtocol(),
-      "Must be being sent over the same toplevel protocol");
+  MOZ_RELEASE_ASSERT(inner.mOtherSide->Get() && aWriter->GetActor() &&
+                         inner.mOtherSide->Get()->ToplevelProtocol() ==
+                             aWriter->GetActor()->ToplevelProtocol(),
+                     "Must be being sent over the same toplevel protocol");
 
-  WriteIPDLParam(aWriter, aActor, inner.mId);
-  WriteIPDLParam(aWriter, aActor, inner.mType);
-  WriteIPDLParam(aWriter, aActor, inner.mManagerId);
-  WriteIPDLParam(aWriter, aActor, inner.mManagerType);
+  WriteParam(aWriter, inner.mId);
+  WriteParam(aWriter, inner.mType);
+  WriteParam(aWriter, inner.mManagerId);
+  WriteParam(aWriter, inner.mManagerType);
 }
 
 /* static */
-bool IPDLParamTraits<UntypedManagedEndpoint>::Read(IPC::MessageReader* aReader,
-                                                   IProtocol* aActor,
-                                                   paramType* aResult) {
-  *aResult = UntypedManagedEndpoint{};
+bool ParamTraits<mozilla::ipc::UntypedManagedEndpoint>::Read(
+    MessageReader* aReader, paramType* aResult) {
+  *aResult = mozilla::ipc::UntypedManagedEndpoint{};
   bool isValid = false;
-  if (!aActor || !ReadIPDLParam(aReader, aActor, &isValid)) {
+  if (!aReader->GetActor() || !ReadParam(aReader, &isValid)) {
     return false;
   }
   if (!isValid) {
@@ -137,16 +139,12 @@ bool IPDLParamTraits<UntypedManagedEndpoint>::Read(IPC::MessageReader* aReader,
 
   aResult->mInner.emplace();
   auto& inner = *aResult->mInner;
-  inner.mToplevel = aActor->ToplevelProtocol()->GetWeakLifecycleProxy();
-  return ReadIPDLParam(aReader, aActor, &inner.mId) &&
-         ReadIPDLParam(aReader, aActor, &inner.mType) &&
-         ReadIPDLParam(aReader, aActor, &inner.mManagerId) &&
-         ReadIPDLParam(aReader, aActor, &inner.mManagerType);
+  inner.mToplevel =
+      aReader->GetActor()->ToplevelProtocol()->GetWeakLifecycleProxy();
+  return ReadParam(aReader, &inner.mId) && ReadParam(aReader, &inner.mType) &&
+         ReadParam(aReader, &inner.mManagerId) &&
+         ReadParam(aReader, &inner.mManagerType);
 }
-
-}  // namespace mozilla::ipc
-
-namespace IPC {
 
 void ParamTraits<mozilla::ipc::UntypedEndpoint>::Write(MessageWriter* aWriter,
                                                        paramType&& aParam) {

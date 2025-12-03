@@ -7,7 +7,6 @@
 #define _NS_NSSVERSION_H_
 
 #include "nsINSSVersion.h"
-#include "mozilla/Attributes.h"
 
 class nsNSSVersion final : public nsINSSVersion {
  public:

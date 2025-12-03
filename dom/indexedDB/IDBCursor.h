@@ -10,7 +10,6 @@
 #include "IDBCursorType.h"
 #include "IndexedDatabase.h"
 #include "js/RootingAPI.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/InitializedOnce.h"
 #include "mozilla/dom/IDBCursorBinding.h"
 #include "mozilla/dom/IDBTransaction.h"

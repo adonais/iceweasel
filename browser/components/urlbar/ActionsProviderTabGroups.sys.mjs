@@ -26,9 +26,9 @@ class ProviderTabGroups extends ActionsProvider {
     return "ActionsProviderTabGroups";
   }
 
-  isActive(queryContext, controller) {
+  isActive(queryContext) {
     return (
-      controller?.input.isAddressbar &&
+      queryContext.sapName == "urlbar" &&
       Services.prefs.getBoolPref("browser.tabs.groups.enabled") &&
       (!queryContext.restrictSource ||
         queryContext.restrictSource == lazy.UrlbarUtils.RESULT_SOURCE.TABS) &&

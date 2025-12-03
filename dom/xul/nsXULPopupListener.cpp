@@ -37,7 +37,6 @@
 #include "nsFocusManager.h"
 #include "nsPIDOMWindow.h"
 #include "nsPresContext.h"
-#include "nsViewManager.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

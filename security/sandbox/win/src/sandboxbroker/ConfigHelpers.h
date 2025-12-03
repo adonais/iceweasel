@@ -40,7 +40,7 @@ MOZ_RAII class UserFontConfigHelper final {
                        const nsString& aLocalAppData);
   ~UserFontConfigHelper();
 
-  void AddRules(sandboxing::SizeTrackingConfig& aPolicy) const;
+  void AddRules(sandboxing::SizeTrackingConfig& aConfig) const;
 
   UserFontConfigHelper(const UserFontConfigHelper&) = delete;
   UserFontConfigHelper& operator=(const UserFontConfigHelper&) = delete;

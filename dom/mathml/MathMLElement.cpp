@@ -6,7 +6,6 @@
 
 #include "mozilla/dom/MathMLElement.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/FocusModel.h"
 #include "mozilla/StaticPrefs_mathml.h"

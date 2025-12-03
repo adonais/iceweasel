@@ -33,8 +33,8 @@ static already_AddRefed<Document> CreateHTMLDoc() {
                                         u""_ns,   // aQualifiedName
                                         nullptr,  // aDoctype
                                         uri, uri, principal,
-                                        false,    // aLoadedAsData
-                                        nullptr,  // aEventObject
+                                        LoadedAsData::No,  // aLoadedAsData
+                                        nullptr,           // aEventObject
                                         DocumentFlavor::HTML));
   MOZ_RELEASE_ASSERT(doc);
   return doc.forget();

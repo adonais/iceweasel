@@ -1113,6 +1113,7 @@ dom/media/test/hls/*.ts
 
 # Intentional broken files
 dom/base/test/file_js_cache_syntax_error.js
+dom/base/test/file_js_cache_large_syntax_error.js
 dom/base/test/jsmodules/test_scriptNotParsedAsModule.html
 dom/base/test/jsmodules/test_syntaxError.html
 dom/base/test/jsmodules/test_syntaxErrorAsync.html
@@ -1387,6 +1388,7 @@ dom/media/platforms/ffmpeg/ffmpeg58/
 dom/media/platforms/ffmpeg/ffmpeg59/
 dom/media/platforms/ffmpeg/ffmpeg60/
 dom/media/platforms/ffmpeg/ffmpeg61/
+dom/media/platforms/ffmpeg/ffmpeg62/
 dom/media/platforms/ffmpeg/libav53/
 dom/media/platforms/ffmpeg/libav54/
 dom/media/platforms/ffmpeg/libav55/
@@ -1499,7 +1501,6 @@ modules/zlib/
 mozglue/misc/decimal/
 mozglue/static/lz4/.*
 mozglue/tests/glibc_printf_tests/
-netwerk/dns/nsIDNKitInterface.h
 netwerk/sctp/src/
 netwerk/srtp/src/
 nsprpub/
@@ -1550,7 +1551,7 @@ toolkit/components/utils/mozjexl.sys.mjs
 toolkit/components/viaduct/fetch_msg_types.pb.cc
 toolkit/components/viaduct/fetch_msg_types.pb.h
 toolkit/content/vendor/react/
-toolkit/content/widgets/vendor/lit.all.mjs
+toolkit/content/widgets/vendor/
 toolkit/crashreporter/breakpad-client/
 toolkit/crashreporter/google-breakpad/
 toolkit/modules/third_party/
@@ -1725,6 +1726,7 @@ mobile/android/android-components/components/lib/push-firebase/lint-baseline.xml
 mobile/android/android-components/components/lib/state/lint-baseline.xml
 mobile/android/android-components/components/service/digitalassetlinks/lint-baseline.xml
 mobile/android/android-components/components/service/firefox-accounts/lint-baseline.xml
+mobile/android/android-components/components/service/firefox-relay/lint-baseline.xml
 mobile/android/android-components/components/service/glean/lint-baseline.xml
 mobile/android/android-components/components/service/location/lint-baseline.xml
 mobile/android/android-components/components/service/mars/lint-baseline.xml
@@ -1766,9 +1768,7 @@ mobile/android/android-components/samples/sync-logins/lint-baseline.xml
 mobile/android/android-components/samples/sync/lint-baseline.xml
 mobile/android/android-components/samples/toolbar/lint-baseline.xml
 mobile/android/fenix/app/lint-baseline.xml
-mobile/android/fenix/app/src/debug/res/raw/initial_experiments.json
 mobile/android/fenix/app/src/main/res/
-mobile/android/fenix/app/src/main/res/raw/initial_experiments.json
 mobile/android/fenix/config/detekt-baseline.xml
 mobile/android/fenix/gradle/wrapper/
 mobile/android/focus-android/app/lint-baseline.xml

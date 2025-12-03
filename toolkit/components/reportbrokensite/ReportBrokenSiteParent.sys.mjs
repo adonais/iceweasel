@@ -129,7 +129,6 @@ export class ReportBrokenSiteParent extends JSWindowActorParent {
     );
 
     return clean({
-      direct2DEnabled: get("direct2DEnabled"),
       directWriteEnabled: get("directWriteEnabled"),
       directWriteVersion: get("directWriteVersion"),
       hasTouchScreen: info.ApzTouchInput == 1,

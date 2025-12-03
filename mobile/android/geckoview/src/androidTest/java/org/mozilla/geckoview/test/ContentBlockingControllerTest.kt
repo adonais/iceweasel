@@ -259,6 +259,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             "browser.safebrowsing.provider.google5.updateURL",
             "browser.safebrowsing.provider.google5.gethashURL",
             "browser.safebrowsing.provider.google5.lists",
+            "browser.safebrowsing.provider.google5.enabled",
         )
 
         assertThat(
@@ -290,6 +291,11 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             "Restored prefs value is correct",
             restoredPrefs[5] as String,
             equalTo(originalPrefs[5]),
+        )
+        assertThat(
+            "Restored prefs value is correct",
+            restoredPrefs[6] as Boolean,
+            equalTo(originalPrefs[6]),
         )
     }
 

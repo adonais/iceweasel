@@ -336,7 +336,7 @@ newtab-wallpaper-abstract-purple = Furmoù limestra
 newtab-wallpaper-abstract-orange = Furmoù orañjez
 newtab-wallpaper-abstract-blue-purple = Furmoù limestra hag orañjez
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotoioù
 newtab-wallpaper-beach-at-sunrise = Traezhenn e-pad ar sav-heol
@@ -446,3 +446,13 @@ newtab-custom-wallpaper-cta = Esaeañ
 
 newtab-report-cancel = Nullañ
 newtab-report-submit = Kas
+
+## Strings for task / to-do list productivity widget
+
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Nevez
+newtab-widget-lists-menu-create = Krouiñ ur roll nevez
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Roll nevez

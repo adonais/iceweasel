@@ -26,7 +26,7 @@ add_setup(async function init() {
   // Enable Suggest but not the ML backend yet.
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     prefs: [
-      ["suggest.quicksuggest.nonsponsored", true],
+      ["suggest.quicksuggest.all", true],
       ["suggest.quicksuggest.sponsored", true],
     ],
   });

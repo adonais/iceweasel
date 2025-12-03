@@ -13,8 +13,6 @@
 #include <string>
 #include <vector>
 
-#include "mozilla/ArrayUtils.h"
-
 #include "cert.h"
 #include "nspr.h"
 #include "nss.h"

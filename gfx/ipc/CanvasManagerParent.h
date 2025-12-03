@@ -9,7 +9,6 @@
 #include "mozilla/gfx/PCanvasManagerParent.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/StaticMonitor.h"
-#include "mozilla/UniquePtr.h"
 #include "nsHashtablesFwd.h"
 #include "nsTArray.h"
 

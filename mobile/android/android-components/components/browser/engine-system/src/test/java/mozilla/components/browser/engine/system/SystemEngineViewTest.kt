@@ -621,12 +621,12 @@ class SystemEngineViewTest {
         whenever(blockedRequest.url).thenReturn("http://analyticsTest1.com/".toUri())
         webViewClient.shouldInterceptRequest(engineSession.webView, blockedRequest)
 
-        assertTrue(trackerBlocked!!.trackingCategories.first() == TrackingCategory.ANALYTICS)
+        assertTrue(trackerBlocked.trackingCategories.first() == TrackingCategory.ANALYTICS)
 
         whenever(blockedRequest.url).thenReturn("http://www.socialtest1.com/".toUri())
         webViewClient.shouldInterceptRequest(engineSession.webView, blockedRequest)
 
-        assertTrue(trackerBlocked!!.trackingCategories.first() == TrackingCategory.SOCIAL)
+        assertTrue(trackerBlocked.trackingCategories.first() == TrackingCategory.SOCIAL)
 
         SystemEngineView.urlMatcher = null
     }

@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.browser.store
 
+import android.content.Context
 import android.view.Gravity
 import androidx.annotation.VisibleForTesting
 import mozilla.components.concept.base.crash.Breadcrumb
@@ -74,31 +75,51 @@ class BrowserScreenMiddleware(
         crashReporter.recordCrashBreadcrumb(
             Breadcrumb("DownloadCancelDialogFragment shown in browser screen"),
         )
-        val dialog = DownloadCancelDialogFragment.newInstance(
+        val dialog = createDownloadCancelDialog(environment.context, store, downloadCount, tabId)
+
+        dialog.show(environment.fragmentManager, CANCEL_PRIVATE_DOWNLOADS_DIALOG_FRAGMENT_TAG)
+    }
+
+    /**
+     * Creates and configures a new instance of [DownloadCancelDialogFragment].
+     */
+    @VisibleForTesting
+    internal fun createDownloadCancelDialog(
+        context: Context,
+        store: Store<BrowserScreenState, BrowserScreenAction>,
+        downloadCount: Int,
+        tabId: String?,
+    ): DownloadCancelDialogFragment {
+        return DownloadCancelDialogFragment.newInstance(
             downloadCount = downloadCount,
             tabId = tabId,
             source = null,
-            promptStyling = DownloadCancelDialogFragment.PromptStyling(
-                gravity = Gravity.BOTTOM,
-                shouldWidthMatchParent = true,
-                positiveButtonBackgroundColor = ThemeManager.resolveAttribute(
-                    R.attr.accent,
-                    environment.context,
-                ),
-                positiveButtonTextColor = ThemeManager.resolveAttribute(
-                    R.attr.textOnColorPrimary,
-                    environment.context,
-                ),
-                positiveButtonRadius = environment.context.pixelSizeFor(
-                    R.dimen.tab_corner_radius,
-                ).toFloat(),
-            ),
-
+            promptStyling = createDialogPromptStyling(context),
             onPositiveButtonClicked = { _, _ ->
                 store.dispatch(CancelPrivateDownloadsOnPrivateTabsClosedAccepted)
             },
         )
-        dialog.show(environment.fragmentManager, CANCEL_PRIVATE_DOWNLOADS_DIALOG_FRAGMENT_TAG)
+    }
+
+    /**
+     * Creates the specific styling configuration for the download cancellation prompt.
+     */
+    fun createDialogPromptStyling(context: Context): DownloadCancelDialogFragment.PromptStyling {
+        return DownloadCancelDialogFragment.PromptStyling(
+            gravity = Gravity.BOTTOM,
+            shouldWidthMatchParent = true,
+            positiveButtonBackgroundColor = ThemeManager.resolveAttribute(
+                R.attr.accent,
+                context,
+            ),
+            positiveButtonTextColor = ThemeManager.resolveAttribute(
+                R.attr.textOnColorPrimary,
+                context,
+            ),
+            positiveButtonRadius = context.pixelSizeFor(
+                R.dimen.tab_corner_radius,
+            ).toFloat(),
+        )
     }
 
     /**

@@ -9,7 +9,6 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"

@@ -17,8 +17,9 @@ import org.mozilla.fenix.helpers.AppAndSystemHelper.grantSystemPermission
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
-import org.mozilla.fenix.helpers.TestAssetHelper.getMutedVideoPageAsset
-import org.mozilla.fenix.helpers.TestAssetHelper.getVideoPageAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.mutedVideoPageAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.videoPageAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
@@ -119,8 +120,8 @@ class SettingsSitePermissionsTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyAutoplayBlockAudioOnlySettingOnNotMutedVideoTest() {
-        val genericPage = getGenericAsset(mockWebServer, 1)
-        val videoTestPage = getVideoPageAsset(mockWebServer)
+        val genericPage = mockWebServer.getGenericAsset(1)
+        val videoTestPage = mockWebServer.videoPageAsset
 
         homeScreen {
         }.openThreeDotMenu {
@@ -158,8 +159,8 @@ class SettingsSitePermissionsTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyAutoplayBlockAudioOnlySettingOnMutedVideoTest() {
-        val genericPage = getGenericAsset(mockWebServer, 1)
-        val mutedVideoTestPage = getMutedVideoPageAsset(mockWebServer)
+        val genericPage = mockWebServer.getGenericAsset(1)
+        val mutedVideoTestPage = mockWebServer.mutedVideoPageAsset
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(genericPage.url) {
@@ -185,8 +186,8 @@ class SettingsSitePermissionsTest : TestSetup() {
     @Test
     @SkipLeaks
     fun verifyAutoplayAllowAudioVideoSettingOnNotMutedVideoTestTest() {
-        val genericPage = getGenericAsset(mockWebServer, 1)
-        val videoTestPage = getVideoPageAsset(mockWebServer)
+        val genericPage = mockWebServer.getGenericAsset(1)
+        val videoTestPage = mockWebServer.videoPageAsset
 
         homeScreen {
         }.openThreeDotMenu {
@@ -221,7 +222,7 @@ class SettingsSitePermissionsTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2286806
     @Test
     fun verifyAutoplayAllowAudioVideoSettingOnMutedVideoTest() {
-        val mutedVideoTestPage = getMutedVideoPageAsset(mockWebServer)
+        val mutedVideoTestPage = mockWebServer.mutedVideoPageAsset
 
         homeScreen {
         }.openThreeDotMenu {
@@ -249,7 +250,7 @@ class SettingsSitePermissionsTest : TestSetup() {
     @Test
     @SkipLeaks
     fun verifyAutoplayBlockAudioAndVideoSettingOnNotMutedVideoTest() {
-        val videoTestPage = getVideoPageAsset(mockWebServer)
+        val videoTestPage = mockWebServer.videoPageAsset
 
         homeScreen {
         }.openThreeDotMenu {
@@ -281,7 +282,7 @@ class SettingsSitePermissionsTest : TestSetup() {
     @Test
     @SkipLeaks
     fun verifyAutoplayBlockAudioAndVideoSettingOnMutedVideoTest() {
-        val mutedVideoTestPage = getMutedVideoPageAsset(mockWebServer)
+        val mutedVideoTestPage = mockWebServer.mutedVideoPageAsset
 
         homeScreen {
         }.openThreeDotMenu {
@@ -466,6 +467,7 @@ class SettingsSitePermissionsTest : TestSetup() {
             browserScreen {
             }.openThreeDotMenu {
             }.refreshPage {
+                waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
             }.clickRequestDRMControlledContentAccessButton {}
             browserScreen {
                 verifyPageContent("DRM-controlled content allowed")

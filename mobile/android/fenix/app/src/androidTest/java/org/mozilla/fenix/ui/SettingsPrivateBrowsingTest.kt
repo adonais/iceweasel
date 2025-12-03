@@ -11,7 +11,7 @@ import org.mozilla.fenix.helpers.AppAndSystemHelper
 import org.mozilla.fenix.helpers.AppAndSystemHelper.clickSystemHomeScreenShortcutAddButton
 import org.mozilla.fenix.helpers.DataGenerationHelper
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
-import org.mozilla.fenix.helpers.TestAssetHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.restartApp
 import org.mozilla.fenix.helpers.TestSetup
@@ -53,8 +53,8 @@ class SettingsPrivateBrowsingTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/420086
     @Test
     fun launchLinksInAPrivateTabTest() {
-        val firstWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
-        val secondWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 2)
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.getGenericAsset(2)
 
         setOpenLinksInPrivateOn()
 
@@ -90,7 +90,7 @@ class SettingsPrivateBrowsingTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/555776
     @Test
     fun launchPageShortcutInPrivateBrowsingTest() {
-        val defaultWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
 
         setOpenLinksInPrivateOn()
 

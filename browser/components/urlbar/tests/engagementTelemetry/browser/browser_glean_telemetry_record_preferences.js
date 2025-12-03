@@ -37,12 +37,16 @@ add_task(async function prefMaxRichResults() {
 add_task(async function boolPref() {
   const testData = [
     {
-      green: "prefSuggestDataCollection",
-      pref: "quicksuggest.dataCollection.enabled",
+      green: "prefSuggestOnlineAvailable",
+      pref: "quicksuggest.online.available",
     },
     {
-      green: "prefSuggestNonsponsored",
-      pref: "suggest.quicksuggest.nonsponsored",
+      green: "prefSuggestOnlineEnabled",
+      pref: "quicksuggest.online.enabled",
+    },
+    {
+      green: "prefSuggestAll",
+      pref: "suggest.quicksuggest.all",
     },
     {
       green: "prefSuggestSponsored",
@@ -69,6 +73,43 @@ add_task(async function boolPref() {
       Glean.urlbar[green].testGetValue(),
       UrlbarPrefs.get(pref),
       `Record ${green} when the ${pref} pref is updated`
+    );
+  }
+});
+
+add_task(async function boolNimbusVariable() {
+  const testData = [
+    {
+      glean: "prefSuggestOnlineAvailable",
+      variable: "quickSuggestOnlineAvailable",
+      pref: "quicksuggest.online.available",
+    },
+  ];
+
+  for (const { glean, variable, pref } of testData) {
+    let initialValue = UrlbarPrefs.get(pref);
+    Assert.equal(
+      Glean.urlbar[glean].testGetValue(),
+      initialValue,
+      `Record ${glean} when UrlbarController is initialized`
+    );
+
+    let nimbusCleanup = await UrlbarTestUtils.initNimbusFeature({
+      [variable]: !initialValue,
+    });
+
+    Assert.equal(
+      Glean.urlbar[glean].testGetValue(),
+      !initialValue,
+      `Record ${glean} when the ${variable} variable is set`
+    );
+
+    await nimbusCleanup();
+
+    Assert.equal(
+      Glean.urlbar[glean].testGetValue(),
+      initialValue,
+      `Record ${glean} when the ${variable} variable is unset`
     );
   }
 });

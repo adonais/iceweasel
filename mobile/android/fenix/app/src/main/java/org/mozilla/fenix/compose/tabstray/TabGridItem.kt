@@ -316,7 +316,7 @@ private fun Thumbnail(
     ) {
         TabThumbnail(
             tab = tab,
-            size = size,
+            thumbnailSizePx = size,
             modifier = Modifier.fillMaxSize(),
         )
 

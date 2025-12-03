@@ -74,7 +74,6 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Mutex.h"

@@ -808,7 +808,9 @@ impl TimingDistribution for TimingDistributionMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<DistributionData> for TimingDistributionMetric {
+impl glean::TestGetValue for TimingDistributionMetric {
+    type Output = DistributionData;
+
     /// **Exported for test purposes.**
     ///
     /// Gets the currently stored value of the metric.

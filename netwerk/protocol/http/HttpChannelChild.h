@@ -10,7 +10,6 @@
 
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPrefsBase.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/extensions/StreamFilterParent.h"
 #include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/net/NeckoTargetHolder.h"
@@ -144,6 +143,11 @@ class HttpChannelChild final : public PHttpChannelChild,
   void RegisterStreamFilter(
       RefPtr<extensions::StreamFilterParent>& aStreamFilter);
 
+  // Get the captured JavaScript call stack for LNA console logging
+  const char* GetCallStack() const {
+    return mCallStack ? mCallStack.get() : nullptr;
+  }
+
  protected:
   mozilla::ipc::IPCResult RecvOnStartRequestSent() override;
   mozilla::ipc::IPCResult RecvFailedAsyncOpen(const nsresult& status) override;
@@ -160,6 +164,11 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   mozilla::ipc::IPCResult RecvReportSecurityMessage(
       const nsAString& messageTag, const nsAString& messageCategory) override;
+
+  mozilla::ipc::IPCResult RecvReportLNAToConsole(
+      const NetAddr& aPeerAddr, const nsACString& aMessageType,
+      const nsACString& aPromptAction,
+      const nsACString& aTopLevelSite) override;
 
   mozilla::ipc::IPCResult RecvSetPriority(const int16_t& aPriority) override;
 
@@ -420,6 +429,9 @@ class HttpChannelChild final : public PHttpChannelChild,
   // But we have to make sure we only do this once - otherwise we could
   // get stuck in a loop.
   uint8_t mAlreadyReleased : 1;
+
+  // JavaScript stack captured during AsyncOpen for LNA console logging
+  mozilla::UniquePtr<char[]> mCallStack;
 
   void CleanupRedirectingChannel(nsresult rv);
 

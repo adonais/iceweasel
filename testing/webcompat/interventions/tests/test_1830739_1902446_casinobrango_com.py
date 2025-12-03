@@ -8,7 +8,7 @@ SUPPORTED_CSS = "#game_main"
 
 async def get_to_page(client):
     await client.navigate(URL)
-    client.switch_to_frame(client.await_css(IFRAME_CSS))
+    client.switch_to_frame(client.await_css(IFRAME_CSS, timeout=45))
 
 
 @pytest.mark.only_platforms("android")

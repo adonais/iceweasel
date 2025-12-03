@@ -58,9 +58,9 @@ struct ParamTraits<nsIWidget::TouchpadGesturePhase>
           nsIWidget::TouchpadGesturePhase::PHASE_END> {};
 
 template <>
-struct ParamTraits<nsIWidget::TouchPointerState>
-    : public BitFlagsEnumSerializer<nsIWidget::TouchPointerState,
-                                    nsIWidget::TouchPointerState::ALL_BITS> {};
+struct ParamTraits<TouchPointerState>
+    : public BitFlagsEnumSerializer<TouchPointerState,
+                                    TouchPointerState::ALL_BITS> {};
 
 template <>
 struct ParamTraits<mozilla::DimensionKind>

@@ -7,6 +7,7 @@
 #include "nsXULPopupManager.h"
 
 #include "PopupQueue.h"
+#include "WindowRenderer.h"
 #include "XULButtonElement.h"
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/Assertions.h"
@@ -224,12 +225,12 @@ UniquePtr<nsMenuChainItem> nsMenuChainItem::Detach() {
 }
 
 void nsXULPopupManager::AddMenuChainItem(UniquePtr<nsMenuChainItem> aItem) {
-  PopupType popupType = aItem->Frame()->GetPopupType();
+  auto* frame = aItem->Frame();
+  PopupType popupType = frame->GetPopupType();
   if (StaticPrefs::layout_cursor_disable_for_popups() &&
       popupType != PopupType::Tooltip) {
-    if (nsPresContext* rootPC =
-            aItem->Frame()->PresContext()->GetRootPresContext()) {
-      if (nsCOMPtr<nsIWidget> rootWidget = rootPC->GetRootWidget()) {
+    if (auto* rootPc = frame->PresContext()->GetRootPresContext()) {
+      if (nsCOMPtr<nsIWidget> rootWidget = rootPc->GetRootWidget()) {
         rootWidget->SetCustomCursorAllowed(false);
       }
     }
@@ -672,105 +673,6 @@ void nsXULPopupManager::AdjustPopupsOnWindowChange(PresShell* aPresShell) {
   if (aPresShell->GetDocument()) {
     AdjustPopupsOnWindowChange(aPresShell->GetDocument()->GetWindow());
   }
-}
-
-static nsMenuPopupFrame* GetPopupToMoveOrResize(nsIFrame* aFrame) {
-  nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(aFrame);
-  if (!menuPopupFrame) {
-    return nullptr;
-  }
-
-  // no point moving or resizing hidden popups
-  if (!menuPopupFrame->IsVisible()) {
-    return nullptr;
-  }
-
-  nsIWidget* widget = menuPopupFrame->GetWidget();
-  if (widget && !widget->IsVisible()) {
-    return nullptr;
-  }
-
-  return menuPopupFrame;
-}
-
-void nsXULPopupManager::PopupMoved(nsIFrame* aFrame,
-                                   const LayoutDeviceIntPoint& aPoint,
-                                   bool aByMoveToRect) {
-  nsMenuPopupFrame* menuPopupFrame = GetPopupToMoveOrResize(aFrame);
-  if (!menuPopupFrame) {
-    return;
-  }
-
-  nsView* view = menuPopupFrame->GetView();
-  if (!view) {
-    return;
-  }
-
-  // Don't do anything if the popup is already at the specified location. This
-  // prevents recursive calls when a popup is positioned.
-  LayoutDeviceIntRect curDevBounds = view->RecalcWidgetBounds();
-  nsIWidget* widget = menuPopupFrame->GetWidget();
-  if (curDevBounds.TopLeft() == aPoint &&
-      (!widget ||
-       widget->GetClientOffset() == menuPopupFrame->GetLastClientOffset())) {
-    return;
-  }
-
-  // Update the popup's position using SetPopupPosition if the popup is
-  // anchored and at the parent level as these maintain their position
-  // relative to the parent window (except if positioned by move to rect, in
-  // which case we better make sure that layout matches that). Otherwise, just
-  // update the popup to the specified screen coordinates.
-  if (menuPopupFrame->IsAnchored() &&
-      menuPopupFrame->GetPopupLevel() == widget::PopupLevel::Parent &&
-      !aByMoveToRect) {
-    menuPopupFrame->SetPopupPosition(true);
-  } else {
-    CSSPoint cssPos =
-        aPoint / menuPopupFrame->PresContext()->CSSToDevPixelScale();
-    menuPopupFrame->MoveTo(cssPos, false, aByMoveToRect);
-  }
-}
-
-void nsXULPopupManager::PopupResized(nsIFrame* aFrame,
-                                     const LayoutDeviceIntSize& aSize) {
-  nsMenuPopupFrame* menuPopupFrame = GetPopupToMoveOrResize(aFrame);
-  if (!menuPopupFrame) {
-    return;
-  }
-
-  nsView* view = menuPopupFrame->GetView();
-  if (!view) {
-    return;
-  }
-
-  const LayoutDeviceIntRect curDevBounds = view->RecalcWidgetBounds();
-  // If the size is what we think it is, we have nothing to do.
-  if (curDevBounds.Size() == aSize) {
-    return;
-  }
-
-  Element* popup = menuPopupFrame->GetContent()->AsElement();
-
-  // Only set the width and height if the popup already has these attributes.
-  if (!popup->HasAttr(nsGkAtoms::width) || !popup->HasAttr(nsGkAtoms::height)) {
-    return;
-  }
-
-  // The size is different. Convert the actual size to css pixels and store it
-  // as 'width' and 'height' attributes on the popup.
-  nsPresContext* presContext = menuPopupFrame->PresContext();
-
-  CSSIntSize newCSS(presContext->DevPixelsToIntCSSPixels(aSize.width),
-                    presContext->DevPixelsToIntCSSPixels(aSize.height));
-
-  nsAutoString width, height;
-  width.AppendInt(newCSS.width);
-  height.AppendInt(newCSS.height);
-  // FIXME(emilio): aNotify should be consistent (probably true in the two calls
-  // below?).
-  popup->SetAttr(kNameSpaceID_None, nsGkAtoms::width, width, false);
-  popup->SetAttr(kNameSpaceID_None, nsGkAtoms::height, height, true);
 }
 
 nsMenuPopupFrame* nsXULPopupManager::GetPopupFrameForContent(
@@ -1698,8 +1600,76 @@ void nsXULPopupManager::HidePopupsInDocShell(
 
 void nsXULPopupManager::UpdatePopupPositions(nsRefreshDriver* aRefreshDriver) {
   for (nsMenuChainItem* item = mPopups.get(); item; item = item->GetParent()) {
-    if (item->Frame()->PresContext()->RefreshDriver() == aRefreshDriver) {
-      item->CheckForAnchorChange();
+    nsMenuPopupFrame* frame = item->Frame();
+    if (frame->PresContext()->RefreshDriver() != aRefreshDriver) {
+      continue;
+    }
+    item->CheckForAnchorChange();
+  }
+}
+
+void nsXULPopupManager::PaintPopups(nsRefreshDriver* aRefreshDriver) {
+  if (!mPopups) {
+    return;
+  }
+
+  AutoTArray<std::pair<RefPtr<nsIWidget>, WeakFrame>, 32> visiblePopups;
+  for (nsMenuChainItem* item = mPopups.get(); item; item = item->GetParent()) {
+    nsMenuPopupFrame* frame = item->Frame();
+    if (!frame->IsVisible() ||
+        frame->PresContext()->GetRootPresContext()->RefreshDriver() !=
+            aRefreshDriver) {
+      continue;
+    }
+    if (nsIWidget* widget = frame->GetWidget()) {
+      visiblePopups.AppendElement(std::make_pair(widget, frame));
+    }
+  }
+
+  for (const auto& visiblePopup : Reversed(visiblePopups)) {
+    nsIWidget* widget = visiblePopup.first;
+    nsMenuPopupFrame* frame = do_QueryFrame(visiblePopup.second.GetFrame());
+    if (!frame) {
+      continue;
+    }
+    if (frame->PendingWidgetMoveResize()) {
+      frame->ClearPendingWidgetMoveResize();
+
+      LayoutDeviceIntRect curBounds = widget->GetClientBounds();
+      auto newBounds = frame->CalcWidgetBounds();
+      widget->ConstrainSize(&newBounds.width, &newBounds.height);
+      const bool changedPos = curBounds.TopLeft() != newBounds.TopLeft();
+      const bool changedSize = curBounds.Size() != newBounds.Size();
+
+      if (changedPos || changedSize) {
+        DesktopToLayoutDeviceScale scale = widget->GetDesktopToDeviceScale();
+        DesktopRect deskRect = newBounds / scale;
+        if (changedPos) {
+          if (changedSize) {
+            widget->ResizeClient(deskRect, true);
+          } else {
+            widget->MoveClient(deskRect.TopLeft());
+          }
+        } else if (changedSize) {
+          widget->ResizeClient(deskRect.Size(), true);
+        }
+      }
+    }
+    if (!widget->IsVisible()) {
+      widget->Show(true);
+    }
+    if (!visiblePopup.second.IsAlive() || !widget->NeedsPaint()) {
+      continue;
+    }
+    nsAutoScriptBlocker scriptBlocker;
+    RefPtr<PresShell> ps = frame->PresShell();
+    RefPtr<WindowRenderer> renderer = widget->GetWindowRenderer();
+    if (renderer->AsFallback()) {
+      // FIXME: A bit of a hack. This matches what PaintAndRequestComposite
+      // does for views (eventually).
+      widget->Invalidate(LayoutDeviceIntRect({}, widget->GetBounds().Size()));
+    } else {
+      ps->PaintAndRequestComposite(frame, renderer, PaintFlags::None);
     }
   }
 }
@@ -1781,8 +1751,7 @@ nsEventStatus nsXULPopupManager::FirePopupShowingEvent(
   // coordinates are relative to the root widget
   nsPresContext* rootPresContext = aPresContext->GetRootPresContext();
   if (rootPresContext) {
-    event.mWidget =
-        rootPresContext->PresShell()->GetViewManager()->GetRootWidget();
+    event.mWidget = rootPresContext->GetRootWidget();
   } else {
     event.mWidget = nullptr;
   }
@@ -1883,8 +1852,8 @@ void nsXULPopupManager::FirePopupHidingEvent(Element* aPopup,
                                              HidePopupOptions aOptions) {
   nsCOMPtr<nsIContent> popup = aPopup;
   RefPtr<PresShell> presShell = aPresContext->PresShell();
-  Unused << presShell;  // This presShell may be keeping things alive
-                        // on non GTK platforms
+  (void)presShell;  // This presShell may be keeping things alive
+                    // on non GTK platforms
 
   nsEventStatus status = nsEventStatus_eIgnore;
   WidgetMouseEvent event(true, eXULPopupHiding, nullptr,
@@ -1988,7 +1957,7 @@ bool nsXULPopupManager::IsPopupOpen(Element* aPopup) {
                      item->Frame()->PopupState() == ePopupHiding ||
                      item->Frame()->PopupState() == ePopupInvisible,
                  "popup in open list not actually open");
-    Unused << item;
+    (void)item;
     return true;
   }
   return false;
@@ -3118,7 +3087,7 @@ nsXULMenuCommandEvent::Run() {
       presContext ? presContext->PresShell() : nullptr;
   RefPtr<nsViewManager> kungFuDeathGrip =
       presShell ? presShell->GetViewManager() : nullptr;
-  Unused << kungFuDeathGrip;  // Not referred to directly within this function
+  (void)kungFuDeathGrip;  // Not referred to directly within this function
 
   // Deselect ourselves.
   if (mCloseMenuMode != CloseMenuMode_None) {

@@ -5,7 +5,6 @@
 
 #include "nsDeviceContextSpecWin.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/gfx/PrintPromise.h"
 #include "mozilla/gfx/PrintTargetPDF.h"
 #include "mozilla/gfx/PrintTargetWindows.h"

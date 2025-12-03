@@ -677,6 +677,21 @@ fn truncate_string_for_marker_to_length(mut input: String, byte_length: usize) -
     input
 }
 
+pub trait TestGetNumErrors {
+    /// **Exported for test purposes.**
+    ///
+    /// Gets the number of recorded errors for the given metric and error type.
+    ///
+    /// # Arguments
+    ///
+    /// * `error` - The type of error
+    ///
+    /// # Returns
+    ///
+    /// The number of errors reported.
+    fn test_get_num_recorded_errors(&self, error_type: glean::ErrorType) -> i32;
+}
+
 #[cfg(test)]
 mod truncation_tests {
     use crate::private::truncate_string_for_marker;

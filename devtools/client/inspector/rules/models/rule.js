@@ -300,6 +300,9 @@ class Rule {
 
     this.applyProperties(modifications => {
       modifications.createProperty(ind, name, value, priority, enabled);
+
+      this.store.userProperties.setProperty(this.domRule, name, value);
+
       // Now that the rule has been updated, the server might have given us data
       // that changes the state of the property. Update it now.
       prop.updateEditor();
@@ -500,7 +503,7 @@ class Rule {
    *        The value to be used for the preview
    * @param {String} priority
    *        The property's priority (either "important" or an empty string).
-   **@return {Promise}
+   * @return {Promise}
    */
   previewPropertyValue(property, value, priority) {
     this.elementStyle.ruleView.emitForTests("start-preview-property-value");
@@ -808,7 +811,8 @@ class Rule {
 
     if (direction === Services.focus.MOVEFOCUS_FORWARD) {
       for (++index; index < this.textProps.length; ++index) {
-        if (!this.textProps[index].invisible) {
+        // The prop could be invisible or a hidden unused variable
+        if (this.textProps[index].editor) {
           break;
         }
       }
@@ -819,7 +823,8 @@ class Rule {
       }
     } else if (direction === Services.focus.MOVEFOCUS_BACKWARD) {
       for (--index; index >= 0; --index) {
-        if (!this.textProps[index].invisible) {
+        // The prop could be invisible or a hidden unused variable
+        if (this.textProps[index].editor) {
           break;
         }
       }

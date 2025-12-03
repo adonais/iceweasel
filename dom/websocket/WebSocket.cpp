@@ -16,7 +16,6 @@
 #include "mozilla/LoadInfo.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/CloseEvent.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/File.h"
@@ -786,7 +785,7 @@ WebSocketImpl::OnStart(nsISupports* aContext) {
     nsCOMPtr<nsISupports> context = aContext;
     return Dispatch(NS_NewRunnableFunction("WebSocketImpl::OnStart",
                                            [self = RefPtr{this}, context]() {
-                                             Unused << self->OnStart(context);
+                                             (void)self->OnStart(context);
                                            }),
                     NS_DISPATCH_NORMAL);
   }

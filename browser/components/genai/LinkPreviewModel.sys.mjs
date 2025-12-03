@@ -335,10 +335,11 @@ export const LinkPreviewModel = {
    *
    * @param {object} options - Configuration options for the ML engine.
    * @param {?function(ProgressAndStatusCallbackParams):void} notificationsCallback A function to call to indicate notifications.
+   * @param {AbortSignal} abortSignal - The signal to abort the download.
    * @returns {Promise<MLEngine>} - A promise that resolves to the ML engine instance.
    */
-  async createEngine(options, notificationsCallback = null) {
-    return lazy.createEngine(options, notificationsCallback);
+  async createEngine(options, notificationsCallback = null, abortSignal) {
+    return lazy.createEngine(options, notificationsCallback, abortSignal);
   },
 
   /**
@@ -346,11 +347,15 @@ export const LinkPreviewModel = {
    *
    * @param {string} inputText
    * @param {object} callbacks for progress and error
+   * @param {AbortSignal} callbacks.abortSignal - The signal to abort the download.
    * @param {Function} callbacks.onDownload optional for download active
    * @param {Function} callbacks.onText optional for text chunks
    * @param {Function} callbacks.onError optional for error
    */
-  async generateTextAI(inputText, { onDownload, onText, onError } = {}) {
+  async generateTextAI(
+    inputText,
+    { onDownload, onText, onError, abortSignal } = {}
+  ) {
     // Get updated options from remote settings. No failure if no record exists
     const remoteRequestRecord = await lazy.RemoteSettingsManager.getRemoteData({
       collectionName: "ml-inference-request-options",
@@ -423,7 +428,8 @@ export const LinkPreviewModel = {
               Math.round((100 * data.totalLoaded) / data.total)
             );
           }
-        }
+        },
+        abortSignal
       );
 
       const postProcessor = await SentencePostProcessor.initialize();

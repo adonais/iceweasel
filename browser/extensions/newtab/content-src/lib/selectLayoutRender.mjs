@@ -51,9 +51,7 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
   const positions = {};
   const DS_COMPONENTS = [
     "Message",
-    "TextPromo",
     "SectionTitle",
-    "Signup",
     "Navigation",
     "Widgets",
     "CardGrid",
@@ -108,7 +106,7 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
 
   const placeholderComponent = component => {
     if (!component.feed) {
-      // TODO we now need a placeholder for topsites and textPromo.
+      // TODO we now need a placeholder for topsites.
       return {
         ...component,
         data: {

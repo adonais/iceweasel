@@ -9,7 +9,6 @@
 #define mozilla_dom_WebTaskSchedulerWorker_h
 
 #include "WebTaskScheduler.h"
-#include "mozilla/LinkedList.h"
 #include "mozilla/dom/WebTaskSchedulingBinding.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"

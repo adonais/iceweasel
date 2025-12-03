@@ -11,7 +11,6 @@
 #include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsWeakReference.h"
-#include "mozilla/Attributes.h"
 
 class nsIURI;
 

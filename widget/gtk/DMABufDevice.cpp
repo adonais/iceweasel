@@ -148,7 +148,7 @@ DMABufDevice* DMABufDeviceLock::EnsureDMABufDevice() {
       LOGDMABUF(("EnsureDMABufDevice(): created DMABufDevice"));
     } else {
       nsCString failureId;
-      Unused << sDMABufDevice->IsEnabled(failureId);
+      (void)sDMABufDevice->IsEnabled(failureId);
       LOGDMABUF(("EnsureDMABufDevice(): failed to init DMABufDevice: %s",
                  failureId.get()));
     }
@@ -263,7 +263,13 @@ bool DMABufDevice::Init() {
     return false;
   }
 
-  DMABufSurface::InitMemoryReporting();
+  if (NS_IsMainThread()) {
+    DMABufSurface::InitMemoryReporting();
+  } else {
+    NS_DispatchToMainThread(
+        NS_NewRunnableFunction("DMABufSurface::InitMemoryReporting()",
+                               [] { DMABufSurface::InitMemoryReporting(); }));
+  }
 
   LOGDMABUF(("DMABuf is enabled"));
   return true;

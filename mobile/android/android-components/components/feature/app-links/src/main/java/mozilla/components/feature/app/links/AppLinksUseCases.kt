@@ -112,17 +112,11 @@ class AppLinksUseCases(
                 getAppNameFromResolveInfo(context, resolveInfo)
             } ?: ""
 
-            // Only set fallback URL if url is not a Google PlayStore URL
-            // The reason here is we already handled that case with the market place URL
-            val fallbackUrl = redirectData.fallbackUrl?.takeIf {
-                !isPlayStoreURL(it) || redirectData.resolveInfo == null
-            }?.toString()
-
             val appIntent = when {
                 redirectData.resolveInfo == null -> null
                 isBrowserRedirect && isEngineSupportedScheme -> null
                 includeHttpAppLinks && isAppIntentHttpOrHttps -> redirectData.appIntent
-                !launchInApp() && (isEngineSupportedScheme || fallbackUrl != null) -> null
+                !launchInApp() && (isEngineSupportedScheme || redirectData.fallbackUrl != null) -> null
                 else -> redirectData.appIntent
             }
 
@@ -130,7 +124,7 @@ class AppLinksUseCases(
             val appLinkRedirect = AppLinkRedirect(
                 appIntent = appIntent,
                 appName = appName,
-                fallbackUrl = fallbackUrl,
+                fallbackUrl = redirectData.fallbackUrl,
                 marketplaceIntent = redirectData.marketplaceIntent,
             )
 
@@ -198,9 +192,25 @@ class AppLinksUseCases(
                 }
             }
 
+            /**
+             * Determines the fallback URL to use when attempting to redirect to an external app.
+             *
+             * The fallback URL is taken from the intent's `EXTRA_BROWSER_FALLBACK_URL` only if:
+             * - The original URL scheme is not supported by the engine, AND
+             * - The provided fallback URL is not a Google Play Store URL OR application is not
+             * installed. (Handled by marketplace intent)
+             */
+            val fallbackUrl = appIntent?.getStringExtra(EXTRA_BROWSER_FALLBACK_URL)?.takeIf {
+                val schemeEngineSupported = url.toUri().scheme in ENGINE_SUPPORTED_SCHEMES
+                val appInstalled = resolveInfo != null
+
+                val isPlayStoreUrlForInstalledApp = isPlayStoreURL(it) && appInstalled
+                !schemeEngineSupported && !isPlayStoreUrlForInstalledApp
+            }
+
             return RedirectData(
                 appIntent = appIntent,
-                fallbackUrl = null,
+                fallbackUrl = fallbackUrl,
                 marketplaceIntent = marketplaceIntent,
                 resolveInfo = resolveInfo,
             )

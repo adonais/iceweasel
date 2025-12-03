@@ -41,9 +41,9 @@ import org.mozilla.fenix.helpers.MockBrowserDataHelper.createHistoryItem
 import org.mozilla.fenix.helpers.MockBrowserDataHelper.generateBookmarkFolder
 import org.mozilla.fenix.helpers.MockBrowserDataHelper.setCustomSearchEngine
 import org.mozilla.fenix.helpers.SearchDispatcher
-import org.mozilla.fenix.helpers.TestAssetHelper
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
-import org.mozilla.fenix.helpers.TestAssetHelper.getLoremIpsumAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.htmlControlsFormAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.loremIpsumAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.helpers.TestHelper.clickSnackbarButton
@@ -165,7 +165,7 @@ class NavigationToolbarTestCompose : TestSetup() {
             composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
                 composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
         ) {
-            val defaultWebPage = getGenericAsset(mockWebServer, 1)
+            val defaultWebPage = mockWebServer.getGenericAsset(1)
 
             navigationToolbar {
             }.enterURLAndEnterToBrowserWithComposableToolbar(composeTestRule, defaultWebPage.url) {
@@ -214,7 +214,7 @@ class NavigationToolbarTestCompose : TestSetup() {
         ) {
             // Goes through the settings and changes the default text on a webpage, then verifies if the text has changed.
             val fenixApp = composeTestRule.activity.applicationContext as FenixApplication
-            val webpage = getLoremIpsumAsset(mockWebServer).url
+            val webpage = mockWebServer.loremIpsumAsset.url
 
             // This value will represent the text size percentage the webpage will scale to. The default value is 100%.
             val textSizePercentage = 180
@@ -250,8 +250,8 @@ class NavigationToolbarTestCompose : TestSetup() {
             composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
                 composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
         ) {
-            val firstWebPage = getGenericAsset(mockWebServer, 1)
-            val secondWebPage = TestAssetHelper.getHTMLControlsFormAsset(mockWebServer)
+            val firstWebPage = mockWebServer.getGenericAsset(1)
+            val secondWebPage = mockWebServer.htmlControlsFormAsset
 
             val newFolder = generateBookmarkFolder(title = bookmarkFolderName, position = null)
             createBookmarkItem(firstWebPage.url.toString(), firstWebPage.title, null, newFolder)
@@ -282,7 +282,7 @@ class NavigationToolbarTestCompose : TestSetup() {
                 composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
         ) {
             val customMenuItem = "TestMenuItem"
-            val customTabPage = getGenericAsset(mockWebServer, 1)
+            val customTabPage = mockWebServer.getGenericAsset(1)
 
             intentReceiverActivityTestRule.launchActivity(
                 createCustomTabIntent(
@@ -390,8 +390,8 @@ class NavigationToolbarTestCompose : TestSetup() {
             composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
                 composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
         ) {
-            val firstPageUrl = getGenericAsset(searchMockServer, 1)
-            val secondPageUrl = getGenericAsset(searchMockServer, 2)
+            val firstPageUrl = searchMockServer.getGenericAsset(1)
+            val secondPageUrl = searchMockServer.getGenericAsset(2)
 
             createHistoryItem(firstPageUrl.url.toString())
             createHistoryItem(secondPageUrl.url.toString())
@@ -428,7 +428,7 @@ class NavigationToolbarTestCompose : TestSetup() {
     fun searchEnginesCanBeChangedTemporarilyFromSearchSelectorMenuTest() {
         runWithCondition(
             composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
+                    composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
         ) {
             (generalEnginesList + topicEnginesList).forEach {
                 homeScreen {
@@ -455,7 +455,7 @@ class NavigationToolbarTestCompose : TestSetup() {
         ) {
             TestHelper.appContext.settings().shouldShowSearchSuggestionsInPrivate = true
 
-            val firstPageUrl = getGenericAsset(searchMockServer, 1)
+            val firstPageUrl = searchMockServer.getGenericAsset(1)
             val searchEngineName = "TestSearchEngine"
 
             setCustomSearchEngine(searchMockServer, searchEngineName)
@@ -503,8 +503,8 @@ class NavigationToolbarTestCompose : TestSetup() {
             composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
                 composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
         ) {
-            val firstPageUrl = getGenericAsset(searchMockServer, 1).url
-            val secondPageUrl = getGenericAsset(searchMockServer, 2).url
+            val firstPageUrl = searchMockServer.getGenericAsset(1).url
+            val secondPageUrl = searchMockServer.getGenericAsset(2).url
             val searchEngineName = "TestSearchEngine"
             // setting our custom mockWebServer search URL
             setCustomSearchEngine(searchMockServer, searchEngineName)
@@ -583,8 +583,8 @@ class NavigationToolbarTestCompose : TestSetup() {
             composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
                 composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
         ) {
-            val firstWebPage = getGenericAsset(mockWebServer, 1)
-            val secondWebPage = getGenericAsset(mockWebServer, 2)
+            val firstWebPage = mockWebServer.getGenericAsset(1)
+            val secondWebPage = mockWebServer.getGenericAsset(2)
 
             // Disable the back gesture from the edge of the screen on the device.
             enableOrDisableBackGestureNavigationOnDevice(backGestureNavigationEnabled = false)
@@ -719,7 +719,7 @@ class NavigationToolbarTestCompose : TestSetup() {
             composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
                 composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
         ) {
-            val websiteURL = getGenericAsset(mockWebServer, 1).url.toString()
+            val websiteURL = mockWebServer.getGenericAsset(1).url.toString()
 
             createHistoryItem(websiteURL)
 
@@ -750,7 +750,7 @@ class NavigationToolbarTestCompose : TestSetup() {
             composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
                 composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
         ) {
-            val website = getGenericAsset(mockWebServer, 1)
+            val website = mockWebServer.getGenericAsset(1)
 
             createBookmarkItem(website.url.toString(), website.title, 1u)
 
@@ -845,8 +845,8 @@ class NavigationToolbarTestCompose : TestSetup() {
             composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
                 composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
         ) {
-            val firstWebPage = getGenericAsset(mockWebServer, 1)
-            val secondWebPage = TestAssetHelper.getHTMLControlsFormAsset(mockWebServer)
+            val firstWebPage = mockWebServer.getGenericAsset(1)
+            val secondWebPage = mockWebServer.htmlControlsFormAsset
 
             navigationToolbar {
             }.enterURLAndEnterToBrowserWithComposableToolbar(composeTestRule, firstWebPage.url) {
@@ -974,7 +974,7 @@ class NavigationToolbarTestCompose : TestSetup() {
             composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
                 composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
         ) {
-            val customTabPage = getGenericAsset(mockWebServer, 1)
+            val customTabPage = mockWebServer.getGenericAsset(1)
 
             intentReceiverActivityTestRule.launchActivity(
                 createCustomTabIntent(

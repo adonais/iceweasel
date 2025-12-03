@@ -71,8 +71,12 @@ def fake_loader(kind, path, config, parameters, loaded_tasks, write_artifacts):
                 "i": i,
                 "metadata": {"name": f"t-{i}"},
                 "deadline": "soon",
+                "provisionerId": "prov",
+                "workerType": "linux",
             },
             "dependencies": dependencies,
+            "if-dependencies": [],
+            "soft-dependencies": [],
         }
         if "task-defaults" in config:
             task = merge(config["task-defaults"], task)
@@ -191,6 +195,7 @@ def maketgg(monkeypatch):
                 "_kinds": kinds,
                 "backstop": False,
                 "enable_always_target": False,
+                "level": 1,
                 "target_tasks_method": "test_method",
                 "test_manifest_loader": "default",
                 "try_mode": None,

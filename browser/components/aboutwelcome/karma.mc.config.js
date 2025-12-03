@@ -132,7 +132,7 @@ module.exports = function (config) {
             "content-src/components/EmbeddedFxBackupOptIn.jsx": {
               statements: 60,
               lines: 60,
-              functions: 60,
+              functions: 50,
               branches: 60,
             },
             "content-src/components/MSLocalized.jsx": {

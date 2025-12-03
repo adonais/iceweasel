@@ -32,6 +32,7 @@ balrog_description_schema = Schema(
         # Shipping product / phase
         Optional("shipping-product"): task_description_schema["shipping-product"],
         Optional("shipping-phase"): task_description_schema["shipping-phase"],
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
     }
 )
 
@@ -155,6 +156,7 @@ def make_task_description(config, jobs):
             "soft-dependencies": soft_dependencies,
             "attributes": attributes,
             "run-on-projects": dep_job.attributes.get("run_on_projects"),
+            "run-on-repo-type": job.get("run-on-repo-type", ["git", "hg"]),
             "treeherder": treeherder,
             "shipping-phase": job.get("shipping-phase", "promote"),
             "shipping-product": job.get("shipping-product"),

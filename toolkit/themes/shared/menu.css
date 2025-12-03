@@ -9,6 +9,7 @@ panel {
   --menuitem-border-radius: 3px;
   --menuitem-margin: 0px;
   --menuitem-padding: 0.5em 1em;
+  --menuitem-max-width: 42em;
 
   --badge-text-color: var(--text-color-deemphasized);
   --badge-background-color: transparent;
@@ -218,7 +219,7 @@ menucaption {
   align-items: center;
   flex-shrink: 0;
   list-style-image: none;
-  max-width: 42em;
+  max-width: var(--menuitem-max-width);
   /* Prevents the icon from being inherited to submenus. */
   --menuitem-icon: normal;
 }
@@ -242,7 +243,7 @@ menuitem {
 
 menuitem:is([default="true"], .spell-suggestion),
 menucaption {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .menu-icon,
@@ -411,7 +412,7 @@ menupopup[needsgutter] {
         line-height: 0;
         visibility: hidden;
         padding-inline: 4px;
-        font-weight: bold;
+        font-weight: var(--font-weight-bold);
       }
     }
 

@@ -69,7 +69,7 @@ default: &default
             en-US: ''
     destinations:
         - ${branch}/${year}/${month}/${day}/${head_rev}
-    expiry: "2 years"
+    expiry: "8 years"
 
 mapping:
     target.json:

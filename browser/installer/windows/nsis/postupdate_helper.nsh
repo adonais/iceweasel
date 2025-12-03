@@ -5,7 +5,6 @@
 !include "LogicLib.nsh"
 
 !define buildNumWin10 10240 ; First Win10 version
-!define buildNumWin11 22000 ; First Win11 version
 
 ; Depending on the installation type (as admin or not) we have different
 ; default installation directories, one of which we push onto the stack as the
@@ -132,7 +131,6 @@ Function getUninstallKey
   Pop $0
 
   ${If} $3 >= ${buildNumWin10}
-  ${AndIf} $3 < ${buildNumWin11}
     ClearErrors
 
     ; Determine the path to the user configured target directory.

@@ -42,7 +42,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "clipboardHelper",
   "@mozilla.org/widget/clipboardhelper;1",
-  "nsIClipboardHelper"
+  Ci.nsIClipboardHelper
 );
 
 /**

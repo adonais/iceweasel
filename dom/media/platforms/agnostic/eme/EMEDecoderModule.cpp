@@ -23,7 +23,6 @@
 #include "mozilla/RemoteCDMChild.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 #include "nsClassHashtable.h"
 #include "nsServiceManagerUtils.h"
 

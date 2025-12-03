@@ -34,7 +34,6 @@
 #include "mozilla/Likely.h"
 #include "mozilla/Logging.h"
 #include "mozilla/LookAndFeel.h"
-#include "mozilla/MacroForEach.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerMarkers.h"
@@ -55,6 +54,7 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/MediaDeviceInfoBinding.h"
 #include "mozilla/dom/quota/QuotaManager.h"
+#include "mozilla/intl/LocaleService.h"
 #include "mozilla/XorShift128PlusRNG.h"
 #include "mozilla/dom/CanvasUtils.h"
 
@@ -309,13 +309,6 @@ Maybe<bool> nsRFPService::HandleExceptionalRFPTargets(
     return Some(IsTargetActiveForMode(aTarget, aMode) &&
                 StaticPrefs::privacy_spoof_english_DoNotUseDirectly() == 2);
   }
-
-  // We don't spoof the pointerId on multi-touch devices.
-#if SPOOFED_MAX_TOUCH_POINTS > 0
-  if (aTarget == RFPTarget::PointerId) {
-    return Some(false);
-  }
-#endif
 
   return Nothing();
 }
@@ -1380,7 +1373,7 @@ void nsRFPService::ClearBrowsingSessionKey(
   for (auto iter = mBrowsingSessionKeys.Iter(); !iter.Done(); iter.Next()) {
     nsAutoCString key(iter.Key());
     OriginAttributes attrs;
-    Unused << attrs.PopulateFromSuffix(key);
+    (void)attrs.PopulateFromSuffix(key);
 
     // Remove the entry if the origin attributes pattern matches
     if (aPattern.Matches(attrs)) {
@@ -1413,7 +1406,7 @@ Maybe<nsTArray<uint8_t>> nsRFPService::GenerateKey(nsIChannel* aChannel) {
 #endif
 
   nsCOMPtr<nsIURI> topLevelURI;
-  Unused << aChannel->GetURI(getter_AddRefs(topLevelURI));
+  (void)aChannel->GetURI(getter_AddRefs(topLevelURI));
 
   MOZ_LOG(gResistFingerprintingLog, LogLevel::Debug,
           ("Generating the randomization key for top-level URI: %s\n",
@@ -2379,7 +2372,7 @@ Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForChannel(
   MOZ_ASSERT(XRE_IsParentProcess());
 
   nsCOMPtr<nsIURI> uri;
-  Unused << aChannel->GetURI(getter_AddRefs(uri));
+  (void)aChannel->GetURI(getter_AddRefs(uri));
 
   if (uri->SchemeIs("about") && !NS_IsContentAccessibleAboutURI(uri)) {
     return Nothing();
@@ -2941,8 +2934,8 @@ void nsRFPService::CalculateFontLocaleAllowlist() {
     }
 
     nsAutoCString acceptLang;
-    nsresult rv = Preferences::GetLocalizedCString(INTL_ACCEPT_LANGUAGES_PREF,
-                                                   acceptLang);
+    nsresult rv =
+        intl::LocaleService::GetInstance()->GetAcceptLanguages(acceptLang);
     NS_ENSURE_SUCCESS_VOID(rv);
 
     ToLowerCase(acceptLang);

@@ -10,7 +10,6 @@
 #include "js/ColumnNumber.h"  // JS::LimitedColumnNumberOneOrigin
 #include "js/GCAPI.h"
 #include "jsfriendapi.h"
-#include "mozilla/MathAlgorithms.h"
 #include "nsJSPrincipals.h"
 #include "nsScriptSecurityManager.h"
 
@@ -59,8 +58,8 @@ uint64_t ProfileBuffer::AddThreadIdEntry(ProfilerThreadId aThreadId) {
 
 void ProfileBuffer::CollectCodeLocation(
     const char* aLabel, const char* aStr, uint32_t aFrameFlags,
-    uint64_t aInnerWindowID, const Maybe<uint32_t>& aLineNumber,
-    const Maybe<uint32_t>& aColumnNumber,
+    uint64_t aInnerWindowID, uint32_t aSourceId,
+    const Maybe<uint32_t>& aLineNumber, const Maybe<uint32_t>& aColumnNumber,
     const Maybe<JS::ProfilingCategoryPair>& aCategoryPair) {
   AddEntry(ProfileBufferEntry::Label(aLabel));
   AddEntry(ProfileBufferEntry::FrameFlags(uint64_t(aFrameFlags)));
@@ -104,6 +103,10 @@ void ProfileBuffer::CollectCodeLocation(
 
   if (aInnerWindowID) {
     AddEntry(ProfileBufferEntry::InnerWindowID(aInnerWindowID));
+  }
+
+  if (aSourceId) {
+    AddEntry(ProfileBufferEntry::SourceId(aSourceId));
   }
 
   if (aLineNumber) {
@@ -195,7 +198,7 @@ void ProfileBufferCollector::CollectJitReturnAddr(void* aAddr) {
 
 void ProfileBufferCollector::CollectWasmFrame(
     JS::ProfilingCategoryPair aCategory, const char* aLabel) {
-  mBuf.CollectCodeLocation("", aLabel, 0, 0, Nothing(), Nothing(),
+  mBuf.CollectCodeLocation("", aLabel, 0, 0, 0, Nothing(), Nothing(),
                            Some(aCategory));
 }
 
@@ -210,6 +213,7 @@ void ProfileBufferCollector::CollectProfilingStackFrame(
   const char* dynamicString = aFrame.dynamicString();
   Maybe<uint32_t> line;
   Maybe<uint32_t> column;
+  uint32_t sourceId = aFrame.sourceId();
 
   if (aFrame.isJsFrame()) {
     // There are two kinds of JS frames that get pushed onto the ProfilingStack.
@@ -240,6 +244,6 @@ void ProfileBufferCollector::CollectProfilingStackFrame(
   }
 
   mBuf.CollectCodeLocation(label, dynamicString, aFrame.flags(),
-                           aFrame.realmID(), line, column,
+                           aFrame.realmID(), sourceId, line, column,
                            Some(aFrame.categoryPair()));
 }

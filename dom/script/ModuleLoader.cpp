@@ -69,24 +69,25 @@ bool ModuleLoader::CanStartLoad(ModuleLoadRequest* aRequest, nsresult* aRvOut) {
     return false;
   }
 
-  // If this document is sandboxed without 'allow-scripts', abort.
-  if (GetScriptLoader()->GetDocument()->HasScriptsBlockedBySandbox()) {
-    *aRvOut = NS_OK;
-    return false;
-  }
-
-  // To prevent dynamic code execution, content scripts can only
-  // load moz-extension URLs.
   nsCOMPtr<nsIPrincipal> principal = aRequest->TriggeringPrincipal();
-  if (BasePrincipal::Cast(principal)->ContentScriptAddonPolicy() &&
-      !aRequest->mURI->SchemeIs("moz-extension")) {
-    *aRvOut = NS_ERROR_DOM_WEBEXT_CONTENT_SCRIPT_URI;
-    return false;
+  if (BasePrincipal::Cast(principal)->ContentScriptAddonPolicy()) {
+    // To prevent dynamic code execution, content scripts can only
+    // load moz-extension URLs.
+    if (!aRequest->URI()->SchemeIs("moz-extension")) {
+      *aRvOut = NS_ERROR_DOM_WEBEXT_CONTENT_SCRIPT_URI;
+      return false;
+    }
+  } else {
+    // If this document is sandboxed without 'allow-scripts', abort.
+    if (GetScriptLoader()->GetDocument()->HasScriptsBlockedBySandbox()) {
+      *aRvOut = NS_ERROR_CONTENT_BLOCKED;
+      return false;
+    }
   }
 
   if (LOG_ENABLED()) {
     nsAutoCString url;
-    aRequest->mURI->GetAsciiSpec(url);
+    aRequest->URI()->GetAsciiSpec(url);
     LOG(("ScriptLoadRequest (%p): Start Module Load (url = %s)", aRequest,
          url.get()));
   }
@@ -95,7 +96,7 @@ bool ModuleLoader::CanStartLoad(ModuleLoadRequest* aRequest, nsresult* aRvOut) {
 }
 
 nsresult ModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
-  if (aRequest->IsStencil()) {
+  if (aRequest->IsCachedStencil()) {
     GetScriptLoader()->EmulateNetworkEvents(aRequest);
     SetModuleFetchStarted(aRequest);
     return aRequest->OnFetchComplete(NS_OK);
@@ -225,6 +226,8 @@ nsresult ModuleLoader::CompileFetchedModule(
       return CompileJsonModule(aCx, aOptions, aRequest, aModuleOut);
     case JS::ModuleType::CSS:
       return CompileCssModule(aCx, aOptions, aRequest, aModuleOut);
+    case JS::ModuleType::Bytes:
+      MOZ_CRASH("Unexpected module type");
   }
 
   MOZ_CRASH("Unhandled module type");
@@ -235,7 +238,7 @@ nsresult ModuleLoader::CompileJavaScriptModule(
     JS::MutableHandle<JSObject*> aModuleOut) {
   GetScriptLoader()->CalculateCacheFlag(aRequest);
 
-  if (aRequest->IsStencil()) {
+  if (aRequest->IsCachedStencil()) {
     JS::InstantiateOptions instantiateOptions(aOptions);
     RefPtr<JS::Stencil> stencil = aRequest->GetStencil();
     aModuleOut.set(
@@ -262,6 +265,8 @@ nsresult ModuleLoader::CompileJavaScriptModule(
       return NS_ERROR_FAILURE;
     }
 
+    aRequest->SetStencil(stencil);
+
     JS::InstantiateOptions instantiateOptions(aOptions);
     aModuleOut.set(JS::InstantiateModuleStencil(aCx, instantiateOptions,
                                                 stencil, &storage));
@@ -278,7 +283,7 @@ nsresult ModuleLoader::CompileJavaScriptModule(
       MOZ_ASSERT(!alreadyStarted);
     }
 
-    GetScriptLoader()->TryCacheRequest(aRequest, stencil);
+    GetScriptLoader()->TryCacheRequest(aRequest);
 
     return NS_OK;
   }
@@ -311,6 +316,8 @@ nsresult ModuleLoader::CompileJavaScriptModule(
     return NS_ERROR_FAILURE;
   }
 
+  aRequest->SetStencil(stencil);
+
   JS::InstantiateOptions instantiateOptions(aOptions);
   aModuleOut.set(
       JS::InstantiateModuleStencil(aCx, instantiateOptions, stencil));
@@ -327,7 +334,7 @@ nsresult ModuleLoader::CompileJavaScriptModule(
     MOZ_ASSERT(!alreadyStarted);
   }
 
-  GetScriptLoader()->TryCacheRequest(aRequest, stencil);
+  GetScriptLoader()->TryCacheRequest(aRequest);
 
   return NS_OK;
 }
@@ -397,7 +404,7 @@ nsresult ModuleLoader::CompileCssModule(
     // https://github.com/whatwg/html/issues/11629).
     dom::CSSStyleSheetInit options;
     RefPtr<StyleSheet> sheet = StyleSheet::CreateConstructedSheet(
-        *constructorDocument, aRequest->mBaseURL, options, error);
+        *constructorDocument, aRequest->BaseURL(), options, error);
     if (error.Failed()) {
       return;
     }
@@ -425,7 +432,7 @@ nsresult ModuleLoader::CompileCssModule(
     }
 
     // Steps. 1 - 4 (re-ordered), 7, 8
-    cssModule.set(JS::CreateCssModule(aCx, aOptions, val));
+    cssModule.set(JS::CreateDefaultExportSyntheticModule(aCx, val));
   };
 
   maybeSource.mapNonEmpty(compile);
@@ -445,13 +452,12 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateTopLevel(
     ScriptFetchOptions* aFetchOptions, const SRIMetadata& aIntegrity,
     nsIURI* aReferrer, ScriptLoadContext* aContext,
     ScriptLoadRequestType aRequestType) {
-  RefPtr<ModuleLoadRequest> request =
-      new ModuleLoadRequest(aURI, JS::ModuleType::JavaScript, aReferrerPolicy,
-                            aFetchOptions, aIntegrity, aReferrer, aContext,
-                            ModuleLoadRequest::Kind::TopLevel, this, nullptr);
+  RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
+      JS::ModuleType::JavaScript, aIntegrity, aReferrer, aContext,
+      ModuleLoadRequest::Kind::TopLevel, this, nullptr);
 
-  GetScriptLoader()->TryUseCache(request, aElement, aFetchOptions->mNonce,
-                                 aRequestType);
+  GetScriptLoader()->TryUseCache(aReferrerPolicy, aFetchOptions, aURI, request,
+                                 aElement, aFetchOptions->mNonce, aRequestType);
 
   return request.forget();
 }
@@ -479,11 +485,10 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateRequest(
   }
 
   JS::ModuleType moduleType = GetModuleRequestType(aCx, aModuleRequest);
-  RefPtr<ModuleLoadRequest> request =
-      new ModuleLoadRequest(aURI, moduleType, aReferrerPolicy, aOptions,
-                            aSriMetadata, aBaseURL, context, kind, this, root);
+  RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
+      moduleType, aSriMetadata, aBaseURL, context, kind, this, root);
 
-  GetScriptLoader()->TryUseCache(request);
+  GetScriptLoader()->TryUseCache(aReferrerPolicy, aOptions, aURI, request);
 
   return request.forget();
 }

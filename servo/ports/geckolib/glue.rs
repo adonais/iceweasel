@@ -106,7 +106,7 @@ use style::invalidation::element::relative_selector::{
 };
 use style::invalidation::element::restyle_hints::RestyleHint;
 use style::invalidation::stylesheets::RuleChangeKind;
-use style::logical_geometry::{PhysicalAxis, PhysicalSide};
+use style::logical_geometry::{PhysicalAxis, PhysicalSide, WritingMode};
 use style::media_queries::MediaList;
 use style::parser::{Parse, ParserContext};
 use style::properties::declaration_block::PropertyTypedValue;
@@ -135,13 +135,14 @@ use style::stylesheets::keyframes_rule::{Keyframe, KeyframeSelector, KeyframesSt
 use style::stylesheets::scope_rule::{ImplicitScopeRoot, ScopeRootCandidate, ScopeSubjectMap};
 use style::stylesheets::supports_rule::parse_condition_or_declaration;
 use style::stylesheets::{
-    AllowImportRules, ContainerRule, CounterStyleRule, CssRule, CssRuleType, CssRuleTypes,
-    CssRules, CssRulesHelpers, DocumentRule, FontFaceRule, FontFeatureValuesRule,
-    FontPaletteValuesRule, ImportRule, KeyframesRule, LayerBlockRule, LayerStatementRule,
-    MarginRule, MediaRule, NamespaceRule, NestedDeclarationsRule, Origin, OriginSet,
-    PagePseudoClassFlags, PageRule, PositionTryRule, PropertyRule, SanitizationData,
-    SanitizationKind, ScopeRule, StartingStyleRule, StyleRule, StylesheetContents,
-    StylesheetInDocument, StylesheetLoader as StyleStylesheetLoader, SupportsRule, UrlExtraData,
+    AllowImportRules, ContainerRule, CounterStyleRule, CssRule, CssRuleRef, CssRuleType,
+    CssRuleTypes, CssRules, CustomMediaCondition, CustomMediaEvaluator, CustomMediaRule,
+    DocumentRule, FontFaceRule, FontFeatureValuesRule, FontPaletteValuesRule, ImportRule,
+    KeyframesRule, LayerBlockRule, LayerStatementRule, MarginRule, MediaRule, NamespaceRule,
+    NestedDeclarationsRule, Origin, OriginSet, PagePseudoClassFlags, PageRule, PositionTryRule,
+    PropertyRule, SanitizationData, SanitizationKind, ScopeRule, StartingStyleRule, StyleRule,
+    StylesheetContents, StylesheetInDocument, StylesheetLoader as StyleStylesheetLoader,
+    SupportsRule, UrlExtraData,
 };
 use style::stylist::{
     add_size_of_ua_cache, replace_parent_selector_with_implicit_scope, scope_root_candidates,
@@ -162,17 +163,20 @@ use style::values::computed::font::{
 use style::values::computed::length_percentage::{
     AllowAnchorPosResolutionInCalcPercentage, Unpacked,
 };
-use style::values::computed::position::AnchorFunction;
-use style::values::computed::{self, ContentVisibility, Context, ToComputedValue};
+use style::values::computed::position::{AnchorFunction, PositionArea};
+use style::values::computed::{
+    self, ContentVisibility, Context, PositionAreaKeyword, ToComputedValue,
+};
 use style::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use style::values::generics::color::ColorMixFlags;
 use style::values::generics::easing::BeforeFlag;
 use style::values::generics::length::GenericAnchorSizeFunction;
 use style::values::resolved;
+use style::values::specified::align::AlignFlags;
 use style::values::specified::intersection_observer::IntersectionObserverMargin;
+use style::values::specified::position::DashedIdentAndOrTryTactic;
 use style::values::specified::source_size_list::SourceSizeList;
 use style::values::specified::svg_path::PathCommand;
-use style::values::specified::position::DashedIdentAndOrTryTactic;
 use style::values::specified::{AbsoluteLength, NoCalcLength};
 use style::values::{specified, AtomIdent, CustomIdent, KeyframesName};
 use style_traits::{CssWriter, ParseError, ParsingMode, ToCss, TypedValue};
@@ -1768,7 +1772,9 @@ pub unsafe extern "C" fn Servo_AuthorStyles_AppendStyleSheet(
     let global_style_data = &*GLOBAL_STYLE_DATA;
     let guard = global_style_data.shared_lock.read();
     let sheet = GeckoStyleSheet::new(sheet);
-    styles.stylesheets.append_stylesheet(None, sheet, &guard);
+    styles
+        .stylesheets
+        .append_stylesheet(None, styles.data.custom_media_map(), sheet, &guard);
 }
 
 #[no_mangle]
@@ -1781,6 +1787,7 @@ pub unsafe extern "C" fn Servo_AuthorStyles_InsertStyleSheetBefore(
     let guard = global_style_data.shared_lock.read();
     styles.stylesheets.insert_stylesheet_before(
         None,
+        styles.data.custom_media_map(),
         GeckoStyleSheet::new(sheet),
         GeckoStyleSheet::new(before_sheet),
         &guard,
@@ -1794,9 +1801,12 @@ pub unsafe extern "C" fn Servo_AuthorStyles_RemoveStyleSheet(
 ) {
     let global_style_data = &*GLOBAL_STYLE_DATA;
     let guard = global_style_data.shared_lock.read();
-    styles
-        .stylesheets
-        .remove_stylesheet(None, GeckoStyleSheet::new(sheet), &guard);
+    styles.stylesheets.remove_stylesheet(
+        None,
+        styles.data.custom_media_map(),
+        GeckoStyleSheet::new(sheet),
+        &guard,
+    );
 }
 
 #[no_mangle]
@@ -2064,11 +2074,14 @@ pub extern "C" fn Servo_StyleSheet_GetRules(sheet: &StylesheetContents) -> Stron
 #[no_mangle]
 pub extern "C" fn Servo_StyleSheet_Clone(
     contents: &StylesheetContents,
+    data: *mut URLExtraData,
 ) -> Strong<StylesheetContents> {
-    use style::shared_lock::DeepCloneWithLock;
     let global_style_data = &*GLOBAL_STYLE_DATA;
     let guard = global_style_data.shared_lock.read();
-    Arc::new(contents.deep_clone_with_lock(&global_style_data.shared_lock, &guard)).into()
+    let url_data = unsafe { UrlExtraData::from_ptr_ref(&data) };
+    contents
+        .deep_clone(&global_style_data.shared_lock, Some(url_data), &guard)
+        .into()
 }
 
 #[no_mangle]
@@ -2099,8 +2112,7 @@ pub extern "C" fn Servo_StyleSheet_GetSourceMapURL(
     contents: &StylesheetContents,
     result: &mut nsACString,
 ) {
-    let url_opt = contents.source_map_url.read();
-    if let Some(ref url) = *url_opt {
+    if let Some(ref url) = contents.source_map_url {
         result.assign(url);
     }
 }
@@ -2110,8 +2122,7 @@ pub extern "C" fn Servo_StyleSheet_GetSourceURL(
     contents: &StylesheetContents,
     result: &mut nsACString,
 ) {
-    let url_opt = contents.source_url.read();
-    if let Some(ref url) = *url_opt {
+    if let Some(ref url) = contents.source_url {
         result.assign(url);
     }
 }
@@ -2231,24 +2242,28 @@ pub extern "C" fn Servo_CssRules_InsertRule(
     let rule = unsafe { rule.as_str_unchecked() };
 
     let global_style_data = &*GLOBAL_STYLE_DATA;
-    let result = rules.insert_rule(
-        &global_style_data.shared_lock,
-        rule,
-        contents,
-        index as usize,
-        CssRuleTypes::from_bits(containing_rule_types),
-        parse_relative_rule_type.cloned(),
-        loader,
-        allow_import_rules,
-    );
+    let index = index as usize;
+    let new_rule = {
+        let guard = global_style_data.shared_lock.read();
+        match rules.read_with(&guard).parse_rule_for_insert(
+            &global_style_data.shared_lock,
+            rule,
+            contents,
+            index,
+            CssRuleTypes::from_bits(containing_rule_types),
+            parse_relative_rule_type.cloned(),
+            loader,
+            allow_import_rules,
+        ) {
+            Ok(r) => r,
+            Err(e) => return e.into(),
+        }
+    };
 
-    match result {
-        Ok(new_rule) => {
-            *rule_type = new_rule.rule_type();
-            nsresult::NS_OK
-        },
-        Err(err) => err.into(),
-    }
+    let mut write_guard = global_style_data.shared_lock.write();
+    *rule_type = new_rule.rule_type();
+    rules.write_with(&mut write_guard).0.insert(index, new_rule);
+    nsresult::NS_OK
 }
 
 #[no_mangle]
@@ -2351,6 +2366,7 @@ macro_rules! impl_basic_rule_funcs {
             rule: &$maybe_locked_rule_type,
             sheet: &DomStyleSheet,
             change_kind: RuleChangeKind,
+            ancestors: &nsTArray<CssRuleRef>,
         ) {
             let mut data = styleset.borrow_mut();
             let data = &mut *data;
@@ -2360,7 +2376,7 @@ macro_rules! impl_basic_rule_funcs {
             // but it's probably not a huge deal.
             let rule = unsafe { CssRule::$name(Arc::from_raw_addrefed(rule)) };
             let sheet = unsafe { GeckoStyleSheet::new(sheet) };
-            data.stylist.rule_changed(&sheet, &rule, &guard, change_kind);
+            data.stylist.rule_changed(&sheet, &rule, &guard, change_kind, ancestors.as_slice());
         }
 
         impl_basic_rule_funcs_without_getter! {
@@ -2449,6 +2465,13 @@ impl_basic_rule_funcs! { (Margin, MarginRule, MarginRule),
     debug: Servo_MarginRule_Debug,
     to_css: Servo_MarginRule_GetCssText,
     changed: Servo_StyleSet_MarginRuleChanged,
+}
+
+impl_basic_rule_funcs! { (CustomMedia, CustomMediaRule, CustomMediaRule),
+    getter: Servo_CssRules_GetCustomMediaRuleAt,
+    debug: Servo_CustomMediaRule_Debug,
+    to_css: Servo_CustomMediaRule_GetCssText,
+    changed: Servo_StyleSet_CustomMediaRuleChanged,
 }
 
 impl_basic_rule_funcs! { (Namespace, NamespaceRule, NamespaceRule),
@@ -2761,6 +2784,7 @@ fn selector_matches_element<F, R>(
     index: u32,
     host: Option<&RawGeckoElement>,
     pseudo_type: PseudoStyleType,
+    pseudo_id: *const nsAtom,
     relevant_link_visited: bool,
     on_match: F,
 ) -> Option<R>
@@ -2778,7 +2802,14 @@ where
         return None;
     };
     let mut matching_mode = MatchingMode::Normal;
-    match PseudoElement::from_pseudo_type(pseudo_type, None) {
+    let pseudo_id = if pseudo_id.is_null() {
+        None
+    } else {
+        Some(AtomIdent::new(unsafe {
+            Atom::from_raw(pseudo_id as *mut nsAtom)
+        }))
+    };
+    match PseudoElement::from_pseudo_type(pseudo_type, pseudo_id) {
         Some(pseudo) => {
             // We need to make sure that the requested pseudo element type
             // matches the selector pseudo element type before proceeding.
@@ -2845,6 +2876,7 @@ pub extern "C" fn Servo_StyleRule_SelectorMatchesElement(
     index: u32,
     host: Option<&RawGeckoElement>,
     pseudo_type: PseudoStyleType,
+    pseudo_id: *const nsAtom,
     relevant_link_visited: bool,
 ) -> bool {
     selector_matches_element(
@@ -2854,6 +2886,7 @@ pub extern "C" fn Servo_StyleRule_SelectorMatchesElement(
         index,
         host,
         pseudo_type,
+        pseudo_id,
         relevant_link_visited,
         |_| true,
     )
@@ -2868,6 +2901,7 @@ pub extern "C" fn Servo_StyleRule_GetScopeRootFor(
     index: u32,
     host: Option<&RawGeckoElement>,
     pseudo_type: PseudoStyleType,
+    pseudo_id: *const nsAtom,
     relevant_link_visited: bool,
 ) -> *const RawGeckoElement {
     let element = GeckoElement(element);
@@ -2878,6 +2912,7 @@ pub extern "C" fn Servo_StyleRule_GetScopeRootFor(
         index,
         host,
         pseudo_type,
+        pseudo_id,
         relevant_link_visited,
         |candidate| {
             candidate
@@ -2904,8 +2939,8 @@ pub extern "C" fn Servo_StyleRule_SetSelectorText(
         use selectors::parser::ParseRelative;
         use style::selector_parser::SelectorParser;
 
-        let namespaces = contents.namespaces.read();
-        let url_data = contents.url_data.read();
+        let namespaces = &contents.namespaces;
+        let url_data = &contents.url_data;
         let parser = SelectorParser {
             stylesheet_origin: contents.origin,
             namespaces: &namespaces,
@@ -3260,6 +3295,23 @@ pub extern "C" fn Servo_MediaRule_GetMedia(rule: &MediaRule) -> Strong<LockedMed
     rule.media_queries.clone().into()
 }
 
+/// If the condition is null, the true/false gets communicated via the out-param
+#[no_mangle]
+pub extern "C" fn Servo_CustomMediaRule_GetCondition(
+    rule: &CustomMediaRule,
+    value: Option<&mut bool>,
+) -> Strong<LockedMediaList> {
+    let fixed_value = match rule.condition {
+        CustomMediaCondition::True => true,
+        CustomMediaCondition::False => false,
+        CustomMediaCondition::MediaList(ref list) => return list.clone().into(),
+    };
+    if let Some(value) = value {
+        *value = fixed_value;
+    }
+    Strong::null()
+}
+
 #[no_mangle]
 pub extern "C" fn Servo_NamespaceRule_GetPrefix(rule: &NamespaceRule) -> *mut nsAtom {
     rule.prefix
@@ -3280,6 +3332,11 @@ pub extern "C" fn Servo_MarginRule_GetStyle(rule: &MarginRule) -> Strong<LockedD
 #[no_mangle]
 pub extern "C" fn Servo_MarginRule_GetName(rule: &MarginRule, out: &mut nsACString) {
     out.assign(rule.name());
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_CustomMediaRule_GetName(rule: &CustomMediaRule) -> *mut nsAtom {
+    rule.name.0.as_ptr()
 }
 
 #[no_mangle]
@@ -3324,7 +3381,7 @@ pub extern "C" fn Servo_PageRule_SetSelectorText(
             return true;
         }
 
-        let url_data = contents.url_data.read();
+        let url_data = &contents.url_data;
         let context = ParserContext::new(
             Origin::Author,
             &url_data,
@@ -4395,13 +4452,9 @@ pub unsafe extern "C" fn Servo_ComputedValues_GetForPositionTry(
     let guards = StylesheetGuards::same(&guard);
     let element = GeckoElement(element);
     let data = raw_data.borrow();
-    data.stylist.resolve_position_try(
-        style,
-        &guards,
-        element,
-        name_and_try_tactic
-    )
-    .into()
+    data.stylist
+        .resolve_position_try(style, &guards, element, name_and_try_tactic)
+        .into()
 }
 
 #[no_mangle]
@@ -5619,6 +5672,7 @@ pub extern "C" fn Servo_MediaList_Matches(
         list.evaluate(
             per_doc_data.stylist.device(),
             per_doc_data.stylist.quirks_mode(),
+            &mut CustomMediaEvaluator::none(),
         )
     })
 }
@@ -6844,7 +6898,7 @@ pub extern "C" fn Servo_ReparentStyle(
             Some(parent_style),
             Some(layout_parent_style),
             FirstLineReparenting::Yes { style_to_reparent },
-            /* try_tactic = */ Default::default(),
+            /* try_tactic = */ &Default::default(),
             /* rule_cache = */ None,
             &mut RuleCacheConditions::default(),
         )
@@ -9452,8 +9506,8 @@ pub unsafe extern "C" fn Servo_SharedMemoryBuilder_AddStylesheet(
     // Assert some things we assume when we create a style sheet from shared
     // memory.
     debug_assert_eq!(contents.quirks_mode, QuirksMode::NoQuirks);
-    debug_assert!(contents.source_map_url.read().is_none());
-    debug_assert!(contents.source_url.read().is_none());
+    debug_assert!(contents.source_map_url.is_none());
+    debug_assert!(contents.source_url.is_none());
 
     match builder.write(&contents.rules) {
         Ok(rules_ptr) => &**rules_ptr,
@@ -10705,7 +10759,7 @@ fn offset_params_from_base_params(
             mFrame: params.mFrame,
             mPosition: params.mPosition,
             mPositionArea: params.mPositionArea,
-            mAnchorPosReferenceData: params.mAnchorPosReferenceData,
+            mCache: params.mCache,
         },
     }
 }
@@ -10750,4 +10804,29 @@ pub extern "C" fn Servo_ResolveAnchorSizeFunctionForMaxSize(
         &offset_params_from_base_params(params),
         AllowAnchorPosResolutionInCalcPercentage::AnchorSizeOnly(prop_axis),
     );
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_PhysicalizePositionArea(
+    area: &mut PositionArea,
+    cb_wm: &WritingMode,
+    self_wm: &WritingMode,
+) {
+    *area = area.to_physical(*cb_wm, *self_wm);
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_ResolvePositionAreaSelfAlignment(
+    area: &PositionAreaKeyword,
+    out: &mut AlignFlags,
+) {
+    let Some(align) = area.to_self_alignment() else {
+        debug_assert!(
+            false,
+            "ResolvePositionAreaSelfAlignment called on {:?}",
+            area
+        );
+        return;
+    };
+    *out = align;
 }

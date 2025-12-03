@@ -16,7 +16,7 @@ export var CanonicalJSON = {
    *
    * @usage
    *        CanonicalJSON.stringify(listOfRecords);
-   **/
+   */
   stringify: function stringify(source, jsescFn) {
     if (typeof jsescFn != "function") {
       const { jsesc } = ChromeUtils.importESModule(

@@ -689,7 +689,7 @@ void AsyncDecodeWebAudio(const char* aContentType, uint8_t* aBuffer,
   } else {
     nsresult rv = task->PSupervisorTaskQueue()->Dispatch(task.forget());
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
+    (void)rv;
   }
 }
 

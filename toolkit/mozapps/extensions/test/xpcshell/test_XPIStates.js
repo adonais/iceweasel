@@ -36,7 +36,7 @@ add_task(async function setup() {
 // timestamp we may not consider the change significant)
 var lastTimestamp = Date.now();
 
-/*
+/**
  * Helper function to touch a file and then test whether we detect the change.
  * @param XS      The XPIState object.
  * @param aPath   File path to touch.

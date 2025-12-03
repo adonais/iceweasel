@@ -218,7 +218,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
     super.destroy();
   }
 
-  /*
+  /**
    * Get the list of the currently watched resources for this watcher.
    *
    * @return Array<String>

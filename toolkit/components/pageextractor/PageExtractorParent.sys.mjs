@@ -37,6 +37,18 @@ export class PageExtractorParent extends JSWindowActorParent {
    * @returns {Promise<string | null>}
    */
   getText(options = {}) {
+    if (this.#isPDF()) {
+      return this.browsingContext.currentWindowGlobal
+        .getActor("Pdfjs")
+        .getTextContent();
+    }
     return this.sendQuery("PageExtractorParent:GetText", options);
+  }
+
+  #isPDF() {
+    return (
+      this.browsingContext.currentWindowGlobal.documentPrincipal
+        .originNoSuffix == "resource://pdf.js"
+    );
   }
 }

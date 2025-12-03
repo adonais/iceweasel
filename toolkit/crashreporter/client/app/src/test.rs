@@ -1480,7 +1480,12 @@ fn background_task_curl_fallback() {
     let mock_ran_bgtask = ran_bgtask.clone();
     let ran_curl = Counter::new();
     let mock_ran_curl = ran_curl.clone();
+    let background_task_attempts = Arc::new(net::http::BackgroundTaskAttempts::new(2));
     test.mock
+        .set(
+            net::http::BACKGROUND_TASK_ATTEMPTS,
+            background_task_attempts.clone(),
+        )
         .set(
             Command::mock("work_dir/firefox"),
             Box::new(move |cmd| {
@@ -1598,6 +1603,65 @@ fn background_task_curl_fallback() {
 
     ran_bgtask.assert_one();
     ran_curl.assert_one();
+
+    // Verify that background tasks are still enabled.
+    assert!(background_task_attempts.should_attempt());
+
+    test.assert_files()
+        .saved_settings(Settings::default())
+        .submitted();
+}
+
+#[test]
+fn background_task_disables() {
+    let mut test = GuiTest::new();
+    let ran_bgtask = Counter::new();
+    let mock_ran_bgtask = ran_bgtask.clone();
+    let ran_curl = Counter::new();
+    let mock_ran_curl = ran_curl.clone();
+    let background_task_attempts = Arc::new(net::http::BackgroundTaskAttempts::new(1));
+    test.mock
+        .set(
+            net::http::BACKGROUND_TASK_ATTEMPTS,
+            background_task_attempts.clone(),
+        )
+        .set(
+            Command::mock("work_dir/firefox"),
+            Box::new(move |cmd| {
+                if cmd.spawning {
+                    return Ok(crate::std::process::success_output());
+                }
+                mock_ran_bgtask.inc();
+
+                Ok(crate::std::process::Output {
+                    status: crate::std::process::exit_status(255),
+                    stdout: vec![],
+                    stderr: vec![],
+                })
+            }),
+        )
+        .set(
+            Command::mock("curl"),
+            Box::new(move |cmd| {
+                if cmd.spawning {
+                    return Ok(crate::std::process::success_output());
+                }
+
+                let mut output = crate::std::process::success_output();
+                output.stdout = format!("CrashID={MOCK_REMOTE_CRASH_ID}").into();
+                mock_ran_curl.inc();
+                Ok(output)
+            }),
+        );
+    test.run(|interact| {
+        interact.element("quit", |_style, b: &model::Button| b.click.fire(&()));
+    });
+
+    ran_bgtask.assert_one();
+    ran_curl.assert_one();
+
+    // Verify that background tasks are now disabled.
+    assert_eq!(false, background_task_attempts.should_attempt());
 
     test.assert_files()
         .saved_settings(Settings::default())

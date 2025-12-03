@@ -531,7 +531,7 @@ void nsHtml5TreeOpExecutor::RunFlushLoop() {
   if (mParser) {
     streamParserGrip = GetParser()->GetStreamParser();
   }
-  Unused << streamParserGrip;  // Intentionally not used within function
+  (void)streamParserGrip;  // Intentionally not used within function
 
   // Remember the entry time
   (void)nsContentSink::WillParseImpl();
@@ -742,12 +742,12 @@ nsresult nsHtml5TreeOpExecutor::FlushDocumentWrite() {
   // avoid crashing near EOF
   RefPtr<nsHtml5TreeOpExecutor> kungFuDeathGrip(this);
   RefPtr<nsParserBase> parserKungFuDeathGrip(mParser);
-  Unused << parserKungFuDeathGrip;  // Intentionally not used within function
+  (void)parserKungFuDeathGrip;  // Intentionally not used within function
   RefPtr<nsHtml5StreamParser> streamParserGrip;
   if (mParser) {
     streamParserGrip = GetParser()->GetStreamParser();
   }
-  Unused << streamParserGrip;  // Intentionally not used within function
+  (void)streamParserGrip;  // Intentionally not used within function
 
   MOZ_RELEASE_ASSERT(!mReadingFromStage,
                      "Got doc write flush when reading from stage");
@@ -1189,6 +1189,10 @@ void nsHtml5TreeOpExecutor::PreloadScript(
     const nsAString& aNonce, const nsAString& aFetchPriority,
     const nsAString& aIntegrity, dom::ReferrerPolicy aReferrerPolicy,
     bool aScriptFromHead, bool aAsync, bool aDefer, bool aLinkPreload) {
+  dom::ScriptLoader* loader = mDocument->GetScriptLoader();
+  if (!loader) {
+    return;
+  }
   nsCOMPtr<nsIURI> uri = ConvertIfNotPreloadedYetAndMediaApplies(aURL, aMedia);
   if (!uri) {
     return;
@@ -1197,10 +1201,9 @@ void nsHtml5TreeOpExecutor::PreloadScript(
   if (mDocument->Preloads().PreloadExists(key)) {
     return;
   }
-  mDocument->ScriptLoader()->PreloadURI(
-      uri, aCharset, aType, aCrossOrigin, aNonce, aFetchPriority, aIntegrity,
-      aScriptFromHead, aAsync, aDefer, aLinkPreload,
-      GetPreloadReferrerPolicy(aReferrerPolicy), 0);
+  loader->PreloadURI(uri, aCharset, aType, aCrossOrigin, aNonce, aFetchPriority,
+                     aIntegrity, aScriptFromHead, aAsync, aDefer, aLinkPreload,
+                     GetPreloadReferrerPolicy(aReferrerPolicy), 0);
 }
 
 void nsHtml5TreeOpExecutor::PreloadStyle(

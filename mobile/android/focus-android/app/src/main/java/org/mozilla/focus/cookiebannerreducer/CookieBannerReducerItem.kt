@@ -105,7 +105,7 @@ fun CookieBannerReducerItem(
             if (cookieBannerReducerStatus is CookieBannerReducerStatus.NoException) {
                 painterResource(id = iconsR.drawable.mozac_ic_cookies_24)
             } else {
-                painterResource(id = R.drawable.ic_cookies_disable)
+                painterResource(id = iconsR.drawable.mozac_ic_cookies_slash_24)
             }
         Icon(
             painter = painter,

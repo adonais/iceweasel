@@ -23,7 +23,6 @@
 #include "nsMenuPopupFrame.h"
 #include "nsNameSpaceManager.h"
 #include "nsStringFwd.h"
-#include "nsView.h"
 #ifdef MOZ_WAYLAND
 #  include "mozilla/WidgetUtilsGtk.h"
 #endif

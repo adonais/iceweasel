@@ -7,9 +7,8 @@
 #ifndef _NSTHEBESFONTENUMERATOR_H_
 #define _NSTHEBESFONTENUMERATOR_H_
 
-#include "mozilla/Attributes.h"  // for final
-#include "nsIFontEnumerator.h"   // for NS_DECL_NSIFONTENUMERATOR, etc
-#include "nsISupports.h"         // for NS_DECL_ISUPPORTS
+#include "nsIFontEnumerator.h"  // for NS_DECL_NSIFONTENUMERATOR, etc
+#include "nsISupports.h"        // for NS_DECL_ISUPPORTS
 
 class nsThebesFontEnumerator final : public nsIFontEnumerator {
   ~nsThebesFontEnumerator() = default;

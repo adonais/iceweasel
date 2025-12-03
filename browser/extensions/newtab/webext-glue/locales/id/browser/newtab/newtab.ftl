@@ -395,7 +395,7 @@ newtab-wallpaper-abstract-purple-green = Gradien ungu dan hijau terang
 newtab-wallpaper-abstract-blue-purple-waves = Bentuk bergelombang biru dan ungu
 newtab-wallpaper-abstract-black-waves = Bentuk hitam bergelombang
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Foto
 newtab-wallpaper-beach-at-sunrise = Pantai saat matahari terbit

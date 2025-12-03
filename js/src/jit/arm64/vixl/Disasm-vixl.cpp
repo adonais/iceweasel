@@ -1628,6 +1628,7 @@ void Disassembler::VisitException(const Instruction* instr) {
     case SVC: mnemonic = "svc"; break;
     case HVC: mnemonic = "hvc"; break;
     case SMC: mnemonic = "smc"; break;
+    case DCPS0: mnemonic = "dcps0"; form = "{'IDebug} (Wasm Trap)"; break;
     case DCPS1: mnemonic = "dcps1"; form = "{'IDebug}"; break;
     case DCPS2: mnemonic = "dcps2"; form = "{'IDebug}"; break;
     case DCPS3: mnemonic = "dcps3"; form = "{'IDebug}"; break;

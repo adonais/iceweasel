@@ -330,67 +330,19 @@ add_task(async function telemetryType() {
   );
 });
 
-// When sponsored suggestions are disabled, Yelp suggestions should be
-// disabled.
-add_task(async function sponsoredDisabled() {
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
-
-  // First make sure the suggestion is added when non-sponsored
-  // suggestions are enabled, if the rust is enabled.
-  await check_results({
-    context: createContext("the shop in tokyo", {
-      providers: [
-        UrlbarProviderQuickSuggest.name,
-        UrlbarProviderSearchSuggestions.name,
-      ],
-      isPrivate: false,
-    }),
-    matches: [QuickSuggestTestUtils.yelpResult(TOKYO_RESULT)],
-  });
-
-  // Now disable the pref.
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
-  Assert.ok(
-    !QuickSuggest.getFeature("YelpSuggestions").isEnabled,
-    "Yelp should be disabled"
-  );
-  await check_results({
-    context: createContext("the shop in tokyo", {
-      providers: [
-        UrlbarProviderQuickSuggest.name,
-        UrlbarProviderSearchSuggestions.name,
-      ],
-      isPrivate: false,
-    }),
-    matches: [],
-  });
-
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-  UrlbarPrefs.clear("suggest.quicksuggest.nonsponsored");
-  await QuickSuggestTestUtils.forceSync();
-
-  // Make sure Yelp is enabled again.
-  Assert.ok(
-    QuickSuggest.getFeature("YelpSuggestions").isEnabled,
-    "Yelp should be re-enabled"
-  );
-  await check_results({
-    context: createContext("the shop in tokyo", {
-      providers: [
-        UrlbarProviderQuickSuggest.name,
-        UrlbarProviderSearchSuggestions.name,
-      ],
-      isPrivate: false,
-    }),
-    matches: [QuickSuggestTestUtils.yelpResult(TOKYO_RESULT)],
-  });
-});
-
-// When Yelp-specific preferences are disabled, suggestions should not be
+// When relevant Yelp and Suggest prefs are disabled, suggestions should not be
 // added.
-add_task(async function yelpSpecificPrefsDisabled() {
-  const prefs = ["suggest.yelp", "yelp.featureGate"];
+add_task(async function prefsDisabled() {
+  const prefs = [
+    "suggest.yelp",
+    "yelp.featureGate",
+    "suggest.quicksuggest.all",
+    "suggest.quicksuggest.sponsored",
+    "quicksuggest.enabled",
+  ];
   for (const pref of prefs) {
+    info("Doing test with pref: " + pref);
+
     // First make sure the suggestion is added, if the rust is enabled.
     await check_results({
       context: createContext("the shop in tokyo", {

@@ -285,19 +285,7 @@ static TextureType ChooseTextureType(gfx::SurfaceFormat aFormat,
   LayersBackend layersBackend = aKnowsCompositor->GetCompositorBackendType();
   gfx::BackendType moz2DBackend =
       BackendTypeForBackendSelector(layersBackend, aSelector);
-  Unused << moz2DBackend;
-
-#ifdef XP_WIN
-  int32_t maxTextureSize = aKnowsCompositor->GetMaxTextureSize();
-  if ((layersBackend == LayersBackend::LAYERS_WR &&
-       !aKnowsCompositor->UsingSoftwareWebRender()) &&
-      (moz2DBackend == gfx::BackendType::DIRECT2D ||
-       moz2DBackend == gfx::BackendType::DIRECT2D1_1) &&
-      aSize.width <= maxTextureSize && aSize.height <= maxTextureSize &&
-      !(aAllocFlags & (ALLOC_UPDATE_FROM_SURFACE | ALLOC_DO_NOT_ACCELERATE))) {
-    return TextureType::D3D11;
-  }
-#endif
+  (void)moz2DBackend;
 
 #ifdef XP_MACOSX
   if (StaticPrefs::gfx_use_iosurface_textures_AtStartup() &&
@@ -1396,27 +1384,6 @@ already_AddRefed<TextureClient> TextureClient::CreateFromSurface(
     return nullptr;
   }
 
-  TextureData* data = nullptr;
-#if defined(XP_WIN)
-  LayersBackend layersBackend = aAllocator->GetCompositorBackendType();
-  gfx::BackendType moz2DBackend =
-      BackendTypeForBackendSelector(layersBackend, aSelector);
-
-  int32_t maxTextureSize = aAllocator->GetMaxTextureSize();
-
-  if (layersBackend == LayersBackend::LAYERS_WR &&
-      (moz2DBackend == gfx::BackendType::DIRECT2D ||
-       moz2DBackend == gfx::BackendType::DIRECT2D1_1) &&
-      size.width <= maxTextureSize && size.height <= maxTextureSize) {
-    data = D3D11TextureData::Create(aSurface, aAllocFlags);
-  }
-#endif
-
-  if (data) {
-    return MakeAndAddRef<TextureClient>(data, aTextureFlags,
-                                        aAllocator->GetTextureForwarder());
-  }
-
   // Fall back to using UpdateFromSurface
 
   TextureAllocationFlags allocFlags =
@@ -1468,12 +1435,9 @@ already_AddRefed<TextureClient> TextureClient::CreateForRawBufferAccess(
     aAllocFlags = TextureAllocationFlags(aAllocFlags | ALLOC_CLEAR_BUFFER);
   }
 
-  // Note that we ignore the backend type if we get here. It should only be D2D
-  // or Skia, and D2D does not support data surfaces. Therefore it is safe to
-  // force the buffer to be Skia.
-  NS_WARNING_ASSERTION(aMoz2DBackend == gfx::BackendType::SKIA ||
-                           aMoz2DBackend == gfx::BackendType::DIRECT2D ||
-                           aMoz2DBackend == gfx::BackendType::DIRECT2D1_1,
+  // We ignore the backend type if we get here. It should only be Skia.
+  // Therefore it is safe to force the buffer to be Skia.
+  NS_WARNING_ASSERTION(aMoz2DBackend == gfx::BackendType::SKIA,
                        "Unsupported TextureClient backend type");
 
   // For future changes, check aAllocFlags aAllocFlags & ALLOC_DO_NOT_ACCELERATE

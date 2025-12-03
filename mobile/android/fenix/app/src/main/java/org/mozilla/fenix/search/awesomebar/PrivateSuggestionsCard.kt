@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -91,7 +92,7 @@ internal fun PrivateSuggestionsCard(
                             onClick = { onLearnMoreClick() },
                         ),
                     ),
-                    linkTextColor = FirefoxTheme.colors.textAccent,
+                    linkTextColor = MaterialTheme.colorScheme.tertiary,
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))

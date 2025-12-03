@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_idbdatabase_h__
 #define mozilla_dom_idbdatabase_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/IDBTransactionBinding.h"

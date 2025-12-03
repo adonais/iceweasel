@@ -20,7 +20,6 @@
 
 #ifdef XP_WIN
 #  include "mozilla/gfx/gfxVars.h"
-#  include "mozilla/WindowsVersion.h"
 #  include "nsExceptionHandler.h"
 #  include "PDMFactory.h"
 #endif  // XP_WIN

@@ -38,6 +38,7 @@ UNIFIED_SOURCES += [
     "ScriptLoader.cpp",
     "ScriptLoadHandler.cpp",
     "ScriptSettings.cpp",
+    "ScriptTrace.cpp",
     "ShadowRealmGlobalScope.cpp",
     "SharedScriptCache.cpp",
 ]

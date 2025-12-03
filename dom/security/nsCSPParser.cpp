@@ -9,11 +9,9 @@
 #include <cstdint>
 #include <utility>
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_security.h"
-#include "mozilla/TextUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/TrustedTypesConstants.h"
 #include "nsCOMPtr.h"

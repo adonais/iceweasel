@@ -9,7 +9,6 @@
 
 #include "mozilla/a11y/DocAccessible.h"
 #include "mozilla/a11y/PDocAccessibleChild.h"
-#include "mozilla/Unused.h"
 #include "nsISupportsImpl.h"
 
 namespace mozilla {

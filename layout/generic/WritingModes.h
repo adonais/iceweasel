@@ -2189,6 +2189,17 @@ inline AnchorResolvedInset nsStylePosition::GetAnchorResolvedInset(
   return GetAnchorResolvedInset(aWM.PhysicalSide(aSide), aParams);
 }
 
+inline mozilla::Maybe<mozilla::Side> nsStylePosition::GetSingleAutoInsetInAxis(
+    LogicalAxis aAxis, WritingMode aWM,
+    const AnchorPosOffsetResolutionParams& aParams) const {
+  const bool isInlineAxis = (aAxis == LogicalAxis::Inline);
+  const mozilla::StylePhysicalAxis physicalAxis =
+      (isInlineAxis == aWM.IsVertical())
+          ? mozilla::StylePhysicalAxis::Vertical
+          : mozilla::StylePhysicalAxis::Horizontal;
+  return GetSingleAutoInsetInAxis(physicalAxis, aParams);
+}
+
 inline AnchorResolvedSize nsStylePosition::ISize(
     WritingMode aWM, const AnchorPosResolutionParams& aParams) const {
   return aWM.IsVertical() ? GetHeight(aParams) : GetWidth(aParams);

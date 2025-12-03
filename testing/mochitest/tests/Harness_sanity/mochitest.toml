@@ -48,6 +48,7 @@ skip-if = [
 
 ["test_sanityRegisteredServiceWorker.html"]
 support-files = "empty.js"
+skip-if = ["verify-standalone"]
 
 ["test_sanityRegisteredServiceWorker2.html"]
 support-files = "empty.js"

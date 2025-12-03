@@ -1863,13 +1863,15 @@ pub(crate) mod __glean_metric_maps {
     ///
     /// Panics if no event by the given metric ID could be found.
     pub(crate) fn event_test_get_value_wrapper(metric_id: u32, ping_name: Option<String>) -> Option<Vec<RecordedEvent>> {
-        match metric_id {
-           21 => super::test_nested::event_metric.test_get_value(ping_name),
-           22 => super::test_nested::event_metric_with_extra.test_get_value(ping_name),
-           49 => super::test2_nested::event_metric.test_get_value(ping_name),
-           50 => super::test2_nested::event_metric_with_extra.test_get_value(ping_name),
+        let event = match metric_id {
+           21 => &*super::test_nested::event_metric as &dyn ::glean::TestGetValue<Output=Vec<RecordedEvent>>,
+           22 => &*super::test_nested::event_metric_with_extra as &dyn ::glean::TestGetValue<Output=Vec<RecordedEvent>>,
+           49 => &*super::test2_nested::event_metric as &dyn ::glean::TestGetValue<Output=Vec<RecordedEvent>>,
+           50 => &*super::test2_nested::event_metric_with_extra as &dyn ::glean::TestGetValue<Output=Vec<RecordedEvent>>,
            _ => panic!("No event for metric id {}", metric_id),
-        }
+        };
+
+        return event.test_get_value(ping_name);
     }
 
     /// Check the provided event for errors.
@@ -1890,12 +1892,16 @@ pub(crate) mod __glean_metric_maps {
     #[allow(unused_variables)]
     pub(crate) fn event_test_get_error(metric_id: u32) -> Option<String> {
         #[cfg(feature = "with_gecko")]
-        match metric_id {
-           21 => test_get_errors!(super::test_nested::event_metric),
-           22 => test_get_errors!(super::test_nested::event_metric_with_extra),
-           49 => test_get_errors!(super::test2_nested::event_metric),
-           50 => test_get_errors!(super::test2_nested::event_metric_with_extra),
-           _ => panic!("No event for metric id {}", metric_id),
+        {
+            let event = match metric_id {
+               21 => &*super::test_nested::event_metric as &dyn crate::private::TestGetNumErrors,
+               22 => &*super::test_nested::event_metric_with_extra as &dyn crate::private::TestGetNumErrors,
+               49 => &*super::test2_nested::event_metric as &dyn crate::private::TestGetNumErrors,
+               50 => &*super::test2_nested::event_metric_with_extra as &dyn crate::private::TestGetNumErrors,
+               _ => panic!("No event for metric id {}", metric_id),
+            };
+
+            return test_get_errors!(event);
         }
 
         #[cfg(not(feature = "with_gecko"))]
@@ -1930,6 +1936,67 @@ pub(crate) mod __glean_metric_maps {
             _ => panic!("No labeled_boolean for metric id {}", metric_id),
         }
     }
+
+    /// Gets the value from the specified labeled metric.
+    ///
+    /// # Arguments
+    ///
+    /// * `metric_id` - The metric's ID to look up
+    /// * `ping_name` - The label identifying the boolean submetric.
+    ///
+    /// # Returns
+    ///
+    /// Returns a map of all values in the labeled metric.
+    ///
+    /// # Panics
+    ///
+    /// Panics if no labeled_boolean by the given metric ID could be found.
+    #[allow(unused_variables)]
+    pub(crate) fn labeled_boolean_test_get(metric_id: u32, ping_name: &str) -> Option<HashMap<String, bool>> {
+        let ping_name = if ping_name.len() == 0 {
+            None
+        } else {
+            Some(ping_name.to_string())
+        };
+        let metric = match metric_id {
+            4 => &*super::test::labeled_boolean_metric as &dyn ::glean::TestGetValue<Output=HashMap<String, bool>>,
+            5 => &*super::test::labeled_boolean_metric_labels as &dyn ::glean::TestGetValue<Output=HashMap<String, bool>>,
+            17 => &*super::test::unordered_labeled_boolean_metric as &dyn ::glean::TestGetValue<Output=HashMap<String, bool>>,
+            33 => &*super::test2::labeled_boolean_metric as &dyn ::glean::TestGetValue<Output=HashMap<String, bool>>,
+            34 => &*super::test2::labeled_boolean_metric_labels as &dyn ::glean::TestGetValue<Output=HashMap<String, bool>>,
+            46 => &*super::test2::unordered_labeled_boolean_metric as &dyn ::glean::TestGetValue<Output=HashMap<String, bool>>,
+            _ => panic!("No labeled_boolean for metric id {}", metric_id),
+        };
+
+        metric.test_get_value(ping_name)
+    }
+
+    /// Gets the number of reported errors from the specified labeled metric.
+    ///
+    /// # Arguments
+    ///
+    /// * `metric_id` - The metric's ID to look up
+    /// * `error_type` - The error type for which to look
+    ///
+    /// # Returns
+    ///
+    /// Returns the number of recorded errors in the labeled metric.
+    ///
+    /// # Panics
+    ///
+    /// Panics if no labeled_boolean by the given metric ID could be found.
+    #[allow(unused_variables)]
+    pub(crate) fn labeled_boolean_test_get_num_recorded_errors(metric_id: u32, error_type: glean::ErrorType) -> i32 {
+        match metric_id {
+            4 => super::test::labeled_boolean_metric.test_get_num_recorded_errors(error_type),
+            5 => super::test::labeled_boolean_metric_labels.test_get_num_recorded_errors(error_type),
+            17 => super::test::unordered_labeled_boolean_metric.test_get_num_recorded_errors(error_type),
+            33 => super::test2::labeled_boolean_metric.test_get_num_recorded_errors(error_type),
+            34 => super::test2::labeled_boolean_metric_labels.test_get_num_recorded_errors(error_type),
+            46 => super::test2::unordered_labeled_boolean_metric.test_get_num_recorded_errors(error_type),
+            _ => panic!("No labeled_boolean for metric id {}", metric_id),
+        }
+    }
     /// Gets the submetric from the specified labeled_counter metric.
     ///
     /// # Arguments
@@ -1954,6 +2021,63 @@ pub(crate) mod __glean_metric_maps {
             _ => panic!("No labeled_counter for metric id {}", metric_id),
         }
     }
+
+    /// Gets the value from the specified labeled metric.
+    ///
+    /// # Arguments
+    ///
+    /// * `metric_id` - The metric's ID to look up
+    /// * `ping_name` - The label identifying the counter submetric.
+    ///
+    /// # Returns
+    ///
+    /// Returns a map of all values in the labeled metric.
+    ///
+    /// # Panics
+    ///
+    /// Panics if no labeled_counter by the given metric ID could be found.
+    #[allow(unused_variables)]
+    pub(crate) fn labeled_counter_test_get(metric_id: u32, ping_name: &str) -> Option<HashMap<String, i32>> {
+        let ping_name = if ping_name.len() == 0 {
+            None
+        } else {
+            Some(ping_name.to_string())
+        };
+        let metric = match metric_id {
+            6 => &*super::test::labeled_counter_metric as &dyn ::glean::TestGetValue<Output=HashMap<String, i32>>,
+            7 => &*super::test::labeled_counter_metric_labels as &dyn ::glean::TestGetValue<Output=HashMap<String, i32>>,
+            35 => &*super::test2::labeled_counter_metric as &dyn ::glean::TestGetValue<Output=HashMap<String, i32>>,
+            36 => &*super::test2::labeled_counter_metric_labels as &dyn ::glean::TestGetValue<Output=HashMap<String, i32>>,
+            _ => panic!("No labeled_counter for metric id {}", metric_id),
+        };
+
+        metric.test_get_value(ping_name)
+    }
+
+    /// Gets the number of reported errors from the specified labeled metric.
+    ///
+    /// # Arguments
+    ///
+    /// * `metric_id` - The metric's ID to look up
+    /// * `error_type` - The error type for which to look
+    ///
+    /// # Returns
+    ///
+    /// Returns the number of recorded errors in the labeled metric.
+    ///
+    /// # Panics
+    ///
+    /// Panics if no labeled_counter by the given metric ID could be found.
+    #[allow(unused_variables)]
+    pub(crate) fn labeled_counter_test_get_num_recorded_errors(metric_id: u32, error_type: glean::ErrorType) -> i32 {
+        match metric_id {
+            6 => super::test::labeled_counter_metric.test_get_num_recorded_errors(error_type),
+            7 => super::test::labeled_counter_metric_labels.test_get_num_recorded_errors(error_type),
+            35 => super::test2::labeled_counter_metric.test_get_num_recorded_errors(error_type),
+            36 => super::test2::labeled_counter_metric_labels.test_get_num_recorded_errors(error_type),
+            _ => panic!("No labeled_counter for metric id {}", metric_id),
+        }
+    }
     /// Gets the submetric from the specified labeled_string metric.
     ///
     /// # Arguments
@@ -1975,6 +2099,63 @@ pub(crate) mod __glean_metric_maps {
             9 => super::test::labeled_string_metric_labels.get(label),
             37 => super::test2::labeled_string_metric.get(label),
             38 => super::test2::labeled_string_metric_labels.get(label),
+            _ => panic!("No labeled_string for metric id {}", metric_id),
+        }
+    }
+
+    /// Gets the value from the specified labeled metric.
+    ///
+    /// # Arguments
+    ///
+    /// * `metric_id` - The metric's ID to look up
+    /// * `ping_name` - The label identifying the string submetric.
+    ///
+    /// # Returns
+    ///
+    /// Returns a map of all values in the labeled metric.
+    ///
+    /// # Panics
+    ///
+    /// Panics if no labeled_string by the given metric ID could be found.
+    #[allow(unused_variables)]
+    pub(crate) fn labeled_string_test_get(metric_id: u32, ping_name: &str) -> Option<HashMap<String, String>> {
+        let ping_name = if ping_name.len() == 0 {
+            None
+        } else {
+            Some(ping_name.to_string())
+        };
+        let metric = match metric_id {
+            8 => &*super::test::labeled_string_metric as &dyn ::glean::TestGetValue<Output=HashMap<String, String>>,
+            9 => &*super::test::labeled_string_metric_labels as &dyn ::glean::TestGetValue<Output=HashMap<String, String>>,
+            37 => &*super::test2::labeled_string_metric as &dyn ::glean::TestGetValue<Output=HashMap<String, String>>,
+            38 => &*super::test2::labeled_string_metric_labels as &dyn ::glean::TestGetValue<Output=HashMap<String, String>>,
+            _ => panic!("No labeled_string for metric id {}", metric_id),
+        };
+
+        metric.test_get_value(ping_name)
+    }
+
+    /// Gets the number of reported errors from the specified labeled metric.
+    ///
+    /// # Arguments
+    ///
+    /// * `metric_id` - The metric's ID to look up
+    /// * `error_type` - The error type for which to look
+    ///
+    /// # Returns
+    ///
+    /// Returns the number of recorded errors in the labeled metric.
+    ///
+    /// # Panics
+    ///
+    /// Panics if no labeled_string by the given metric ID could be found.
+    #[allow(unused_variables)]
+    pub(crate) fn labeled_string_test_get_num_recorded_errors(metric_id: u32, error_type: glean::ErrorType) -> i32 {
+        match metric_id {
+            8 => super::test::labeled_string_metric.test_get_num_recorded_errors(error_type),
+            9 => super::test::labeled_string_metric_labels.test_get_num_recorded_errors(error_type),
+            37 => super::test2::labeled_string_metric.test_get_num_recorded_errors(error_type),
+            38 => super::test2::labeled_string_metric_labels.test_get_num_recorded_errors(error_type),
             _ => panic!("No labeled_string for metric id {}", metric_id),
         }
     }

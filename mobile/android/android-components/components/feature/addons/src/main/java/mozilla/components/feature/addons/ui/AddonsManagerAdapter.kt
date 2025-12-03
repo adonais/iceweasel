@@ -571,9 +571,9 @@ class AddonsManagerAdapter(
                         // Soft-blocked add-ons can be re-enabled. That's why we check whether the add-on is enabled
                         // first.
                         if (addon.isEnabled()) {
-                            R.string.mozac_feature_addons_status_softblocked_re_enabled
+                            R.string.mozac_feature_addons_status_softblocked_re_enabled_2
                         } else {
-                            R.string.mozac_feature_addons_status_softblocked_1
+                            R.string.mozac_feature_addons_status_softblocked_2
                         },
                     )
                 // This learn more link should be underlined.

@@ -21,6 +21,7 @@ kind-dependencies:
 
 # move this into the single job ??
 task-defaults:
+    run-on-repo-type: [hg]
     attributes:
         build_platform: linux64-shippable
         build_type: opt

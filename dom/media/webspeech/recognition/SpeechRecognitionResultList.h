@@ -9,7 +9,6 @@
 
 #include "SpeechRecognitionResult.h"
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
 #include "nsWrapperCache.h"

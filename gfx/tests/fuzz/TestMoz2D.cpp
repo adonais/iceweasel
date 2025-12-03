@@ -12,43 +12,39 @@ static int testInitMoz2D(int* argc, char*** argv) { return 0; }
 static int testMoz2DRenderCallback(const uint8_t* buf, size_t size) {
   FuzzingBufferReader fuzzBuf(buf, size);
 
-  uint8_t imageFormat;
-  MOZ_TRY_VAR(imageFormat, fuzzBuf.Read<uint8_t>());
+  uint8_t imageFormat = MOZ_TRY(fuzzBuf.Read<uint8_t>());
 
   mozilla::wr::LayoutIntRect renderRect;
-  MOZ_TRY_VAR(renderRect.min.x, fuzzBuf.Read<int32_t>());
-  MOZ_TRY_VAR(renderRect.min.y, fuzzBuf.Read<int32_t>());
-  MOZ_TRY_VAR(renderRect.max.x, fuzzBuf.Read<int32_t>());
-  MOZ_TRY_VAR(renderRect.max.y, fuzzBuf.Read<int32_t>());
+  renderRect.min.x = MOZ_TRY(fuzzBuf.Read<int32_t>());
+  renderRect.min.y = MOZ_TRY(fuzzBuf.Read<int32_t>());
+  renderRect.max.x = MOZ_TRY(fuzzBuf.Read<int32_t>());
+  renderRect.max.y = MOZ_TRY(fuzzBuf.Read<int32_t>());
 
   mozilla::wr::DeviceIntRect visibleRect;
-  MOZ_TRY_VAR(visibleRect.min.x, fuzzBuf.Read<int32_t>());
-  MOZ_TRY_VAR(visibleRect.min.y, fuzzBuf.Read<int32_t>());
-  MOZ_TRY_VAR(visibleRect.max.x, fuzzBuf.Read<int32_t>());
-  MOZ_TRY_VAR(visibleRect.max.y, fuzzBuf.Read<int32_t>());
+  visibleRect.min.x = MOZ_TRY(fuzzBuf.Read<int32_t>());
+  visibleRect.min.y = MOZ_TRY(fuzzBuf.Read<int32_t>());
+  visibleRect.max.x = MOZ_TRY(fuzzBuf.Read<int32_t>());
+  visibleRect.max.y = MOZ_TRY(fuzzBuf.Read<int32_t>());
 
-  uint16_t tileSize;
-  MOZ_TRY_VAR(tileSize, fuzzBuf.Read<uint16_t>());
+  uint16_t tileSize = MOZ_TRY(fuzzBuf.Read<uint16_t>());
 
   mozilla::wr::TileOffset tileOffset;
   if (tileSize) {
-    MOZ_TRY_VAR(tileOffset.x, fuzzBuf.Read<int32_t>());
-    MOZ_TRY_VAR(tileOffset.y, fuzzBuf.Read<int32_t>());
+    tileOffset.x = MOZ_TRY(fuzzBuf.Read<int32_t>());
+    tileOffset.y = MOZ_TRY(fuzzBuf.Read<int32_t>());
   }
 
-  uint8_t haveDirtyRect;
-  MOZ_TRY_VAR(haveDirtyRect, fuzzBuf.Read<uint8_t>());
+  uint8_t haveDirtyRect = MOZ_TRY(fuzzBuf.Read<uint8_t>());
 
   mozilla::wr::LayoutIntRect dirtyRect;
   if (!!haveDirtyRect) {
-    MOZ_TRY_VAR(dirtyRect.min.x, fuzzBuf.Read<int32_t>());
-    MOZ_TRY_VAR(dirtyRect.min.y, fuzzBuf.Read<int32_t>());
-    MOZ_TRY_VAR(dirtyRect.max.x, fuzzBuf.Read<int32_t>());
-    MOZ_TRY_VAR(dirtyRect.max.y, fuzzBuf.Read<int32_t>());
+    dirtyRect.min.x = MOZ_TRY(fuzzBuf.Read<int32_t>());
+    dirtyRect.min.y = MOZ_TRY(fuzzBuf.Read<int32_t>());
+    dirtyRect.max.x = MOZ_TRY(fuzzBuf.Read<int32_t>());
+    dirtyRect.max.y = MOZ_TRY(fuzzBuf.Read<int32_t>());
   }
 
-  uint32_t outLength;
-  MOZ_TRY_VAR(outLength, fuzzBuf.Read<uint32_t>());
+  uint32_t outLength = MOZ_TRY(fuzzBuf.Read<uint32_t>());
   if (outLength >= 10 * 1024 * 1024) {
     return 0;
   }

@@ -7,7 +7,6 @@
 #include "gtest/gtest.h"
 #include "fmt/format.h"
 #include "fmt/xchar.h"
-#include "mozilla/ArrayUtils.h"
 #include "nsTArray.h"
 #include "nsFmtString.h"
 #include "nsString.h"
@@ -59,7 +58,8 @@ TEST(Fmt, CrossCheckPrintf)
     nsCString fmtFormat =
         PrintfToFmtFormat(tfformat::sprint_doubles[i].format_string);
     nsCString withFmt;
-    withFmt.AppendFmt(fmtFormat.get(), tfformat::sprint_doubles[i].value);
+    withFmt.AppendVfmt(fmtFormat.get(), fmt::make_format_args(
+                                            tfformat::sprint_doubles[i].value));
     SprintfBuf(bufGeckoPrintf, 1024, tfformat::sprint_doubles[i].format_string,
                tfformat::sprint_doubles[i].value);
     if (strcmp(bufGeckoPrintf, withFmt.get()) != 0) {

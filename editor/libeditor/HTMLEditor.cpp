@@ -1190,8 +1190,8 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
       // the visible character.
       const WSScanResult scanResultInTextNode =
           WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-              WSRunScanner::Scan::EditableNodes, EditorRawDOMPoint(text, 0),
-              BlockInlineCheck::UseComputedDisplayStyle);
+              {WSRunScanner::Option::OnlyEditableNodes},
+              EditorRawDOMPoint(text, 0));
       if ((scanResultInTextNode.InVisibleOrCollapsibleCharacters() ||
            scanResultInTextNode.ReachedPreformattedLineBreak()) &&
           scanResultInTextNode.TextPtr() == text) {
@@ -3347,7 +3347,7 @@ Result<CreateElementResult, nsresult> HTMLEditor::CreateAndInsertElement(
   // XXX We need offset at new node for RangeUpdaterRef().  Therefore, we need
   //     to compute the offset now but this is expensive.  So, if it's possible,
   //     we need to redesign RangeUpdaterRef() as avoiding using indices.
-  Unused << aPointToInsert.Offset();
+  (void)aPointToInsert.Offset();
 
   IgnoredErrorResult ignoredError;
   AutoEditSubActionNotifier startToHandleEditSubAction(
@@ -4271,7 +4271,7 @@ Result<CreateLineBreakResult, nsresult> HTMLEditor::InsertLineBreak(
       }
       insertTextNodeResult.unwrap().IgnoreCaretPointSuggestion();
     } else {
-      Unused << pointToInsert.Offset();
+      (void)pointToInsert.Offset();
       RefPtr<InsertNodeTransaction> transaction =
           InsertNodeTransaction::Create(*this, *newTextNode, pointToInsert);
       nsresult rv = transaction->DoTransaction();
@@ -4361,9 +4361,7 @@ nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
     if (IsPlaintextMailComposer()) {
       const WSScanResult nextThing =
           WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-              WSRunScanner::Scan::All,
-              unnecessaryLineBreak->After<EditorRawDOMPoint>(),
-              BlockInlineCheck::UseComputedDisplayOutsideStyle);
+              {}, unnecessaryLineBreak->After<EditorRawDOMPoint>());
       if (nextThing.ReachedOtherBlockElement() &&
           HTMLEditUtils::IsMailCiteElement(*nextThing.ElementPtr()) &&
           HTMLEditUtils::IsInlineContent(
@@ -5214,7 +5212,7 @@ Result<SplitNodeResult, nsresult> HTMLEditor::SplitNodeDeepWithTransaction(
 Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
     const EditorDOMPoint& aStartOfRightNode, nsIContent& aNewNode) {
   // Ensure computing the offset if it's initialized with a child content node.
-  Unused << aStartOfRightNode.Offset();
+  (void)aStartOfRightNode.Offset();
 
   // XXX Perhaps, aStartOfRightNode may be invalid if this is a redo
   //     operation after modifying DOM node with JS.
@@ -5565,7 +5563,7 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
   const uint32_t keepingContentLength = aContentToKeep.Length();
   const EditorDOMPoint oldPointAtRightContent(&aContentToRemove);
   if (MOZ_LIKELY(oldPointAtRightContent.IsSet())) {
-    Unused << oldPointAtRightContent.Offset();  // Fix the offset
+    (void)oldPointAtRightContent.Offset();  // Fix the offset
   }
 
   // Remember all selection points.

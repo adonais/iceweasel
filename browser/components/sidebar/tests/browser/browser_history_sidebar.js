@@ -383,10 +383,10 @@ add_task(async function test_history_hover_buttons() {
   // a mouse user would not need these links to become focusable, therefore this rule check shall be ignored
   // by a11y_checks suite. Bug 1961686 is a follow up update a helper so we can later remove this.
   AccessibilityUtils.setEnv({ focusableRule: false });
-  await waitForPageLoadTask(
-    () => EventUtils.synthesizeMouseAtCenter(rows[0].mainEl, {}, contentWindow),
-    URLs[0]
-  );
+  const browser = gBrowser.selectedBrowser;
+  const loaded = BrowserTestUtils.browserLoaded(browser, false, URLs[0]);
+  EventUtils.synthesizeMouseAtCenter(rows[0].mainEl, {}, contentWindow);
+  await loaded;
   AccessibilityUtils.resetEnv();
 
   info("Remove the first entry.");

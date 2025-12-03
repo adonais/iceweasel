@@ -212,13 +212,13 @@ bool EventTarget::IsApzAware() const {
 void EventTarget::DispatchEvent(Event& aEvent) {
   // The caller type doesn't really matter if we don't care about the
   // return value, but let's be safe and pass NonSystem.
-  Unused << DispatchEvent(aEvent, CallerType::NonSystem, IgnoreErrors());
+  (void)DispatchEvent(aEvent, CallerType::NonSystem, IgnoreErrors());
 }
 
 void EventTarget::DispatchEvent(Event& aEvent, ErrorResult& aRv) {
   // The caller type doesn't really matter if we don't care about the
   // return value, but let's be safe and pass NonSystem.
-  Unused << DispatchEvent(aEvent, CallerType::NonSystem, IgnoreErrors());
+  (void)DispatchEvent(aEvent, CallerType::NonSystem, IgnoreErrors());
 }
 
 Nullable<WindowProxyHolder> EventTarget::GetOwnerGlobalForBindings() {

@@ -677,7 +677,7 @@
       <!-- updateCTAPanel will control if we show this panel -->
       <vbox id="PanelUI-fxa-cta-menu" hidden="true">
         <toolbarseparator id="PanelUI-products-separator" />
-        <label id="fxa-menu-other-protection-tools-header" crop="end" class="PanelUI-fxa-menu-section-title" data-l10n-id="appmenu-other-protection-header" />
+        <label id="fxa-menu-other-protection-tools-header" crop="end" class="PanelUI-fxa-menu-section-title" data-l10n-id="appmenu-other-protection-header2" />
         <toolbarbutton id="PanelUI-fxa-menu-monitor-button" class="fxa-cta-button subviewbutton subviewbutton-iconic">
           <vbox flex="1">
             <hbox align="center">
@@ -821,6 +821,19 @@
              class="PanelUI-subView"
              mainview-with-header="true"
              has-custom-header="true">
+    <hbox id="PanelUI-ipprotection-header"
+         class="panel-header panel-header-with-info-button">
+        <html:h1>
+          <html:span id="ipprotection-header-content"
+                     data-l10n-id="ipprotection-title"></html:span>
+          <html:moz-badge
+            id="ipprotection-experiment-badge"
+            data-l10n-id="ipprotection-experiment-badge"
+          ></html:moz-badge>
+        </html:h1>
+    </hbox>
+    <toolbarseparator/>
+    <vbox id="PanelUI-ipprotection-content" class="panel-subview-body"/>
   </panelview>
 
   <panelview id="PanelUI-ipprotection-settings"

@@ -10,6 +10,7 @@ browser.jar:
    content/browser/preferences/dialogs/clearSiteData.css
    content/browser/preferences/dialogs/clearSiteData.js
    content/browser/preferences/dialogs/clearSiteData.xhtml
+   content/browser/preferences/dialogs/colors.css
    content/browser/preferences/dialogs/colors.xhtml
    content/browser/preferences/dialogs/colors.js
    content/browser/preferences/dialogs/connection.xhtml

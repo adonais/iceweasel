@@ -80,7 +80,7 @@ class MainActivityNavigation(
         // and the session was removed while the app was in the background (e.g. via the
         // notification). In this case we do not want to show the content and remove the
         // browser fragment immediately.
-        val shouldAnimate = isShowingBrowser && browserFragment!!.isResumed
+        val shouldAnimate = isShowingBrowser && browserFragment.isResumed
 
         if (shouldAnimate) {
             transaction.setCustomAnimations(0, R.anim.erase_animation)

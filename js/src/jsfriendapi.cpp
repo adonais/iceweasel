@@ -741,7 +741,8 @@ JS_PUBLIC_API void js::SetAllocationMetadataBuilder(
 }
 
 JS_PUBLIC_API JSObject* js::GetAllocationMetadata(JSObject* obj) {
-  ObjectWeakMap* map = ObjectRealm::get(obj).objectMetadataTable.get();
+  ObjectRealm::ObjectMetadataTable* map =
+      ObjectRealm::get(obj).objectMetadataTable.get();
   if (map) {
     auto ptr = map->lookup(obj);
     if (ptr) {

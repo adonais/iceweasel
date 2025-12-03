@@ -7,7 +7,6 @@
 #ifndef nsCheckboxRadioFrame_h___
 #define nsCheckboxRadioFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "nsAtomicContainerFrame.h"
 #include "nsDisplayList.h"
 

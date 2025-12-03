@@ -71,5 +71,13 @@ RUN apt-get update && \
     apt-get install \
       apt-transport-https \
       ca-certificates && \
-    if [ -n "$SNAPSHOT" -a -f /etc/apt/sources.list.d/ubuntu.sources ]; then echo "APT::Snapshot \"$SNAPSHOT\";" > /etc/apt/apt.conf.d/99snapshot && apt-get update; fi && \
-    apt-get dist-upgrade
+    if [ -n "$SNAPSHOT" -a -f /etc/apt/sources.list.d/ubuntu.sources ]; then \
+      echo "APT::Snapshot \"$SNAPSHOT\";" > /etc/apt/apt.conf.d/99snapshot && \
+      ( echo 'Package: *'; \
+        echo 'Pin: origin "snapshot.ubuntu.com"'; \
+        echo 'Pin-Priority: 1001'; \
+      ) > /etc/apt/preferences.d/90snapshot && \
+      downgrades=--allow-downgrades && \
+      apt-get update; fi && \
+    apt-get dist-upgrade ${downgrades} && \
+    rm -f /etc/apt/preferences.d/90snapshot

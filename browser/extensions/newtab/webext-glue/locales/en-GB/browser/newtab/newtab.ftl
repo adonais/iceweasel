@@ -407,7 +407,7 @@ newtab-wallpaper-abstract-purple-green = Purple and green light gradient
 newtab-wallpaper-abstract-blue-purple-waves = Blue and purple wavy shapes
 newtab-wallpaper-abstract-black-waves = Black wavy shapes
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Photographs
 newtab-wallpaper-beach-at-sunrise = Beach at sunrise
@@ -436,6 +436,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -676,10 +680,6 @@ newtab-widget-timer-mode-focus =
     .label = Focus
 newtab-widget-timer-mode-break =
     .label = Break
-newtab-widget-timer-play =
-    .title = Play
-newtab-widget-timer-pause =
-    .title = Pause
 newtab-widget-timer-label-play =
     .label = Play
 newtab-widget-timer-label-pause =

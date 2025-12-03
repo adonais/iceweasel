@@ -33,6 +33,7 @@ support-files = [
 ["browser_aboutCertError_telemetry.js"]
 
 ["browser_aboutDialog_distribution.js"]
+skip-if = ["os == 'win' && os_version == '11.26100' && arch == 'x86_64' && msix && verify-standalone"]
 
 ["browser_aboutNetError.js"]
 
@@ -79,6 +80,10 @@ support-files = [
 ]
 
 ["browser_aboutNewTab_bookmarksToolbar.js"]
+skip-if = [
+  "debug && verify-standalone",
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1775602
+]
 
 ["browser_aboutNewTab_bookmarksToolbarEmpty.js"]
 skip-if = [

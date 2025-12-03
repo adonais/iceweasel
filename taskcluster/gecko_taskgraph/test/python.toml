@@ -1,6 +1,8 @@
 [DEFAULT]
 subsuite = "taskgraph"
 
+["test_actions.py"]
+
 ["test_actions_util.py"]
 
 ["test_decision.py"]

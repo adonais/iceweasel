@@ -38,6 +38,7 @@ export class PreferencesBackupResource extends BackupResource {
     // List of prefs we never backup.
     let kIgnoredPrefs = [
       "app.normandy.user_id",
+      "toolkit.telemetry.cachedClientID",
       "toolkit.telemetry.cachedProfileGroupID",
       PROFILE_RESTORATION_DATE_PREF,
     ];

@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -149,7 +156,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s kuya´ rilawachixik chi awech.</p> <p>Chakojo´ pacha´ nik´ob´al rech echeb´alil: <ul> <li>Chatzukuj chi´l chanik´oj pa le kojkemchak:</li> <li>Che´aq´atej taq tzukub´al (on chak´ak´arisaj taq wiqitajem chech uya´ik b´e chi kech taq tzukub´al)</li> <li>Chayuju´ chech kichupik cookies chi´l utzukuxik chi´l unik´oxik b´antal kanoq</li> </ul> </p> <p>%1$s are b´anowinaq le Mozilla. Le qachak are uya´ik jun utzalaj, ujaqik kemk´atz.<br/> <a href=\"%2$s\">Chaweta´maj nik´aj chik</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s kuya´ rilawachixik chi awech.</p>\n<p>Chakojo´ pacha´ nik´ob´al rech echeb´alil:\n<ul>\n<li>Chatzukuj chi´l chanik´oj pa le kojkemchak:</li>\n<li>Che´aq´atej taq tzukub´al (on chak´ak´arisaj taq wiqitajem chech uya´ik b´e chi kech taq tzukub´al)</li>\n<li>Chayuju´ chech kichupik cookies chi´l utzukuxik chi´l unik´oxik b´antal kanoq</li>\n</ul> </p>\n<p>%1$s are b´anowinaq le Mozilla. Le qachak are uya´ik jun utzalaj, ujaqik kemk´atz.<br/>\n<a href=\"%2$s\">Chaweta´maj nik´aj chik</a></p>]]></string>
   <!-- A link to SUMO at the bottom of About Focus screen. -->
   <string name="about_screen_learn_more">Chaweta\'maj nik\'aj chik</string>
   <!-- Header for the Privacy and Security settings menu -->
@@ -869,13 +876,13 @@
     The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"),
     %2$s is a URL to a support article. Contains a button that will redirect the user to Privacy & Security Screen.
   -->
-  <string name="errorpage_httpsonly_message2" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[%1$s Utz kakoj jun t\'iqonem HTTPS we kkowinb\'exik, chech nim ucholajil chajinem. <a href=\"%2$s\">Chaweta\'maj nik\'aj chik</a> <br/><br/> Chak\'exa\' we jeq\'eb\'anem pa taq jeq\'eb\'anem > Echeb\'alil &amp; Chajinem > Echeb\'alil.]]></string>
+  <string name="errorpage_httpsonly_message2" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[%1$s Utz kakoj jun t\'iqonem HTTPS we kkowinb\'exik, chech nim ucholajil chajinem. <a href=\"%2$s\">Chaweta\'maj nik\'aj chik</a> <br/><br/>\nChak\'exa\' we jeq\'eb\'anem pa taq jeq\'eb\'anem > Echeb\'alil &amp; Chajinem > Echeb\'alil.]]></string>
   <!-- The document title and heading of the error page shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_title">Le t\'iqonem man qas ta uq\'alb\'al k\'u\'x</string>
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Wene kuya\' k\'axk\'olil ruk\' le ujeq\'eb\'axik pataninel, on k\'o jun alachinaq le ktajin kraj kujalwachij le ub\'antajik le kempatanel. <br/><br/> We at\'iqom kanoq chech we pataninel xuquje\' utz ub\'anom, wene xaq ch\'ikital uq\'ijol le uk\'axk\'olil.]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Wene kuya\' k\'axk\'olil ruk\' le ujeq\'eb\'axik pataninel, on k\'o jun alachinaq le ktajin kraj kujalwachij le ub\'antajik le kempatanel. <br/><br/>\nWe at\'iqom kanoq chech we pataninel xuquje\' utz ub\'anom, wene xaq ch\'ikital uq\'ijol le uk\'axk\'olil.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Wene k\'o alachinaq ktajin kraj kujalwachij ub\'antajik le uk\'olib\'al web\', wa\' k\'o uk\'axk\'olil chi rij.</label> <br><br> <label>%1$s maq\'a\'i\' ak\'u\'x chi rij <b>%2$s</b> rumal le uwujil man eta\'matal taj, le uwujil juch\'utal pa utukelam on le kempatanel man are ta kutaq loq le utz uwujil.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Wene k\'o alachinaq ktajin kraj kujalwachij ub\'antajik le uk\'olib\'al web\', wa\' k\'o uk\'axk\'olil chi rij.</label> <br><br>\n<label>%1$s maq\'a\'i\' ak\'u\'x chi rij <b>%2$s</b> rumal le uwujil man eta\'matal taj, le uwujil juch\'utal pa utukelam on le kempatanel man are ta kutaq loq le utz uwujil.</label>]]></string>
   <!--
     Sessions List
 

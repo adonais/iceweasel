@@ -10,7 +10,6 @@ add_setup(async function () {
     set: [
       ["privacy.query_stripping.strip_list", "stripParam"],
       ["privacy.query_stripping.strip_on_share.enabled", true],
-      ["privacy.query_stripping.strip_on_share.canDisable", false],
       ["dom.text_fragments.create_text_fragment.enabled", true],
     ],
   });
@@ -78,8 +77,7 @@ add_task(async function isVisibleIfSelection() {
 
       // tests for enabled menu items
       Assert.ok(
-        !copyLinkToHighlight.hasAttribute("disabled") ||
-          copyLinkToHighlight.getAttribute("disabled") === "false",
+        !copyLinkToHighlight.disabled,
         "Copy Link to Highlight Menu item is enabled"
       );
     },
@@ -95,9 +93,7 @@ add_task(async function copiesToClipboard() {
         "https://www.example.com/?stripParam=1234#:~:text=eiusmod%20tempor%20incididunt&text=labore",
         async () => {
           await BrowserTestUtils.waitForCondition(
-            () =>
-              !copyLinkToHighlight.hasAttribute("disabled") ||
-              copyLinkToHighlight.getAttribute("disabled") === "false",
+            () => !copyLinkToHighlight.disabled,
             "Waiting for copyLinkToHighlight to become enabled"
           );
           copyLinkToHighlight
@@ -110,7 +106,7 @@ add_task(async function copiesToClipboard() {
 });
 
 // Clicking "Copy Clean Link to Highlight" copies the URL with text fragment and without tracking query params to the clipboard
-add_task(async function copiesToClipboard() {
+add_task(async function copiesCleanLinkToClipboard() {
   await testCopyLinkToHighlight({
     testPage: loremIpsumTestPage(true),
     runTests: async ({ copyCleanLinkToHighlight }) => {
@@ -118,9 +114,7 @@ add_task(async function copiesToClipboard() {
         "https://www.example.com/#:~:text=eiusmod%20tempor%20incididunt&text=labore",
         async () => {
           await BrowserTestUtils.waitForCondition(
-            () =>
-              !copyCleanLinkToHighlight.hasAttribute("disabled") ||
-              copyCleanLinkToHighlight.getAttribute("disabled") === "false",
+            () => !copyCleanLinkToHighlight.disabled,
             "Waiting for copyLinkToHighlight to become enabled"
           );
           copyCleanLinkToHighlight

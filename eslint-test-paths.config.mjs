@@ -39,9 +39,8 @@ const xpcshellTestPaths = [
   "**/test*/xpcshell/**/",
 ];
 
-// NOTE: Before adding to the list below, please see the note at the top
+// DO NOT add more items to this list. Please see the note at the top
 // of the file.
-
 const extraXpcshellTestPaths = [
   "devtools/client/shared/remote-debugging/adb/xpcshell/",
   "devtools/platform/tests/xpcshell/",
@@ -71,9 +70,8 @@ const extraXpcshellTestPaths = [
   "widget/headless/tests/",
 ];
 
-// NOTE: Before adding to the list below, please see the note at the top
+// DO NOT add more items to this list. Please see the note at the top
 // of the file.
-
 const extraBrowserTestPaths = [
   "dom/ipc/tests/",
   "toolkit/components/thumbnails/test/",
@@ -222,9 +220,8 @@ const extraBrowserTestPaths = [
   "uriloader/exthandler/tests/mochitest/",
 ];
 
-// NOTE: Before adding to the list below, please see the note at the top
+// DO NOT add more items to this list. Please see the note at the top
 // of the file.
-
 const extraChromeTestPaths = [
   "devtools/shared/security/tests/chrome/",
   "devtools/shared/webconsole/test/chrome/",
@@ -271,9 +268,8 @@ const extraChromeTestPaths = [
   "xpfe/appshell/test/",
 ];
 
-// NOTE: Before adding to the list below, please see the note at the top
+// DO NOT add more items to this list. Please see the note at the top
 // of the file.
-
 const extraMochitestTestPaths = [
   "dom/ipc/tests/",
   "toolkit/xre/test/",

@@ -158,6 +158,9 @@ add_task(
         let disableEncryptionStub = sandbox
           .stub(BackupService.prototype, "disableEncryption")
           .resolves(true);
+        let createBackupStub = sandbox
+          .stub(BackupService.prototype, "createBackup")
+          .resolves(true);
 
         await SpecialPowers.pushPrefEnv({
           set: [[SCHEDULED_BACKUPS_ENABLED_PREF, true]],
@@ -239,6 +242,10 @@ add_task(
         Assert.ok(
           enableEncryptionStub.calledOnceWith(MOCK_PASSWORD),
           "BackupService was called to re-run encryption with changed password"
+        );
+        Assert.ok(
+          createBackupStub.calledOnceWith({ reason: "encryption" }),
+          "A new backup was started for the right reason"
         );
 
         let legacyEvents = TelemetryTestUtils.getEvents(

@@ -333,3 +333,184 @@ add_task(async function test_update_namespaced_timestamp_pref_onImpression() {
 
   Services.prefs.clearUserPref(namespaced);
 });
+
+add_task(async function test_copyFromPref_string() {
+  const sourcePrefName = "messaging-system-action.source.string";
+  Services.prefs.setStringPref(sourcePrefName, "test");
+
+  const targetPrefName = "messaging-system-action.target.string";
+
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(targetPrefName);
+    Services.prefs.clearUserPref(sourcePrefName);
+  });
+
+  const action = {
+    type: "SET_PREF",
+    data: {
+      pref: {
+        name: targetPrefName,
+        value: { copyFromPref: sourcePrefName },
+      },
+    },
+  };
+
+  await SMATestUtils.executeAndValidateAction(action);
+
+  Assert.equal(
+    Services.prefs.getStringPref(targetPrefName),
+    Services.prefs.getStringPref(sourcePrefName),
+    "Copied source string pref value to target pref"
+  );
+});
+
+add_task(async function test_copyFromPref_bool() {
+  const sourcePrefName = "messaging-system-action.source.bool";
+  Services.prefs.setBoolPref(sourcePrefName, true);
+
+  const targetPrefName = "messaging-system-action.target.bool";
+
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(targetPrefName);
+    Services.prefs.clearUserPref(sourcePrefName);
+  });
+
+  const action = {
+    type: "SET_PREF",
+    data: {
+      pref: {
+        name: targetPrefName,
+        value: { copyFromPref: sourcePrefName },
+      },
+    },
+  };
+
+  await SMATestUtils.executeAndValidateAction(action);
+
+  Assert.equal(
+    Services.prefs.getBoolPref(targetPrefName),
+    Services.prefs.getBoolPref(sourcePrefName),
+    "Copied source bool pref value to target pref"
+  );
+});
+
+add_task(async function test_copyFromPref_int() {
+  const sourcePrefName = "messaging-system-action.source.int";
+  Services.prefs.setIntPref(sourcePrefName, 42);
+
+  const targetPrefName = "messaging-system-action.target.int";
+
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(targetPrefName);
+    Services.prefs.clearUserPref(sourcePrefName);
+  });
+
+  const action = {
+    type: "SET_PREF",
+    data: {
+      pref: {
+        name: targetPrefName,
+        value: { copyFromPref: sourcePrefName },
+      },
+    },
+  };
+
+  await SMATestUtils.executeAndValidateAction(action);
+
+  Assert.equal(
+    Services.prefs.getIntPref(targetPrefName),
+    Services.prefs.getIntPref(sourcePrefName),
+    "Copied source int pref value to target pref"
+  );
+});
+
+add_task(async function test_copyFromPref_type_mismatch_throws() {
+  const sourcePrefName = "messaging-system-action.source.mismatch.int";
+  Services.prefs.setIntPref(sourcePrefName, 7);
+
+  const targetPrefName = "messaging-system-action.target.mismatch.bool";
+  Services.prefs.setBoolPref(targetPrefName, true);
+
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(targetPrefName);
+    Services.prefs.clearUserPref(sourcePrefName);
+  });
+
+  const action = {
+    type: "SET_PREF",
+    data: {
+      pref: {
+        name: targetPrefName,
+        value: { copyFromPref: sourcePrefName },
+      },
+    },
+  };
+
+  await Assert.rejects(
+    SMATestUtils.executeAndValidateAction(action),
+    /SET_PREF\(copyFromPref\).*type/i,
+    "Throws when destination type does not match source type"
+  );
+});
+
+add_task(async function test_copyFromPref_missing_source_throws() {
+  const sourcePrefName = "messaging-system-action.source.missing";
+  const targetPrefName = "messaging-system-action.target.missing";
+
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(targetPrefName);
+  });
+
+  const action = {
+    type: "SET_PREF",
+    data: {
+      pref: {
+        name: targetPrefName,
+        value: { copyFromPref: sourcePrefName },
+      },
+    },
+  };
+
+  await Assert.rejects(
+    SMATestUtils.executeAndValidateAction(action),
+    /SET_PREF\(copyFromPref\).*(does not exist|invalid|unsupported)/i,
+    "Throws when source pref does not exist"
+  );
+
+  Assert.equal(
+    Services.prefs.getPrefType(targetPrefName),
+    Services.prefs.PREF_INVALID,
+    "Target pref not created on missing source"
+  );
+});
+
+add_task(async function test_copyFromPref_overwrite_same_type() {
+  const sourcePrefName = "messaging-system-action.source.overwrite.string";
+  Services.prefs.setStringPref(sourcePrefName, "new");
+
+  const targetPrefName = "messaging-system-action.target.overwrite.string";
+  Services.prefs.setStringPref(targetPrefName, "old");
+
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(targetPrefName);
+    Services.prefs.clearUserPref(sourcePrefName);
+  });
+
+  const action = {
+    type: "SET_PREF",
+    data: {
+      pref: {
+        name: targetPrefName,
+        value: { copyFromPref: sourcePrefName },
+      },
+    },
+  };
+
+  await SMATestUtils.executeAndValidateAction(action);
+
+  Assert.equal(
+    Services.prefs.getStringPref(targetPrefName),
+    Services.prefs.getStringPref(sourcePrefName),
+    "Overwrote existing target value with source value (same type)"
+  );
+});

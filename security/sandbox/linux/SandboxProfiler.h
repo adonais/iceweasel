@@ -12,14 +12,11 @@
 
 #include "base/trace_event/common/trace_event_common.h"
 
-#include "mozilla/UniquePtr.h"
 #include "ProfilerNativeStack.h"
 #include "MicroGeckoProfiler.h"
 
 #include "mozilla/ProfileChunkedBuffer.h"
 #include "mozilla/ProfilerState.h"
-
-#include "mozilla/ArrayUtils.h"
 
 #include "mozilla/BoundedMPSCQueue.h"
 

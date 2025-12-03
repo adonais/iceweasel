@@ -15,7 +15,7 @@ import org.mozilla.fenix.helpers.AppAndSystemHelper.registerAndCleanupIdlingReso
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.RecyclerViewIdlingResource
-import org.mozilla.fenix.helpers.TestAssetHelper.getEnhancedTrackingProtectionAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.enhancedTrackingProtectionAsset
 import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
@@ -115,7 +115,7 @@ class SettingsAddonsTest : TestSetup() {
 
         val uBlockAddon = "uBlock Origin"
         val darkReaderAddon = "Dark Reader"
-        val trackingProtectionPage = getEnhancedTrackingProtectionAsset(mockWebServer)
+        val trackingProtectionPage = mockWebServer.enhancedTrackingProtectionAsset
 
         addonsMenu {
             installAddon(uBlockAddon, activityTestRule.activityRule)

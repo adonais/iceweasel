@@ -4,7 +4,7 @@
 
 use api::{ColorF, DocumentId, ExternalImageId, PrimitiveFlags, Parameter, RenderReasons};
 use api::{ImageFormat, NotificationRequest, Shadow, FilterOpGraphPictureBufferId, FilterOpGraphPictureReference, FilterOpGraphNode, FilterOp, ImageBufferKind};
-use api::FramePublishId;
+use api::{FramePublishId, TextureCacheCategory};
 use api::units::*;
 use crate::render_api::DebugCommand;
 use crate::composite::NativeSurfaceOperation;
@@ -1111,17 +1111,6 @@ pub struct TextureCacheAllocation {
     pub id: CacheTextureId,
     /// Details corresponding to the operation in question.
     pub kind: TextureCacheAllocationKind,
-}
-
-/// A little bit of extra information to make memory reports more useful
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub enum TextureCacheCategory {
-    Atlas,
-    Standalone,
-    PictureTile,
-    RenderTarget,
 }
 
 /// Information used when allocating / reallocating.

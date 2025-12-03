@@ -10,7 +10,6 @@
 #ifndef mozilla_css_ImageLoader_h___
 #define mozilla_css_ImageLoader_h___
 
-#include "mozilla/Attributes.h"
 #include "mozilla/CORSMode.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"

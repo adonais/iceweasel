@@ -22,6 +22,7 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.geckoview.AllowOrDeny;
@@ -472,7 +473,10 @@ public class TestRunnerActivity extends Activity {
                   .safeBrowsingProviders(google, googleLegacy, google5)
                   .build())
           .lowMemoryDetection(false) // Avoid unpredictability in tests
-          .isolatedProcessEnabled(BuildConfig.MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS);
+          .isolatedProcessEnabled(BuildConfig.MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS)
+          .appZygoteProcessEnabled(
+              Objects.equals(
+                  System.getenv("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE"), "1"));
 
       sRuntime = GeckoRuntime.create(this, runtimeSettingsBuilder.build());
 

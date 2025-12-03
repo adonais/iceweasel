@@ -6,8 +6,6 @@
 #ifndef TRANSFRMX_XPATHRESULTCOMPARATOR_H
 #define TRANSFRMX_XPATHRESULTCOMPARATOR_H
 
-#include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/intl/Collator.h"
 #include "nsCOMPtr.h"

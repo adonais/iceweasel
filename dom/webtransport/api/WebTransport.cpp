@@ -71,6 +71,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WebTransport)
     tmp->mChild->Shutdown(false);
     tmp->mChild = nullptr;
   }
+  NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(WebTransport)
@@ -277,6 +278,7 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   PBackgroundChild* backgroundChild =
       BackgroundChild::GetOrCreateForCurrentThread();
   if (NS_WARN_IF(!backgroundChild)) {
+    aError.Throw(NS_ERROR_FAILURE);
     return;
   }
 
@@ -295,9 +297,11 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   RefPtr<WebTransportChild> child = new WebTransportChild(this);
   if (NS_IsMainThread()) {
     if (!childEndpoint.Bind(child)) {
+      aError.Throw(NS_ERROR_FAILURE);
       return;
     }
   } else if (!childEndpoint.Bind(child, mGlobal->SerialEventTarget())) {
+    aError.Throw(NS_ERROR_FAILURE);
     return;
   }
 

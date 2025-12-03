@@ -31,6 +31,9 @@ const { HttpServer } = ChromeUtils.importESModule(
 const MS_PER_SEC = 1000;
 const IndexedDBCache = TestIndexedDBCache;
 
+/**
+ * @type {import("../../../ml/content/EngineProcess.sys.mjs")}
+ */
 const {
   createEngine,
   PipelineOptions,
@@ -50,8 +53,7 @@ Services.scriptloader.loadSubScript(
 );
 
 /**
- * Sets up the stage for a test
- *
+ * Mock out remote settings and set some default preferences for the testing environment.
  */
 async function setup({
   disabled = false,
@@ -1115,4 +1117,19 @@ async function getMLEngineWorkerCode() {
     "chrome://global/content/ml/MLEngine.worker.mjs"
   );
   return response.text();
+}
+
+/**
+ * Checks that a process exists.
+ *
+ * @param {string} remoteType
+ */
+async function checkForRemoteType(remoteType) {
+  let procinfo3 = await ChromeUtils.requestProcInfo();
+  for (const child of procinfo3.children) {
+    if (child.type === remoteType) {
+      return true;
+    }
+  }
+  return false;
 }

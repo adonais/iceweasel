@@ -356,7 +356,7 @@ newtab-wallpaper-brown = Aqehwi
 
 newtab-wallpaper-category-title-abstract = Amadwan
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Tiwlafin
 newtab-wallpaper-white-mountains = Idurar imellalen
@@ -525,10 +525,6 @@ newtab-widget-timer-mode-focus =
     .label = Focus
 newtab-widget-timer-mode-break =
     .label = Angaz
-newtab-widget-timer-play =
-    .title = Urar
-newtab-widget-timer-pause =
-    .title = Asteɛfu
 newtab-widget-timer-label-play =
     .label = Urar
 newtab-widget-timer-label-pause =

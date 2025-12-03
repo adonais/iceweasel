@@ -16,7 +16,6 @@
 
 #include "nsTArray.h"
 
-#include "mozilla/Attributes.h"
 #include "mozilla/HalTypes.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/ProfilerUtils.h"

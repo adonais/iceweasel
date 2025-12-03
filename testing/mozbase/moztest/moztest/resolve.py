@@ -8,6 +8,7 @@ import pickle
 import sys
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
+from functools import lru_cache
 from urllib.parse import urlsplit
 
 import mozpack.path as mozpath
@@ -734,40 +735,53 @@ class TestResolver(MozbuildObject):
                 self._test_dirs.add(test["dir_relpath"])
         return self._test_dirs
 
-    def get_test_tags(self, test_tags, metadata_base, path):
-        paths = []
+    @lru_cache(maxsize=1024)
+    def _get_metadata_paths(self, metadata_base, dir_path):
 
-        # similar logic to wpt TestLoader::load_dir_metadata
-        path_parts = os.path.dirname(path).split(os.path.sep)
+        paths = []
+        path_parts = dir_path.split(os.path.sep) if dir_path else []
+
         for i in range(1, len(path_parts) + 1):
-            p = os.path.join(
+            dir_ini = os.path.join(
                 metadata_base, os.path.sep.join(path_parts[:i]), "__dir__.ini"
             )
-            if not p:
-                break
-            if os.path.exists(p):
-                paths.append(p)
+            if os.path.exists(dir_ini):
+                paths.append(dir_ini)
 
-        paths.append(os.path.join(metadata_base, "%s.ini" % path))
+        return tuple(paths)
 
-        for file_path in paths:
+    def _extract_tags_from_file(self, file_path):
+
+        tags = []
+        try:
+            with open(file_path, encoding="utf-8") as f:
+                for line in f:
+                    if "tags: [" in line:
+                        tags = line.split("[")[1].split("]")[0].split()
+                        break
+        except OSError:
+            # File doesn't exist or isn't readable
+            pass
+        return tags
+
+    def get_test_tags(self, test_tags, metadata_base, path):
+
+        dir_path = os.path.dirname(path) if path else ""
+        dir_metadata_paths = self._get_metadata_paths(metadata_base, dir_path)
+
+        test_metadata = os.path.join(metadata_base, f"{path}.ini")
+        if os.path.exists(test_metadata):
+            all_paths = list(dir_metadata_paths) + [test_metadata]
+        else:
+            all_paths = dir_metadata_paths
+
+        for file_path in all_paths:
             if file_path in self.meta_tags:
                 test_tags.extend(self.meta_tags[file_path])
-                continue
-
-            try:
-                with open(file_path, "rb") as f:
-                    # __dir__.ini are not proper .ini files, configParser doesn't work
-                    # WPT uses a custom reader for __dir__.ini, but hard to load/use here.
-                    data = f.read().decode("utf-8")
-                    for line in data.split("\n"):
-                        if "tags: [" in line:
-                            self.meta_tags[file_path] = (
-                                line.split("[")[1].split("]")[0].split(" ")
-                            )
-                            test_tags.extend(self.meta_tags[file_path])
-            except OSError:
-                pass
+            else:
+                tags = self._extract_tags_from_file(file_path)
+                self.meta_tags[file_path] = tags
+                test_tags.extend(tags)
 
         return list(set(test_tags))
 

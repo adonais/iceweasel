@@ -11,9 +11,6 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/urlbar/private/AmpSuggestions.sys.mjs",
 });
 
-// relative to `browser.urlbar`
-const PREF_DATA_COLLECTION_ENABLED = "quicksuggest.dataCollection.enabled";
-
 const SEARCH_STRING = "frab";
 
 const { DEFAULT_SUGGESTION_SCORE } = UrlbarProviderQuickSuggest;
@@ -43,7 +40,7 @@ add_setup(async () => {
   // Set up the remote settings client with the test data.
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     prefs: [
-      ["suggest.quicksuggest.nonsponsored", true],
+      ["suggest.quicksuggest.all", true],
       ["suggest.quicksuggest.sponsored", true],
       ["quicksuggest.ampTopPickCharThreshold", 0],
     ],
@@ -62,7 +59,8 @@ add_setup(async () => {
 add_task(async function merinoDisabled() {
   let mockEndpointUrl = UrlbarPrefs.get("merino.endpointURL");
   UrlbarPrefs.set("merino.endpointURL", "");
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   // Clear the remote settings suggestions so that if Merino is actually queried
   // -- which would be a bug -- we don't accidentally mask the Merino suggestion
@@ -83,24 +81,31 @@ add_task(async function merinoDisabled() {
   await resetRemoteSettingsData();
 });
 
-// Tests with Merino enabled but with data collection disabled. Results should
-// not be fetched from Merino in that case.
-add_task(async function dataCollectionDisabled() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, false);
-
+// Results should be fetched from Merino only when online is both available and
+// enabled.
+add_task(async function onlineAvailableAndEnabled() {
   // Clear the remote settings suggestions so that if Merino is actually queried
   // -- which would be a bug -- we don't accidentally mask the Merino suggestion
   // by also matching an RS suggestion with the same or higher score.
   await QuickSuggestTestUtils.setRemoteSettingsRecords([]);
 
-  let context = createContext(SEARCH_STRING, {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: [],
-  });
+  for (let onlineAvailable of [false, true]) {
+    for (let onlineEnabled of [false, true]) {
+      UrlbarPrefs.set("quicksuggest.online.available", onlineAvailable);
+      UrlbarPrefs.set("quicksuggest.online.enabled", onlineEnabled);
+
+      await check_results({
+        context: createContext(SEARCH_STRING, {
+          providers: [UrlbarProviderQuickSuggest.name],
+          isPrivate: false,
+        }),
+        matches:
+          onlineAvailable && onlineEnabled
+            ? [EXPECTED_MERINO_URLBAR_RESULT]
+            : [],
+      });
+    }
+  }
 
   await resetRemoteSettingsData();
 });
@@ -108,7 +113,8 @@ add_task(async function dataCollectionDisabled() {
 // When the Merino suggestion has a higher score than the remote settings
 // suggestion, the Merino suggestion should be used.
 add_task(async function higherScore() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   MerinoTestUtils.server.response.body.suggestions[0].score =
     2 * DEFAULT_SUGGESTION_SCORE;
@@ -129,7 +135,8 @@ add_task(async function higherScore() {
 // When the Merino suggestion has a lower score than the remote settings
 // suggestion, the remote settings suggestion should be used.
 add_task(async function lowerScore() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   MerinoTestUtils.server.response.body.suggestions[0].score =
     DEFAULT_SUGGESTION_SCORE / 2;
@@ -150,7 +157,8 @@ add_task(async function lowerScore() {
 // When remote settings doesn't return a suggestion but Merino does, the Merino
 // suggestion should be used.
 add_task(async function noSuggestion_remoteSettings() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   let context = createContext("this doesn't match remote settings", {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -168,7 +176,8 @@ add_task(async function noSuggestion_remoteSettings() {
 // When Merino doesn't return a suggestion but remote settings does, the remote
 // settings suggestion should be used.
 add_task(async function noSuggestion_merino() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   MerinoTestUtils.server.response.body.suggestions = [];
 
@@ -188,7 +197,8 @@ add_task(async function noSuggestion_merino() {
 // When Merino returns multiple suggestions, the one with the largest score
 // should be used.
 add_task(async function multipleMerinoSuggestions() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   MerinoTestUtils.server.response.body.suggestions = [
     {
@@ -266,7 +276,8 @@ add_task(async function multipleMerinoSuggestions() {
 
 // Timestamp templates in URLs should be replaced with real timestamps.
 add_task(async function timestamps() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   // Set up the Merino response with template URLs.
   let suggestion = MerinoTestUtils.server.response.body.suggestions[0];
@@ -309,44 +320,11 @@ add_task(async function timestamps() {
   merinoClient().resetSession();
 });
 
-// When both suggestion types are disabled but data collection is enabled, we
-// should still send requests to Merino, and the requests should include an
-// empty `providers` to tell Merino not to fetch any suggestions.
-add_task(async function suggestedDisabled_dataCollectionEnabled() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
-
-  let context = createContext("test", {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: [],
-  });
-
-  // Check that the request is received and includes an empty `providers`.
-  MerinoTestUtils.server.checkAndClearRequests([
-    {
-      params: {
-        [MerinoTestUtils.SEARCH_PARAMS.QUERY]: "test",
-        [MerinoTestUtils.SEARCH_PARAMS.SEQUENCE_NUMBER]: 0,
-        [MerinoTestUtils.SEARCH_PARAMS.PROVIDERS]: "",
-      },
-    },
-  ]);
-
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-  await QuickSuggestTestUtils.forceSync();
-  merinoClient().resetSession();
-});
-
 // Tests dismissals of managed Merino suggestions (suggestions that are managed
 // by a `SuggestFeature`).
 add_task(async function dismissals_managed() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   // Set up a single Merino AMP suggestion with a unique URL.
   let url = "https://example.com/merino-amp-url";
@@ -417,9 +395,12 @@ add_task(async function dismissals_managed() {
 // Tests dismissals of unmanaged Merino suggestions (suggestions that are not
 // managed by a `SuggestFeature`).
 add_task(async function dismissals_unmanaged_1() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
-  let provider = "some-unknown-merino-provider";
+  // The "top_picks" provider is the only supported unmanaged suggestion.
+  let provider = "top_picks";
+
   let tests = [
     {
       suggestion: {
@@ -563,9 +544,11 @@ add_task(async function dismissals_unmanaged_1() {
 // managed by a `SuggestFeature`) that all have the same URL but different
 // original URLs and dismissal keys.
 add_task(async function dismissals_unmanaged_2() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
-  let provider = "some-unknown-merino-provider";
+  // The "top_picks" provider is the only supported unmanaged suggestion.
+  let provider = "top_picks";
 
   MerinoTestUtils.server.response =
     MerinoTestUtils.server.makeDefaultResponse();
@@ -743,14 +726,16 @@ add_task(async function dismissals_unmanaged_2() {
 
 // Tests a Merino suggestion that is a top pick/best match.
 add_task(async function bestMatch() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
-  // Set up a suggestion with `is_top_pick` and an unknown provider so that
+  // Set up a suggestion with `is_top_pick` and the "top_picks" provider so that
   // UrlbarProviderQuickSuggest will make a default result for it.
+  let provider = "top_picks";
   MerinoTestUtils.server.response.body.suggestions = [
     {
       is_top_pick: true,
-      provider: "some_top_pick_provider",
+      provider,
       full_keyword: "full_keyword",
       title: "title",
       url: "url",
@@ -772,7 +757,7 @@ add_task(async function bestMatch() {
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
         heuristic: false,
         payload: {
-          telemetryType: "some_top_pick_provider",
+          telemetryType: provider,
           title: "title",
           url: "url",
           icon: null,
@@ -782,7 +767,7 @@ add_task(async function bestMatch() {
           isManageable: true,
           displayUrl: "url",
           source: "merino",
-          provider: "some_top_pick_provider",
+          provider,
         },
       },
     ],
@@ -796,38 +781,73 @@ add_task(async function bestMatch() {
   merinoClient().resetSession();
 });
 
-// Tests a sponsored suggestion that isn't managed by a feature.
-add_task(async function unmanaged_sponsored() {
+// Tests a sponsored suggestion that isn't managed by a feature. When the `all`
+// pref is disabled, a result for the suggestion should not be added.
+add_task(async function unmanaged_sponsored_allDisabled() {
+  await doUnmanagedTest({
+    pref: "suggest.quicksuggest.all",
+    suggestion: {
+      title: "Sponsored without feature",
+      url: "https://example.com/sponsored-without-feature",
+      is_sponsored: true,
+    },
+    shouldBeAdded: false,
+  });
+});
+
+// Tests a sponsored suggestion that isn't managed by a feature. When the
+// sponsored pref is disabled, a result for the suggestion should not be added.
+add_task(async function unmanaged_sponsored_sponsoredDisabled() {
   await doUnmanagedTest({
     pref: "suggest.quicksuggest.sponsored",
     suggestion: {
       title: "Sponsored without feature",
       url: "https://example.com/sponsored-without-feature",
-      provider: "sponsored-unrecognized-provider",
       is_sponsored: true,
     },
+    shouldBeAdded: false,
   });
 });
 
-// Tests a nonsponsored suggestion that isn't managed by a feature.
-add_task(async function unmanaged_nonsponsored() {
+// Tests a nonsponsored suggestion that isn't managed by a feature. When the
+// `all` pref is disabled, a result for the suggestion should not be added.
+add_task(async function unmanaged_nonsponsored_allDisabled() {
   await doUnmanagedTest({
-    pref: "suggest.quicksuggest.nonsponsored",
+    pref: "suggest.quicksuggest.all",
     suggestion: {
       title: "Nonsponsored without feature",
       url: "https://example.com/nonsponsored-without-feature",
-      provider: "nonsponsored-unrecognized-provider",
       // no is_sponsored
     },
+    shouldBeAdded: false,
   });
 });
 
-async function doUnmanagedTest({ pref, suggestion }) {
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+// Tests a nonsponsored suggestion that isn't managed by a feature. When the
+// `all` pref is enabled and the sponsored pref is disabled, a result for the
+// suggestion should be added.
+add_task(async function unmanaged_nonsponsored_sponsoredDisabled() {
+  await doUnmanagedTest({
+    pref: "suggest.quicksuggest.sponsored",
+    suggestion: {
+      title: "Nonsponsored without feature",
+      url: "https://example.com/nonsponsored-without-feature",
+      // no is_sponsored
+    },
+    shouldBeAdded: true,
+  });
+});
+
+async function doUnmanagedTest({ pref, suggestion, shouldBeAdded }) {
+  // The "top_picks" provider is the only supported unmanaged suggestion.
+  suggestion.provider = "top_picks";
+
+  UrlbarPrefs.set("suggest.quicksuggest.all", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   await QuickSuggestTestUtils.forceSync();
 
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
   MerinoTestUtils.server.response.body.suggestions = [suggestion];
 
   let expectedResult = {
@@ -848,7 +868,7 @@ async function doUnmanagedTest({ pref, suggestion }) {
     },
   };
 
-  // Do an initial search. Sponsored and nonsponsored suggestions are both
+  // Do an initial search. The `all` pref and sponsored suggestions are both
   // enabled, so the suggestion should be matched.
   info("Doing search 1");
   await check_results({
@@ -859,8 +879,8 @@ async function doUnmanagedTest({ pref, suggestion }) {
     matches: [expectedResult],
   });
 
-  // Set the pref to false and do another search. The suggestion shouldn't be
-  // matched.
+  // Set the passed-in pref to false and do another search. The suggestion
+  // should be matched as expected.
   UrlbarPrefs.set(pref, false);
   await QuickSuggestTestUtils.forceSync();
 
@@ -870,7 +890,7 @@ async function doUnmanagedTest({ pref, suggestion }) {
       providers: [UrlbarProviderQuickSuggest.name],
       isPrivate: false,
     }),
-    matches: [],
+    matches: shouldBeAdded ? [expectedResult] : [],
   });
 
   // Flip the pref back to true and do a third search.
@@ -912,6 +932,32 @@ async function doUnmanagedTest({ pref, suggestion }) {
   MerinoTestUtils.server.reset();
   merinoClient().resetSession();
 }
+
+// An unmanaged suggestion with an unrecognized Merino provider (i.e., not
+// "top_picks") should not be added.
+add_task(async function unmanaged_unrecognized() {
+  UrlbarPrefs.set("suggest.quicksuggest.all", true);
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+  await QuickSuggestTestUtils.forceSync();
+
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
+  MerinoTestUtils.server.response.body.suggestions = [
+    {
+      title: "Some unrecognized suggestion",
+      url: "https://example.com/unmanaged_unrecognized",
+      provider: "unmanaged-unrecognized-provider",
+    },
+  ];
+
+  await check_results({
+    context: createContext("test", {
+      providers: [UrlbarProviderQuickSuggest.name],
+      isPrivate: false,
+    }),
+    matches: [],
+  });
+});
 
 function merinoClient() {
   return QuickSuggest.getFeature("SuggestBackendMerino")?.client;

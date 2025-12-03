@@ -6,7 +6,6 @@
 
 #include "FilePickerParent.h"
 
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ContentParent.h"
@@ -20,7 +19,6 @@
 #include "nsISimpleEnumerator.h"
 #include "nsNetCID.h"
 
-using mozilla::Unused;
 using namespace mozilla::dom;
 
 NS_IMPL_ISUPPORTS(FilePickerParent::FilePickerShownCallback,
@@ -138,7 +136,7 @@ void FilePickerParent::SendFilesOrDirectories(
   if (mMode == nsIFilePicker::modeGetFolder) {
     MOZ_ASSERT(aData.Length() <= 1);
     if (aData.IsEmpty()) {
-      Unused << Send__delete__(this, void_t(), mResult);
+      (void)Send__delete__(this, void_t(), mResult);
       return;
     }
 
@@ -164,7 +162,7 @@ void FilePickerParent::SendFilesOrDirectories(
     InputDirectory input;
     input.directoryPath() = aData[0].mDirectoryPath;
     input.blobsInWebKitDirectory() = std::move(ipcBlobs);
-    Unused << Send__delete__(this, input, mResult);
+    (void)Send__delete__(this, input, mResult);
     return;
   }
 
@@ -185,14 +183,14 @@ void FilePickerParent::SendFilesOrDirectories(
   InputBlobs inblobs;
   inblobs.blobs() = std::move(ipcBlobs);
 
-  Unused << Send__delete__(this, inblobs, mResult);
+  (void)Send__delete__(this, inblobs, mResult);
 }
 
 void FilePickerParent::Done(nsIFilePicker::ResultCode aResult) {
   mResult = aResult;
 
   if (mResult != nsIFilePicker::returnOK) {
-    Unused << Send__delete__(this, void_t(), mResult);
+    (void)Send__delete__(this, void_t(), mResult);
     return;
   }
 
@@ -220,7 +218,7 @@ void FilePickerParent::Done(nsIFilePicker::ResultCode aResult) {
   }
 
   if (files.IsEmpty()) {
-    Unused << Send__delete__(this, void_t(), mResult);
+    (void)Send__delete__(this, void_t(), mResult);
     return;
   }
 
@@ -253,7 +251,7 @@ void FilePickerParent::Done(nsIFilePicker::ResultCode aResult) {
 
   // Dispatch to background thread to do I/O:
   if (!mRunnable->Dispatch()) {
-    Unused << Send__delete__(this, void_t(), nsIFilePicker::returnCancel);
+    (void)Send__delete__(this, void_t(), nsIFilePicker::returnCancel);
   }
 }
 
@@ -279,7 +277,7 @@ mozilla::ipc::IPCResult FilePickerParent::RecvOpen(
     const nsString& aDisplaySpecialDirectory, const nsString& aOkButtonLabel,
     const nsIFilePicker::CaptureTarget& aCapture) {
   if (!CreateFilePicker()) {
-    Unused << Send__delete__(this, void_t(), nsIFilePicker::returnCancel);
+    (void)Send__delete__(this, void_t(), nsIFilePicker::returnCancel);
     return IPC_OK();
   }
 

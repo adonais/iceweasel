@@ -57,6 +57,7 @@ skip-if = ["os == 'linux' && os_version == '18.04' && bits == 64 && !debug"] # B
 ["browser_autocomplete_import.js"]
 https_first_disabled = true
 skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && verify-standalone",
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug", # Bug 1775902
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", # Bug 1775902
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64'", # Bug 1775902
@@ -91,6 +92,7 @@ skip-if = [
 ]
 
 ["browser_context_menu.js"]
+skip-if = ["os == 'win' && os_version == '11.26100' && opt && verify-standalone"]
 
 ["browser_context_menu_autocomplete_interaction.js"]
 
@@ -246,7 +248,10 @@ support-files = [
 skip-if = ["os == 'linux' && os_version == '18.04' && bits == 64 && !debug"] # Bug 1744976
 
 ["browser_proxyAuth_prompt.js"]
-skip-if = ["os == 'android'"]
+skip-if = [
+  "os == 'android'",
+  "os == 'win' && os_version == '11.26100' && verify-standalone",
+]
 
 ["browser_relay_signup_flow.js"]
 support-files = ["browser_relay_utils.js"]

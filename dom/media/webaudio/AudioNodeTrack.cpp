@@ -395,6 +395,7 @@ void AudioNodeTrack::UpMixDownMixChunk(const AudioBlock* aChunk,
 // AudioNodeTracks.
 void AudioNodeTrack::ProcessInput(GraphTime aFrom, GraphTime aTo,
                                   uint32_t aFlags) {
+  MOZ_ASSERT(aTo - aFrom == WEBAUDIO_BLOCK_SIZE);
   uint16_t outputCount = mLastChunks.Length();
   MOZ_ASSERT(outputCount == std::max(uint16_t(1), mEngine->OutputCount()));
 
@@ -436,7 +437,7 @@ void AudioNodeTrack::ProcessInput(GraphTime aFrom, GraphTime aTo,
       NS_ASSERTION(mLastChunks[i].GetDuration() == WEBAUDIO_BLOCK_SIZE,
                    "Invalid WebAudio chunk size");
     }
-    if (finished) {
+    if (finished && !mMarkAsEndedAfterThisBlock) {
       mMarkAsEndedAfterThisBlock = true;
       if (mIsActive) {
         ScheduleCheckForInactive();

@@ -1538,7 +1538,7 @@ nsContentSecurityManager::AsyncOnChannelRedirect(
       aOldChannel, getter_AddRefs(oldPrincipal));
 
   nsCOMPtr<nsIURI> newURI;
-  Unused << NS_GetFinalChannelURI(aNewChannel, getter_AddRefs(newURI));
+  (void)NS_GetFinalChannelURI(aNewChannel, getter_AddRefs(newURI));
   NS_ENSURE_STATE(oldPrincipal && newURI);
 
   // Do not allow insecure redirects to data: URIs

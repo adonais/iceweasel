@@ -10,7 +10,6 @@
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
-#include "mozilla/Unused.h"
 #include "nsASCIIMask.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsContentSecurityManager.h"
@@ -179,7 +178,7 @@ void ClearSiteData::ClearDataFromChannel(nsIHttpChannel* aChannel) {
   nsCOMPtr<nsIPrincipal> partitionedPrincipal;
   rv = ssm->GetChannelResultPrincipals(aChannel, getter_AddRefs(nodePrincipal),
                                        getter_AddRefs(partitionedPrincipal));
-  Unused << nodePrincipal;
+  (void)nodePrincipal;
   if (NS_WARN_IF(NS_FAILED(rv) || !partitionedPrincipal)) {
     return;
   }

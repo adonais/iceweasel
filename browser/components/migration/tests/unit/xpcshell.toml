@@ -71,6 +71,7 @@ run-if = ["os == 'win'"]
 run-if = ["os == 'win' && bits == 64"] # bug 1392396
 
 ["test_IE_history.js"]
+requesttimeoutfactor = 2  # Slow on condprof
 run-if = ["os == 'win'"]
 skip-if = [
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && msix", # Bug 1807928

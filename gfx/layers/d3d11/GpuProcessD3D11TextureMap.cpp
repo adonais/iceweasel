@@ -207,6 +207,25 @@ Maybe<HANDLE> GpuProcessD3D11TextureMap::GetSharedHandle(
   return Some(handle->GetHandle());
 }
 
+void GpuProcessD3D11TextureMap::DisableZeroCopyNV12Texture(
+    GpuProcessTextureId aTextureId) {
+  MonitorAutoLock lock(mMonitor);
+
+  auto it = mD3D11TexturesById.find(aTextureId);
+  if (it == mD3D11TexturesById.end()) {
+    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+    return;
+  }
+
+  if (!it->second.mZeroCopyUsageInfo) {
+    return;
+  }
+
+  // Disable no video copy for future decoded video frames. Since
+  // Get SharedHandle of copied Texture() is slow.
+  it->second.mZeroCopyUsageInfo->DisableZeroCopyNV12Texture();
+}
+
 size_t GpuProcessD3D11TextureMap::GetWaitingTextureCount() const {
   MonitorAutoLock lock(mMonitor);
   return mWaitingTextures.size();

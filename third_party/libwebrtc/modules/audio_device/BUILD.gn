@@ -52,10 +52,6 @@ rtc_source_set("audio_device_api") {
   deps = [ "../../api/audio:audio_device" ]
 }
 
-rtc_library("audio_device_config") {
-  sources = [ "audio_device_config.h" ]
-}
-
 rtc_library("audio_device_buffer") {
 if (!build_with_mozilla) { # See Bug 1820869.
   sources = [
@@ -69,6 +65,7 @@ if (!build_with_mozilla) { # See Bug 1820869.
     "../../api:sequence_checker",
     "../../api/audio:audio_device",
     "../../api/task_queue",
+    "../../api/units:time_delta",
     "../../common_audio:common_audio_c",
     "../../rtc_base:buffer",
     "../../rtc_base:checks",
@@ -121,7 +118,7 @@ rtc_library("windows_core_audio_utility") {
       "../../rtc_base:platform_thread_types",
       "../../rtc_base:stringutils",
       "../../rtc_base/win:windows_version",
-      "//third_party/abseil-cpp/absl/strings:strings",
+      "//third_party/abseil-cpp/absl/strings",
     ]
 
     libs = [ "oleaut32.lib" ]
@@ -166,7 +163,7 @@ rtc_library("audio_device_module_from_input_and_output") {
       "../../rtc_base:timeutils",
       "../../rtc_base/win:scoped_com_initializer",
       "../../rtc_base/win:windows_version",
-      "//third_party/abseil-cpp/absl/strings:strings",
+      "//third_party/abseil-cpp/absl/strings",
     ]
   }
 }
@@ -181,10 +178,6 @@ if (!build_with_chromium) {
       "test_audio_device_impl.h",
     ]
 
-    # TODO: bugs.webrtc.org/413413572 - Mark this build target as testonly or
-    # or update downstream not to use deprecated function. Explicit poison
-    # can be removed then.
-    allow_poison = [ "environment_construction" ]
     deps = [
       ":audio_device_buffer",
       ":audio_device_default",
@@ -195,7 +188,6 @@ if (!build_with_chromium) {
       "../../api:scoped_refptr",
       "../../api/audio:audio_device",
       "../../api/environment",
-      "../../api/environment:environment_factory",
       "../../api/task_queue",
       "../../api/units:time_delta",
       "../../common_audio",
@@ -243,7 +235,9 @@ if (!build_with_chromium) {
       defines += [ "WEBRTC_DUMMY_FILE_DEVICES" ]
     }
     deps = [
+      ":audio_device_buffer",
       ":audio_device_generic",
+      "../../api/audio:audio_device",
       "../../rtc_base:checks",
       "../../rtc_base:logging",
       "../../rtc_base:platform_thread",
@@ -264,12 +258,12 @@ if (!build_with_mozilla) { # See Bug 1820869.
   visibility = [ "*" ]
   deps = [
     ":audio_device_buffer",
-    ":audio_device_config",
     ":audio_device_default",
     ":audio_device_dummy",
     ":audio_device_generic",
     "../../api:array_view",
     "../../api:make_ref_counted",
+    "../../api:ref_count",
     "../../api:refcountedbase",
     "../../api:scoped_refptr",
     "../../api:sequence_checker",
@@ -444,6 +438,7 @@ rtc_source_set("mock_audio_device") {
     ":audio_device_buffer",
     ":audio_device_impl",
     "../../api:make_ref_counted",
+    "../../api:scoped_refptr",
     "../../api/audio:audio_device",
     "../../test:test_support",
   ]

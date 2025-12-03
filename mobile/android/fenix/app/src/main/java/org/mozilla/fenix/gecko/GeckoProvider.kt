@@ -88,7 +88,7 @@ object GeckoProvider {
         context: Context,
         policy: TrackingProtectionPolicy,
     ): GeckoRuntimeSettings {
-        return GeckoRuntimeSettings.Builder()
+        val builder = GeckoRuntimeSettings.Builder()
             .crashHandler(CrashHandlerService::class.java)
             .experimentDelegate(NimbusExperimentDelegate())
             .contentBlocking(
@@ -123,8 +123,6 @@ object GeckoProvider {
             .extensionsWebAPIEnabled(true)
             .translationsOfferPopup(context.settings().offerTranslation)
             .crashPullNeverShowAgain(context.settings().crashPullNeverShowAgain)
-            .disableShip(FxNimbus.features.ship.value().disabled)
-            .fissionEnabled(FxNimbus.features.fission.value().enabled)
             .setSameDocumentNavigationOverridesLoadType(
                 FxNimbus.features.sameDocumentNavigationOverridesLoadType.value().enabled,
             )
@@ -132,6 +130,14 @@ object GeckoProvider {
                 FxNimbus.features.sameDocumentNavigationOverridesLoadType.value().forceDisableUri,
             )
             .isolatedProcessEnabled(context.settings().isIsolatedProcessEnabled)
-            .build()
+            .appZygoteProcessEnabled(context.settings().isAppZygoteEnabled)
+
+        if (FxNimbus.features.fission.value().shouldUseNimbus) {
+            builder
+                .fissionEnabled(FxNimbus.features.fission.value().enabled)
+                .disableShip(FxNimbus.features.ship.value().disabled)
+        }
+
+        return builder.build()
     }
 }

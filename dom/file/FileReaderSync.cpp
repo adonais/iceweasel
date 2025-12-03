@@ -11,7 +11,6 @@
 #include "js/Utility.h"  // js::ArrayBufferContentsArena, JS::FreePolicy, js_pod_arena_malloc
 #include "mozilla/Base64.h"
 #include "mozilla/Encoding.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FileReaderSyncBinding.h"
 #include "mozilla/dom/WorkerPrivate.h"

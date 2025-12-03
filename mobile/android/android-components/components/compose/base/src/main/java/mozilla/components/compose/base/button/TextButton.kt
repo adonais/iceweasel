@@ -4,6 +4,7 @@
 
 package mozilla.components.compose.base.button
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.ButtonColors
@@ -28,6 +29,7 @@ import androidx.compose.material3.TextButton as M3TextButton
  * @param enabled Controls the enabled state of the button. When `false`, this button will not
  * be clickable.
  * @param colors The [ButtonColors] used to color the [TextButton].
+ * @param border Optional [BorderStroke] to apply to the [TextButton].
  */
 @Composable
 fun TextButton(
@@ -36,12 +38,14 @@ fun TextButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     colors: ButtonColors = ButtonDefaults.textButtonColors(),
+    border: BorderStroke? = null,
 ) {
     M3TextButton(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
         colors = colors,
+        border = border,
     ) {
         Text(
             text = text,
@@ -71,7 +75,7 @@ private fun TextButtonPreview() {
 }
 
 @Composable
-@Preview()
+@Preview
 private fun PrivateTextButtonPreview() {
     AcornTheme(
         colors = privateColorPalette,

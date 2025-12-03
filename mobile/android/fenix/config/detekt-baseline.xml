@@ -271,8 +271,6 @@
     <ID>UndocumentedPublicClass:DebugDrawerRoute.kt$DebugDrawerRoute$Companion</ID>
     <ID>UndocumentedPublicClass:DebugFenixApplication.kt$DebugFenixApplication : FenixApplication</ID>
     <ID>UndocumentedPublicClass:DefaultBrowserPreference.kt$DefaultBrowserPreference : Preference</ID>
-    <ID>UndocumentedPublicClass:DefaultLocaleSettingsController.kt$DefaultLocaleSettingsController : LocaleSettingsController</ID>
-    <ID>UndocumentedPublicClass:DefaultLocaleSettingsController.kt$LocaleSettingsController</ID>
     <ID>UndocumentedPublicClass:DefaultSyncController.kt$SyncController</ID>
     <ID>UndocumentedPublicClass:DefaultSyncInteractor.kt$SyncInteractor</ID>
     <ID>UndocumentedPublicClass:DefaultTopSitesView.kt$DefaultTopSitesView : TopSitesView</ID>
@@ -667,9 +665,6 @@
     <ID>UndocumentedPublicFunction:CounterPreference.kt$CounterPreference$fun underMaxCount()</ID>
     <ID>UndocumentedPublicFunction:CreditCardItemViewHolder.kt$CreditCardItemViewHolder$fun bind(creditCard: CreditCard)</ID>
     <ID>UndocumentedPublicFunction:DefaultBrowserPreference.kt$DefaultBrowserPreference$fun updateSwitch()</ID>
-    <ID>UndocumentedPublicFunction:DefaultLocaleSettingsController.kt$LocaleSettingsController$fun handleDefaultLocaleSelected()</ID>
-    <ID>UndocumentedPublicFunction:DefaultLocaleSettingsController.kt$LocaleSettingsController$fun handleLocaleSelected(locale: Locale)</ID>
-    <ID>UndocumentedPublicFunction:DefaultLocaleSettingsController.kt$LocaleSettingsController$fun handleSearchQueryTyped(query: String)</ID>
     <ID>UndocumentedPublicFunction:DefaultSyncController.kt$SyncController$fun handleCameraPermissionsNeeded()</ID>
     <ID>UndocumentedPublicFunction:DefaultSyncInteractor.kt$SyncInteractor$fun onCameraPermissionsNeeded()</ID>
     <ID>UndocumentedPublicFunction:DefaultToolbarMenu.kt$DefaultToolbarMenu$@VisibleForTesting(otherwise = PRIVATE) fun canAddToHomescreen(): Boolean</ID>

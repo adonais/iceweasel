@@ -12,7 +12,6 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SharedThreadPool.h"
-#include "mozilla/Unused.h"
 #include "nsComponentManagerUtils.h"
 #include "nsThreadUtils.h"
 
@@ -45,7 +44,7 @@ void MediaTimer<T>::DispatchDestroy() {
                                                   &MediaTimer::Destroy),
                        NS_DISPATCH_NORMAL);
   MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-  Unused << rv;
+  (void)rv;
   (void)rv;
 }
 
@@ -111,7 +110,7 @@ void MediaTimer<T>::ScheduleUpdate() {
       NewRunnableMethod("MediaTimer::Update", this, &MediaTimer::Update),
       NS_DISPATCH_NORMAL);
   MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-  Unused << rv;
+  (void)rv;
   (void)rv;
 }
 

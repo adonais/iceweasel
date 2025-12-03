@@ -287,6 +287,9 @@ disabled = "bug 1612063 # test is racy"
 ["test_peerConnection_remoteReofferRollback.html"]
 
 ["test_peerConnection_remoteRollback.html"]
+skip-if = [
+  "os == 'android' && os_version == '14' && processor == 'x86_64'", # Bug 1883535
+]
 
 ["test_peerConnection_removeAudioTrack.html"]
 

@@ -10,7 +10,6 @@
 #include <memory>
 
 #include "js/TypeDecls.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/dom/TypedArray.h"  // ArrayBuffer
 
 class nsIGlobalObject;
@@ -25,6 +24,10 @@ struct RTCEncodedFrameState {
   std::unique_ptr<webrtc::TransformableFrameInterface> mFrame;
   uint64_t mCounter = 0;
   unsigned long mTimestamp = 0;
+
+  explicit RTCEncodedFrameState(
+      std::unique_ptr<webrtc::TransformableFrameInterface> aFrame,
+      uint64_t aCounter = 0, unsigned long aTimestamp = 0);
 
   // work around only having forward-declared TransformableFrameInterface
   ~RTCEncodedFrameState();
@@ -65,6 +68,7 @@ class RTCEncodedFrameBase : public nsISupports, public nsWrapperCache {
 
  protected:
   virtual ~RTCEncodedFrameBase();
+  void DetachData();
 
   // forbid copy/move to protect mState
   RTCEncodedFrameBase(const RTCEncodedFrameBase&) = delete;

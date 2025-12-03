@@ -457,12 +457,7 @@ browsertime-benchmark:
         by-app:
             firefox:
                 by-subtest:
-                    # Bug 1971608
-                    # For now, keep js3 on tier 3 to minimize potential alerts
-                    # due to now running on autoland.
-                    # Bump to tier 1 or 2 once more development has been done on
-                    # js3.
-                    jetstream3: 3
+                    jetstream3: 2
                     default:
                         by-test-platform:
                             linux.*clang-trunk.*: 2

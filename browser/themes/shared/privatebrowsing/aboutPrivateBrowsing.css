@@ -342,7 +342,7 @@ p {
 
 .banner-body h1 {
   font-size: 18px;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   color: var(--in-content-banner-text-color);
   line-height: 1em;
   margin: 7px 0;
@@ -375,7 +375,7 @@ p {
 .info h1,
 .promo h1 {
   font-size: 18px;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   line-height: 28px;
 }
 
@@ -504,7 +504,7 @@ p {
 .promo-cta .primary {
   padding: 0.54em 1.15em;
   margin: 8px 0;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
   background-color: rgb(0, 221, 255);
   color: rgb(43, 42, 51);

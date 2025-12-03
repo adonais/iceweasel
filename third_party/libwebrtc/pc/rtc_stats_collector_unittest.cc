@@ -10,9 +10,8 @@
 
 #include "pc/rtc_stats_collector.h"
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <cstddef>
+#include <cstdint>
 #include <initializer_list>
 #include <map>
 #include <memory>
@@ -105,7 +104,7 @@ namespace webrtc {
 
 namespace {
 
-const int64_t kGetStatsReportTimeoutMs = 1000;
+constexpr int64_t kGetStatsReportTimeoutMs = 1000;
 
 // Fake data used by `SetupExampleStatsVoiceGraph()` to fill in remote outbound
 // stats.

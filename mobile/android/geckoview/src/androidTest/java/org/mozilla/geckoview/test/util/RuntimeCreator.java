@@ -207,6 +207,7 @@ public class RuntimeCreator {
             .crashHandler(TestCrashHandler.class)
             .experimentDelegate(sRuntimeExperimentDelegateProxy)
             .isolatedProcessEnabled(BuildConfig.MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS)
+            .appZygoteProcessEnabled(env.isAppZygoteProcess())
             .build();
 
     sRuntime =

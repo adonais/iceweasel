@@ -606,23 +606,6 @@ bool WidgetEvent::IsBlockedForFingerprintingResistance() const {
               keyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_Control ||
               keyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_AltGraph);
     }
-    case ePointerEventClass: {
-      if (IsPointerEventMessageOriginallyMouseEventMessage(mMessage)) {
-        return false;
-      }
-
-      if (SPOOFED_MAX_TOUCH_POINTS > 0) {
-        return false;
-      }
-
-      const WidgetPointerEvent* pointerEvent = AsPointerEvent();
-
-      // We suppress the pointer events if it is not primary for fingerprinting
-      // resistance. It is because of that we want to spoof any pointer event
-      // into a mouse pointer event and the mouse pointer event only has
-      // isPrimary as true.
-      return !pointerEvent->mIsPrimary;
-    }
     default:
       return false;
   }
@@ -687,7 +670,7 @@ void WidgetEvent::PreventDefault(bool aCalledByDefaultHandler,
     }
     if (aPrincipal) {
       nsAutoString addonId;
-      Unused << NS_WARN_IF(NS_FAILED(aPrincipal->GetAddonId(addonId)));
+      (void)NS_WARN_IF(NS_FAILED(aPrincipal->GetAddonId(addonId)));
       if (!addonId.IsEmpty()) {
         // Ignore the case that it's called by a web extension.
         return;

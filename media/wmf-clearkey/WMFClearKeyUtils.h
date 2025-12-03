@@ -17,7 +17,6 @@
 
 #include "MFCDMExtra.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Unused.h"
 
 namespace mozilla {
 
@@ -123,7 +122,7 @@ class AutoPropVar final {
     if (mVar.vt != VT_EMPTY) {
       HRESULT hr = PropVariantClear(&mVar);
       MOZ_ASSERT(SUCCEEDED(hr));
-      Unused << hr;
+      (void)hr;
     }
   }
 

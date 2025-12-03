@@ -45,11 +45,6 @@ CodeGeneratorARM::CodeGeneratorARM(MIRGenerator* gen, LIRGraph* graph,
                                    const wasm::CodeMetadata* wasmCodeMeta)
     : CodeGeneratorShared(gen, graph, masm, wasmCodeMeta) {}
 
-Register64 CodeGeneratorARM::ToOperandOrRegister64(
-    const LInt64Allocation& input) {
-  return ToRegister64(input);
-}
-
 void CodeGeneratorARM::emitBranch(Assembler::Condition cond,
                                   MBasicBlock* mirTrue, MBasicBlock* mirFalse) {
   if (isNextBlock(mirFalse->lir())) {
@@ -201,7 +196,7 @@ void CodeGenerator::visitAddI64(LAddI64* lir) {
     return;
   }
 
-  masm.add64(ToOperandOrRegister64(rhs), ToRegister64(lhs));
+  masm.add64(ToRegister64(rhs), ToRegister64(lhs));
 }
 
 void CodeGenerator::visitSubI(LSubI* ins) {
@@ -255,7 +250,7 @@ void CodeGenerator::visitSubI64(LSubI64* lir) {
     return;
   }
 
-  masm.sub64(ToOperandOrRegister64(rhs), ToRegister64(lhs));
+  masm.sub64(ToRegister64(rhs), ToRegister64(lhs));
 }
 
 void CodeGenerator::visitMulI(LMulI* ins) {
@@ -438,7 +433,7 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
         masm.neg64(ToRegister64(lhs));
         return;
       case 0:
-        masm.xor64(ToRegister64(lhs), ToRegister64(lhs));
+        masm.move64(Imm64(0), ToRegister64(lhs));
         return;
       case 1:
         // nop
@@ -460,7 +455,7 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
     }
   } else {
     Register temp = ToTempRegisterOrInvalid(lir->temp0());
-    masm.mul64(ToOperandOrRegister64(rhs), ToRegister64(lhs), temp);
+    masm.mul64(ToRegister64(rhs), ToRegister64(lhs), temp);
   }
 }
 
@@ -999,17 +994,18 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
     // The shift amounts should be AND'ed into the 0-31 range since arm
     // shifts by the lower byte of the register (it will attempt to shift by
     // 250 if you ask it to).
-    masm.as_and(dest, ToRegister(rhs), Imm8(0x1F));
+    ScratchRegisterScope scratch(masm);
+    masm.as_and(scratch, ToRegister(rhs), Imm8(0x1F));
 
     switch (ins->bitop()) {
       case JSOp::Lsh:
-        masm.ma_lsl(dest, lhs, dest);
+        masm.ma_lsl(scratch, lhs, dest);
         break;
       case JSOp::Rsh:
-        masm.ma_asr(dest, lhs, dest);
+        masm.ma_asr(scratch, lhs, dest);
         break;
       case JSOp::Ursh:
-        masm.ma_lsr(dest, lhs, dest);
+        masm.ma_lsr(scratch, lhs, dest);
         if (ins->mir()->toUrsh()->fallible()) {
           // x >>> 0 can overflow.
           masm.as_cmp(dest, Imm8(0));
@@ -2361,62 +2357,6 @@ void CodeGenerator::visitInt64ToFloatingPointCall(
   masm.Pop(InstanceReg);
 }
 
-void CodeGenerator::visitCopySignF(LCopySignF* ins) {
-  FloatRegister lhs = ToFloatRegister(ins->lhs());
-  FloatRegister rhs = ToFloatRegister(ins->rhs());
-  FloatRegister output = ToFloatRegister(ins->output());
-
-  Register lhsi = ToRegister(ins->temp0());
-  Register rhsi = ToRegister(ins->temp1());
-
-  masm.ma_vxfer(lhs, lhsi);
-  masm.ma_vxfer(rhs, rhsi);
-
-  ScratchRegisterScope scratch(masm);
-
-  // Clear lhs's sign.
-  masm.ma_and(Imm32(INT32_MAX), lhsi, lhsi, scratch);
-
-  // Keep rhs's sign.
-  masm.ma_and(Imm32(INT32_MIN), rhsi, rhsi, scratch);
-
-  // Combine.
-  masm.ma_orr(lhsi, rhsi, rhsi);
-
-  masm.ma_vxfer(rhsi, output);
-}
-
-void CodeGenerator::visitCopySignD(LCopySignD* ins) {
-  FloatRegister lhs = ToFloatRegister(ins->lhs());
-  FloatRegister rhs = ToFloatRegister(ins->rhs());
-  FloatRegister output = ToFloatRegister(ins->output());
-
-  Register lhsi = ToRegister(ins->temp0());
-  Register rhsi = ToRegister(ins->temp1());
-
-  // Manipulate high words of double inputs.
-  masm.as_vxfer(lhsi, InvalidReg, lhs, Assembler::FloatToCore,
-                Assembler::Always, 1);
-  masm.as_vxfer(rhsi, InvalidReg, rhs, Assembler::FloatToCore,
-                Assembler::Always, 1);
-
-  ScratchRegisterScope scratch(masm);
-
-  // Clear lhs's sign.
-  masm.ma_and(Imm32(INT32_MAX), lhsi, lhsi, scratch);
-
-  // Keep rhs's sign.
-  masm.ma_and(Imm32(INT32_MIN), rhsi, rhsi, scratch);
-
-  // Combine.
-  masm.ma_orr(lhsi, rhsi, rhsi);
-
-  // Reconstruct the output.
-  masm.as_vxfer(lhsi, InvalidReg, lhs, Assembler::FloatToCore,
-                Assembler::Always, 0);
-  masm.ma_vxfer(lhsi, rhsi, output);
-}
-
 void CodeGenerator::visitWrapInt64ToInt32(LWrapInt64ToInt32* lir) {
   LInt64Allocation input = lir->input();
   Register output = ToRegister(lir->output());
@@ -2626,21 +2566,21 @@ void CodeGenerator::visitBitOpI64(LBitOpI64* lir) {
       if (IsConstant(rhs)) {
         masm.or64(Imm64(ToInt64(rhs)), ToRegister64(lhs));
       } else {
-        masm.or64(ToOperandOrRegister64(rhs), ToRegister64(lhs));
+        masm.or64(ToRegister64(rhs), ToRegister64(lhs));
       }
       break;
     case JSOp::BitXor:
       if (IsConstant(rhs)) {
         masm.xor64(Imm64(ToInt64(rhs)), ToRegister64(lhs));
       } else {
-        masm.xor64(ToOperandOrRegister64(rhs), ToRegister64(lhs));
+        masm.xor64(ToRegister64(rhs), ToRegister64(lhs));
       }
       break;
     case JSOp::BitAnd:
       if (IsConstant(rhs)) {
         masm.and64(Imm64(ToInt64(rhs)), ToRegister64(lhs));
       } else {
-        masm.and64(ToOperandOrRegister64(rhs), ToRegister64(lhs));
+        masm.and64(ToRegister64(rhs), ToRegister64(lhs));
       }
       break;
     default:

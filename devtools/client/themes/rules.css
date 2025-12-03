@@ -699,7 +699,6 @@
   vertical-align: middle;
 }
 
-.ruleview-property.ruleview-changed,
 .ruleview-property[dirty] {
   border-left-color: var(--theme-highlight-green);
 }
@@ -946,4 +945,15 @@
 
 .ruleview-propertyvalue-break-spaces {
   white-space: break-spaces;
+}
+
+.ruleview-show-unused-custom-css-properties {
+  margin-block: 4px;
+  /* Align the button with the properties above it. */
+  /* prettier-ignore */
+  margin-inline-start: calc(
+    var(--rule-enableproperty-size) +
+    var(--rule-enableproperty-margin-inline-start) +
+    var(--rule-enableproperty-margin-inline-end)
+  );
 }

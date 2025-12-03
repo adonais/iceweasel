@@ -150,9 +150,6 @@ class HomeScreenRobot {
             ),
         ).check(matches(isDisplayed()))
 
-    fun verifyWallpaperImageApplied(isEnabled: Boolean) =
-        assertUIObjectExists(itemWithResId("$packageName:id/wallpaperImageView"), exists = isEnabled)
-
     fun verifyFirstOnboardingCard(composeTestRule: ComposeTestRule) {
         composeTestRule.also {
             Log.i(TAG, "verifyFirstOnboardingCard: Trying to verify that the first onboarding screen title exists")

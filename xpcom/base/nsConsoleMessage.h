@@ -7,8 +7,6 @@
 #ifndef __nsconsolemessage_h__
 #define __nsconsolemessage_h__
 
-#include "mozilla/Attributes.h"
-
 #include "nsIConsoleMessage.h"
 #include "nsString.h"
 

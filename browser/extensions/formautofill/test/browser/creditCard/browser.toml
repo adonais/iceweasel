@@ -17,6 +17,7 @@ support-files = [
 
 ["browser_anti_clickjacking.js"]
 skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && opt && a11y_checks && swgl && verify-standalone",
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && !debug", # perma-fail see Bug 1600059
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && !debug", # perma-fail see Bug 1600059
 ]

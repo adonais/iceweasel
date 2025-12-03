@@ -137,7 +137,7 @@ nsMIMEInfoAndroid::SetFileExtensions(const nsACString& aExtensions) {
   aExtensions.EndReading(end);
   while (start != end) {
     nsACString::const_iterator cursor = start;
-    mozilla::Unused << FindCharInReadable(',', cursor, end);
+    (void)FindCharInReadable(',', cursor, end);
     AddUniqueExtension(Substring(start, cursor));
     // If a comma was found, skip it for the next search.
     start = cursor != end ? ++cursor : cursor;

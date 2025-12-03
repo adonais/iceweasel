@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_cache_StreamControl_h
 #define mozilla_dom_cache_StreamControl_h
 
-#include "mozilla/RefPtr.h"
 #include "mozilla/dom/cache/ReadStream.h"
 #include "mozilla/dom/cache/Types.h"
 #include "nsTObserverArray.h"

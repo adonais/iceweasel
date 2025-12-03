@@ -20,12 +20,8 @@ add_task(async function test_createConnection_and_proxy() {
 
   await withProxyServer(async proxyInfo => {
     // Create the IPP connection filter
-    const filter = IPPChannelFilter.create(
-      "",
-      proxyInfo.host,
-      proxyInfo.port,
-      proxyInfo.type
-    );
+    const filter = IPPChannelFilter.create();
+    filter.initialize("", proxyInfo.host, proxyInfo.port, proxyInfo.type);
     filter.start();
 
     const observer = new IPPNetworkErrorObserver();

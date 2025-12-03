@@ -8,7 +8,6 @@
 
 #include "TRRService.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/ScopeExit.h"
 #include "nsHostResolver.h"
 #include "nsNetUtil.h"
 #include "nsIOService.h"
@@ -307,7 +306,7 @@ void TRRServiceBase::AsyncCreateTRRConnectionInfoInternal(
   // method, so we don't really care aobut the |rv| here. If it's failed,
   // mDefaultTRRConnectionInfo stays as nullptr and we'll create a new
   // connection info in TRRServiceChannel again.
-  Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 }
 
 already_AddRefed<nsHttpConnectionInfo> TRRServiceBase::TRRConnectionInfo() {
@@ -391,7 +390,7 @@ void TRRServiceBase::DoReadEtcHostsFile(ParsingCallback aCallback) {
     rust_parse_etc_hosts(&path, aCallback);
   };
 
-  Unused << NS_DispatchBackgroundTask(
+  (void)NS_DispatchBackgroundTask(
       NS_NewRunnableFunction("Read /etc/hosts file", readHostsTask),
       NS_DISPATCH_EVENT_MAY_BLOCK);
 }

@@ -7,7 +7,6 @@
 
 #include "TableArea.h"
 #include "celldata.h"
-#include "mozilla/Attributes.h"
 #include "nsCellMap.h"
 #include "nsContainerFrame.h"
 #include "nsDisplayList.h"
@@ -144,8 +143,9 @@ class nsTableFrame : public nsContainerFrame {
  public:
   NS_DECL_FRAMEARENA_HELPERS(nsTableFrame)
 
-  typedef nsTArray<nsIFrame*> FrameTArray;
-  NS_DECLARE_FRAME_PROPERTY_DELETABLE(PositionedTablePartArray, FrameTArray)
+  using TablePartsArray = nsTArray<nsContainerFrame*>;
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(PositionedTablePartsProperty,
+                                      TablePartsArray)
 
   /** nsTableWrapperFrame has intimate knowledge of the inner table frame */
   friend class nsTableWrapperFrame;
@@ -185,14 +185,12 @@ class nsTableFrame : public nsContainerFrame {
   // Register or deregister a positioned table part with its nsTableFrame.
   // These objects will be visited by FixupPositionedTableParts after reflow is
   // complete. (See that function for more explanation.) Should be called
-  // during frame construction or style recalculation.
-  //
-  // @return true if the frame is a registered positioned table part.
+  // during style recalculation.
   static void PositionedTablePartMaybeChanged(
-      nsIFrame*, mozilla::ComputedStyle* aOldStyle);
+      nsContainerFrame*, mozilla::ComputedStyle* aOldStyle);
 
   // Unregister a positioned table part with its nsTableFrame, if needed.
-  static void MaybeUnregisterPositionedTablePart(nsIFrame* aFrame);
+  static void MaybeUnregisterPositionedTablePart(nsContainerFrame* aFrame);
 
   /*
    * Notification that rowspan or colspan has changed for content inside a
@@ -588,9 +586,6 @@ class nsTableFrame : public nsContainerFrame {
   void FixupPositionedTableParts(nsPresContext* aPresContext,
                                  ReflowOutput& aDesiredSize,
                                  const ReflowInput& aReflowInput);
-
-  // Clears the list of positioned table parts.
-  void ClearAllPositionedTableParts();
 
   nsITableLayoutStrategy* LayoutStrategy() const {
     return static_cast<nsTableFrame*>(FirstInFlow())

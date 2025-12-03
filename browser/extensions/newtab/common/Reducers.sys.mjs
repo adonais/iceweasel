@@ -828,7 +828,8 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
       if (action.data) {
         // If spocs have been loaded on this tab, we can ignore future updates.
         // This should never be true on the main store, only content pages.
-        if (prevState.spocs.onDemand.loaded) {
+        // We check agasint onDemand just to be safe. It generally shouldn't be needed.
+        if (prevState.spocs?.onDemand?.loaded) {
           return prevState;
         }
         return {

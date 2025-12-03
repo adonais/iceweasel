@@ -13,7 +13,6 @@
 #include "LayoutConstants.h"
 #include "Units.h"
 #include "gfxPoint.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/LayoutStructs.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Maybe.h"
@@ -719,7 +718,7 @@ class nsLayoutUtils {
   enum class GetPopupFrameForPointFlags : uint8_t {
     OnlyReturnFramesWithWidgets = 0x1,
   };
-  static nsIFrame* GetPopupFrameForPoint(
+  static nsMenuPopupFrame* GetPopupFrameForPoint(
       nsPresContext* aRootPresContext, nsIWidget* aWidget,
       const mozilla::LayoutDeviceIntPoint& aPoint,
       GetPopupFrameForPointFlags aFlags = GetPopupFrameForPointFlags(0));
@@ -1101,6 +1100,19 @@ class nsLayoutUtils {
    */
   template <typename T>
   static nsRect RoundGfxRectToAppRect(const T& aRect, const float aFactor);
+
+  /**
+   * Like the above but slightly different scale and round behaviour. First
+   * scales, then constrains to nscoord, then rounds each component (x, y,
+   * width, height) individually.
+   *
+   * @param aRect The graphics rect to round outward.
+   * @param aFactor The number of app units per graphics unit.
+   * @return The rounaded rectangle in app space.
+   */
+  template <typename T>
+  static nsRect ScaleThenRoundGfxRectToAppRect(const T& aRect,
+                                               const float aFactor);
 
   /**
    * Returns a subrectangle of aContainedRect that is entirely inside the
@@ -2166,8 +2178,8 @@ class nsLayoutUtils {
    *   @return a value suitable for passing to SetWindowTranslucency.
    */
   using TransparencyMode = mozilla::widget::TransparencyMode;
-  static TransparencyMode GetFrameTransparency(nsIFrame* aBackgroundFrame,
-                                               nsIFrame* aCSSRootFrame);
+  static TransparencyMode GetFrameTransparency(const nsIFrame* aBackgroundFrame,
+                                               const nsIFrame* aCSSRootFrame);
 
   /**
    * A frame is a popup if it has its own floating window. Menus, panels
@@ -3193,8 +3205,9 @@ class nsLayoutUtils {
 
   static bool IsAPZTestLoggingEnabled();
 
-  static void ConstrainToCoordValues(gfxFloat& aStart, gfxFloat& aSize);
-  static void ConstrainToCoordValues(float& aStart, float& aSize);
+  // doubles only because nscoord_max and nscoord_min cannot be represented
+  // exactly by floats.
+  static void ConstrainToCoordValues(double& aStart, double& aSize);
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsLayoutUtils::PaintFrameFlags)
@@ -3247,21 +3260,66 @@ nsRect nsLayoutUtils::RoundGfxRectToAppRect(const T& aRect,
   T scaledRect = aRect;
   scaledRect.ScaleRoundOut(aFactor);
 
+  nsRect retval;
+
+  double start = double(scaledRect.x);
+  double size = double(scaledRect.width);
   // We now need to constrain our results to the max and min values for coords.
-  ConstrainToCoordValues(scaledRect.x, scaledRect.width);
-  ConstrainToCoordValues(scaledRect.y, scaledRect.height);
+  ConstrainToCoordValues(start, size);
+  // ConstrainToCoordValues ensures casting to nscoord is safe.
+  retval.x = nscoord(start);
+  retval.width = nscoord(size);
+
+  start = double(scaledRect.y);
+  size = double(scaledRect.height);
+  ConstrainToCoordValues(start, size);
+  retval.y = nscoord(start);
+  retval.height = nscoord(size);
 
   if (!aRect.Width()) {
-    scaledRect.SetWidth(0);
+    retval.SetWidth(0);
   }
 
   if (!aRect.Height()) {
-    scaledRect.SetHeight(0);
+    retval.SetHeight(0);
   }
 
-  // Now typecast everything back.  This is guaranteed to be safe.
-  return nsRect(nscoord(scaledRect.X()), nscoord(scaledRect.Y()),
-                nscoord(scaledRect.Width()), nscoord(scaledRect.Height()));
+  return retval;
+}
+
+template <typename T>
+nsRect nsLayoutUtils::ScaleThenRoundGfxRectToAppRect(const T& aRect,
+                                                     const float aFactor) {
+  // Get a new Rect whose units are app units by scaling by the specified
+  // factor.
+  T scaledRect = aRect;
+  scaledRect.Scale(aFactor);
+
+  nsRect retval;
+
+  double start = double(scaledRect.x);
+  double size = double(scaledRect.width);
+  // We now need to constrain our results to the max and min values for coords.
+  ConstrainToCoordValues(start, size);
+  // ConstrainToCoordValues ensures converting to nscoord is safe.
+  retval.x = NSToCoordRoundWithClamp(start);
+  retval.width = NSToCoordRoundWithClamp(size);
+
+  start = double(scaledRect.y);
+  size = double(scaledRect.height);
+  ConstrainToCoordValues(start, size);
+  retval.y = NSToCoordRoundWithClamp(start);
+  retval.height = NSToCoordRoundWithClamp(size);
+
+  if (!aRect.Width()) {
+    retval.SetWidth(0);
+  }
+
+  if (!aRect.Height()) {
+    retval.SetHeight(0);
+  }
+
+  return retval;
 }
 
 namespace mozilla {

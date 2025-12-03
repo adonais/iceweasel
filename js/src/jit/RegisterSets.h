@@ -9,7 +9,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Variant.h"
 
 #include <new>
 #include <stddef.h>

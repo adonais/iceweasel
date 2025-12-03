@@ -44,7 +44,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "timerManager",
   "@mozilla.org/updates/timer-manager;1",
-  "nsIUpdateTimerManager"
+  Ci.nsIUpdateTimerManager
 );
 
 const SUGGEST_DATA_STORE_BASENAME = "suggest.sqlite";

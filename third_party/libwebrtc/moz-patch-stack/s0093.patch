@@ -10,10 +10,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b050c455caa1d24a0
  2 files changed, 7 insertions(+), 5 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index b7df8398c2..d5f414db72 100644
+index 3eab1126bf..550c75bafb 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -283,6 +283,7 @@ config("rtc_prod_config") {
+@@ -280,6 +280,7 @@ config("rtc_prod_config") {
  }
  
  group("tracing") {
@@ -21,7 +21,7 @@ index b7df8398c2..d5f414db72 100644
    all_dependent_configs = [ "//third_party/perfetto/gn:public_config" ]
    if (rtc_use_perfetto) {
      if (build_with_chromium) {
-@@ -299,6 +300,7 @@ group("tracing") {
+@@ -296,6 +297,7 @@ group("tracing") {
          [ "//third_party/perfetto/include/perfetto/tracing" ]
    }
  }
@@ -30,7 +30,7 @@ index b7df8398c2..d5f414db72 100644
  if (rtc_use_perfetto) {
    rtc_library("webrtc_libperfetto") {
 diff --git a/modules/video_coding/generic_decoder.cc b/modules/video_coding/generic_decoder.cc
-index ab23106f94..dd4a5611b4 100644
+index 88c93170c6..b7abdd14c4 100644
 --- a/modules/video_coding/generic_decoder.cc
 +++ b/modules/video_coding/generic_decoder.cc
 @@ -121,9 +121,9 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
@@ -46,7 +46,7 @@ index ab23106f94..dd4a5611b4 100644
    // TODO(holmer): We should improve this so that we can handle multiple
    // callbacks from one call to Decode().
    std::optional<FrameInfo> frame_info;
-@@ -331,8 +331,8 @@ int32_t VCMGenericDecoder::Decode(
+@@ -330,8 +330,8 @@ int32_t VCMGenericDecoder::Decode(
      const std::optional<
          std::variant<FrameInstrumentationSyncData, FrameInstrumentationData>>&
          frame_instrumentation_data) {

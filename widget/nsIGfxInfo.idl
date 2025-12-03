@@ -13,13 +13,11 @@ interface nsIGfxInfo : nsISupports
   /*
    * These are win32-specific
    */
-  readonly attribute boolean D2DEnabled;
   readonly attribute boolean DWriteEnabled;
   readonly attribute boolean EmbeddedInFirefoxReality;
   readonly attribute AString AzureCanvasBackend;
   readonly attribute AString AzureContentBackend;
   readonly attribute boolean usingGPUProcess;
-  readonly attribute boolean usingRemoteCanvas;
   readonly attribute boolean usingAcceleratedCanvas;
   readonly attribute boolean hasBattery;
   readonly attribute AString DWriteVersion;
@@ -136,7 +134,7 @@ interface nsIGfxInfo : nsISupports
 #undef GFXINFO_FEATURE
     FEATURE_COUNT,
     /* This must be the first value after INVALID/ALL/OPTIONAL. */
-    FEATURE_START = FEATURE_DIRECT2D
+    FEATURE_START = FEATURE_DIRECT3D_9_LAYERS
   };
 
   /*

@@ -110,57 +110,52 @@ pub enum NetworkEvent {
 pub struct NetworkEventStream;
 
 // Thread that connects to a WR instance and reads realtime updates as provided, such as
-// profiler updates, debug flag changes etc. The messages are pushed to the SDL event queue
-// to be consumed by the client.
+// profiler updates, debug flag changes etc. The messages are pushed pushed via a callback.
 impl NetworkEventStream {
-    pub fn spawn(
+    pub fn spawn<F>(
         host: &str,
-        event_sender: sdl3::event::EventSender,
-    ) {
+        callback: F,
+    ) where
+        F: Fn(NetworkEvent) + Send + 'static,
+    {
         let host = host.to_string();
         let mut connection: Option<WebSocket<MaybeTlsStream<TcpStream>>> = None;
 
-        thread::spawn(move || {
-            loop {
-                match connection {
-                    Some(ref mut socket) => {
-                        match socket.read() {
-                            Ok(msg) => {
-                                let msg = match msg {
-                                    tungstenite::Message::Text(text) => text,
-                                    _ => todo!(),
-                                };
-                                let msg: DebuggerMessage = serde_json::from_str(msg.as_str()).expect("bug");
-                                event_sender.push_custom_event(
-                                    NetworkEvent::Message(msg)
-                                ).expect("bug");
-                            }
-                            Err(..) => {
-                                // Connection dropped
-                                connection = None;
-                                event_sender.push_custom_event(NetworkEvent::Disconnected)
-                                    .expect("bug");
-                            }
+        loop {
+            match connection {
+                Some(ref mut socket) => {
+                    match socket.read() {
+                        Ok(msg) => {
+                            let msg = match msg {
+                                tungstenite::Message::Text(text) => text,
+                                _ => todo!(),
+                            };
+                            let msg: DebuggerMessage = serde_json::from_str(msg.as_str()).expect("bug");
+                            callback(NetworkEvent::Message(msg));
+                        }
+                        Err(..) => {
+                            // Connection dropped
+                            connection = None;
+                            callback(NetworkEvent::Disconnected);
                         }
                     }
-                    None => {
-                        // Try connect
-                        let uri = format!("ws://{}/debugger-socket", host);
-                        match tungstenite::connect(uri) {
-                            Ok((socket, _)) => {
-                                // Connected
-                                connection = Some(socket);
-                                event_sender.push_custom_event(NetworkEvent::Connected)
-                                    .expect("bug");
-                            }
-                            Err(..) => {
-                                // Wait until try again
-                                thread::sleep(time::Duration::new(1, 0));
-                            }
+                }
+                None => {
+                    // Try connect
+                    let uri = format!("ws://{}/debugger-socket", host);
+                    match tungstenite::connect(uri) {
+                        Ok((socket, _)) => {
+                            // Connected
+                            connection = Some(socket);
+                            callback(NetworkEvent::Connected);
+                        }
+                        Err(..) => {
+                            // Wait until try again
+                            thread::sleep(time::Duration::new(1, 0));
                         }
                     }
                 }
             }
-        });
+        }
     }
 }

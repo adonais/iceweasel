@@ -28,6 +28,7 @@ cubeb-sys = { version = "0.30.1", optional = true, features=["gecko-in-tree"] }
 audioipc2-client = { git = "https://github.com/mozilla/audioipc", rev = "82fe7fa7e3aaa35468137239a0e4c2f867457214", optional = true }
 audioipc2-server = { git = "https://github.com/mozilla/audioipc", rev = "82fe7fa7e3aaa35468137239a0e4c2f867457214", optional = true }
 encoding_glue = { path = "../../../../intl/encoding_glue" }
+locale_service_glue = { path = "../../../../intl/locale/rust/locale_service_glue" }
 authrs_bridge = { path = "../../../../dom/webauthn/authrs_bridge" }
 gkrust_utils = { path = "../../../../xpcom/rust/gkrust_utils" }
 gecko_logger = { path = "../../../../xpcom/rust/gecko_logger" }
@@ -71,7 +72,7 @@ dom = { path = "../../../../dom/base/rust" }
 dom_fragmentdirectives = { path="../../../../dom/base/fragmentdirectives" }
 origin-trials-ffi = { path = "../../../../dom/origin-trials/ffi" }
 jog = { path = "../../../components/glean/bindings/jog" }
-dap_ffi = { path = "../../../components/telemetry/dap/ffi" }
+dap_ffi = { path = "../../../components/dap/ffi" }
 data-encoding-ffi = { path = "../../../../dom/fs/parent/rust/data-encoding-ffi" }
 binary_http = { path = "../../../../netwerk/protocol/http/binary_http" }
 oblivious_http = { path = "../../../../netwerk/protocol/http/oblivious_http" }
@@ -82,6 +83,7 @@ crypto_hash = { path = "../../../../security/manager/ssl/crypto_hash" }
 data_storage = { path = "../../../../security/manager/ssl/data_storage" }
 ipcclientcerts = { path = "../../../../security/manager/ssl/ipcclientcerts" }
 mls_gk = { path = "../../../../security/mls/mls_gk" }
+qwac-trust-anchors = { path = "../../../../security/manager/ssl/qwac_trust_anchors" }
 trust-anchors = { path = "../../../../security/manager/ssl/trust_anchors" }
 signature_cache = { path = "../../../../security/certverifier/signature_cache" }
 
@@ -104,11 +106,11 @@ processtools = { path = "../../../components/processtools" }
 qcms = { path = "../../../../gfx/qcms", features = ["c_bindings", "neon"], default-features = false }
 
 wpf-gpu-raster = { git = "https://github.com/FirefoxGraphics/wpf-gpu-raster", rev = "99979da091fd58fba8477e7fcdf5ec0727102916" }
-aa-stroke = { git = "https://github.com/FirefoxGraphics/aa-stroke", rev = "a821fa621c2def48e90c82774b4c6563b5a8ea4a" }
+aa-stroke = { git = "https://github.com/FirefoxGraphics/aa-stroke", rev = "5776bdfc8ad664a1503db668fab397d818a5f98a" }
 etagere = { version = "0.2.13", features = ["ffi"] }
 
 url = "2.5.7"
-urlpattern = "0.4.0"
+urlpattern = "0.4.1"
 urlpattern_glue = { path = "../../../../netwerk/base/urlpattern_glue" }
 uritemplate_glue = { path = "../../../../netwerk/base/uritemplate_glue" }
 
@@ -159,6 +161,7 @@ for_xul = [
     # `libmozsqlite` that we distribute.
     "rusqlite/in_gecko"
 ]
+webrender_debugger = ["webrender_bindings/debugger"]
 
 [lib]
 path = "lib.rs"

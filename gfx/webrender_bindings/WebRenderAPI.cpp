@@ -11,6 +11,7 @@
 #include "mozilla/webrender/RendererOGL.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CompositorThread.h"
+#include "mozilla/HelperMacros.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/ToString.h"
@@ -488,7 +489,7 @@ wr::WebRenderAPI* WebRenderAPI::GetRootAPI() {
   return this;
 }
 
-void WebRenderAPI::UpdateDebugFlags(uint32_t aFlags) {
+void WebRenderAPI::UpdateDebugFlags(uint64_t aFlags) {
   wr_api_set_debug_flags(mDocHandle, wr::DebugFlags{aFlags});
 }
 

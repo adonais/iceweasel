@@ -12,7 +12,6 @@
 
 #include "mozilla/gfx/FileHandleWrapper.h"
 #include "mozilla/layers/LayersTypes.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/StaticPtr.h"
 

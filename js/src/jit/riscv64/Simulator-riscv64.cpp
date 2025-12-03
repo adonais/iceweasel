@@ -33,7 +33,6 @@
 #  include "mozilla/FloatingPoint.h"
 #  include "mozilla/IntegerPrintfMacros.h"
 #  include "mozilla/Likely.h"
-#  include "mozilla/MathAlgorithms.h"
 
 #  include <cinttypes>
 #  include <float.h>
@@ -928,10 +927,12 @@ void SimulatorProcess::checkICacheLocked(SimInstruction* instr) {
   char* cached_line = cache_page->cachedData(offset & ~CachePage::kLineMask);
 
   if (cache_hit) {
+#  ifdef DEBUG
     // Check that the data in memory matches the contents of the I-cache.
     int cmpret = memcmp(reinterpret_cast<void*>(instr),
                         cache_page->cachedData(offset), kInstrSize);
     MOZ_ASSERT(cmpret == 0);
+#  endif
   } else {
     // Cache miss.  Load memory into the cache.
     memcpy(cached_line, line, CachePage::kLineLength);

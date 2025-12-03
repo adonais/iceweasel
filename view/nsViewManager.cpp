@@ -51,14 +51,16 @@ using namespace mozilla::layers;
 
 uint32_t nsViewManager::gLastUserEventTime = 0;
 
-nsViewManager::nsViewManager()
-    : mPresShell(nullptr),
+nsViewManager::nsViewManager(nsDeviceContext* aContext)
+    : mContext(aContext),
+      mPresShell(nullptr),
       mDelayedResize(NSCOORD_NONE, NSCOORD_NONE),
       mRootView(nullptr),
-      mRefreshDisableCount(0),
       mPainting(false),
       mRecursiveRefreshPending(false),
-      mHasPendingWidgetGeometryChanges(false) {}
+      mHasPendingWidgetGeometryChanges(false) {
+  MOZ_ASSERT(aContext);
+}
 
 nsViewManager::~nsViewManager() {
   if (mRootView) {
@@ -74,29 +76,13 @@ nsViewManager::~nsViewManager() {
                      "the PresShell!");
 }
 
-// We don't hold a reference to the presentation context because it
-// holds a reference to us.
-nsresult nsViewManager::Init(nsDeviceContext* aContext) {
-  MOZ_ASSERT(nullptr != aContext, "null ptr");
-
-  if (nullptr == aContext) {
-    return NS_ERROR_NULL_POINTER;
-  }
-  if (nullptr != mContext) {
-    return NS_ERROR_ALREADY_INITIALIZED;
-  }
-  mContext = aContext;
-
-  return NS_OK;
-}
-
 nsView* nsViewManager::CreateView(const nsRect& aBounds, nsView* aParent,
                                   ViewVisibility aVisibilityFlag) {
   auto* v = new nsView(this, aVisibilityFlag);
   v->SetParent(aParent);
   v->SetPosition(aBounds.X(), aBounds.Y());
   nsRect dim(0, 0, aBounds.Width(), aBounds.Height());
-  v->SetDimensions(dim, false);
+  v->SetDimensions(dim);
   return v;
 }
 
@@ -145,7 +131,7 @@ void nsViewManager::DoSetWindowDimensions(nscoord aWidth, nscoord aHeight) {
     return;
   }
   // Don't resize the widget. It is already being set elsewhere.
-  mRootView->SetDimensions(newDim, true, false);
+  mRootView->SetDimensions(newDim);
   if (RefPtr<PresShell> presShell = mPresShell) {
     presShell->ResizeReflow(aWidth, aHeight);
   }
@@ -269,11 +255,11 @@ void nsViewManager::Refresh(nsView* aView,
         printf_stderr("--COMPOSITE-- %p\n", presShell.get());
       }
 #endif
-      WindowRenderer* renderer = widget->GetWindowRenderer();
+      RefPtr<WindowRenderer> renderer = widget->GetWindowRenderer();
       if (!renderer->NeedsWidgetInvalidation()) {
         renderer->FlushRendering(wr::RenderReasons::WIDGET);
       } else {
-        presShell->SyncPaintFallback(aView);
+        presShell->SyncPaintFallback(aView->GetFrame(), renderer);
       }
 #ifdef MOZ_DUMP_PAINTING
       if (nsLayoutUtils::InvalidationDebuggingIsEnabled()) {
@@ -305,19 +291,16 @@ void nsViewManager::ProcessPendingUpdatesForView(nsView* aView,
   aView->GetViewManager()->ProcessPendingUpdatesRecurse(aView, widgets);
   for (uint32_t i = 0; i < widgets.Length(); ++i) {
     nsView* view = nsView::GetViewFor(widgets[i]);
-    if (view) {
-      if (view->mNeedsWindowPropertiesSync) {
-        view->mNeedsWindowPropertiesSync = false;
-        if (nsViewManager* vm = view->GetViewManager()) {
-          if (PresShell* presShell = vm->GetPresShell()) {
-            presShell->SyncWindowProperties(/* aSync */ true);
-          }
+    if (!view) {
+      continue;
+    }
+    if (view->mNeedsWindowPropertiesSync) {
+      view->mNeedsWindowPropertiesSync = false;
+      if (nsViewManager* vm = view->GetViewManager()) {
+        if (PresShell* presShell = vm->GetPresShell()) {
+          presShell->SyncWindowProperties(/* aSync */ true);
         }
       }
-    }
-    view = nsView::GetViewFor(widgets[i]);
-    if (view) {
-      view->ResetWidgetBounds(false, true);
     }
   }
   if (rootPresShell->GetViewManager() != this) {
@@ -396,7 +379,8 @@ void nsViewManager::ProcessPendingUpdatesPaint(nsIWidget* aWidget) {
       }
 #endif
 
-      presShell->PaintAndRequestComposite(view, PaintFlags::None);
+      presShell->PaintAndRequestComposite(
+          view->GetFrame(), aWidget->GetWindowRenderer(), PaintFlags::None);
       view->SetForcedRepaint(false);
 
 #ifdef MOZ_DUMP_PAINTING
@@ -542,11 +526,9 @@ void nsViewManager::WillPaintWindow(nsIWidget* aWidget) {
 
 bool nsViewManager::PaintWindow(nsIWidget* aWidget,
                                 const LayoutDeviceIntRegion& aRegion) {
-  if (!aWidget || !mContext) return false;
-
-  NS_ASSERTION(
-      IsPaintingAllowed(),
-      "shouldn't be receiving paint events while painting is disallowed!");
+  if (!aWidget) {
+    return false;
+  }
 
   // Get the view pointer here since NS_WILL_PAINT might have
   // destroyed it during CallWillPaintOnObservers (bug 378273).
@@ -603,7 +585,7 @@ void nsViewManager::DispatchEvent(WidgetGUIEvent* aEvent, nsView* aView,
     }
   }
 
-  if (nullptr != frame) {
+  if (frame) {
     // Hold a refcount to the presshell. The continued existence of the
     // presshell will delay deletion of this view hierarchy should the event
     // want to cause its destruction in, say, some JavaScript event handler.
@@ -689,7 +671,7 @@ void nsViewManager::ResizeView(nsView* aView, const nsRect& aRect) {
 
   nsRect oldDimensions = aView->GetDimensions();
   if (!oldDimensions.IsEqualEdges(aRect)) {
-    aView->SetDimensions(aRect, true);
+    aView->SetDimensions(aRect);
   }
 
   // Note that if layout resizes the view and the view has a custom clip
@@ -722,22 +704,6 @@ bool nsViewManager::IsViewInserted(nsView* aView) {
     view = view->GetNextSibling();
   }
   return false;
-}
-
-nsViewManager* nsViewManager::IncrementDisableRefreshCount() {
-  if (!IsRootVM()) {
-    return RootViewManager()->IncrementDisableRefreshCount();
-  }
-
-  ++mRefreshDisableCount;
-
-  return this;
-}
-
-void nsViewManager::DecrementDisableRefreshCount() {
-  NS_ASSERTION(IsRootVM(), "Should only be called on root");
-  --mRefreshDisableCount;
-  NS_ASSERTION(mRefreshDisableCount >= 0, "Invalid refresh disable count!");
 }
 
 nsIWidget* nsViewManager::GetRootWidget() const {

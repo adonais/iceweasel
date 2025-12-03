@@ -62,7 +62,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "gFormFillService",
   "@mozilla.org/satchel/form-fill-controller;1",
-  "nsIFormFillController"
+  Ci.nsIFormFillController
 );
 
 ChromeUtils.defineLazyGetter(lazy, "log", () => {
@@ -738,7 +738,8 @@ export class LoginFormState {
     lazy.gFormFillService.showPopup();
   }
 
-  /** Remove login field highlight when its value is cleared or overwritten.
+  /**
+   * Remove login field highlight when its value is cleared or overwritten.
    */
   static #removeFillFieldHighlight(event) {
     event.target.autofillState = "";
@@ -1400,19 +1401,19 @@ export class LoginManagerChild extends JSWindowActorChild {
         break;
       }
       case "PasswordManager:OnFieldAutoComplete": {
-        const { focusedElement } = lazy.gFormFillService;
+        const { controlledElement } = lazy.gFormFillService;
         const login = lazy.LoginHelper.vanillaObjectToLogin(msg.data);
-        this.onFieldAutoComplete(focusedElement, login);
+        this.onFieldAutoComplete(controlledElement, login);
         break;
       }
       case "PasswordManager:FillGeneratedPassword": {
-        const { focusedElement } = lazy.gFormFillService;
-        this.filledWithGeneratedPassword(focusedElement);
+        const { controlledElement } = lazy.gFormFillService;
+        this.filledWithGeneratedPassword(controlledElement);
         break;
       }
       case "PasswordManager:FillRelayUsername": {
-        const { focusedElement } = lazy.gFormFillService;
-        this.fillRelayUsername(focusedElement, msg.data);
+        const { controlledElement } = lazy.gFormFillService;
+        this.fillRelayUsername(controlledElement, msg.data);
         break;
       }
     }
@@ -1427,7 +1428,7 @@ export class LoginManagerChild extends JSWindowActorChild {
       return;
     }
 
-    if (inputElement != lazy.gFormFillService.focusedElement) {
+    if (inputElement != lazy.gFormFillService.controlledElement) {
       lazy.log("Could not open popup on input that's no longer focused.");
       return;
     }
@@ -3089,9 +3090,9 @@ export class LoginManagerChild extends JSWindowActorChild {
         Glean.pwmgr.formAutofillResult[autofillResult].add(1);
 
         if (usernameField) {
-          let focusedElement = lazy.gFormFillService.focusedElement;
+          let controlledElement = lazy.gFormFillService.controlledElement;
           if (
-            usernameField == focusedElement &&
+            usernameField == controlledElement &&
             ![
               AUTOFILL_RESULT.FILLED,
               AUTOFILL_RESULT.FILLED_USERNAME_ONLY_FORM,

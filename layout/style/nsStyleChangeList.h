@@ -12,7 +12,6 @@
 #ifndef nsStyleChangeList_h___
 #define nsStyleChangeList_h___
 
-#include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 #include "nsChangeHint.h"
 #include "nsTArray.h"

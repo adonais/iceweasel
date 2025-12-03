@@ -21,14 +21,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.ui.icons.R
 import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.home.interactor.HomepageInteractor
 import org.mozilla.fenix.home.pocket.ui.PocketSection
+import org.mozilla.fenix.home.store.HeaderState
 import org.mozilla.fenix.home.store.HomepageState
 import org.mozilla.fenix.home.topsites.TopSiteColors
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE
@@ -174,7 +177,15 @@ private fun MiddleSearchHomepagePreview() {
                 showRecentlyVisited = true,
                 showPocketStories = true,
                 showCollections = true,
-                showHeader = false,
+                headerState = HeaderState(
+                    showHeader = false,
+                    wordmarkTextColor = null,
+                    privateBrowsingButtonColor = colorResource(
+                        getAttr(
+                            R.attr.mozac_ic_private_mode_circle_fill_icon_color,
+                        ),
+                    ),
+                ),
                 searchBarVisible = true,
                 searchBarEnabled = true,
                 firstFrameDrawn = true,

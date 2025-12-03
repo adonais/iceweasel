@@ -113,7 +113,14 @@ export class BackupUIParent extends JSWindowActorParent {
         if (parentDirPath) {
           this.#bs.setParentDirPath(parentDirPath);
         }
+
         if (password) {
+          // If the user's previously created backups were already encrypted
+          // with a password, their encryption settings are now reset to
+          // accommodate the newly supplied password.
+          if (await this.#bs.loadEncryptionState()) {
+            await this.#bs.disableEncryption();
+          }
           await this.#bs.enableEncryption(password);
           Glean.browserBackup.passwordAdded.record();
         }
@@ -130,17 +137,10 @@ export class BackupUIParent extends JSWindowActorParent {
        */
       return { success: true };
     } else if (message.name == "DisableScheduledBackups") {
-      try {
-        if (this.#bs.state.encryptionEnabled) {
-          await this.#bs.disableEncryption();
-        }
-        await this.#bs.deleteLastBackup();
-      } catch (e) {
-        // no-op so that scheduled backups can still be turned off
-      }
+      await this.#bs.cleanupBackupFiles();
       this.#bs.setScheduledBackups(false);
     } else if (message.name == "ShowFilepicker") {
-      let { win, filter, displayDirectoryPath } = message.data;
+      let { win, filter, existingBackupPath } = message.data;
 
       let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
 
@@ -153,11 +153,11 @@ export class BackupUIParent extends JSWindowActorParent {
         fp.appendFilters(Ci.nsIFilePicker[filter]);
       }
 
-      if (displayDirectoryPath) {
+      if (existingBackupPath) {
         try {
-          let exists = await IOUtils.exists(displayDirectoryPath);
-          if (exists) {
-            fp.displayDirectory = await IOUtils.getFile(displayDirectoryPath);
+          let folder = (await IOUtils.getFile(existingBackupPath)).parent;
+          if (folder.exists()) {
+            fp.displayDirectory = folder;
           }
         } catch (_) {
           // If the file can not be found we will skip setting the displayDirectory.
@@ -236,11 +236,8 @@ export class BackupUIParent extends JSWindowActorParent {
         lazy.logConsole.error(`Failed to rerun encryption`, e);
         return { success: false, errorCode: e.cause || lazy.ERRORS.UNKNOWN };
       }
-      /**
-       * TODO: (Bug 1901640) after enabling encryption, recreate the backup,
-       * this time with the new password.
-       */
-      return { success: true };
+
+      return await this.#triggerCreateBackup({ reason: "encryption" });
     } else if (message.name == "ShowBackupLocation") {
       this.#bs.showBackupLocation();
     } else if (message.name == "EditBackupLocation") {
@@ -266,6 +263,10 @@ export class BackupUIParent extends JSWindowActorParent {
           e
         );
       }
+    } else if (message.name == "SetEmbeddedComponentPersistentData") {
+      this.#bs.setEmbeddedComponentPersistentData(message.data);
+    } else if (message.name == "FlushEmbeddedComponentPersistentData") {
+      this.#bs.setEmbeddedComponentPersistentData({});
     }
 
     return null;

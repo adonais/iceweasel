@@ -10,7 +10,6 @@
 #include <string.h>
 
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/SVGElement.h"
 #include "mozilla/gfx/2D.h"

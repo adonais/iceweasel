@@ -279,13 +279,13 @@ void ServiceWorkerScopeAndScriptAreValid(const ClientInfo& aClientInfo,
   // The refs should really be empty coming in here, but if someone
   // injects bad data into IPC, who knows.  So let's revalidate that.
   nsAutoCString ref;
-  Unused << aScopeURI->GetRef(ref);
+  (void)aScopeURI->GetRef(ref);
   if (NS_WARN_IF(!ref.IsEmpty())) {
     aRv.ThrowSecurityError("Non-empty fragment on scope URL");
     return;
   }
 
-  Unused << aScriptURI->GetRef(ref);
+  (void)aScriptURI->GetRef(ref);
   if (NS_WARN_IF(!ref.IsEmpty())) {
     aRv.ThrowSecurityError("Non-empty fragment on script URL");
     return;

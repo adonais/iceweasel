@@ -16,7 +16,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "usernameAutocompleteSearch",
   "@mozilla.org/autocomplete/search;1?name=login-doorhanger-username",
-  "nsIAutoCompleteSimpleSearch"
+  Ci.nsIAutoCompleteSimpleSearch
 );
 
 ChromeUtils.defineLazyGetter(lazy, "l10n", () => {

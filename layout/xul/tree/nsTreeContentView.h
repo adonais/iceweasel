@@ -7,7 +7,6 @@
 #ifndef nsTreeContentView_h__
 #define nsTreeContentView_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"

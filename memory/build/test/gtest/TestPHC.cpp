@@ -69,13 +69,8 @@ TEST(PHC, TestPHCAllocations)
     MOZ_CRASH("failed to get a PHC allocation");
   }
 
-  // On Win64 the smallest possible allocation is 16 bytes. On other platforms
-  // it is 8 bytes.
-#if defined(XP_WIN) && defined(HAVE_64BIT_BUILD)
+  // The smallest possible allocation is 16 bytes.
   ASSERT_POS(8U, 16U);
-#else
-  ASSERT_POS(8U, 8U);
-#endif
   for (unsigned i = 16; i <= kPageSize; i *= 2) {
     ASSERT_POS(i, i);
   }
@@ -98,13 +93,8 @@ TEST(PHC, TestPHCAllocations)
   ASSERT_EQ(moz_malloc_usable_size(p), (a2));                   \
   free(p);
 
-  // On Win64 the smallest possible allocation is 16 bytes. On other platforms
-  // it is 8 bytes.
-#if defined(XP_WIN) && defined(HAVE_64BIT_BUILD)
+  // The smallest possible allocation is 16 bytes.
   ASSERT_ALIGN(8U, 16U);
-#else
-  ASSERT_ALIGN(8U, 8U);
-#endif
   for (unsigned i = 16; i <= kPageSize; i *= 2) {
     ASSERT_ALIGN(i, i);
   }

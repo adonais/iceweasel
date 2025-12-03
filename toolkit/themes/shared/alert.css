@@ -147,7 +147,7 @@
 
 .alertTitle {
   flex: 1;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   padding: 6px 8px 0;
   margin: 0;
   width: 255px;

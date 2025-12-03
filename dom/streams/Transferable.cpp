@@ -12,7 +12,6 @@
 #include "js/Value.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/ResultVariant.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/MessageChannel.h"

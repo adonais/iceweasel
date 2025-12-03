@@ -96,6 +96,7 @@ void ServoStyleRuleMap::RuleRemoved(StyleSheet& aStyleSheet,
       mTable.Clear();
       break;
     }
+    case StyleCssRuleType::CustomMedia:
     case StyleCssRuleType::LayerStatement:
     case StyleCssRuleType::FontFace:
     case StyleCssRuleType::Page:
@@ -162,6 +163,7 @@ void ServoStyleRuleMap::FillTableFromRule(css::Rule& aRule) {
       }
       break;
     }
+    case StyleCssRuleType::CustomMedia:
     case StyleCssRuleType::LayerStatement:
     case StyleCssRuleType::FontFace:
     case StyleCssRuleType::Page:

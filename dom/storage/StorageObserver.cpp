@@ -71,6 +71,7 @@ nsresult StorageObserver::Init() {
   obs->AddObserver(sSelf, "dom-storage:clear-origin-attributes-data", true);
   obs->AddObserver(sSelf, "extension:purge-localStorage", true);
   obs->AddObserver(sSelf, "browser:purge-sessionStorage", true);
+  obs->AddObserver(sSelf, "extension:purge-sessionStorage", true);
 
   // Shutdown
   obs->AddObserver(sSelf, "profile-after-change", true);
@@ -358,7 +359,8 @@ StorageObserver::Observe(nsISupports* aSubject, const char* aTopic,
     return NS_OK;
   }
 
-  if (!strcmp(aTopic, "browser:purge-sessionStorage")) {
+  if (!strcmp(aTopic, "browser:purge-sessionStorage") ||
+      !strcmp(aTopic, "extension:purge-sessionStorage")) {
     // The caller passed an nsIClearBySiteEntry object which consists of both
     // site and pattern.
     // If both are passed, aSubject takes precedence over aData.
@@ -376,9 +378,11 @@ StorageObserver::Observe(nsISupports* aSubject, const char* aTopic,
       NS_ENSURE_SUCCESS(rv, rv);
 
       nsCString originScope;
-      rv = GetOriginScope(NS_ConvertUTF8toUTF16(schemelessSite).get(),
-                          originScope);
-      NS_ENSURE_SUCCESS(rv, rv);
+      if (!schemelessSite.IsEmpty()) {
+        rv = GetOriginScope(NS_ConvertUTF8toUTF16(schemelessSite).get(),
+                            originScope);
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
 
       Notify(aTopic, patternJSON, originScope);
     } else if (aData) {

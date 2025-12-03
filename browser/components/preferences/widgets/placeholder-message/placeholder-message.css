@@ -1,0 +1,36 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+moz-box-item {
+  --box-padding: var(--space-xxlarge);
+}
+
+.placeholder-container {
+  gap: var(--space-large);
+}
+
+.placeholder-container,
+.text-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.text-container {
+  gap: var(--space-xsmall);
+  text-align: center;
+}
+
+img {
+  max-width: 160px;
+}
+
+.label:has(+ .support-link),
+.description:has(+ .support-link) {
+  margin-inline-end: var(--space-xsmall);
+}
+
+.description {
+  color: var(--text-color-deemphasized);
+}

@@ -174,8 +174,8 @@ td:not(:hover) > .profiler-icon:not(.profiler-active, :focus-visible) {
 }
 
 tr[selected] > td {
-  background-color: var(--in-content-item-selected);
-  color: var(--in-content-item-selected-text);
+  background-color: var(--color-accent-primary-selected);
+  color: var(--text-color-accent-primary-selected);
 }
 #process-tbody > tr:hover {
   background-color: var(--in-content-item-hover);
@@ -240,7 +240,7 @@ th > button.clickable {
 }
 
 tr.process > td.type {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   user-select: text;
 }
 tr.thread {

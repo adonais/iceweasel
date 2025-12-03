@@ -62,13 +62,9 @@ tags = "remote-settings"
 skip-if = ["appname == 'thunderbird'"] # Data irrelevant to Thunderbird. Bug 1641400.
 
 ["test_blocklistchange.js"]
-# Times out during parallel runs on desktop
-requesttimeoutfactor = 2
 skip-if = ["os == 'android' && verify"] # times out because it takes too much time to run the full test
 
 ["test_blocklistchange_v2.js"]
-# Times out during parallel runs on desktop
-requesttimeoutfactor = 2
 skip-if = ["os == 'android' && verify"] # times out in chaos mode on Android because several minutes are spent waiting at https://hg.mozilla.org/mozilla-central/file/3350b680/toolkit/mozapps/extensions/Blocklist.jsm#l698
 
 ["test_gfxBlocklist_Device.js"]

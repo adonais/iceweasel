@@ -403,7 +403,7 @@ newtab-wallpaper-abstract-purple-green = Gradiento luma purpura kaj verda
 newtab-wallpaper-abstract-blue-purple-waves = Bluaj kaj purpuraj ondaj formoj
 newtab-wallpaper-abstract-black-waves = Nigraj ondaj formoj
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotoj
 newtab-wallpaper-beach-at-sunrise = Strando dum suneliro
@@ -432,6 +432,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -672,10 +676,6 @@ newtab-widget-timer-mode-focus =
     .label = Koncentriĝo
 newtab-widget-timer-mode-break =
     .label = Paŭzo
-newtab-widget-timer-play =
-    .title = Komenci
-newtab-widget-timer-pause =
-    .title = Paŭzigi
 newtab-widget-timer-label-play =
     .label = Komenci
 newtab-widget-timer-label-pause =

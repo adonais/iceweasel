@@ -82,7 +82,6 @@ support-files = [
 ["browser_resources_reflows.js"]
 skip-if = [
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && debug", # Bug 1767771
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug", # Bug 1767771
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug", # Bug 1767771
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && debug", # Bug 1767771
 ]
@@ -121,6 +120,5 @@ skip-if = [
 
 ["browser_resources_websocket.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1829298
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]

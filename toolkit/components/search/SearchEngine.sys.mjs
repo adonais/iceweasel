@@ -167,11 +167,7 @@ function paramSubstitution(paramValue, searchTerms, queryCharset) {
 
     // Handle languages for URL results.
     if (name == PARAM_ACCEPT_LANGUAGES) {
-      let languages = Services.prefs
-        .getComplexValue("intl.accept_languages", Ci.nsIPrefLocalizedString)
-        .data.replace(/\s+/g, "");
-
-      return languages || "";
+      return Services.locale.acceptLanguages.replace(/\s+/g, "");
     }
 
     // Handle the less common OpenSearch parameters we're confident about.
@@ -567,10 +563,6 @@ export class SearchEngine {
   _name = null;
   // The name of the charset used to submit the search terms.
   _queryCharset = null;
-  // The order hint from the configuration (if any).
-  _orderHint = null;
-  // The telemetry id from the configuration (if any).
-  _telemetryId = null;
   // Set to true once the engine has been added to the store, and the initial
   // notification sent. This allows to skip sending notifications during
   // initialization.
@@ -668,15 +660,19 @@ export class SearchEngine {
    * @param {string} iconURL
    *   A URI string pointing to the engine's icon.
    *   Must have http[s], data, or moz-extension protocol.
-   * @param {number} [size]
+   * @param {object} options
+   *   The options object
+   * @param {number} [options.size]
    *   Width and height of the icon (determined automatically if not provided).
-   * @param {boolean} [override]
+   * @param {boolean} [options.override]
    * Whether the new URI should override an existing one.
+   * @param {object} [options.originAttributes]
+   *   The origin attributes to use to load the icon.
    * @returns {Promise<void>}
    *   Resolves when the icon was set.
    *   Rejects with an Error if there was an error.
    */
-  async _setIcon(iconURL, size, override = true) {
+  async _setIcon(iconURL, options = { override: true }) {
     lazy.logConsole.debug(
       "_setIcon: Setting icon url for",
       this.name,
@@ -684,8 +680,12 @@ export class SearchEngine {
       limitURILength(iconURL)
     );
 
-    [iconURL, size] = await this._downloadAndRescaleIcon(iconURL, size);
-    this._addIconToMap(iconURL, size, override);
+    let size;
+    [iconURL, size] = await this._downloadAndRescaleIcon(iconURL, {
+      size: options.size,
+      originAttributes: options.originAttributes,
+    });
+    this._addIconToMap(iconURL, size, options.override);
 
     if (this._engineAddedToStore) {
       lazy.SearchUtils.notifyAction(
@@ -703,17 +703,23 @@ export class SearchEngine {
    * @param {string} iconURL
    *   A URI string pointing to the engine's icon.
    *   Must have http[s], data, or moz-extension protocol.
-   * @param {number} [size]
+   * @param {object} options
+   *   The options object
+   * @param {number} [options.size]
    *   Width and height of the icon (determined automatically if not provided).
+   * @param {object} [options.originAttributes]
+   *   The origin attributes to use to load the icon.
    * @returns {Promise<[string, number]>}
    *   Resolves to [dataURL, size] if successful and rejects if there was an error.
    */
-  async _downloadAndRescaleIcon(iconURL, size) {
+  async _downloadAndRescaleIcon(iconURL, options = {}) {
     let uri = lazy.SearchUtils.makeURI(iconURL);
 
     if (!uri) {
       throw new Error(`Invalid URI`);
     }
+
+    let size = options.size;
 
     switch (uri.scheme) {
       case "moz-extension": {
@@ -727,7 +733,10 @@ export class SearchEngine {
       case "data":
       case "http":
       case "https": {
-        let [byteArray, contentType] = await lazy.SearchUtils.fetchIcon(uri);
+        let [byteArray, contentType] = await lazy.SearchUtils.fetchIcon(
+          uri,
+          options.originAttributes
+        );
         if (byteArray.length > lazy.SearchUtils.MAX_ICON_SIZE) {
           lazy.logConsole.debug(
             `Rescaling icon for search engine ${this.name}.`
@@ -1029,7 +1038,6 @@ export class SearchEngine {
       json.queryCharset || lazy.SearchUtils.DEFAULT_QUERY_CHARSET;
     this._iconMapObj = json._iconMapObj || null;
     this._metaData = json._metaData || {};
-    this._orderHint = json._orderHint || null;
     this._definedAliases = json._definedAliases || [];
     // These changed keys in Firefox 80, maintain the old keys
     // for backwards compatibility.
@@ -1063,8 +1071,6 @@ export class SearchEngine {
       "_iconMapObj",
       "_metaData",
       "_urls",
-      "_orderHint",
-      "_telemetryId",
       "_filePath",
       "_definedAliases",
     ];
@@ -1138,10 +1144,11 @@ export class SearchEngine {
    * Gets the order hint for this engine. This is determined from the search
    * configuration when the engine is initialized.
    *
-   * @type {number}
+   * @type {?number}
    */
   get orderHint() {
-    return this._orderHint;
+    // Overridden in derived classes.
+    return null;
   }
 
   /**
@@ -1185,11 +1192,7 @@ export class SearchEngine {
    * id/partner_code/other fields instead.
    */
   get telemetryId() {
-    let telemetryId = this._telemetryId || `other-${this.name}`;
-    if (this.getAttr("overriddenBy")) {
-      return telemetryId + "-addon";
-    }
-    return telemetryId;
+    return `other-${this.name}`;
   }
 
   get hidden() {

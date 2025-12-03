@@ -124,6 +124,11 @@ extension-controlling-proxy-config = <img data-l10n-name ="icon"/> <strong>{ $na
 # <img data-l10n-name="menu-icon"/> will be replaced with Menu icon
 extension-controlled-enable = To enable the extension go to <img data-l10n-name="addons-icon"/> Add-ons in the <img data-l10n-name="menu-icon"/> menu.
 
+extension-controlled-enable-2 = To re-enable this extension visit <a data-l10n-name="addons-link">Extensions and themes</a>.
+# This string is shown to notify the user that their home page or new tab preferences
+# are being controlled by an extension.
+extension-controlling-homepage = { $name } controls some of your homepage settings.
+
 ## Preferences UI Search Results
 
 search-results-header = Search Results
@@ -663,7 +668,11 @@ home-new-windows-tabs-description2 = Choose what you see when you open your home
 
 ## Home Section - Home Page Customization
 
+home-homepage-header = Homepage
+
 home-homepage-mode-label = Homepage and new windows
+
+home-homepage-mode-label2 = New windows
 
 home-newtabs-mode-label = New tabs
 
@@ -682,6 +691,40 @@ home-mode-choice-blank =
 
 home-homepage-custom-url =
     .placeholder = Paste a URL…
+
+# This button is shown when the homepage is managed by an extension and is placed below extension-controlling-homepage.
+home-homepage-manage-extension-button =
+    .label = Manage extension
+
+# This option leads to the "Custom Homepage" subpage
+home-homepage-custom-homepage-url = Choose a specific site
+
+## Custom Homepage subpage
+
+home-custom-homepage-header = Custom Homepage
+
+# Subheader on the Custom Homepage subpage. Followed by a form to enter URLs and a list of URLs already saved, if any.
+home-custom-homepage-subheader = Website address(es)
+
+home-custom-homepage-address =
+    .placeholder = Enter address
+home-custom-homepage-address-button =
+    .label = Add address
+
+# Shown when no custom websites/URLs to use as a homepage have been added yet
+home-custom-homepage-no-websites-yet = No websites added yet.
+
+# Further options to use when setting the home page. Two action buttons are placed in line with this prompt
+# to replace the current home page with a currently open page or bookmark.
+home-custom-homepage-replace-with = Replace with
+
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with)
+home-custom-homepage-current-pages-button =
+    .label = Current opened pages
+
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with)
+home-custom-homepage-bookmarks-button =
+    .label = Bookmarks…
 
 # This string has a special case for '1' and [other] (default). If necessary for
 # your language, you can add {$tabCount} to your translations and use the
@@ -702,10 +745,13 @@ choose-bookmark =
 ## Home Section - Firefox Home Content Customization
 
 home-prefs-content-header2 = { -firefox-home-brand-name } Content
+home-prefs-content-header3 = { -firefox-home-brand-name }
 home-prefs-content-description2 = Choose what content you want on your { -firefox-home-brand-name } screen.
 
 home-prefs-search-header =
     .label = Web Search
+home-prefs-search-header2 =
+    .label = Search
 home-prefs-shortcuts-header =
     .label = Shortcuts
 home-prefs-shortcuts-description = Sites you save or visit
@@ -715,6 +761,10 @@ home-prefs-shortcuts-by-option-sponsored =
 home-prefs-recommended-by-header-generic =
     .label = Recommended stories
 home-prefs-recommended-by-description-generic = Exceptional content curated by the { -brand-product-name } family
+
+home-prefs-stories-header =
+    .label = Stories
+home-prefs-stories-description = Personalized stories based on your activity
 
 ##
 
@@ -747,6 +797,9 @@ home-prefs-support-firefox-header =
 
 home-prefs-mission-message = Our sponsors support our mission to build a better web
 home-prefs-mission-message-learn-more-link = Find out how
+
+home-prefs-manage-topics-link = Manage topics
+home-prefs-choose-wallpaper-link = Choose a wallpaper
 
 # Variables:
 #   $num (number) - Number of rows displayed
@@ -844,6 +897,8 @@ remove-addon-engine-alert = To remove this search engine, remove the associated 
 containers-back-button2 =
     .aria-label = Back to Settings
 containers-header = Container Tabs
+containers-section-header =
+    .heading = Container Tabs
 containers-add-button =
     .label = Add New Container
     .accesskey = A
@@ -1003,6 +1058,16 @@ sync-engine-settings =
 ## The device name controls.
 
 sync-device-name-header = Device Name
+
+# Variables:
+#   $placeholder (string) - The placeholder text of the input
+sync-device-name-input =
+    .aria-label = Device Name
+    .placeholder = { $placeholder }
+
+sync-device-name-change-2 =
+    .label = Change Device Name
+    .accesskey = h
 
 sync-device-name-change =
     .label = Change Device Name…
@@ -1245,13 +1310,13 @@ cookie-banner-blocker-checkbox-label =
 
 addressbar-header = Address Bar
 
-addressbar-suggest = When using the address bar, suggest
+addressbar-suggest-1 = Choose which suggestions display in your address bar
 
 # When Firefox Suggest is enabled, this replaces `addressbar-header`.
-addressbar-header-firefox-suggest = Address Bar — { -firefox-suggest-brand-name }
+addressbar-header-firefox-suggest-1 = { -firefox-suggest-brand-name }
 
 # When Firefox Suggest is enabled, this replaces `addressbar-suggest`.
-addressbar-suggest-firefox-suggest = Choose the type of suggestions that appear in the address bar.
+addressbar-suggest-firefox-suggest-1 = Suggestions from { -brand-short-name } and our partners in your address bar.
 
 # When Firefox Suggest is enabled, a "Learn more" link appears at the end of
 # `addressbar-suggest-firefox-suggest`.
@@ -1276,8 +1341,8 @@ addressbar-locbar-shortcuts-option =
 addressbar-locbar-topsites-option =
     .label = Top sites
     .accesskey = T
-addressbar-locbar-engines-option =
-    .label = Search engines
+addressbar-locbar-engines-option-1 =
+    .label = Suggest search engines to use
     .accesskey = a
 addressbar-locbar-quickactions-option =
     .label = Quick actions
@@ -1289,14 +1354,23 @@ addressbar-locbar-showtrendingsuggestions-option =
     .label = Show trending search suggestions
     .accesskey = t
 
-# Nonsponsored suggestions refers to Firefox Suggest suggestions like Wikipedia.
-addressbar-locbar-suggest-nonsponsored-option =
+# Toggles whether suggestions are obtained from Firefox Suggest or not (local or online).
+addressbar-locbar-suggest-all-option =
   .label = Suggestions from { -brand-short-name }
-addressbar-locbar-suggest-nonsponsored-desc = Get suggestions from the web related to your search.
+addressbar-locbar-suggest-all-option-desc = Get suggestions from the web related to your search.
 
 addressbar-locbar-suggest-sponsored-option =
   .label = Suggestions from sponsors
 addressbar-locbar-suggest-sponsored-desc = Support { -brand-short-name } with occasional sponsored suggestions.
+
+# This string is used for a checkbox in the settings UI that opts the
+# user into "online" Firefox Suggest, allowing them to receive suggestions from
+# Mozilla's Merino server.
+# "Mozilla" is intentionally hardcoded to prevent forks from replacing it
+# with their own vendor name, since the online suggest is created and maintained
+# by Mozilla.
+addressbar-firefox-suggest-online =
+  .label = Retrieve suggestions from Mozilla as you type
 
 addressbar-quickactions-learn-more = Learn more
 

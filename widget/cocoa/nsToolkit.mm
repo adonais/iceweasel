@@ -29,7 +29,7 @@ extern "C" {
 #include "nsGkAtoms.h"
 #include "nsIRollupListener.h"
 #include "nsIWidget.h"
-#include "nsBaseWidget.h"
+#include "nsIWidget.h"
 
 #include "nsIObserverService.h"
 
@@ -160,7 +160,7 @@ void nsToolkit::MonitorAllProcessMouseEvents() {
                                         }
 
                                         nsIRollupListener* rollupListener =
-                                            nsBaseWidget::
+                                            nsIWidget::
                                                 GetActiveRollupListener();
                                         if (!rollupListener) {
                                           return;

@@ -9,7 +9,6 @@
 #include <stdint.h>
 
 #include "AudioSampleFormat.h"
-#include "mozilla/PodOperations.h"
 #include "nsTArray.h"
 #include "nsTArrayForwardDeclare.h"
 

@@ -1,11 +1,15 @@
 [DEFAULT]
-run-if = ["os != 'android'"]
+run-if = [
+  "os != 'android'",
+]
 head = "head.js"
 firefox-appdir = "browser"
 prefs = [
   "browser.backup.log=true",
   "browser.backup.archive.enabled=true",
   "browser.backup.restore.enabled=true",
+  "browser.backup.archive.overridePlatformCheck=true",
+  "browser.backup.restore.overridePlatformCheck=true",
 ]
 
 ["test_AddonsBackupResource.js"]
@@ -28,6 +32,7 @@ support-files = [
 ]
 
 ["test_BackupService_archive.js"]
+requesttimeoutfactor = 2  # Slow on macOS debug
 support-files = [
   "data/corrupt.zip",
   "data/break_over_unicode.html",
@@ -41,11 +46,17 @@ support-files = [
 
 ["test_BackupService_finalizeSingleFileArchive.js"]
 
+["test_BackupService_internalPostRecovery.js"]
+
 ["test_BackupService_onedrive.js"]
-run-if = ["os == 'win'"]
+run-if = [
+  "os == 'win'",
+]
 run-sequentially = ["true"] # Mock Windows registry interferes with normal operations
 
 ["test_BackupService_recoverFromSnapshotFolder.js"]
+
+["test_BackupService_recoverFromSnapshotFolderIntoSelectableProfile.js"]
 
 ["test_BackupService_regeneration.js"]
 
@@ -61,9 +72,13 @@ run-sequentially = ["true"] # Mock Windows registry interferes with normal opera
 
 ["test_BackupService_schema_versions.js"]
 
+["test_BackupService_setParentDirPath.js"]
+
 ["test_BackupService_takeMeasurements.js"]
 
 ["test_BackupService_telemetry.js"]
+
+["test_BackupService_wrongPassword.js"]
 
 ["test_CookiesBackupResource.js"]
 

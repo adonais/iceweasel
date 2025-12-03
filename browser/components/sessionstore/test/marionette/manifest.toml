@@ -18,6 +18,8 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && d
 
 ["test_restore_sidebar_automatic.py"]
 
+["test_restore_split_view.py"]
+
 ["test_restore_windows_after_close_last_tabs.py"]
 skip-if = ["os == 'mac'"]
 

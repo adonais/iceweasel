@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_ServiceWorkerCloneData_h__
 #define mozilla_dom_ServiceWorkerCloneData_h__
 
-#include "mozilla/Assertions.h"
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "nsCOMPtr.h"

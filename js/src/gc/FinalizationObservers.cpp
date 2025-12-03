@@ -10,8 +10,6 @@
 
 #include "gc/FinalizationObservers.h"
 
-#include "mozilla/ScopeExit.h"
-
 #include "builtin/FinalizationRegistryObject.h"
 #include "builtin/WeakRefObject.h"
 #include "gc/GCRuntime.h"

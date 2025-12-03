@@ -249,13 +249,17 @@ OffThreadPromiseRuntimeState::OffThreadPromiseRuntimeState()
     : dispatchToEventLoopCallback_(nullptr),
       delayedDispatchToEventLoopCallback_(nullptr),
       dispatchToEventLoopClosure_(nullptr),
+#ifdef DEBUG
+      forceQuitting_(false),
+#endif
       numRegistered_(0),
-      internalDispatchQueueClosed_(false) {}
+      internalDispatchQueueClosed_(false) {
+}
 
 OffThreadPromiseRuntimeState::~OffThreadPromiseRuntimeState() {
-  MOZ_ASSERT(numRegistered_ == 0);
-  MOZ_ASSERT(numDelayed_ == 0);
-  MOZ_ASSERT(internalDispatchQueue_.refNoCheck().empty());
+  MOZ_ASSERT_IF(!forceQuitting_, numRegistered_ == 0);
+  MOZ_ASSERT_IF(!forceQuitting_, numDelayed_ == 0);
+  MOZ_ASSERT_IF(!forceQuitting_, internalDispatchQueue_.refNoCheck().empty());
   MOZ_ASSERT(!initialized());
 }
 

@@ -628,7 +628,7 @@
 
       this._tabForBrowser.set(browser, tab);
 
-      this._appendStatusPanel();
+      this.appendStatusPanel();
 
       // This is the initial browser, so it's usually active; the default is false
       // so we have to update it:
@@ -851,8 +851,8 @@
       return findBar;
     }
 
-    _appendStatusPanel() {
-      this.selectedBrowser.insertAdjacentElement("afterend", StatusPanel.panel);
+    appendStatusPanel(browser = this.selectedBrowser) {
+      browser.insertAdjacentElement("afterend", StatusPanel.panel);
     }
 
     _updateTabBarForPinnedTabs() {
@@ -1401,7 +1401,7 @@
       this._selectedTab = newTab;
       this.showTab(newTab);
 
-      this._appendStatusPanel();
+      this.appendStatusPanel();
 
       this._updateVisibleNotificationBox(newBrowser);
 
@@ -2887,13 +2887,13 @@
         bulkOrderedOpen,
         charset,
         createLazyBrowser,
-        disableTRR,
         eventDetail,
         focusUrlBar,
         forceNotRemote,
         forceAllowDataURI,
         fromExternal,
         inBackground = true,
+        isCaptivePortalTab,
         elementIndex,
         tabIndex,
         lazyTabTitle,
@@ -3103,8 +3103,8 @@
           allowInheritPrincipal,
           allowThirdPartyFixup,
           fromExternal,
-          disableTRR,
           forceAllowDataURI,
+          isCaptivePortalTab,
           skipLoad,
           referrerInfo,
           charset,
@@ -3235,9 +3235,12 @@
         return;
       }
 
-      for (const tab of splitview.tabs) {
-        this.#handleTabMove(tab, () =>
-          gBrowser.tabContainer.insertBefore(tab, splitview.nextElementSibling)
+      for (let i = splitview.tabs.length - 1; i >= 0; i--) {
+        this.#handleTabMove(splitview.tabs[i], () =>
+          gBrowser.tabContainer.insertBefore(
+            splitview.tabs[i],
+            splitview.nextElementSibling
+          )
         );
       }
       splitview.remove();
@@ -3252,6 +3255,7 @@
       const panels = [];
       for (const tab of tabs) {
         this._insertBrowser(tab);
+        this.#insertSplitViewFooter(tab);
         tab.linkedBrowser.docShellIsActive = true;
         panels.push(tab.linkedPanel);
       }
@@ -3267,6 +3271,21 @@
       for (const tab of tabs) {
         this.tabpanels.removePanelFromSplitView(tab.linkedPanel);
       }
+    }
+
+    /**
+     * Ensures the split view footer exists for the given tab.
+     *
+     * @param {MozTabbrowserTab} tab
+     */
+    #insertSplitViewFooter(tab) {
+      const panelEl = document.getElementById(tab.linkedPanel);
+      if (panelEl.querySelector("split-view-footer")) {
+        return;
+      }
+      const footer = document.createXULElement("split-view-footer");
+      footer.setTab(tab);
+      panelEl.appendChild(footer);
     }
 
     /**
@@ -3781,8 +3800,8 @@
         allowInheritPrincipal,
         allowThirdPartyFixup,
         fromExternal,
-        disableTRR,
         forceAllowDataURI,
+        isCaptivePortalTab,
         skipLoad,
         referrerInfo,
         charset,
@@ -3840,7 +3859,7 @@
         if (!allowInheritPrincipal) {
           loadFlags |= LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
         }
-        if (disableTRR) {
+        if (isCaptivePortalTab) {
           loadFlags |= LOAD_FLAGS_DISABLE_TRR;
         }
         if (forceAllowDataURI) {
@@ -3859,6 +3878,7 @@
             schemelessInput,
             hasValidUserGestureActivation,
             textDirectiveUserActivation,
+            isCaptivePortalTab,
           });
         } catch (ex) {
           console.error(ex);
@@ -6311,6 +6331,15 @@
       return !!element?.classList?.contains("tab-group-label");
     }
 
+    /**
+     * @param {Element} element
+     * @returns {boolean}
+     *   `true` if element is a `<tab-split-view-wrapper>`
+     */
+    isSplitViewWrapper(element) {
+      return !!(element?.tagName == "tab-split-view-wrapper");
+    }
+
     _updateTabsAfterInsert() {
       for (let i = 0; i < this.tabs.length; i++) {
         this.tabs[i]._tPos = i;
@@ -6566,9 +6595,7 @@
         return;
       }
 
-      this.#handleTabMove(aTab, () =>
-        aSplitViewWrapper.container.appendChild(aTab)
-      );
+      this.#handleTabMove(aTab, () => aSplitViewWrapper.appendChild(aTab));
       this.removeFromMultiSelectedTabs(aTab);
       this.tabContainer._notifyBackgroundTab(aTab);
     }
@@ -6589,10 +6616,26 @@
       if (aTab.group && aTab.group.id === aGroup.id) {
         return;
       }
-
-      this.#handleTabMove(aTab, () => aGroup.appendChild(aTab), metricsContext);
-      this.removeFromMultiSelectedTabs(aTab);
-      this.tabContainer._notifyBackgroundTab(aTab);
+      if (aTab.splitview) {
+        let splitViewTabs = aTab.splitview.tabs;
+        this.#handleTabMove(
+          aTab.splitview,
+          () => aGroup.appendChild(aTab.splitview),
+          metricsContext
+        );
+        for (const splitViewTab of splitViewTabs) {
+          this.removeFromMultiSelectedTabs(splitViewTab);
+          this.tabContainer._notifyBackgroundTab(splitViewTab);
+        }
+      } else {
+        this.#handleTabMove(
+          aTab,
+          () => aGroup.appendChild(aTab),
+          metricsContext
+        );
+        this.removeFromMultiSelectedTabs(aTab);
+        this.tabContainer._notifyBackgroundTab(aTab);
+      }
     }
 
     /**
@@ -6667,8 +6710,12 @@
         tabs = [element];
       } else if (this.isTabGroup(element)) {
         tabs = element.tabs;
+      } else if (this.isSplitViewWrapper(element)) {
+        tabs = element.tabs;
       } else {
-        throw new Error("Can only move a tab or tab group within the tab bar");
+        throw new Error(
+          "Can only move a tab, tab group, or split view within the tab bar"
+        );
       }
 
       let wasFocused = document.activeElement == this.selectedTab;
@@ -7418,7 +7465,7 @@
     }
 
     getTabPids(tab) {
-      if (!tab.linkedBrowser) {
+      if (!tab?.linkedBrowser) {
         return [];
       }
 
@@ -8584,10 +8631,6 @@
           modifiedAttrs.push("progress");
         }
 
-        if (modifiedAttrs.length) {
-          gBrowser._tabAttrModified(this.mTab, modifiedAttrs);
-        }
-
         if (aWebProgress.isTopLevel) {
           let isSuccessful = Components.isSuccessCode(aStatus);
           if (!isSuccessful && !this.mTab.isEmpty) {
@@ -8626,13 +8669,14 @@
         // flickering. Don't clear the icon if we already set it from one of the
         // known defaults. Note we use the original URL since about:newtab
         // redirects to a prerendered page.
-        if (
+        const shouldRemoveFavicon =
           !this.mBrowser.mIconURL &&
           !ignoreBlank &&
-          !(originalLocation.spec in FAVICON_DEFAULTS)
-        ) {
+          !(originalLocation.spec in FAVICON_DEFAULTS);
+        if (shouldRemoveFavicon && this.mTab.hasAttribute("image")) {
           this.mTab.removeAttribute("image");
-        } else {
+          modifiedAttrs.push("image");
+        } else if (!shouldRemoveFavicon) {
           // Bug 1804166: Allow new tabs to set the favicon correctly if the
           // new tabs behavior is set to open a blank page
           // This is a no-op unless this.mBrowser._documentURI is in
@@ -8647,6 +8691,10 @@
 
         if (this.mTab.selected) {
           gBrowser._isBusy = false;
+        }
+
+        if (modifiedAttrs.length) {
+          gBrowser._tabAttrModified(this.mTab, modifiedAttrs);
         }
       }
 
@@ -9078,6 +9126,10 @@
         loadURIOptions
       );
 
+      if (loadURIOptions.isCaptivePortalTab) {
+        browser.browsingContext.isCaptivePortalTab = true;
+      }
+
       // XXX(nika): Is `browser.isNavigating` necessary anymore?
       // XXX(gijs): Unsure. But it mirrors docShell.isNavigating, but in the parent process
       // (and therefore imperfectly so).
@@ -9500,6 +9552,34 @@ var TabContextMenu = {
       contextUngroupTab.hidden = true;
     }
 
+    // Split View
+    let splitViewEnabled = Services.prefs.getBoolPref(
+      "browser.tabs.splitView.enabled",
+      false
+    );
+    let contextMoveTabToNewSplitView = document.getElementById(
+      "context_moveTabToSplitView"
+    );
+    let contextSeparateSplitView = document.getElementById(
+      "context_separateSplitView"
+    );
+    let hasSplitViewTab = this.contextTabs.some(tab => tab.splitview);
+    contextMoveTabToNewSplitView.hidden = !splitViewEnabled || hasSplitViewTab;
+    contextSeparateSplitView.hidden = !splitViewEnabled || !hasSplitViewTab;
+    if (splitViewEnabled) {
+      contextMoveTabToNewSplitView.removeAttribute("data-l10n-id");
+      contextMoveTabToNewSplitView.setAttribute(
+        "data-l10n-id",
+        this.contextTabs.length < 2
+          ? "tab-context-add-split-view"
+          : "tab-context-open-in-split-view"
+      );
+
+      let pinnedTabs = this.contextTabs.filter(t => t.pinned);
+      contextMoveTabToNewSplitView.disabled =
+        this.contextTabs.length > 2 || pinnedTabs.length;
+    }
+
     // Only one of Reload_Tab/Reload_Selected_Tabs should be visible.
     document.getElementById("context_reloadTab").hidden = this.multiselected;
     document.getElementById("context_reloadSelectedTabs").hidden =
@@ -9880,6 +9960,10 @@ var TabContextMenu = {
     let insertBefore = this.contextTab;
     if (insertBefore._tPos < gBrowser.pinnedTabCount) {
       insertBefore = gBrowser.tabs[gBrowser.pinnedTabCount];
+    } else if (this.contextTab.group) {
+      insertBefore = this.contextTab.group;
+    } else if (this.contextTab.splitview) {
+      insertBefore = this.contextTab.splitview;
     }
     gBrowser.addTabGroup(this.contextTabs, {
       insertBefore,
@@ -9922,6 +10006,55 @@ var TabContextMenu = {
     for (let i = this.contextTabs.length - 1; i >= 0; i--) {
       gBrowser.ungroupTab(this.contextTabs[i]);
     }
+  },
+
+  moveTabsToSplitView() {
+    let insertBefore = this.contextTabs.includes(gBrowser.selectedTab)
+      ? gBrowser.selectedTab
+      : this.contextTabs[0];
+    let tabsToAdd = this.contextTabs;
+
+    // Ensure selected tab is always first in split view
+    const selectedTabIndex = tabsToAdd.indexOf(gBrowser.selectedTab);
+    if (selectedTabIndex > -1 && selectedTabIndex != 0) {
+      const [removed] = tabsToAdd.splice(selectedTabIndex, 1);
+      tabsToAdd.unshift(removed);
+    }
+
+    let newTab = null;
+    if (this.contextTabs.length < 2) {
+      // Open new tab to split with context tab
+      newTab = gBrowser.addTrustedTab(BROWSER_NEW_TAB_URL);
+      tabsToAdd = [this.contextTabs[0], newTab];
+    }
+
+    gBrowser.addTabSplitView(tabsToAdd, {
+      insertBefore,
+    });
+
+    if (newTab) {
+      gBrowser.selectedTab = newTab;
+    }
+  },
+
+  unsplitTabs() {
+    const splitviews = new Set(
+      this.contextTabs.map(tab => tab.splitview).filter(Boolean)
+    );
+    splitviews.forEach(splitview => gBrowser.unsplitTabs(splitview));
+  },
+
+  addNewBadge() {
+    let badgeNewMenuItems = document.querySelectorAll(
+      "#tabContextMenu menuitem.badge-new"
+    );
+
+    badgeNewMenuItems.forEach(badgedMenuItem => {
+      badgedMenuItem.setAttribute(
+        "badge",
+        gBrowser.tabLocalization.formatValueSync("tab-context-badge-new")
+      );
+    });
   },
 };
 

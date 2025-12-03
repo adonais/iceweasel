@@ -3,7 +3,7 @@
     "domains": ["youtube.com"],
     "message": [
       {
-        "text": "The website may not work with a VPN.",
+        "text": "This website may not work with a VPN.",
         "modifier": ["strong"]
       },
       {
@@ -36,7 +36,7 @@
     "domains": ["reddit.com"],
     "message": [
       {
-        "text": "The website may not work with a VPN.",
+        "text": "This website may not work with a VPN.",
         "modifier": ["strong"]
       },
       {
@@ -61,7 +61,7 @@
     ],
     "message": [
       {
-        "text": "The website may not work with a VPN.",
+        "text": "This website may not work with a VPN.",
         "modifier": ["strong"]
       },
       { "text": " Try turning VPN off while you use this website." }

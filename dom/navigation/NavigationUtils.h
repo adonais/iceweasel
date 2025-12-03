@@ -18,6 +18,9 @@ class NavigationUtils {
   static Maybe<enum NavigationHistoryBehavior> NavigationHistoryBehavior(
       NavigationType aNavigationType);
 
+  static Maybe<NavigationType> NavigationTypeFromNavigationHistoryBehavior(
+      enum NavigationHistoryBehavior aBehavior);
+
   static Maybe<NavigationType> NavigationTypeFromLoadType(uint32_t aLoadType);
 };
 

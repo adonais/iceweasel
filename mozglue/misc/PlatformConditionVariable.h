@@ -11,7 +11,6 @@
 
 #include <utility>
 
-#include "mozilla/Attributes.h"
 #include "mozilla/PlatformMutex.h"
 #include "mozilla/TimeStamp.h"
 #if !defined(XP_WIN) && !defined(__wasi__)

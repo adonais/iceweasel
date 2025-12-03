@@ -29,6 +29,11 @@ namespace FuzzingFunctions {
   undefined crash(optional DOMString reason = "");
 
   /**
+   * Gracefully kill the GPU process
+   */
+  undefined killGPUProcess();
+
+  /**
    * Synchronously perform a cycle collection.
    */
   undefined cycleCollect();

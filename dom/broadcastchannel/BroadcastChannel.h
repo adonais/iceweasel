@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_BroadcastChannel_h
 #define mozilla_dom_BroadcastChannel_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/RefPtr.h"
 #include "nsTArray.h"

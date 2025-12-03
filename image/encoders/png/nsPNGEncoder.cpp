@@ -4,7 +4,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ImageLogging.h"
-#include "mozilla/XorShift128PlusRNG.h"
 #include "nsCRT.h"
 #include "nsPNGEncoder.h"
 #include "nsStreamUtils.h"

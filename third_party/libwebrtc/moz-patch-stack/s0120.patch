@@ -1,58 +1,82 @@
 From: Michael Froman <mjfroman@mac.com>
-Date: Wed, 6 Aug 2025 13:58:31 -0500
-Subject: Bug 1980479 - Cherry-pick upstream libwebrtc commit b65c6012cf
+Date: Mon, 15 Sep 2025 14:53:58 -0500
+Subject: Bug 1973648 - move applicable libwebrtc changes to our new
+ libwebrtc_overrides location. r=ng
 
-Upstream commit: https://webrtc.googlesource.com/src/+/b65c6012cf0512e4713fe4c9c834cade2e08e631
-       Fix gn gen with rtc_include_internal_audio_device=false
-
-       Before the change the following command were failing:
-       ```
-       gn gen ../out/Temp --args='target_os="ios"
-       is_debug=true
-       target_environment="device"
-       target_cpu="arm64"
-       ios_deployment_target="14.0"
-       ios_enable_code_signing=false
-       is_component_build=false
-       rtc_include_tests=false
-       rtc_include_internal_audio_device=false'
-
-       ERROR Unresolved dependencies.
-       //:webrtc(//build/toolchain/ios:ios_clang_arm64)
-         needs //api/audio:create_audio_device_module(//build/toolchain/ios:ios_clang_arm64)
-       ```
-
-       Bug: webrtc:413413572
-       Change-Id: Ie34d8f64d363f8f3e2ffa99b04a6771d03e1f7e9
-       Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/397100
-       Reviewed-by: Danil Chapovalov <danilchap@webrtc.org>
-       Commit-Queue: Yury Yarashevich <yura.yaroshevich@gmail.com>
-       Reviewed-by: Mirko Bonadei <mbonadei@webrtc.org>
-       Cr-Commit-Position: refs/heads/main@{#44976}
+Differential Revision: https://phabricator.services.mozilla.com/D258499
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/19164e58323d59c1f66f7fcf671b8d0b6366f708
 ---
- BUILD.gn | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ call/call.cc                     | 13 -------------
+ call/call.h                      | 11 ++---------
+ modules/desktop_capture/BUILD.gn |  5 +++++
+ 3 files changed, 7 insertions(+), 22 deletions(-)
 
-diff --git a/BUILD.gn b/BUILD.gn
-index 0943236577..0571aa8936 100644
---- a/BUILD.gn
-+++ b/BUILD.gn
-@@ -550,7 +550,6 @@ if (!build_with_chromium) {
-       "api:libjingle_peerconnection_api",
-       "api:rtc_error",
-       "api:transport_api",
--      "api/audio:create_audio_device_module",
-       "api/audio_codecs:opus_audio_decoder_factory",
-       "api/crypto",
-       "api/rtc_event_log:rtc_event_log_factory",
-@@ -643,6 +642,10 @@ if (!build_with_chromium) {
-     if (rtc_enable_protobuf) {
-       deps += [ "logging:rtc_event_log_proto" ]
+diff --git a/call/call.cc b/call/call.cc
+index dc1e44995c..827991c4d1 100644
+--- a/call/call.cc
++++ b/call/call.cc
+@@ -514,19 +514,6 @@ class Call final : public webrtc::Call,
+ };
+ }  // namespace internal
+ 
+-std::string Call::Stats::ToString(int64_t time_ms) const {
+-  char buf[1024];
+-  SimpleStringBuilder ss(buf);
+-  ss << "Call stats: " << time_ms << ", {";
+-  ss << "send_bw_bps: " << send_bandwidth_bps << ", ";
+-  ss << "recv_bw_bps: " << recv_bandwidth_bps << ", ";
+-  ss << "max_pad_bps: " << max_padding_bitrate_bps << ", ";
+-  ss << "pacer_delay_ms: " << pacer_delay_ms << ", ";
+-  ss << "rtt_ms: " << rtt_ms;
+-  ss << '}';
+-  return ss.str();
+-}
+-
+ std::unique_ptr<Call> Call::Create(CallConfig config) {
+   std::unique_ptr<RtpTransportControllerSendInterface> transport_send;
+   if (config.rtp_transport_controller_send_factory != nullptr) {
+diff --git a/call/call.h b/call/call.h
+index 87e1884583..420a754edd 100644
+--- a/call/call.h
++++ b/call/call.h
+@@ -25,6 +25,7 @@
+ #include "api/transport/bitrate_settings.h"
+ #include "call/audio_receive_stream.h"
+ #include "call/audio_send_stream.h"
++#include "call/call_basic_stats.h"
+ #include "call/call_config.h"
+ #include "call/flexfec_receive_stream.h"
+ #include "call/packet_receiver.h"
+@@ -50,15 +51,7 @@ namespace webrtc {
+ 
+ class Call {
+  public:
+-  struct Stats {
+-    std::string ToString(int64_t time_ms) const;
+-
+-    int send_bandwidth_bps = 0;       // Estimated available send bandwidth.
+-    int max_padding_bitrate_bps = 0;  // Cumulative configured max padding.
+-    int recv_bandwidth_bps = 0;       // Estimated available receive bandwidth.
+-    int64_t pacer_delay_ms = 0;
+-    int64_t rtt_ms = -1;
+-  };
++  using Stats = CallBasicStats;
+ 
+   static std::unique_ptr<Call> Create(CallConfig config);
+ 
+diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
+index 484a47894b..5c843cfc2b 100644
+--- a/modules/desktop_capture/BUILD.gn
++++ b/modules/desktop_capture/BUILD.gn
+@@ -390,6 +390,11 @@ rtc_library("desktop_capture") {
+     ]
+     if (build_with_mozilla) {
+       libs -= [ "Xtst" ]
++      # Mozilla provides custom impl of x_error_trap.*
++      sources -= [
++        "linux/x11/x_error_trap.cc",
++        "linux/x11/x_error_trap.h",
++      ]
      }
-+
-+    if (rtc_include_internal_audio_device) {
-+      deps += [ "api/audio:create_audio_device_module" ]
-+    }
    }
  
-   if (rtc_include_tests && !is_asan) {

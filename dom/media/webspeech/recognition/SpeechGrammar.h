@@ -8,7 +8,6 @@
 #define mozilla_dom_SpeechGrammar_h
 
 #include "js/TypeDecls.h"
-#include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsString.h"

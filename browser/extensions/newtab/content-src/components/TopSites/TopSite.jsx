@@ -355,6 +355,8 @@ export class TopSiteLink extends React.PureComponent {
             isPinned: this.props.link.isPinned,
             guid: this.props.link.guid,
             visible_topsites: visibleTopSites,
+            smartScores: this.props.link.scores,
+            smartWeights: this.props.link.weights,
           }}
           // For testing.
           IntersectionObserver={this.props.IntersectionObserver}
@@ -598,6 +600,8 @@ export class TopSite extends React.PureComponent {
               isPinned: this.props.link.isPinned,
               guid: this.props.link.guid,
               visible_topsites: this.props.visibleTopSites,
+              smartScores: this.props.link.scores,
+              smartWeights: this.props.link.weights,
             },
           })
         );

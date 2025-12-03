@@ -42,7 +42,7 @@ add_task(async function test_toplevel_fragment_navigations() {
     content.history.back();
   });
 
-  let expectedUrls = [EMPTY_URL, ...hashes.map(hash => `${EMPTY_URL}${hash}`)];
+  let expectedUrls = ["", ...hashes].map(hash => `${EMPTY_URL}${hash}`);
   await checkNavigationEntries(browser, expectedUrls);
 
   await TabStateFlusher.flush(browser);
@@ -74,7 +74,7 @@ add_task(async function test_frame_fragment_navigations() {
     content.history.back();
   });
 
-  let expectedUrls = [EMPTY_URL, ...hashes.map(hash => `${EMPTY_URL}${hash}`)];
+  let expectedUrls = ["", ...hashes].map(hash => `${EMPTY_URL}${hash}`);
   await checkNavigationEntries(browser, expectedUrls, true);
 
   await TabStateFlusher.flush(browser);
@@ -105,8 +105,10 @@ add_task(async function test_mixed_fragment_navigations() {
     content.frames[0].history.pushState(null, "", "#frame3");
   });
 
-  let expectedUrls = [EMPTY_URL, ...hashes.map(hash => `${EMPTY_URL}${hash}`)];
-  await checkNavigationEntries(browser, expectedUrls, true);
+  let expectedTopUrls = ["", "#top"].map(hash => `${EMPTY_FRAME_URL}${hash}`);
+  await checkNavigationEntries(browser, expectedTopUrls);
+  let expectedFrameUrls = ["", ...hashes].map(hash => `${EMPTY_URL}${hash}`);
+  await checkNavigationEntries(browser, expectedFrameUrls, true);
 
   await TabStateFlusher.flush(browser);
   let { entries } = JSON.parse(ss.getTabState(tab));
@@ -117,7 +119,8 @@ add_task(async function test_mixed_fragment_navigations() {
   await promiseTabRestored(tab);
   browser = tab.linkedBrowser;
 
-  await checkNavigationEntries(browser, expectedUrls, true);
+  await checkNavigationEntries(browser, expectedTopUrls);
+  await checkNavigationEntries(browser, expectedFrameUrls, true);
 
   gBrowser.removeTab(tab);
 });

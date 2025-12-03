@@ -19,9 +19,6 @@ namespace mozilla {
 StaticAutoPtr<MediaDrmRemoteCDMParent::DrmCallbackMap>
     MediaDrmRemoteCDMParent::sCbMap;
 
-AMediaCodecCryptoInfoFnPtr_setPattern
-    MediaDrmRemoteCDMParent::sAMediaCodecCryptoInfo_setPattern;
-
 /* static */
 void MediaDrmRemoteCDMParent::InitializeStatics() {
   if (sCbMap) {
@@ -29,18 +26,6 @@ void MediaDrmRemoteCDMParent::InitializeStatics() {
   }
 
   sCbMap = new DrmCallbackMap();
-
-  // The NDK header is wrong for AMediaCodecCryptoInfo_setPattern. It is only
-  // present in 24+, not 21+. As such, we can't rely upon the builtin check,
-  // instead we need to load it manually.
-  // See https://github.com/android/ndk/issues/2169
-  void* lib = dlopen("libmediandk.so", RTLD_NOW);
-  sAMediaCodecCryptoInfo_setPattern =
-      (AMediaCodecCryptoInfoFnPtr_setPattern)dlsym(
-          lib, "AMediaCodecCryptoInfo_setPattern");
-  if (__builtin_available(android 24, *)) {
-    MOZ_ASSERT(sAMediaCodecCryptoInfo_setPattern);
-  }
 }
 
 /* static */
@@ -533,7 +518,7 @@ mozilla::ipc::IPCResult MediaDrmRemoteCDMParent::RecvCreateSession(
   mSessions[sessionIdStr] = {sessionId, std::move(mimeType)};
   aResolver(std::move(sessionIdStr));
 
-  Unused << SendOnSessionKeyMessage(RemoteCDMKeyMessageIPDL(
+  (void)SendOnSessionKeyMessage(RemoteCDMKeyMessageIPDL(
       std::move(sessionIdStr), MediaKeyMessageType::License_request,
       nsTArray<uint8_t>(reinterpret_cast<const uint8_t*>(keyRequest),
                         keyRequestSize)));
@@ -728,7 +713,7 @@ void MediaDrmRemoteCDMParent::HandleEvent(nsString&& aSessionId,
           break;
       }
 
-      Unused << SendOnSessionKeyMessage(RemoteCDMKeyMessageIPDL(
+      (void)SendOnSessionKeyMessage(RemoteCDMKeyMessageIPDL(
           std::move(aSessionId), keyMessageType,
           nsTArray<uint8_t>(reinterpret_cast<const uint8_t*>(keyRequest),
                             keyRequestSize)));
@@ -756,7 +741,7 @@ void MediaDrmRemoteCDMParent::HandleExpirationUpdate(nsString&& aSessionId,
   }
 
   EME_LOG("[%p] MediaDrmRemoteCDMParent::HandleExpirationUpdate", this);
-  Unused << SendOnSessionKeyExpiration(
+  (void)SendOnSessionKeyExpiration(
       RemoteCDMKeyExpirationIPDL(std::move(aSessionId), aExpiryTimeInMS));
 }
 
@@ -772,7 +757,7 @@ void MediaDrmRemoteCDMParent::HandleKeysChange(
   }
 
   EME_LOG("[%p] MediaDrmRemoteCDMParent::HandleKeysChange", this);
-  Unused << SendOnSessionKeyStatus(
+  (void)SendOnSessionKeyStatus(
       RemoteCDMKeyStatusIPDL(std::move(aSessionId), std::move(aKeyInfo)));
 }
 
@@ -858,12 +843,6 @@ already_AddRefed<MediaDrmCryptoInfo> MediaDrmRemoteCDMParent::CreateCryptoInfo(
       break;
     case CryptoScheme::Cbcs:
     case CryptoScheme::Cbcs_1_9:
-      if (NS_WARN_IF(
-              !MediaDrmRemoteCDMParent::sAMediaCodecCryptoInfo_setPattern)) {
-        MOZ_ASSERT_UNREACHABLE(
-            "AMediaCodecCryptoInfo_setPattern not available, but using CBCS");
-        return nullptr;
-      }
       mode = AMEDIACODECRYPTOINFO_MODE_AES_CBC;
       break;
     default:
@@ -883,8 +862,7 @@ already_AddRefed<MediaDrmCryptoInfo> MediaDrmRemoteCDMParent::CreateCryptoInfo(
     cryptoinfo_pattern_t pattern = {};
     pattern.encryptBlocks = cryptoObj.mCryptByteBlock;
     pattern.skipBlocks = cryptoObj.mSkipByteBlock;
-    MediaDrmRemoteCDMParent::sAMediaCodecCryptoInfo_setPattern(cryptoInfo,
-                                                               &pattern);
+    AMediaCodecCryptoInfo_setPattern(cryptoInfo, &pattern);
   }
 
   return MakeAndAddRef<MediaDrmCryptoInfo>(cryptoInfo);

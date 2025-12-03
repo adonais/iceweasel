@@ -12,7 +12,6 @@ import android.view.DragEvent
 import android.view.MotionEvent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import org.hamcrest.Matchers.equalTo
 import org.json.JSONObject
 import org.junit.Ignore
@@ -21,7 +20,6 @@ import org.junit.runner.RunWith
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
 @MediumTest
 class DragAndDropTest : BaseSessionTest() {
     // DragEvent has no constructor, so we create it via Java reflection.

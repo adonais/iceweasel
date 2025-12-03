@@ -8,7 +8,6 @@
 #define DOM_SVG_SVGANIMATEDBOOLEAN_H_
 
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsError.h"

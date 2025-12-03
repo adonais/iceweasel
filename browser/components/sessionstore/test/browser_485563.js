@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 function test() {
-  /** Test for Bug 485563 **/
+  /** Test for Bug 485563 */
 
   waitForExplicitFinish();
 

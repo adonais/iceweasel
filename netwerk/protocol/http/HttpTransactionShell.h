@@ -8,7 +8,6 @@
 #include <functional>
 
 #include "TimingStruct.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "nsIClassOfService.h"
 #include "nsIEarlyHintObserver.h"

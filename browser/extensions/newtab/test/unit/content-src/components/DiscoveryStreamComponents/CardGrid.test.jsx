@@ -89,39 +89,6 @@ describe("<CardGrid>", () => {
     assert.ok(wrapper.find(TopicsWidget).exists());
   });
 
-  it("should create a list feed", () => {
-    const commonProps = {
-      items: 12,
-      data: {
-        recommendations: [
-          { feedName: "foo" },
-          { feedName: "foo" },
-          { feedName: "foo" },
-          { feedName: "foo" },
-          { feedName: "foo" },
-          { feedName: "foo" },
-        ],
-      },
-      Prefs: {
-        ...INITIAL_STATE.Prefs,
-        values: {
-          ...INITIAL_STATE.Prefs.values,
-          "discoverystream.contextualContent.enabled": true,
-          "discoverystream.contextualContent.selectedFeed": "foo",
-        },
-      },
-      DiscoveryStream: INITIAL_STATE.DiscoveryStream,
-    };
-
-    wrapper = mount(
-      <WrapWithProvider>
-        <CardGrid {...commonProps} />
-      </WrapWithProvider>
-    );
-
-    assert.ok(wrapper.find(".list-feed").exists());
-  });
-
   it("should render AdBanner if enabled", () => {
     const commonProps = {
       ...INITIAL_STATE,
@@ -231,6 +198,127 @@ describe("<CardGrid>", () => {
     assert.equal(grid.childAt(1).prop("format"), "spoc");
     // confrim that the next child is the trending search widget
     assert.ok(grid.childAt(2).find(".trending-searches-list-view").exists());
+  });
+
+  describe("Keyboard navigation", () => {
+    beforeEach(() => {
+      const commonProps = {
+        items: 3,
+        data: {
+          recommendations: [{}, {}, {}],
+        },
+        Prefs: INITIAL_STATE.Prefs,
+        DiscoveryStream: INITIAL_STATE.DiscoveryStream,
+      };
+
+      wrapper = mount(
+        <WrapWithProvider>
+          <CardGrid {...commonProps} />
+        </WrapWithProvider>
+      );
+    });
+
+    afterEach(() => {
+      wrapper.unmount();
+    });
+
+    it("should pass tabIndex={0} to the first card and tabIndex={-1} to other cards", () => {
+      const firstCard = wrapper.find(DSCard).at(0);
+      const secondCard = wrapper.find(DSCard).at(1);
+      const thirdCard = wrapper.find(DSCard).at(2);
+
+      assert.equal(firstCard.prop("tabIndex"), 0);
+      assert.equal(secondCard.prop("tabIndex"), -1);
+      assert.equal(thirdCard.prop("tabIndex"), -1);
+    });
+
+    it("should update focused index when onFocus is called", () => {
+      const secondCard = wrapper.find(DSCard).at(1);
+      const onFocus = secondCard.prop("onFocus");
+
+      onFocus();
+      wrapper.update();
+
+      assert.equal(wrapper.find(DSCard).at(1).prop("tabIndex"), 0);
+      assert.equal(wrapper.find(DSCard).at(0).prop("tabIndex"), -1);
+    });
+
+    describe("handleCardKeyDown", () => {
+      let sandbox;
+      let grid;
+      let mockLink;
+      let mockTargetCard;
+      let mockCurrentCard;
+      let mockEvent;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+        grid = wrapper.find(".ds-card-grid");
+
+        mockLink = { focus: sandbox.spy() };
+        mockTargetCard = {
+          matches: sandbox.stub().returns(true),
+          querySelector: sandbox.stub().returns(mockLink),
+        };
+        mockCurrentCard = {};
+        mockEvent = {
+          preventDefault: sandbox.spy(),
+          target: {
+            closest: sandbox.stub().returns(mockCurrentCard),
+          },
+        };
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it("should navigate to next card with ArrowRight", () => {
+        mockEvent.key = "ArrowRight";
+        mockCurrentCard.nextElementSibling = mockTargetCard;
+
+        grid.prop("onKeyDown")(mockEvent);
+
+        assert.calledOnce(mockEvent.preventDefault);
+        assert.calledOnce(mockTargetCard.querySelector);
+        assert.calledWith(mockTargetCard.querySelector, "a.ds-card-link");
+        assert.calledOnce(mockLink.focus);
+      });
+
+      it("should navigate to previous card with ArrowLeft", () => {
+        mockEvent.key = "ArrowLeft";
+        mockCurrentCard.previousElementSibling = mockTargetCard;
+
+        grid.prop("onKeyDown")(mockEvent);
+
+        assert.calledOnce(mockEvent.preventDefault);
+        assert.calledOnce(mockTargetCard.querySelector);
+        assert.calledWith(mockTargetCard.querySelector, "a.ds-card-link");
+        assert.calledOnce(mockLink.focus);
+      });
+
+      it("should return early if no current card found", () => {
+        mockEvent.key = "ArrowRight";
+        mockEvent.target.closest.returns(null);
+
+        grid.prop("onKeyDown")(mockEvent);
+
+        assert.calledOnce(mockEvent.preventDefault);
+        assert.notCalled(mockTargetCard.querySelector);
+      });
+
+      it("should handle case where no matching sibling card is found", () => {
+        mockEvent.key = "ArrowRight";
+        mockCurrentCard.nextElementSibling = {
+          matches: sandbox.stub().returns(false),
+        };
+
+        grid.prop("onKeyDown")(mockEvent);
+
+        assert.calledOnce(mockEvent.preventDefault);
+        assert.notCalled(mockLink.focus);
+      });
+    });
   });
 });
 

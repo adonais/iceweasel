@@ -23,7 +23,6 @@
 #include "js/Utility.h"  // JS::FreePolicy
 #include "js/experimental/JSStencil.h"
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/RefPtr.h"

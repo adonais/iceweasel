@@ -10,17 +10,7 @@
 
 #include "modules/video_capture/linux/video_capture_v4l2.h"
 
-#include <errno.h>
 #include <fcntl.h>
-#include <poll.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <sys/select.h>
-#include <time.h>
-#include <unistd.h>
-// v4l includes
 #if defined(__NetBSD__) || defined(__OpenBSD__) // WEBRTC_BSD
 #include <sys/videoio.h>
 #elif defined(__sun)
@@ -28,14 +18,28 @@
 #else
 #include <linux/videodev2.h>
 #endif
+#include <poll.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <sys/select.h>
+#include <unistd.h>
 
+#include <cerrno>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
 #include <new>
-#include <string>
 
-#include "api/scoped_refptr.h"
+#include "api/sequence_checker.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "media/base/video_common.h"
-#include "modules/video_capture/video_capture.h"
+#include "modules/video_capture/video_capture_defines.h"
+#include "modules/video_capture/video_capture_impl.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/platform_thread.h"
+#include "rtc_base/race_checker.h"
+#include "rtc_base/synchronization/mutex.h"
 
 // These defines are here to support building on kernel 3.16 which some
 // downstream projects, e.g. Firefox, use.

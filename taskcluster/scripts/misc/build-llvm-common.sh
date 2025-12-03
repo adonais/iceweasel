@@ -39,11 +39,11 @@ case "$target" in
     -DCMAKE_LIPO=$MOZ_FETCHES_DIR/clang/bin/llvm-lipo
     -DCMAKE_SYSTEM_NAME=Darwin
     -DCMAKE_SYSTEM_VERSION=$MACOSX_DEPLOYMENT_TARGET
-    -DCMAKE_OSX_SYSROOT=$MOZ_FETCHES_DIR/MacOSX26.0.sdk
+    -DCMAKE_OSX_SYSROOT=$MOZ_FETCHES_DIR/MacOSX26.1.sdk
     -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld
     -DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld
     -DDARWIN_osx_ARCHS=$arch
-    -DDARWIN_osx_SYSROOT=$MOZ_FETCHES_DIR/MacOSX26.0.sdk
+    -DDARWIN_osx_SYSROOT=$MOZ_FETCHES_DIR/MacOSX26.1.sdk
     -DDARWIN_macosx_OVERRIDE_SDK_VERSION=11.0
     -DDARWIN_osx_BUILTIN_ARCHS=$arch
     -DLLVM_DEFAULT_TARGET_TRIPLE=$target
@@ -69,7 +69,8 @@ case "$target" in
     arch=${target%-linux-android}
     ;;
   esac
-  api_level=21
+  # Keep this in sync with min_android_version in android-ndk.configure.
+  api_level=26
   target=$target$api_level
   # These flags are only necessary to pass the cmake tests. They don't end up
   # actually using libgcc, so use an empty library instead of trying to find

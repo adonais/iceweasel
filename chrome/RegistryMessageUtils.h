@@ -6,7 +6,7 @@
 #ifndef mozilla_RegistryMessageUtils_h
 #define mozilla_RegistryMessageUtils_h
 
-#include "mozilla/ipc/IPDLParamTraits.h"
+#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "nsString.h"
 
 struct SerializedURI {

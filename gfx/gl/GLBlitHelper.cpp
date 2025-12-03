@@ -15,7 +15,6 @@
 #include "ImageContainer.h"
 #include "ScopedGLHelpers.h"
 #include "GLUploadHelpers.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Casting.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_gfx.h"

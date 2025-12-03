@@ -10,7 +10,6 @@
 #include "ProfileBuffer.h"
 
 #include "mozilla/ProfileBufferEntrySerialization.h"
-#include "mozilla/UniquePtrExtensions.h"
 
 #include <string>
 

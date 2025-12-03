@@ -28,6 +28,28 @@ const EXTRA_ARGS_TYPES_ALLOWLIST = ["event", "memory_distribution"];
  */
 export const NewTabGleanUtils = {
   /**
+   * Internal Promise.withResolvers() object for tracking metrics and pings
+   * registration completion. Contains resolve, reject functions and a promise
+   * that resolves when registerMetricsAndPings completes.
+   *
+   * @type {{promise: Promise<void>, resolve: Function, reject: Function}}
+   * @private
+   */
+  _registrationDone: Promise.withResolvers(),
+
+  /**
+   * Gets the promise that resolves when metrics and pings registration is
+   * complete. This allows external code to wait for registration to finish
+   * before using registered metrics.
+   *
+   * @returns {Promise<void>} A promise that resolves when
+   *   registerMetricsAndPings completes
+   */
+  get registrationDone() {
+    return this._registrationDone.promise;
+  },
+
+  /**
    * Fetches and parses a JSON file from a given resource URI.
    *
    * @param {string} resourceURI - The URI of the JSON file to fetch and parse
@@ -84,12 +106,14 @@ export const NewTabGleanUtils = {
       lazy.logConsole.debug(
         "Successfully registered metrics and pings found in the JSON file"
       );
+      this._registrationDone.resolve();
       return true;
     } catch (e) {
       lazy.logConsole.error(
         "Failed to complete registration of metrics and pings found in runtime metrics JSON:",
         e
       );
+      this._registrationDone.resolve();
       return false;
     }
   },

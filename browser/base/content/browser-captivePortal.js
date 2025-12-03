@@ -395,7 +395,7 @@ var CaptivePortalWatcher = {
             userContextId: gBrowser.contentPrincipal.userContextId,
           }
         ),
-        disableTRR: true,
+        isCaptivePortalTab: true,
       });
       this._captivePortalTab = Cu.getWeakReference(tab);
       this._previousCaptivePortalTab = Cu.getWeakReference(tab);

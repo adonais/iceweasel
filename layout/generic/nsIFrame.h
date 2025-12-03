@@ -1451,6 +1451,8 @@ class nsIFrame : public nsQueryFrame {
   NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(LastSuccessfulPositionFallback,
                                         uint32_t);
 
+  mozilla::PhysicalAxes GetAnchorPosCompensatingForScroll() const;
+
   // This tracks the start and end page value for a frame.
   //
   // https://www.w3.org/TR/css-page-3/#using-named-pages
@@ -3196,11 +3198,6 @@ class nsIFrame : public nsQueryFrame {
   virtual void DidReflow(nsPresContext* aPresContext,
                          const ReflowInput* aReflowInput);
 
-  void FinishReflowWithAbsoluteFrames(nsPresContext* aPresContext,
-                                      ReflowOutput& aDesiredSize,
-                                      const ReflowInput& aReflowInput,
-                                      nsReflowStatus& aStatus);
-
   /**
    * Updates the overflow areas of the frame. This can be called if an
    * overflow area of the frame's children has changed without reflowing.
@@ -4613,16 +4610,6 @@ class nsIFrame : public nsQueryFrame {
    */
   bool DoesClipChildrenInBothAxes() const;
 
-  /**
-   * NOTE: aStatus is assumed to be already-initialized. The reflow statuses of
-   * any reflowed absolute children will be merged into aStatus; aside from
-   * that, this method won't modify aStatus.
-   */
-  void ReflowAbsoluteFrames(nsPresContext* aPresContext,
-                            ReflowOutput& aDesiredSize,
-                            const ReflowInput& aReflowInput,
-                            nsReflowStatus& aStatus);
-
  private:
   nscoord ComputeISizeValueFromAspectRatio(
       mozilla::WritingMode aWM, const mozilla::LogicalSize& aCBSize,
@@ -5210,6 +5197,15 @@ class nsIFrame : public nsQueryFrame {
    */
   mozilla::gfx::CompositorHitTestInfo GetCompositorHitTestInfo(
       nsDisplayListBuilder* aBuilder);
+
+  /**
+   * Similar to GetCompositorHitTestInfo but this function doesn't consider
+   * pointer-events style.
+   * This function should be used only for
+   * nsDisplayBuilder::SetInheritedCompositorHitTestInfo.
+   */
+  mozilla::gfx::CompositorHitTestInfo
+  GetCompositorHitTestInfoWithoutPointerEvents(nsDisplayListBuilder* aBuilder);
 
   /**
    * Copies aWM to mWritingMode on 'this' and all its ancestors.
@@ -5936,9 +5932,9 @@ inline nsIFrame* nsFrameList::BackwardFrameTraversal::Prev(nsIFrame* aFrame) {
 
 inline AnchorPosResolutionParams AnchorPosResolutionParams::From(
     const nsIFrame* aFrame,
-    mozilla::AnchorPosReferenceData* aAnchorPosReferenceData) {
+    mozilla::AnchorPosResolutionCache* aAnchorPosResolutionCache) {
   return {aFrame, aFrame->StyleDisplay()->mPosition,
-          aFrame->StylePosition()->mPositionArea, aAnchorPosReferenceData};
+          aFrame->StylePosition()->mPositionArea, aAnchorPosResolutionCache};
 }
 
 #endif /* nsIFrame_h___ */

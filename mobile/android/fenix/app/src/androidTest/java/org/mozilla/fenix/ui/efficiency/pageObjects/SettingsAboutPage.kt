@@ -15,16 +15,16 @@ class SettingsAboutPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTe
     override val pageName = "SettingsAboutPage"
 
     init {
-        NavigationRegistry.register(
-            from = "HomePage",
-            to = pageName,
-            steps = listOf(
-                NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
-                NavigationStep.Click(MainMenuSelectors.SETTINGS_BUTTON),
-                NavigationStep.Swipe(SettingsSelectors.DATA_COLLECTION_BUTTON),
-                NavigationStep.Click(SettingsSelectors.DATA_COLLECTION_BUTTON),
-            ),
-        )
+//        NavigationRegistry.register(
+//            from = "HomePage",
+//            to = pageName,
+//            steps = listOf(
+//                NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
+//                NavigationStep.Click(MainMenuSelectors.SETTINGS_BUTTON),
+//                NavigationStep.Swipe(SettingsSelectors.DATA_COLLECTION_BUTTON),
+//                NavigationStep.Click(SettingsSelectors.DATA_COLLECTION_BUTTON),
+//            ),
+//        )
     }
 
     override fun mozGetSelectorsByGroup(group: String): List<Selector> {

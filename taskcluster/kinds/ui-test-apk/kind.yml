@@ -16,6 +16,7 @@ kind-dependencies:
     - signing-apk
 
 task-defaults:
+    run-on-repo-type: [hg]
     attributes:
         build_platform: android
         build-type: debug
@@ -58,53 +59,138 @@ task-defaults:
         notify:
             by-level:
                 '3':
-                    slackText: 'https://firefox-ci-tc.services.mozilla.com/tasks/${status.taskId} | ${task.metadata.name} | ${task.metadata.source}'
-                    slackBlocks: |
-                        [
-                          {
-                            "type": "header",
-                            "text": {
-                              "type": "plain_text",
-                              "text": "firefox-android :firefox: ${task.metadata.name} :x:\n "
-                            }
-                          },
-                          {
-                            "type": "divider"
-                          },
-                          {
-                             "type": "section",
-                             "text": {
-                                 "type": "mrkdwn",
-                                 "text": "*Task*: <https://firefox-ci-tc.services.mozilla.com/tasks/${status.taskId}|Taskcluster>"
-                            }
-                          },
-                          {
-                            "type": "section",
-                            "text": {
-                              "type": "mrkdwn",
-                              "text": "*Owner*: ${task.metadata.owner}"
-                            }
-                          },
-                          {
-                            "type": "section",
-                            "text": {
-                              "type": "mrkdwn",
-                              "text": "*Source*: <${task.payload.env.GECKO_BASE_REPOSITORY}/rev/${task.payload.env.GECKO_HEAD_REV}|Commit> :hg:"
-                            }
-                          },
-                          {
-                            "type": "divider"
-                          },
-                          {
-                            "type": "context",
-                            "elements": [
-                                {
-                                    "type": "mrkdwn",
-                                    "text": ":testops-notify: created by <https://mozilla-hub.atlassian.net/wiki/spaces/MTE/overview|Mobile Test Engineering>"
-                                }
-                            ]
-                          }
-                        ]
+                    by-shipping-product:
+                        fenix:
+                            slackText: '<https://firefox-ci-tc.services.mozilla.com/tasks/${status.taskId}|${task.metadata.name}>'
+                            slackAttachments: |
+                              [
+                                    {
+                                        "color": "#FF0000",
+                                        "blocks": [
+                                        {
+                                            "type": "header",
+                                            "text": {
+                                                "type": "plain_text",
+                                                "text": "Firefox for Android :firefox:"
+                                            }
+                                        },
+                                        {
+                                            "type": "header",
+                                            "text": {
+                                            "type": "plain_text",
+                                            "text": "${task.metadata.name}"
+                                            }
+                                        },
+                                        {
+                                            "type": "section",
+                                            "fields": [
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": "*Task:*\n<https://firefox-ci-tc.services.mozilla.com/tasks/${status.taskId}|Taskcluster>"
+                                            },
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": "*Owner:*\n${task.metadata.owner}"
+                                            },
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": "*Project:*\n${task.tags.project}"
+                                            },
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": "*Treeherder:*\n<https://treeherder.mozilla.org/jobs?repo=${task.tags.project}&revision=${task.payload.env.GECKO_HEAD_REV}|View Jobs>"
+                                            },
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": "*Source:*\n<${task.payload.env.GECKO_BASE_REPOSITORY}/rev/${task.payload.env.GECKO_HEAD_REV}|Commit> :hg:"
+                                            },
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": "*Report:*\n<https://firefoxci.taskcluster-artifacts.net/${status.taskId}/0/public/results/HtmlErrorReport.html|View Report>"
+                                            }
+                                            ]
+                                        },
+                                        {
+                                            "type": "divider"
+                                        },
+                                        {
+                                            "type": "context",
+                                            "elements": [
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": ":testops-notify: Mobile Test Engineering"
+                                            }
+                                            ]
+                                        }
+                                        ]
+                                    }
+                              ]
+                        focus:
+                            slackText: '<https://firefox-ci-tc.services.mozilla.com/tasks/${status.taskId}|${task.metadata.name}>'
+                            slackAttachments: |
+                                [
+                                    {
+                                        "color": "#FF0000",
+                                        "blocks": [
+                                        {
+                                            "type": "header",
+                                            "text": {
+                                                "type": "plain_text",
+                                                "text": "Focus for Android :focusandroid:"
+                                            }
+                                        },
+                                        {
+                                            "type": "header",
+                                            "text": {
+                                            "type": "plain_text",
+                                            "text": "${task.metadata.name}"
+                                            }
+                                        },
+                                        {
+                                            "type": "section",
+                                            "fields": [
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": "*Task:*\n<https://firefox-ci-tc.services.mozilla.com/tasks/${status.taskId}|Taskcluster>"
+                                            },
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": "*Owner:*\n${task.metadata.owner}"
+                                            },
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": "*Project:*\n${task.tags.project}"
+                                            },
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": "*Treeherder:*\n<https://treeherder.mozilla.org/jobs?repo=${task.tags.project}&revision=${task.payload.env.GECKO_HEAD_REV}|View Jobs>"
+                                            },
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": "*Source:*\n<${task.payload.env.GECKO_BASE_REPOSITORY}/rev/${task.payload.env.GECKO_HEAD_REV}|Commit> :hg:"
+                                            },
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": "*Report:*\n<https://firefoxci.taskcluster-artifacts.net/${status.taskId}/0/public/results/HtmlErrorReport.html|View Report>"
+                                            }
+                                            ]
+                                        },
+                                        {
+                                            "type": "divider"
+                                        },
+                                        {
+                                            "type": "context",
+                                            "elements": [
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": ":testops-notify: Mobile Test Engineering"
+                                            }
+                                            ]
+                                        }
+                                        ]
+                                    }
+                                ]
+                        default: {}
                 'default': {}
 
 tasks:

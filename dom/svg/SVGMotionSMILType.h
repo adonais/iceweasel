@@ -9,7 +9,6 @@
 #ifndef DOM_SVG_SVGMOTIONSMILTYPE_H_
 #define DOM_SVG_SVGMOTIONSMILTYPE_H_
 
-#include "mozilla/Attributes.h"
 #include "mozilla/SMILType.h"
 #include "mozilla/gfx/2D.h"
 

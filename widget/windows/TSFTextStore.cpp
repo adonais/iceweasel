@@ -644,7 +644,7 @@ void TSFTextStore::MaybeFlushPendingNotifications() {
   // When there is no cached content, we can sync actual contents and TSF/TIP
   // expecting contents.
   RefPtr<TSFTextStore> kungFuDeathGrip = this;
-  Unused << kungFuDeathGrip;
+  (void)kungFuDeathGrip;
   if (mContentForTSF.isNothing()) {
     if (mPendingTextChangeData.IsValid()) {
       MOZ_LOG(gIMELog, LogLevel::Info,

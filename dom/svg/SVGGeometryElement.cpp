@@ -187,7 +187,7 @@ bool SVGGeometryElement::IsPointInFill(const DOMPointInit& aPoint) {
 bool SVGGeometryElement::IsPointInStroke(const DOMPointInit& aPoint) {
   // stroke-* attributes and the d attribute are presentation attributes, so we
   // flush the layout before building the path.
-  Unused << GetPrimaryFrame(FlushType::Layout);
+  (void)GetPrimaryFrame(FlushType::Layout);
 
   RefPtr<Path> path = GetOrBuildPathForHitTest();
   if (!path) {
@@ -298,7 +298,7 @@ float SVGGeometryElement::GetTotalLength() {
 void SVGGeometryElement::FlushIfNeeded() {
   FlushType flushType =
       GeometryDependsOnCoordCtx() ? FlushType::Layout : FlushType::Style;
-  Unused << GetPrimaryFrame(flushType);
+  (void)GetPrimaryFrame(flushType);
 }
 
 }  // namespace mozilla::dom

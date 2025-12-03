@@ -12,8 +12,6 @@
 
 #include "nsTLiteralString.h"
 
-#include "mozilla/Char16.h"
-
 #define NS_CSTRING_LITERAL_AS_STRING_LITERAL(s) u"" s
 
 #define NS_LITERAL_STRING_FROM_CSTRING(s) \

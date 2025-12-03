@@ -12,9 +12,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 /**
+ * @import {UrlbarUtils} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs"
+ */
+
+/**
  * @typedef {object} LegacySearchButton
  * @property {boolean} open
  *   Whether the button is in an open state.
+ * @property {Values<typeof UrlbarUtils.RESULT_SOURCE>} [source]
+ *   The result source of the button. Only appropriate for one-off buttons
+ *   on the urlbar.
  * @property {nsISearchEngine} engine
  *   The search engine associated with the button.
  */

@@ -15,7 +15,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "ProxyService",
   "@mozilla.org/network/protocol-proxy-service;1",
-  "nsIProtocolProxyService"
+  Ci.nsIProtocolProxyService
 );
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -27,14 +27,14 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "CaptivePortalService",
   "@mozilla.org/network/captive-portal-service;1",
-  "nsICaptivePortalService"
+  Ci.nsICaptivePortalService
 );
 
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "gNetworkLinkService",
   "@mozilla.org/network/network-link-service;1",
-  "nsINetworkLinkService"
+  Ci.nsINetworkLinkService
 );
 
 const PROXY_CONFIG_TYPES = [

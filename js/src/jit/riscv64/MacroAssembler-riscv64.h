@@ -90,7 +90,7 @@ struct ImmShiftedTag : public ImmWord {
 };
 
 struct ImmTag : public Imm32 {
-  ImmTag(JSValueTag mask) : Imm32(int32_t(mask)) {}
+  explicit ImmTag(JSValueTag mask) : Imm32(int32_t(mask)) {}
 };
 
 class MacroAssemblerRiscv64 : public Assembler {
@@ -170,11 +170,11 @@ class MacroAssemblerRiscv64 : public Assembler {
             JumpKind jumpKind = LongJump);
   void ma_b(Register lhs, Imm32 imm, Label* l, Condition c,
             JumpKind jumpKind = LongJump);
-  void BranchAndLinkShort(Label* L);
-  void BranchAndLink(Label* label);
-  void BranchAndLinkShort(int32_t offset);
-  void BranchAndLinkShortHelper(int32_t offset, Label* L);
-  void BranchAndLinkLong(Label* L);
+  CodeOffset BranchAndLinkShort(Label* L);
+  CodeOffset BranchAndLink(Label* label);
+  CodeOffset BranchAndLinkShort(int32_t offset);
+  CodeOffset BranchAndLinkShortHelper(int32_t offset, Label* L);
+  CodeOffset BranchAndLinkLong(Label* L);
   void GenPCRelativeJumpAndLink(Register rd, int32_t imm32);
 
 #define DEFINE_INSTRUCTION(instr)                                           \
@@ -365,12 +365,6 @@ class MacroAssemblerRiscv64 : public Assembler {
   void ma_mul32TestOverflow(Register rd, Register rj, Imm32 imm,
                             Label* overflow);
 
-  // divisions
-  void ma_div_branch_overflow(Register rd, Register rj, Register rk,
-                              Label* overflow);
-  void ma_div_branch_overflow(Register rd, Register rj, Imm32 imm,
-                              Label* overflow);
-
   // fast mod, uses scratch registers, and thus needs to be in the assembler
   // implicitly assumes that we can overwrite dest at the beginning of the
   // sequence
@@ -415,11 +409,10 @@ class MacroAssemblerRiscv64 : public Assembler {
   void BranchLong(Label* L);
 
   // Floating point branches
-  void BranchTrueShortF(Register rs, Label* target);
-  void BranchFalseShortF(Register rs, Label* target);
-
-  void BranchTrueF(Register rs, Label* target);
-  void BranchFalseF(Register rs, Label* target);
+  void BranchFloat32(DoubleCondition cc, FloatRegister frs1, FloatRegister frs2,
+                     Label* label, JumpKind jumpKind);
+  void BranchFloat64(DoubleCondition cc, FloatRegister frs1, FloatRegister frs2,
+                     Label* label, JumpKind jumpKind);
 
   void moveFromDoubleHi(FloatRegister src, Register dest) {
     fmv_x_d(dest, src);
@@ -451,6 +444,7 @@ class MacroAssemblerRiscv64 : public Assembler {
 
   void Clear_if_nan_d(Register rd, FPURegister fs);
   void Clear_if_nan_s(Register rd, FPURegister fs);
+
   // Convert double to unsigned word.
   void Trunc_uw_d(Register rd, FPURegister fs, Register result = InvalidReg,
                   bool Inexact = false);
@@ -463,7 +457,7 @@ class MacroAssemblerRiscv64 : public Assembler {
   void Trunc_ul_d(Register rd, FPURegister fs, Register result = InvalidReg,
                   bool Inexact = false);
 
-  // Convert singled to signed long.
+  // Convert single to signed long.
   void Trunc_l_d(Register rd, FPURegister fs, Register result = InvalidReg,
                  bool Inexact = false);
 
@@ -479,7 +473,7 @@ class MacroAssemblerRiscv64 : public Assembler {
   void Trunc_ul_s(Register rd, FPURegister fs, Register result = InvalidReg,
                   bool Inexact = false);
 
-  // Convert singled to signed long.
+  // Convert single to signed long.
   void Trunc_l_s(Register rd, FPURegister fs, Register result = InvalidReg,
                  bool Inexact = false);
 
@@ -511,6 +505,14 @@ class MacroAssemblerRiscv64 : public Assembler {
   void Ceil_w_d(Register rd, FPURegister fs, Register result = InvalidReg,
                 bool Inexact = false);
 
+  // Ceil single to signed long.
+  void Ceil_l_s(Register rd, FPURegister fs, Register result = InvalidReg,
+                bool Inexact = false);
+
+  // Ceil double to signed long.
+  void Ceil_l_d(Register rd, FPURegister fs, Register result = InvalidReg,
+                bool Inexact = false);
+
   // Floor single to signed word.
   void Floor_w_s(Register rd, FPURegister fs, Register result = InvalidReg,
                  bool Inexact = false);
@@ -518,6 +520,22 @@ class MacroAssemblerRiscv64 : public Assembler {
   // Floor double to signed word.
   void Floor_w_d(Register rd, FPURegister fs, Register result = InvalidReg,
                  bool Inexact = false);
+
+  // Floor single to signed long.
+  void Floor_l_s(Register rd, FPURegister fs, Register result = InvalidReg,
+                 bool Inexact = false);
+
+  // Floor double to signed long.
+  void Floor_l_d(Register rd, FPURegister fs, Register result = InvalidReg,
+                 bool Inexact = false);
+
+  // Round single to signed long, ties to max magnitude (or away from zero).
+  void RoundMaxMag_l_s(Register rd, FPURegister fs,
+                       Register result = InvalidReg, bool Inexact = false);
+
+  // Round double to signed long, ties to max magnitude (or away from zero).
+  void RoundMaxMag_l_d(Register rd, FPURegister fs,
+                       Register result = InvalidReg, bool Inexact = false);
 
   void Clz32(Register rd, Register rs);
   void Ctz32(Register rd, Register rs);
@@ -530,6 +548,9 @@ class MacroAssemblerRiscv64 : public Assembler {
   // Change endianness
   void ByteSwap(Register dest, Register src, int operand_size,
                 Register scratch);
+
+  void Rol(Register rd, Register rs, const Operand& rt);
+  void Drol(Register rd, Register rs, const Operand& rt);
 
   void Ror(Register rd, Register rs, const Operand& rt);
   void Dror(Register rd, Register rs, const Operand& rt);
@@ -610,7 +631,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
     MOZ_CRASH("Not supported for this target");
   }
 
-  void movq(Register rj, Register rd);
+  void truncateFloat32ModUint32(FloatRegister src, Register dest);
 
   void computeEffectiveAddress(const Address& address, Register dest) {
     ma_add64(dest, address.base, Imm32(address.offset));
@@ -820,10 +841,10 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
 
   void unboxGCThingForGCBarrier(const Address& src, Register dest) {
     loadPtr(src, dest);
-    ExtractBits(dest, dest, 0, JSVAL_TAG_SHIFT - 1);
+    ExtractBits(dest, dest, 0, JSVAL_TAG_SHIFT);
   }
   void unboxGCThingForGCBarrier(const ValueOperand& src, Register dest) {
-    ExtractBits(dest, src.valueReg(), 0, JSVAL_TAG_SHIFT - 1);
+    ExtractBits(dest, src.valueReg(), 0, JSVAL_TAG_SHIFT);
   }
 
   void unboxWasmAnyRefGCThingForGCBarrier(const Address& src, Register dest) {
@@ -1096,7 +1117,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   FaultingCodeOffset loadDouble(const BaseIndex& src, FloatRegister dest) {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
-    computeScaledAddress(src, scratch);
+    computeEffectiveAddress(src, scratch);
     FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
     fld(dest, scratch, 0);
     return fco;
@@ -1109,7 +1130,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   FaultingCodeOffset loadFloat32(const BaseIndex& src, FloatRegister dest) {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
-    computeScaledAddress(src, scratch);
+    computeEffectiveAddress(src, scratch);
     FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
     flw(dest, scratch, 0);
     return fco;

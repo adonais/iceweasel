@@ -25,6 +25,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -73,7 +74,7 @@ fun SearchEngineShortcuts(
     onDeleteEngineClicked: (SearchEngine) -> Unit,
     onAddEngineClicked: () -> Unit,
 ) {
-    val searchState = store.observeAsComposableState { it.search }.value ?: SearchState()
+    val searchState = store.observeAsComposableState { it.search }.value
     val searchEngines = with(searchState) {
         regionSearchEngines + additionalSearchEngines + availableSearchEngines + customSearchEngines
     }
@@ -120,7 +121,7 @@ private fun Title(title: String) {
     ) {
         Text(
             text = title,
-            color = FirefoxTheme.colors.textAccent,
+            color = MaterialTheme.colorScheme.tertiary,
             fontWeight = FontWeight.W400,
             modifier = Modifier.padding(horizontal = 16.dp),
             style = FirefoxTheme.typography.headline8,

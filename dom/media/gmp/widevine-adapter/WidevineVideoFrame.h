@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "content_decryption_module.h"
-#include "mozilla/Attributes.h"
 #include "stddef.h"
 
 namespace mozilla {

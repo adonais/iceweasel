@@ -1140,7 +1140,7 @@ JS_PUBLIC_API bool JS::HasDebuggerMicroTasks(JSContext* cx) {
 struct SavedMicroTaskQueueImpl : public JS::SavedMicroTaskQueue {
   explicit SavedMicroTaskQueueImpl(JSContext* cx) : savedQueues(cx) {
     savedQueues = js::MakeUnique<js::MicroTaskQueueSet>(cx);
-    std::swap(cx->microTaskQueues.get(), savedQueues.get());
+    std::swap(cx->microTaskQueues, savedQueues.get());
   }
   ~SavedMicroTaskQueueImpl() override = default;
   JS::PersistentRooted<js::UniquePtr<js::MicroTaskQueueSet>> savedQueues;
@@ -1163,7 +1163,7 @@ JS_PUBLIC_API void JS::RestoreMicroTaskQueue(
   // There's only one impl, so we know this is safe.
   SavedMicroTaskQueueImpl* savedQueueImpl =
       static_cast<SavedMicroTaskQueueImpl*>(savedQueue.get());
-  std::swap(savedQueueImpl->savedQueues.get(), cx->microTaskQueues.get());
+  std::swap(savedQueueImpl->savedQueues.get(), cx->microTaskQueues);
 }
 
 JS_PUBLIC_API size_t JS::GetRegularMicroTaskCount(JSContext* cx) {
@@ -1177,7 +1177,7 @@ JS_PUBLIC_API bool JS::HasRegularMicroTasks(JSContext* cx) {
 JS_PUBLIC_API JS::MicroTask JS::DequeueNextRegularMicroTask(JSContext* cx) {
   auto& queue = cx->microTaskQueues->microTaskQueue;
   if (!queue.empty()) {
-    auto p = std::move(queue.front());
+    JS::MicroTask p = queue.front();
     queue.popFront();
     return p;
   }
@@ -1268,8 +1268,7 @@ JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
       canSkipEnqueuingJobs(this, false),
       promiseRejectionTrackerCallback(this, nullptr),
       promiseRejectionTrackerCallbackData(this, nullptr),
-      insideExclusiveDebuggerOnEval(this, nullptr),
-      microTaskQueues(this) {
+      insideExclusiveDebuggerOnEval(this, nullptr) {
   MOZ_ASSERT(static_cast<JS::RootingContext*>(this) ==
              JS::RootingContext::get(this));
 }
@@ -1525,6 +1524,12 @@ void JSContext::trace(JSTracer* trc) {
 #ifdef ENABLE_WASM_JSPI
   wasm().promiseIntegration.trace(trc);
 #endif
+
+  // Skip tracing the microtask queues on minor GC as we will be updating
+  // nursery pointers through the store buffer instead.
+  if (!trc->isTenuringTracer() && microTaskQueues) {
+    microTaskQueues->trace(trc);
+  }
 }
 
 JS::NativeStackLimit JSContext::stackLimitForJitCode(JS::StackKind kind) {

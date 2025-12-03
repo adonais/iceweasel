@@ -4,7 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-DIRS += ["abridged_certs"]
+DIRS += ["abridged_certs", "qwac_trust_anchors"]
 
 TEST_DIRS += ["tests"]
 
@@ -104,7 +104,6 @@ UNIFIED_SOURCES += [
     "md4.c",
     "nsCertOverrideService.cpp",
     "nsCertTree.cpp",
-    "nsClientAuthRemember.cpp",
     "nsNSSCallbacks.cpp",
     "nsNSSCertHelper.cpp",
     "nsNSSCertificate.cpp",
@@ -128,9 +127,12 @@ UNIFIED_SOURCES += [
     "NSSSocketControl.cpp",
     "nsTLSSocketProvider.cpp",
     "OSKeyStore.cpp",
+    "PDFSignatureVerification.cpp",
     "PKCS11ModuleDB.cpp",
     "PSMRunnable.cpp",
     "PublicKeyPinningService.cpp",
+    "QWACs.cpp",
+    "QWACTrustDomain.cpp",
     "RootCertificateTelemetryUtils.cpp",
     "SecretDecoderRing.cpp",
     "SSLServerCertVerification.cpp",
@@ -141,10 +143,22 @@ UNIFIED_SOURCES += [
     "X509CertValidity.cpp",
 ]
 
+if CONFIG["OS_ARCH"] == "Darwin":
+    # On macOS this file includes CoreFoundation.h, which contains definitions
+    # that conflict with headers included in other unified source files. We
+    # compile this one independently to prevent that interference.
+    SOURCES += [
+        "nsClientAuthRemember.cpp",
+    ]
+else:
+    UNIFIED_SOURCES += [
+        "nsClientAuthRemember.cpp",
+    ]
+
 if CONFIG["OS_ARCH"] == "WINNT":
     # On Windows this file includes ntsecapi.h, which contains definitions that
-    # conflict with headers included in remaining source files. We compile this
-    # one independently to prevent that interferance.
+    # conflict with headers included in other unified source files. We compile
+    # this one independently to prevent that interference.
     SOURCES += [
         "OSReauthenticator.cpp",
     ]

@@ -497,7 +497,7 @@ nsresult Http3WebTransportStream::WriteSegments() {
     if (NS_FAILED(rv)) {
       if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
         nsCOMPtr<nsIEventTarget> target;
-        Unused << gHttpHandler->GetSocketThreadTarget(getter_AddRefs(target));
+        (void)gHttpHandler->GetSocketThreadTarget(getter_AddRefs(target));
         if (target) {
           mReceiveStreamPipeOut->AsyncWait(this, 0, 0, target);
           rv = NS_OK;

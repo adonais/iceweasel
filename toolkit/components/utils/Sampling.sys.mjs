@@ -107,7 +107,8 @@ export var Sampling = {
    * @param {integer}    count Number of buckets to check.
    * @param {integer}    total Total number of buckets to group inputs into.
    * @promises {boolean} True if the given input is within the range of buckets
-   *                     we're checking. */
+   *                     we're checking.
+   */
   async bucketSample(input, start, count, total) {
     const inputHash = await Sampling.truncatedHash(input);
     const wrappedStart = start % total;

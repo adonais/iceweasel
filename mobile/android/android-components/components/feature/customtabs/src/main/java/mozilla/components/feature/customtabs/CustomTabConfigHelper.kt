@@ -179,9 +179,9 @@ fun BrowserMenuBuilder.addCustomMenuItems(
         }
     }
 
-    val safeCustomMenuInsertIndex = customTabMenuInsertIndex.coerceIn(0, this?.items?.size ?: 0)
-    val defaultMenuItems = this?.items ?: emptyList()
-    val defaultMenuExtras = this?.extras ?: emptyMap()
+    val safeCustomMenuInsertIndex = customTabMenuInsertIndex.coerceIn(0, this.items.size)
+    val defaultMenuItems = this.items
+    val defaultMenuExtras = this.extras
 
     return BrowserMenuBuilder(
         items = defaultMenuItems.toMutableList().apply {

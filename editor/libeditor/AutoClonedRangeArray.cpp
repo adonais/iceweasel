@@ -245,7 +245,7 @@ AutoClonedRangeArray::ShrinkRangesIfStartFromOrEndAfterAtomicContent(
                "Changing range in selection may cause running script");
     Result<bool, nsresult> result =
         WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
-            WSRunScanner::Scan::EditableNodes, range);
+            {WSRunScanner::Option::OnlyEditableNodes}, range);
     if (result.isErr()) {
       NS_WARNING(
           "WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent() "
@@ -1103,9 +1103,8 @@ void AutoClonedRangeArray::ExtendRangeToContainSurroundingInvisibleWhiteSpaces(
     }
     const WSScanResult previousThing =
         WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::EditableNodes,
-            EditorRawDOMPoint(range->StartRef()),
-            BlockInlineCheck::UseComputedDisplayOutsideStyle);
+            {WSRunScanner::Option::OnlyEditableNodes},
+            EditorRawDOMPoint(range->StartRef()));
     if (previousThing.ReachedLineBoundary()) {
       const EditorRawDOMPoint mostDistantNewStart =
           [&]() MOZ_NEVER_INLINE_DEBUG {
@@ -1166,9 +1165,8 @@ void AutoClonedRangeArray::ExtendRangeToContainSurroundingInvisibleWhiteSpaces(
     }
     const WSScanResult nextThing =
         WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::EditableNodes,
-            EditorRawDOMPoint(range->EndRef()),
-            BlockInlineCheck::UseComputedDisplayOutsideStyle);
+            {WSRunScanner::Option::OnlyEditableNodes},
+            EditorRawDOMPoint(range->EndRef()));
     if (!nextThing.ReachedLineBoundary()) {
       continue;
     }

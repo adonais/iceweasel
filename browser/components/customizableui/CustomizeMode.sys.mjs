@@ -39,7 +39,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "gTouchBarUpdater",
   "@mozilla.org/widget/touchbarupdater;1",
-  "nsITouchBarUpdater"
+  Ci.nsITouchBarUpdater
 );
 
 let gDebug;

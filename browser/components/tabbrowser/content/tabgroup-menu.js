@@ -576,8 +576,7 @@
         () => {
           this.#handleMLOptinTelemetry("step0-optin-link-click");
           openTrustedLinkIn(
-            // this is a placeholder link, it should be replaced with the actual link
-            "https://support.mozilla.org",
+            "https://support.mozilla.org/kb/how-use-ai-enhanced-tab-groups",
             "tab"
           );
         }

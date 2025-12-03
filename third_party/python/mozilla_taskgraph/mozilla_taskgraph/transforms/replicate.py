@@ -8,7 +8,7 @@ import os
 import re
 from textwrap import dedent
 
-from requests.exceptions import HTTPError
+from taskcluster.exceptions import TaskclusterRestFailure
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.attributes import attrmatch
 from taskgraph.util.schema import Schema
@@ -102,8 +102,8 @@ def resolve_targets(config, tasks):
                 # we have a decision task, add all tasks from task-graph.json
                 result = get_artifact(task_id, "public/task-graph.json").values()
                 task_defs.extend(result)
-            except HTTPError as e:
-                if e.response.status_code != 404:
+            except TaskclusterRestFailure as e:
+                if e.status_code != 404:
                     raise
 
                 # we have a regular task, just yield its definition and move on

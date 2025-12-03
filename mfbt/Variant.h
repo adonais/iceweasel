@@ -27,11 +27,6 @@ struct ParamTraits;
 
 namespace mozilla {
 
-namespace ipc {
-template <typename T>
-struct IPDLParamTraits;
-}  // namespace ipc
-
 template <typename... Ts>
 class Variant;
 
@@ -578,7 +573,6 @@ template <typename... Ts>
 class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS
 MOZ_NON_PARAM MOZ_GSL_OWNER Variant {
   friend struct IPC::ParamTraits<mozilla::Variant<Ts...>>;
-  friend struct mozilla::ipc::IPDLParamTraits<mozilla::Variant<Ts...>>;
 
   using Tag = typename detail::VariantTag<Ts...>::Type;
   using Impl = detail::VariantImplementation<Tag, 0, Ts...>;

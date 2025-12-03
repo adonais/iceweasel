@@ -53,6 +53,7 @@ class GpuProcessD3D11TextureMap {
 
   RefPtr<ID3D11Texture2D> GetTexture(GpuProcessTextureId aTextureId);
   Maybe<HANDLE> GetSharedHandle(GpuProcessTextureId aTextureId);
+  void DisableZeroCopyNV12Texture(GpuProcessTextureId aTextureId);
 
   size_t GetWaitingTextureCount() const;
 

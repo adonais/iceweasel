@@ -63,17 +63,21 @@ add_task(async function test_init_with_opt_in() {
 
   await initExperimentAPI();
 
-  equal(
+  Assert.equal(
     loader.setTimer.callCount,
-    0,
-    `should not initialize if ${STUDIES_OPT_OUT_PREF} pref is false`
+    1,
+    `should initialize even if ${STUDIES_OPT_OUT_PREF} pref is false`
   );
 
-  Services.prefs.setBoolPref(STUDIES_OPT_OUT_PREF, true);
-  Assert.ok(loader.setTimer.calledOnce, "should call .setTimer");
-  Assert.ok(loader.updateRecipes.calledOnce, "should call .updateRecipes");
+  Assert.equal(
+    loader.updateRecipes.callCount,
+    1,
+    "should call updateRecipes()"
+  );
 
   await cleanup();
+
+  Services.prefs.setBoolPref(STUDIES_OPT_OUT_PREF, true);
 });
 
 add_task(async function test_updateRecipes() {

@@ -216,6 +216,11 @@ class ChromeUtils {
   static already_AddRefed<Promise> RequestProcInfo(GlobalObject& aGlobal,
                                                    ErrorResult& aRv);
 
+  static uint64_t GetCurrentProcessMemoryUsage(GlobalObject& aGlobal,
+                                               ErrorResult& aRv);
+  static uint64_t GetCpuTimeSinceProcessStart(GlobalObject& aGlobal,
+                                              ErrorResult& aRv);
+
   static bool VsyncEnabled(GlobalObject& aGlobal);
 
   static void Import(const GlobalObject& aGlobal,

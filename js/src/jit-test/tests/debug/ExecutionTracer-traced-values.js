@@ -14,7 +14,7 @@ const JSVAL_TYPE_SYMBOL = 0x07;
 const JSVAL_TYPE_BIGINT = 0x09;
 const JSVAL_TYPE_OBJECT = 0x0c;
 
-const GETTER_SETTER_MAGIC = 0xf0;
+const GETTER_SETTER_MAGIC = 0x0f;
 
 const GENERIC_OBJECT_HAS_DENSE_ELEMENTS = 1;
 
@@ -159,6 +159,7 @@ wrappedNumber.foo = 0;
   function foobaz(a, a) {},
   function barbaz(a, ...rest) {},
   ccw.wrappedObject,
+  {get testGetter() {return 42}},
 ].map(function f1(x) { return x; });`);
 
 const trace = g.getExecutionTrace();
@@ -608,6 +609,24 @@ testSingleArgument(events.shift(), reader => {
 
   assertEq(reader.readUint32(), 1);
   assertEq(reader.readUint8(), JSVAL_TYPE_INT32 | inlinedInt32Flags(0));
+});
+
+testSingleArgument(events.shift(), reader => {
+  assertEq(reader.readUint8(), JSVAL_TYPE_OBJECT);
+  assertEq(reader.readUint8(), OBJECT_KIND_GENERIC_OBJECT);
+
+  let shape = trace[0].shapeSummaries[reader.readUint32()];
+  assertEq(shape.length, 2);
+  assertEq(shape[0], "Object");
+  assertEq(shape[1], "testGetter");
+
+  assertEq(reader.readUint32(), 1);
+  assertEq(reader.readUint8(), GETTER_SETTER_MAGIC);
+  assertEq(reader.readUint8(), JSVAL_TYPE_OBJECT);
+  assertEq(reader.readUint8(), OBJECT_KIND_FUNCTION);
+  assertEq(reader.readString(), "get testGetter");
+  assertEq(reader.readUint32(), 0);
+  assertEq(reader.readUint8(), JSVAL_TYPE_UNDEFINED);
 });
 
 assertEq(events.length, 0);

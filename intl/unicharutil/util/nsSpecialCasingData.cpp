@@ -6,8 +6,8 @@
    by genSpecialCasingData.pl - do not edit! */
 
 #include "nsSpecialCasingData.h"
-#include "mozilla/ArrayUtils.h" // for ArrayLength
 #include <stdlib.h>       // for bsearch
+#include <array>
 
 /* SpecialCasing-16.0.0.txt */
 /* Date: 2024-05-10, 22:49:00 GMT */

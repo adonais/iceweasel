@@ -13,7 +13,6 @@
 #include "base/process_util.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/ipc/MessageLink.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/NodeController.h"
@@ -220,7 +219,7 @@ class UntypedManagedEndpoint {
   bool BindCommon(IProtocol* aActor, IRefCountedProtocol* aManager);
 
  private:
-  friend struct IPDLParamTraits<UntypedManagedEndpoint>;
+  friend struct IPC::ParamTraits<UntypedManagedEndpoint>;
 
   struct Inner {
     // Pointers to the toplevel actor which will manage this connection. When

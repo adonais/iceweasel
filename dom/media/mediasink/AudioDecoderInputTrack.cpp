@@ -218,7 +218,7 @@ void AudioDecoderInputTrack::PushDataToSPSCQueue(SPSCData& data) {
   AssertOnDecoderThread();
   const bool rv = mSPSCQueue.Enqueue(data);
   MOZ_DIAGNOSTIC_ASSERT(rv, "Failed to push data, SPSC queue is full!");
-  Unused << rv;
+  (void)rv;
 }
 
 void AudioDecoderInputTrack::SetVolume(float aVolume) {
@@ -440,7 +440,7 @@ TrackTime AudioDecoderInputTrack::AppendTimeStretchedDataToSegment(
     }
   });
   MOZ_ASSERT(consumedDuration >= 0);
-  Unused << GetDataFromTimeStretcher(aExpectedDuration, aOutput);
+  (void)GetDataFromTimeStretcher(aExpectedDuration, aOutput);
   return consumedDuration;
 }
 

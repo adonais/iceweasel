@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.tabstray.ui.tabitems
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -64,6 +65,7 @@ import org.mozilla.fenix.compose.SwipeToDismissState2
 import org.mozilla.fenix.compose.TabThumbnail
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
+import org.mozilla.fenix.tabstray.ui.sharedTabTransition
 import org.mozilla.fenix.theme.FirefoxTheme
 import kotlin.math.max
 import mozilla.components.ui.icons.R as iconsR
@@ -333,25 +335,23 @@ private fun clickableColor() = when (isSystemInDarkTheme()) {
  * @param tab Tab, containing the thumbnail to be displayed.
  * @param size Size of the thumbnail.
  */
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun Thumbnail(
     tab: TabSessionState,
     size: Int,
 ) {
-    Box(
+    TabThumbnail(
+        tab = tab,
+        thumbnailSizePx = size,
         modifier = Modifier
-            .fillMaxSize()
             .semantics(mergeDescendants = true) {
                 testTag = TabsTrayTestTag.TAB_ITEM_THUMBNAIL
-            },
-    ) {
-        TabThumbnail(
-            tab = tab,
-            size = size,
-            modifier = Modifier.fillMaxSize(),
-            shape = ThumbnailShape,
-        )
-    }
+            }
+            .sharedTabTransition(tab = tab)
+            .fillMaxSize(),
+        shape = ThumbnailShape,
+    )
 }
 
 private data class TabGridItemPreviewState(

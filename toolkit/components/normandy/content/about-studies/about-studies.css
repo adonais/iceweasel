@@ -72,7 +72,7 @@ button > .button-box {
 
 .study .study-status {
   color: var(--study-status-active-color);
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .study.disabled .study-status {
@@ -135,7 +135,7 @@ button > .button-box {
 }
 
 .study-name {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .study-header {

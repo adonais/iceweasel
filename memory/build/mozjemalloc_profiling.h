@@ -7,7 +7,6 @@
 #ifndef _MOZJEMALLOC_PROFILING_H
 #define _MOZJEMALLOC_PROFILING_H
 
-#include "mozilla/Atomics.h"
 #include "mozilla/RefCounted.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"

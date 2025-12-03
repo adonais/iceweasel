@@ -8,7 +8,6 @@
 #define nsINIParserImpl_h__
 
 #include "nsIINIParser.h"
-#include "mozilla/Attributes.h"
 
 #define NS_INIPARSERFACTORY_CONTRACTID "@mozilla.org/xpcom/ini-parser-factory;1"
 

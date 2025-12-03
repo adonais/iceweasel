@@ -11,7 +11,6 @@
 #include "MediaInfo.h"
 #include "libyuv/convert_from.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Unused.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -307,7 +306,7 @@ void AndroidDataEncoder::ProcessOutput(
             &AndroidDataEncoder::ProcessOutput, std::move(aSample),
             std::move(aBuffer)));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
+    (void)rv;
     return;
   }
   AssertOnTaskQueue();
@@ -498,7 +497,7 @@ void AndroidDataEncoder::Error(const MediaResult& aError) {
     nsresult rv = mTaskQueue->Dispatch(NewRunnableMethod<MediaResult>(
         "AndroidDataEncoder::Error", this, &AndroidDataEncoder::Error, aError));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
+    (void)rv;
     return;
   }
   AssertOnTaskQueue();

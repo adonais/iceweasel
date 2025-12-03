@@ -39,5 +39,6 @@ prefs = [
 ["browser_simplePatterns.js"]
 
 ["browser_textPatterns.js"]
+skip-if = ["os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt && verify-standalone"]
 
 ["browser_tree.js"]

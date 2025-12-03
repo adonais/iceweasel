@@ -9,7 +9,6 @@
 
 #include "Units.h"                           // for ScreenPoint
 #include "mozilla/Assertions.h"              // for MOZ_ASSERT, etc
-#include "mozilla/RefPtr.h"                  // for already_AddRefed, RefCounted
 #include "mozilla/gfx/2D.h"                  // for DrawTarget
 #include "mozilla/gfx/MatrixFwd.h"           // for Matrix, Matrix4x4
 #include "mozilla/gfx/Point.h"               // for IntSize, Point

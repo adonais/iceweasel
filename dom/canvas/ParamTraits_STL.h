@@ -9,7 +9,6 @@
 #include <memory>
 
 #include "ipc/IPCMessageUtils.h"
-#include "mozilla/ipc/IPDLParamTraits.h"
 
 namespace IPC {
 

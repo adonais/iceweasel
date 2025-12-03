@@ -70,6 +70,9 @@ class MOZ_STACK_CLASS nsTextPaintStyle {
   bool GetCustomHighlightTextColor(nsAtom* aHighlightName, nscolor* aForeColor);
   bool GetCustomHighlightBackgroundColor(nsAtom* aHighlightName,
                                          nscolor* aBackColor);
+  RefPtr<ComputedStyle> GetComputedStyleForSelectionPseudo(
+      SelectionType aSelectionType, nsAtom* aHighlightName);
+
   void GetURLSecondaryColor(nscolor* aForeColor);
   void GetIMESelectionColors(SelectionStyleIndex aIndex, nscolor* aForeColor,
                              nscolor* aBackColor);
@@ -117,12 +120,14 @@ class MOZ_STACK_CLASS nsTextPaintStyle {
   bool mInitCommonColors;
   bool mInitSelectionColorsAndShadow;
   bool mResolveColors;
+  bool mInitTargetTextPseudoStyle;
 
   // Selection data
 
   nscolor mSelectionTextColor;
   nscolor mSelectionBGColor;
   RefPtr<ComputedStyle> mSelectionPseudoStyle;
+  RefPtr<ComputedStyle> mTargetTextPseudoStyle;
   nsTHashMap<RefPtr<nsAtom>, RefPtr<ComputedStyle>>
       mCustomHighlightPseudoStyles;
 
@@ -152,6 +157,7 @@ class MOZ_STACK_CLASS nsTextPaintStyle {
   // Color initializations
   void InitCommonColors();
   bool InitSelectionColorsAndShadow();
+  void InitTargetTextPseudoStyle();
 
   nsSelectionStyle* SelectionStyle(SelectionStyleIndex aIndex);
   nsSelectionStyle InitSelectionStyle(SelectionStyleIndex aIndex);

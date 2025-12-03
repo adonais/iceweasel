@@ -862,8 +862,6 @@ export var TelemetryEnvironmentTesting = {
   },
 
   checkGfx(gfxData) {
-    lazy.Assert.ok("D2DEnabled" in gfxData);
-    lazy.Assert.equal(gfxData.D2DEnabled, Glean.gfx.d2dEnabled.testGetValue());
     lazy.Assert.ok("DWriteEnabled" in gfxData);
     lazy.Assert.equal(
       gfxData.DWriteEnabled,
@@ -883,7 +881,6 @@ export var TelemetryEnvironmentTesting = {
       Glean.gfx.textScaleFactor.testGetValue()
     );
     if (gIsWindows) {
-      lazy.Assert.equal(typeof gfxData.D2DEnabled, "boolean");
       lazy.Assert.equal(typeof gfxData.DWriteEnabled, "boolean");
     }
 
@@ -942,11 +939,11 @@ export var TelemetryEnvironmentTesting = {
     lazy.Assert.equal(typeof gfxData.features.gpuProcess.status, "string");
     lazy.Assert.ok(!!Glean.gfxFeatures.gpuProcess.testGetValue().status);
 
-    if (gIsWindows && !!gfxData.features?.d2d?.version) {
-      lazy.Assert.equal(typeof gfxData.features.d2d.version, "string");
+    if (gIsWindows && !!gfxData.features?.d3d11?.version) {
+      lazy.Assert.equal(typeof gfxData.features.d3d11.version, "number");
       lazy.Assert.equal(
-        gfxData.features.d2d.version,
-        Glean.gfxFeatures.d2d.testGetValue().version
+        gfxData.features.d3d11.version,
+        Glean.gfxFeatures.d3d11.testGetValue().version
       );
     }
 

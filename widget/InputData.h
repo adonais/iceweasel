@@ -25,6 +25,8 @@ template <class E>
 struct already_AddRefed;
 class nsIWidget;
 
+enum TouchPointerState : uint8_t;
+
 namespace mozilla {
 
 namespace layers {
@@ -836,6 +838,18 @@ class KeyboardInput : public InputData {
 
   KeyboardInput();
 };
+
+/**
+ * For widgets that support synthesizing native touch events, this function
+ * can be used to manage the current state of synthetic pointers. Each widget
+ * must maintain its own MultiTouchInput instance and pass it in as the state,
+ * along with the desired parameters for the changes. This function returns
+ * a new MultiTouchInput object that is ready to be dispatched.
+ */
+MultiTouchInput UpdateSynthesizedTouchState(
+    MultiTouchInput* aState, TimeStamp aTimeStamp, uint32_t aPointerId,
+    TouchPointerState aPointerState, LayoutDeviceIntPoint aPoint,
+    double aPointerPressure, uint32_t aPointerOrientation);
 
 }  // namespace mozilla
 

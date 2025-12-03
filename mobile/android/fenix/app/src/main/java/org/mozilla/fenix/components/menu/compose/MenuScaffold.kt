@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
  * A scaffold for a menu UI that implements the basic layout structure with [header] and [content].
@@ -50,7 +49,7 @@ internal fun MenuScaffold(
         }
 
         if (scrollState.canScrollBackward) {
-            HorizontalDivider(color = FirefoxTheme.colors.borderPrimary)
+            HorizontalDivider()
         }
 
         Column(
@@ -91,6 +90,7 @@ internal fun MenuFrame(
     Box(modifier = modifier) {
         Column {
             header()
+
             Column(
                 modifier = Modifier
                     .verticalScroll(scrollState)

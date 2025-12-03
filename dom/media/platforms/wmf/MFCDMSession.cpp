@@ -140,7 +140,7 @@ HRESULT MFCDMSession::GenerateRequest(const nsAString& aInitDataType,
       NS_ConvertUTF16toUTF8(aInitDataType).get(), aInitDataSize);
   RETURN_IF_FAILED(mSession->GenerateRequest(
       InitDataTypeToString(aInitDataType), aInitData, aInitDataSize));
-  Unused << RetrieveSessionId();
+  (void)RetrieveSessionId();
   return S_OK;
 }
 

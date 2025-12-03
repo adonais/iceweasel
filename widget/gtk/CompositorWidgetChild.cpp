@@ -4,7 +4,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CompositorWidgetChild.h"
-#include "mozilla/Unused.h"
 #include "gfxPlatform.h"
 
 namespace mozilla {
@@ -36,15 +35,13 @@ mozilla::ipc::IPCResult CompositorWidgetChild::RecvUnobserveVsync() {
 
 void CompositorWidgetChild::NotifyClientSizeChanged(
     const LayoutDeviceIntSize& aClientSize) {
-  Unused << SendNotifyClientSizeChanged(aClientSize);
+  (void)SendNotifyClientSizeChanged(aClientSize);
 }
 
-void CompositorWidgetChild::CleanupResources() {
-  Unused << SendCleanupResources();
-}
+void CompositorWidgetChild::CleanupResources() { (void)SendCleanupResources(); }
 
 void CompositorWidgetChild::SetRenderingSurface(const uintptr_t aXWindow) {
-  Unused << SendSetRenderingSurface(aXWindow);
+  (void)SendSetRenderingSurface(aXWindow);
 }
 
 }  // namespace widget

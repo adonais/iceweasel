@@ -28,7 +28,6 @@
 #include "States.h"
 #include "nsISimpleEnumerator.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Sprintf.h"
 #include "nsAccessibilityService.h"
 #include "nsComponentManagerUtils.h"
@@ -305,16 +304,9 @@ static uint16_t CreateMaiInterfaces(Accessible* aAccessible) {
     interfaces |= 1 << MAI_INTERFACE_SELECTION;
   }
 
-  if (aAccessible->IsRemote()) {
-    if (aAccessible->IsActionable()) {
-      interfaces |= 1 << MAI_INTERFACE_ACTION;
-    }
-  } else {
-    // XXX: Harmonize this with remote accessibles
-    if (aAccessible->ActionCount()) {
-      interfaces |= 1 << MAI_INTERFACE_ACTION;
-    }
-  }
+  // XXX: Always include the action interface because aria-actions
+  // can define actions mid-life.
+  interfaces |= 1 << MAI_INTERFACE_ACTION;
 
   return interfaces;
 }
@@ -1149,6 +1141,19 @@ void MaiAtkObject::FireAtkShowHideEvent(AtkObject* aParent, bool aIsAdded,
 void a11y::PlatformSelectionEvent(Accessible*, Accessible* aWidget, uint32_t) {
   MaiAtkObject* obj = MAI_ATK_OBJECT(GetWrapperFor(aWidget));
   g_signal_emit_by_name(obj, "selection_changed");
+}
+
+mozilla::StaticAutoPtr<nsCString> sReturnedString;
+
+// static
+const char* AccessibleWrap::ReturnString(nsAString& aString) {
+  if (!sReturnedString) {
+    sReturnedString = new nsCString();
+    ClearOnShutdown(&sReturnedString);
+  }
+
+  CopyUTF16toUTF8(aString, *sReturnedString);
+  return sReturnedString->get();
 }
 
 // static

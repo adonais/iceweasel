@@ -7,6 +7,9 @@
 const { IPPProxyManager } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPPProxyManager.sys.mjs"
 );
+const { IPProtectionServerlist } = ChromeUtils.importESModule(
+  "resource:///modules/ipprotection/IPProtectionServerlist.sys.mjs"
+);
 const { GuardianClient } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/GuardianClient.sys.mjs"
 );
@@ -30,6 +33,8 @@ add_task(async function test_IPPProxyManager_start_stop_reset() {
       asBearerToken: () => "Bearer hello world",
     },
   });
+
+  await IPProtectionServerlist.maybeFetchList();
 
   let proxyManager = new IPPProxyManager(guardian);
 

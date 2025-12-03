@@ -159,22 +159,32 @@ async function testRelated(
     },
     {
       desc: "Set attribute",
-      attrs: [{ key: attr, value: "dependant1" }],
+      attrs: [{ id: "host", key: attr, value: "dependant1" }],
       expected: [host, null, dependant1],
     },
     {
       desc: "Change attribute",
-      attrs: [{ key: attr, value: "dependant2" }],
+      attrs: [{ id: "host", key: attr, value: "dependant2" }],
       expected: [null, host, dependant2],
     },
     {
       desc: "Change attribute to multiple targets",
-      attrs: [{ key: attr, value: "dependant1 dependant2" }],
+      attrs: [{ id: "host", key: attr, value: "dependant1 dependant2" }],
+      expected: [host, host, [dependant1, dependant2]],
+    },
+    {
+      desc: "Change 'dependent2' id to 'invalid'",
+      attrs: [{ id: "dependant2", key: "id", value: "invalid" }],
+      expected: [host, null, dependant1],
+    },
+    {
+      desc: "Change 'invalid' id back to 'dependent2'",
+      attrs: [{ id: "invalid", key: "id", value: "dependant2" }],
       expected: [host, host, [dependant1, dependant2]],
     },
     {
       desc: "Remove attribute",
-      attrs: [{ key: attr }],
+      attrs: [{ id: "host", key: attr }],
       expected: [null, null, null],
     },
   ];
@@ -184,24 +194,32 @@ async function testRelated(
     tests = tests.concat([
       {
         desc: "Set reflected attribute",
-        reflectedattr: [{ key: reflectedAttrName, value: ["dependant1"] }],
+        reflectedattr: [
+          { id: "host", key: reflectedAttrName, value: ["dependant1"] },
+        ],
         expected: [host, null, dependant1],
       },
       {
         desc: "Change reflected attribute",
-        reflectedattr: [{ key: reflectedAttrName, value: ["dependant2"] }],
+        reflectedattr: [
+          { id: "host", key: reflectedAttrName, value: ["dependant2"] },
+        ],
         expected: [null, host, dependant2],
       },
       {
         desc: "Change reflected attribute to multiple targets",
         reflectedattr: [
-          { key: reflectedAttrName, value: ["dependant2", "dependant1"] },
+          {
+            id: "host",
+            key: reflectedAttrName,
+            value: ["dependant2", "dependant1"],
+          },
         ],
         expected: [host, host, [dependant1, dependant2]],
       },
       {
         desc: "Remove reflected attribute",
-        reflectedattr: [{ key: reflectedAttrName, value: null }],
+        reflectedattr: [{ id: "host", key: reflectedAttrName, value: null }],
         expected: [null, null, null],
       },
     ]);
@@ -211,12 +229,12 @@ async function testRelated(
     info(desc);
 
     if (attrs) {
-      for (let { key, value } of attrs) {
-        await invokeSetAttribute(browser, "host", key, value);
+      for (let { id, key, value } of attrs) {
+        await invokeSetAttribute(browser, id, key, value);
       }
     } else if (reflectedattr) {
-      for (let { key, value } of reflectedattr) {
-        await invokeSetReflectedElementsAttribute(browser, "host", key, value);
+      for (let { id, key, value } of reflectedattr) {
+        await invokeSetReflectedElementsAttribute(browser, id, key, value);
       }
     }
 

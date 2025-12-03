@@ -14,6 +14,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/ToString.h"
 #include "mozilla/dom/EncoderTypes.h"
 #include "mozilla/dom/ImageBitmapBinding.h"
 #include "mozilla/dom/UnionTypes.h"

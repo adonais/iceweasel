@@ -11,7 +11,7 @@ import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdContainingText
-import org.mozilla.fenix.helpers.TestAssetHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.addressFormAsset
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.TestSetup
@@ -29,9 +29,9 @@ class AddressAutofillTest : TestSetup() {
         var name = "Mozilla Fenix Firefox"
         var streetAddress = "Harrison Street"
         var city = "San Francisco"
-        var state = "Alaska"
+        var state = "AK"
         var zipCode = "94105"
-        var country = "United States"
+        var country = "US"
         var phoneNumber = "555-5555"
         var emailAddress = "foo@bar.com"
     }
@@ -41,9 +41,9 @@ class AddressAutofillTest : TestSetup() {
         var name = "Android Test Name"
         var streetAddress = "Fort Street"
         var city = "Alberta"
-        var state = "Arizona"
+        var state = "AZ"
         var zipCode = "95141"
-        var country = "Canada"
+        var country = "CA"
         var phoneNumber = "777-7777"
         var emailAddress = "fuu@bar.org"
     }
@@ -61,8 +61,7 @@ class AddressAutofillTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyAddressAutofillTest() {
-        val addressFormPage =
-            TestAssetHelper.getAddressFormAsset(mockWebServer)
+        val addressFormPage = mockWebServer.addressFormAsset
 
         autofillScreen(composeTestRule) {
             fillAndSaveAddress(
@@ -164,8 +163,7 @@ class AddressAutofillTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1836839
     @Test
     fun verifyAddressAutofillToggleTest() {
-        val addressFormPage =
-            TestAssetHelper.getAddressFormAsset(mockWebServer)
+        val addressFormPage = mockWebServer.addressFormAsset
 
         autofillScreen(composeTestRule) {
             fillAndSaveAddress(
@@ -208,8 +206,7 @@ class AddressAutofillTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1836847
     @Test
     fun verifyManageAddressesPromptOptionTest() {
-        val addressFormPage =
-            TestAssetHelper.getAddressFormAsset(mockWebServer)
+        val addressFormPage = mockWebServer.addressFormAsset
 
         autofillScreen(composeTestRule) {
             fillAndSaveAddress(
@@ -243,8 +240,7 @@ class AddressAutofillTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1836849
     @Test
     fun verifyMultipleAddressesSelectionTest() {
-        val addressFormPage =
-            TestAssetHelper.getAddressFormAsset(mockWebServer)
+        val addressFormPage = mockWebServer.addressFormAsset
 
         autofillScreen(composeTestRule) {
             fillAndSaveAddress(
@@ -346,11 +342,11 @@ class AddressAutofillTest : TestSetup() {
             verifyAddressAutofillSection(true, false)
             clickAddAddressButton()
             clickCountryDropdown()
-            clickCountryOption("United States")
+            clickCountryOption("US")
             verifyCountryOption("United States")
             verifyStateOption("Alabama")
             clickCountryDropdown()
-            clickCountryOption("Canada")
+            clickCountryOption("CA")
             verifyStateOption("Alberta")
         }
     }
@@ -358,8 +354,7 @@ class AddressAutofillTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1836858
     @Test
     fun verifyFormFieldCanBeFilledManuallyTest() {
-        val addressFormPage =
-            TestAssetHelper.getAddressFormAsset(mockWebServer)
+        val addressFormPage = mockWebServer.addressFormAsset
 
         autofillScreen(composeTestRule) {
             fillAndSaveAddress(
@@ -416,7 +411,7 @@ class AddressAutofillTest : TestSetup() {
             clickManageAddressesButton()
             verifyManageAddressesSection(
                 FirstAddressAutofillDetails.name,
-                "Harrison Street, San Francisco, Alaska, US, 94105, 555-5555, foo@bar.com",
+                "Harrison Street, San Francisco, AK, US, 94105, 555-5555, foo@bar.com",
             )
         }
     }

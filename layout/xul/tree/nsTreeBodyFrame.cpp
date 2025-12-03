@@ -24,7 +24,6 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/Try.h"
 #include "mozilla/dom/CustomEvent.h"
@@ -1569,9 +1568,8 @@ nsresult nsTreeBodyFrame::CreateTimer(const LookAndFeel::IntID aID,
   // Create a new timer only if the delay is greater than zero.
   // Zero value means that this feature is completely disabled.
   if (delay > 0) {
-    MOZ_TRY_VAR(timer,
-                NS_NewTimerWithFuncCallback(aFunc, this, delay, aType, aName,
-                                            GetMainThreadSerialEventTarget()));
+    timer = MOZ_TRY(NS_NewTimerWithFuncCallback(
+        aFunc, this, delay, aType, aName, GetMainThreadSerialEventTarget()));
   }
 
   timer.forget(aTimer);
@@ -2440,7 +2438,7 @@ class nsDisplayTreeBody final : public nsPaintedDisplayItem {
 
   void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override {
     MOZ_ASSERT(aBuilder);
-    Unused << static_cast<nsTreeBodyFrame*>(mFrame)->PaintTreeBody(
+    (void)static_cast<nsTreeBodyFrame*>(mFrame)->PaintTreeBody(
         *aCtx, GetPaintRect(aBuilder, aCtx), ToReferenceFrame(), aBuilder);
   }
 

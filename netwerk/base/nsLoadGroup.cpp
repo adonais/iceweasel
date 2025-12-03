@@ -26,7 +26,6 @@
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/StoragePrincipalHelper.h"
-#include "mozilla/Unused.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/StaticPrefs_network.h"
@@ -111,7 +110,7 @@ nsLoadGroup::~nsLoadGroup() {
 
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   if (os) {
-    Unused << os->RemoveObserver(this, "last-pb-context-exited");
+    (void)os->RemoveObserver(this, "last-pb-context-exited");
   }
 
   if (mPageSize) {
@@ -268,7 +267,7 @@ nsLoadGroup::Cancel(nsresult status) {
   }
 
   if (mRequestContext) {
-    Unused << mRequestContext->CancelTailPendingRequests(status);
+    (void)mRequestContext->CancelTailPendingRequests(status);
   }
 
 #if defined(DEBUG)
@@ -544,7 +543,7 @@ nsLoadGroup::RemoveRequest(nsIRequest* request, nsISupports* ctxt,
 static uint64_t GetTransferSize(nsITimedChannel* aTimedChannel) {
   if (nsCOMPtr<nsIHttpChannel> channel = do_QueryInterface(aTimedChannel)) {
     uint64_t size = 0;
-    Unused << channel->GetTransferSize(&size);
+    (void)channel->GetTransferSize(&size);
     return size;
   }
 
@@ -1150,14 +1149,14 @@ nsresult nsLoadGroup::MergeDefaultLoadFlags(nsIRequest* aRequest,
 nsresult nsLoadGroup::Init() {
   mRequestContextService = RequestContextService::GetOrCreate();
   if (mRequestContextService) {
-    Unused << mRequestContextService->NewRequestContext(
+    (void)mRequestContextService->NewRequestContext(
         getter_AddRefs(mRequestContext));
   }
 
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   NS_ENSURE_STATE(os);
 
-  Unused << os->AddObserver(this, "last-pb-context-exited", true);
+  (void)os->AddObserver(this, "last-pb-context-exited", true);
 
   return NS_OK;
 }
@@ -1166,7 +1165,7 @@ nsresult nsLoadGroup::InitWithRequestContextId(
     const uint64_t& aRequestContextId) {
   mRequestContextService = RequestContextService::GetOrCreate();
   if (mRequestContextService) {
-    Unused << mRequestContextService->GetRequestContext(
+    (void)mRequestContextService->GetRequestContext(
         aRequestContextId, getter_AddRefs(mRequestContext));
   }
   mExternalRequestContext = true;
@@ -1174,7 +1173,7 @@ nsresult nsLoadGroup::InitWithRequestContextId(
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   NS_ENSURE_STATE(os);
 
-  Unused << os->AddObserver(this, "last-pb-context-exited", true);
+  (void)os->AddObserver(this, "last-pb-context-exited", true);
 
   return NS_OK;
 }

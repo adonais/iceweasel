@@ -89,7 +89,7 @@ class Exception : public nsIException, public nsWrapperCache {
 
   uint32_t LineNumber(JSContext* aCx) const;
 
-  uint32_t ColumnNumber() const;
+  uint32_t ColumnNumber(JSContext* aCx) const;
 
   already_AddRefed<nsIStackFrame> GetLocation() const;
 

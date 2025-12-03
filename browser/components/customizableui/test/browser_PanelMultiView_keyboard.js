@@ -34,6 +34,8 @@ let gBrowserBrowser;
 let gIframeView;
 let gIframeIframe;
 let gToggle;
+let gMozButton;
+let gMozButtonSubviewNav;
 let gComponentView;
 let gShadowRoot;
 let gShadowRootButtonA;
@@ -157,6 +159,15 @@ add_setup(async function () {
   gToggle = document.createElement("moz-toggle");
   gToggle.label = "Test label";
   gMainView.appendChild(gToggle);
+  gMozButton = document.createElement("moz-button");
+  gMozButton.label = "gMozButton";
+  gMozButton.id = "gMozButton";
+  gMainView.appendChild(gMozButton);
+  gMozButtonSubviewNav = document.createElement("moz-button");
+  gMozButtonSubviewNav.label = "gMozButtonSubviewNav";
+  gMozButtonSubviewNav.id = "gMozButtonSubviewNav";
+  gMozButtonSubviewNav.classList.add("moz-button-subviewbutton-nav");
+  gMainView.appendChild(gMozButtonSubviewNav);
 
   gMainTabOrder = [
     gMainButton1,
@@ -169,6 +180,8 @@ add_setup(async function () {
     gNamespacedLink,
     gLink,
     gToggle,
+    gMozButton,
+    gMozButtonSubviewNav,
   ];
   gMainArrowOrder = [
     gMainButton1,
@@ -178,6 +191,8 @@ add_setup(async function () {
     gNamespacedLink,
     gLink,
     gToggle,
+    gMozButton,
+    gMozButtonSubviewNav,
   ];
 
   gSubView = document.createXULElement("panelview");
@@ -444,6 +459,48 @@ add_task(async function testLeftArrowTextarea() {
   EventUtils.synthesizeKey("KEY_ArrowLeft");
   is(gSubTextarea.selectionStart, 4, "selectionStart 4 after ArrowLeft");
   is(document.activeElement, gSubTextarea, "textarea still focused");
+  await hidePopup();
+});
+
+add_task(async function testRightArrow() {
+  await openPopup();
+
+  // Ensure non moz-button-subviewbutton-navs respond to the right arrow
+  let clicked = false;
+  let assertNoClick = () => {
+    clicked = true;
+  };
+  gMozButton.addEventListener("click", assertNoClick);
+  // Focus using the arrow keys so PanelMultiView#selectedElement is set
+  for (let i = 0; i < gMainTabOrder.length; i++) {
+    EventUtils.synthesizeKey("KEY_ArrowUp");
+    if (document.activeElement == gMozButton) {
+      break;
+    }
+  }
+  is(document.activeElement, gMozButton, "gMozButton focused");
+  EventUtils.synthesizeKey("KEY_ArrowRight");
+  ok(!clicked, "click handler should not be triggered for regular button");
+  EventUtils.synthesizeKey(" ");
+  ok(clicked, "click handler triggered on space");
+  gMozButton.removeEventListener("click", assertNoClick);
+
+  // Ensure moz-button-subviewbutton-nav gets click on right arrow
+  gMozButtonSubviewNav.addEventListener(
+    "click",
+    () => gPanelMultiView.showSubView(gSubView, gMozButtonSubviewNav),
+    { once: true }
+  );
+  let shown = BrowserTestUtils.waitForEvent(gSubView, "ViewShown");
+  EventUtils.synthesizeKey("KEY_ArrowDown");
+  is(
+    document.activeElement,
+    gMozButtonSubviewNav,
+    "gMozButtonSubviewNav focused"
+  );
+  EventUtils.synthesizeKey("KEY_ArrowRight");
+  await shown;
+  ok(true, "Triggered moz-button-subviewbutton-nav on right arrow");
   await hidePopup();
 });
 

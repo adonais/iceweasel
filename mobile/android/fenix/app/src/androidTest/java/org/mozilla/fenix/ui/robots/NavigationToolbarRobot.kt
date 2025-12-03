@@ -23,9 +23,11 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextReplacement
 import androidx.recyclerview.widget.RecyclerView
+import androidx.test.espresso.AppNotIdleException
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.action.ViewActions.longClick
+import androidx.test.espresso.action.ViewActions.pressImeActionButton
 import androidx.test.espresso.assertion.PositionAssertions.isCompletelyAbove
 import androidx.test.espresso.assertion.PositionAssertions.isPartiallyBelow
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -62,6 +64,7 @@ import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdContainingText
 import org.mozilla.fenix.helpers.SessionLoadedIdlingResource
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
+import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.TestHelper.waitForObjects
@@ -317,7 +320,7 @@ class NavigationToolbarRobot {
             awesomeBar().setText(url.toString())
             Log.i(TAG, "enterURLAndEnterToBrowser: Toolbar text was set to: $url")
             Log.i(TAG, "enterURLAndEnterToBrowser: Trying to press device enter button")
-            mDevice.pressEnter()
+            pressImeActionOnAwesomeBar()
             Log.i(TAG, "enterURLAndEnterToBrowser: Pressed device enter button")
 
             registerAndCleanupIdlingResources(sessionLoadedIdlingResource) {
@@ -364,7 +367,7 @@ class NavigationToolbarRobot {
             awesomeBar().setText(url.toString())
             Log.i(TAG, "enterURLAndEnterToBrowser: Toolbar text was set to: $url")
             Log.i(TAG, "enterURLAndEnterToBrowser: Trying to press device enter button")
-            mDevice.pressEnter()
+            pressImeActionOnAwesomeBar()
             Log.i(TAG, "enterURLAndEnterToBrowser: Pressed device enter button")
 
             BrowserRobot().interact()
@@ -381,7 +384,7 @@ class NavigationToolbarRobot {
             awesomeBar().setText(crashUrl)
             Log.i(TAG, "openTabCrashReporter: Toolbar text was set to: $crashUrl")
             Log.i(TAG, "openTabCrashReporter: Trying to press device enter button")
-            mDevice.pressEnter()
+            pressImeActionOnAwesomeBar()
             Log.i(TAG, "openTabCrashReporter: Pressed device enter button")
 
             registerAndCleanupIdlingResources(sessionLoadedIdlingResource) {
@@ -644,6 +647,21 @@ class NavigationToolbarRobot {
             SearchRobot().interact()
             return SearchRobot.Transition()
         }
+
+        fun openUnifiedTrustPanel(interact: UnifiedTrustPanelRobot.() -> Unit): UnifiedTrustPanelRobot.Transition {
+            Log.i(TAG, "openUnifiedTrustPanel: Waiting for $waitingTime ms for site security button to exist")
+            itemWithResId("$packageName:id/mozac_browser_toolbar_site_info_indicator").waitForExists(waitingTime)
+            Log.i(TAG, "openUnifiedTrustPanel: Waited for $waitingTime ms for site security button to exist")
+            Log.i(TAG, "openUnifiedTrustPanel: Trying to click site security button")
+            itemWithResId("$packageName:id/mozac_browser_toolbar_site_info_indicator").click()
+            Log.i(TAG, "openUnifiedTrustPanel: Clicked site security button")
+            Log.i(TAG, "openUnifiedTrustPanel: Waiting for $waitingTime for the unified trust panel to exist")
+            itemWithResId("$packageName:id/design_bottom_sheet").waitForExists(waitingTime)
+            Log.i(TAG, "openUnifiedTrustPanel: Waited for $waitingTime for the unified trust panel to exist")
+
+            UnifiedTrustPanelRobot().interact()
+            return UnifiedTrustPanelRobot.Transition()
+        }
     }
 }
 
@@ -668,6 +686,34 @@ private fun urlBar() = mDevice.findObject(UiSelector().resourceId("$packageName:
 private fun homeUrlBar() = mDevice.findObject(UiSelector().resourceId("$packageName:id/toolbar_text"))
 private fun awesomeBar() =
     mDevice.findObject(UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_edit_url_view"))
+private fun pressImeActionOnAwesomeBar() {
+    val context = appContext
+    val resId = context.resources.getIdentifier(
+        "mozac_browser_toolbar_edit_url_view",
+        "id",
+        packageName,
+    )
+
+    try {
+        Log.i(TAG, "pressImeActionOnAwesomeBar: Trying pressImeActionButton via Espresso")
+        onView(withId(resId)).perform(pressImeActionButton())
+        Log.i(TAG, "pressImeActionOnAwesomeBar: Espresso IME action completed successfully")
+    } catch (e: AppNotIdleException) {
+        Log.w(TAG, "pressImeActionOnAwesomeBar: IME action failed (AppNotIdleException); falling back to UiAutomator pressEnter()", e)
+        try {
+            val field = awesomeBar()
+            if (field.exists()) {
+                field.click()
+                mDevice.pressEnter()
+                Log.i(TAG, "pressImeActionOnAwesomeBar: Fallback UiAutomator pressEnter() executed successfully")
+            } else {
+                Log.w(TAG, "pressImeActionOnAwesomeBar: Fallback failed: awesomeBar() not found")
+            }
+        } catch (fallbackEx: Exception) {
+            Log.e(TAG, "pressImeActionOnAwesomeBar: Fallback UiAutomator pressEnter() failed", fallbackEx)
+        }
+    }
+}
 private fun threeDotButton() = onView(withId(toolbarR.id.mozac_browser_toolbar_menu))
 private fun tabTrayButton() = onView(withId(R.id.tab_button))
 private fun tabsCounter() = onView(

@@ -236,6 +236,8 @@ class HgRepository(Repository):
         args = ["diff", f"-U{context}"]
         if rev:
             args += ["-c", rev]
+        else:
+            args += ["-r", ".^"]
         for dot_extension in extensions:
             args += ["--include", f"glob:**{dot_extension}"]
         if exclude_file is not None:

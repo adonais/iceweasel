@@ -832,13 +832,13 @@ already_AddRefed<ScaledFont> gfxDWriteFont::GetScaledFont(
 
   if (forceGDI) {
     if (mAzureScaledFontGDI.compareExchange(nullptr, newScaledFont.get())) {
-      Unused << newScaledFont.forget();
+      newScaledFont.forget().leak();
       mAzureScaledFontUsedClearType = useClearType;
     }
     scaledFont = mAzureScaledFontGDI;
   } else {
     if (mAzureScaledFont.compareExchange(nullptr, newScaledFont.get())) {
-      Unused << newScaledFont.forget();
+      newScaledFont.forget().leak();
       mAzureScaledFontUsedClearType = useClearType;
     }
     scaledFont = mAzureScaledFont;

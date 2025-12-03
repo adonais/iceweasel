@@ -552,3 +552,40 @@ addAccessibleTask(
   },
   { chrome: true, topLevel: true, iframe: true, remoteIframe: true }
 );
+
+/**
+ * Test that the name does not include aria-actions targets of itself.
+ */
+addAccessibleTask(
+  `<div role="tablist">
+    <div role="tab" id="tab" aria-actions="close pin">Title
+      <button id="close">Close</button>
+      <button id="pin">Pin</button>
+    </div>
+  </div>`,
+  async function testAriaActionInSubtree(browser, docAcc) {
+    const tab = findAccessibleChildByID(docAcc, "tab");
+    testName(tab, "Title");
+
+    let nameChanged = waitForEvent(EVENT_NAME_CHANGE, tab);
+    invokeSetAttribute(browser, "tab", "aria-actions", "pin");
+    await nameChanged;
+    testName(tab, "Title Close");
+
+    nameChanged = waitForEvent(EVENT_NAME_CHANGE, tab);
+    invokeSetAttribute(browser, "pin", "id", "broken-pin");
+    await nameChanged;
+    testName(tab, "Title Close Pin");
+
+    nameChanged = waitForEvent(EVENT_NAME_CHANGE, tab);
+    invokeSetAttribute(browser, "tab", "aria-actions", "close pin");
+    await nameChanged;
+    testName(tab, "Title Pin");
+
+    nameChanged = waitForEvent(EVENT_NAME_CHANGE, tab);
+    invokeSetAttribute(browser, "broken-pin", "id", "pin");
+    await nameChanged;
+    testName(tab, "Title");
+  },
+  { chrome: true, topLevel: true }
+);

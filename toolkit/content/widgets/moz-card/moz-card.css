@@ -93,7 +93,7 @@ summary {
 
 #heading {
   font-size: var(--font-size-root);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--heading-font-weight);
 }
 
 #content {

@@ -345,7 +345,7 @@ newtab-wallpaper-abstract-orange = مالٹا شکلاں
 newtab-wallpaper-gradient-orange = میلان نارنجی تے غلابی
 newtab-wallpaper-abstract-blue-purple = نیلے تے جامنی رنگ دیاں شکلاں
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = فوٹو
 newtab-wallpaper-beach-at-sunrise = ݙین٘ہ ابھرݨ ویلے ساحل

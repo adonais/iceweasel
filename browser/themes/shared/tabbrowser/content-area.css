@@ -155,7 +155,7 @@
     --panel-min-width: 140px;
 
     .split-view-panel {
-      position: static;
+      position: relative;
       flex: 1;
       min-width: var(--panel-min-width);
       max-width: calc(100% - var(--panel-min-width));
@@ -165,6 +165,7 @@
     .browserStack {
       border-radius: var(--border-radius-medium);
       overflow: clip;
+      outline: var(--border-width) solid var(--border-color);
 
       .deck-selected > .browserContainer > & {
         outline: var(--focus-outline);
@@ -190,7 +191,49 @@
     .split-view-panel[width] {
       flex: none;
     }
+
+    /* Display split view footer within inactive panels. */
+    .split-view-panel:not(.deck-selected) > split-view-footer {
+      display: inherit;
+    }
   }
+}
+
+/* Split view */
+
+split-view-footer {
+  max-width: calc(100% - var(--space-xsmall));
+  display: none;
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-end: 0;
+
+  border-block-start: 1px solid var(--border-color);
+  border-inline-start: 1px solid var(--border-color);
+  border-start-start-radius: var(--border-radius-medium);
+  border-start-end-radius: 0;
+  border-end-end-radius: var(--border-radius-medium);
+  border-end-start-radius: 0;
+
+  padding-block: var(--space-xxsmall);
+  padding-inline: var(--space-small) var(--space-xsmall);
+}
+
+.split-view-icon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+}
+
+.split-view-uri {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+split-view-footer,
+.split-view-security-warning {
+  align-items: center;
+  gap: var(--space-small);
+  white-space: nowrap;
 }
 
 /* Status panel */
@@ -250,15 +293,18 @@
   @media -moz-pref("browser.tabs.hideStatusPanel") {
     visibility: hidden;
   }
+
+  /* Ensure that this appears on top of the split view footer. */
+  .split-view-panel & {
+    z-index: 1;
+  }
 }
 
-#statuspanel-label {
+#statuspanel-label,
+split-view-footer {
   color-scheme: env(-moz-content-preferred-color-scheme);
-  margin: 0;
-  padding: 2px 4px;
   background-color: -moz-dialog;
-  border: 1px none ThreeDShadow;
-  border-top-style: solid;
+  border-color: ThreeDShadow;
   color: -moz-dialogText;
   text-shadow: none;
 
@@ -267,6 +313,14 @@
     border-color: light-dark(#ddd, hsl(240, 1%, 40%));
     color: light-dark(#444, rgb(249, 249, 250));
   }
+}
+
+#statuspanel-label {
+  margin: 0;
+  padding: 2px 4px;
+  border-width: 1px;
+  border-style: none;
+  border-top-style: solid;
 
   #statuspanel:not([mirror]) > &:-moz-locale-dir(ltr),
   #statuspanel[mirror] > &:-moz-locale-dir(rtl) {

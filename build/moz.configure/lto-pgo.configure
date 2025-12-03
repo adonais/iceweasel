@@ -260,19 +260,15 @@ option(
 
 imply_option("MOZ_LD64_KNOWN_GOOD", moz_automation)
 
-
-@depends("--enable-lto", c_compiler, select_linker, target, enable_tests)
-def use_fat_lto(lto, c_compiler, linker, target, enable_tests):
-    if not lto:
-        return False
-    if not enable_tests:
-        return False
-    if c_compiler.type not in ("clang", "clang-cl"):
-        return False
-    if c_compiler.version < "18.0.0":
-        return False
-
-    return linker and linker.KIND == "lld" and target.os != "OSX"
+use_fat_lto = cxx_compiler.try_link(
+    ldflags=depends(stlport_libs)(
+        lambda extra: ["-flto", "-ffat-lto-objects"] + (extra or [])
+    ),
+    check_msg="whether the C++ compiler supports fat lto objects",
+    when=depends(select_linker, "--enable-lto", enable_tests)(
+        lambda linker, lto, tests: linker and linker.KIND == "lld" and lto and tests
+    ),
+)
 
 
 @depends(

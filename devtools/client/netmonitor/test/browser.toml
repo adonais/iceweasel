@@ -3,7 +3,6 @@ https_first_disabled = true
 tags = "devtools"
 subsuite = "devtools"
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1829298
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 support-files = [
@@ -132,7 +131,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_net_block-extensions.js"]
 
 ["browser_net_block-pattern.js"]
-skip-if = ["os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug"] # almost perma leaks
 
 ["browser_net_block-serviceworker.js"]
 skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64'"] # Bug 1980084
@@ -253,7 +251,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_net_frame.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1479782
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1479782
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1479782
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1479782
@@ -418,7 +415,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_net_simple-request-data.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1667115
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1667115
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1667115
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1667115
@@ -471,7 +467,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_net_telemetry_persist_toggle_changed.js"]
 
 ["browser_net_telemetry_select_ws_frame.js"]
-skip-if = ["os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug"] # Bug 1842200 - Frequent intermittent leaks.
 
 ["browser_net_telemetry_sidepanel_changed.js"]
 
@@ -495,7 +490,6 @@ skip-if = ["true"] # TODO: fix the test
 ["browser_net_truncate-post-data.js"]
 https_first_disabled = true # Intermittent crashes on macos when using HTTPS, Bug 1732865
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && socketprocess_networking", # Bug 1772211
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && socketprocess_networking", # Bug 1772211
 ]
 

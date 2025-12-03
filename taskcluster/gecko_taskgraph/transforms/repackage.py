@@ -38,6 +38,7 @@ packaging_description_schema = Schema(
         # passed through to job description
         Optional("fetches"): job_description_schema["fetches"],
         Optional("run-on-projects"): job_description_schema["run-on-projects"],
+        Optional("run-on-repo-type"): job_description_schema["run-on-repo-type"],
         # Shipping product and phase
         Optional("shipping-product"): job_description_schema["shipping-product"],
         Optional("shipping-phase"): job_description_schema["shipping-phase"],
@@ -724,6 +725,7 @@ def make_job_description(config, jobs):
             "run-on-projects": job.get(
                 "run-on-projects", dep_job.attributes.get("run_on_projects")
             ),
+            "run-on-repo-type": job.get("run-on-repo-type", ["git", "hg"]),
             "optimization": dep_job.optimization,
             "treeherder": treeherder,
             "routes": job.get("routes", []),

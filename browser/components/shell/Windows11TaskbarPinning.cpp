@@ -14,7 +14,6 @@
 
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 #include "mozilla/widget/WinTaskbar.h"
 #include "WinUtils.h"

@@ -12,16 +12,16 @@
 #define RTC_BASE_EVENT_H_
 
 #include "api/units/time_delta.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/synchronization/yield_policy.h"
 
 #if defined(WEBRTC_WIN)
 #include <windows.h>
 #elif defined(WEBRTC_POSIX)
-#include <pthread.h>
+#include <pthread.h>  // IWYU pragma: keep
 #else
 #error "Must define either WEBRTC_WIN or WEBRTC_POSIX."
 #endif
-
-#include "rtc_base/synchronization/yield_policy.h"
 
 namespace webrtc {
 
@@ -134,14 +134,5 @@ class ScopedDisallowWait {
 
 }  //  namespace webrtc
 
-// Re-export symbols from the webrtc namespace for backwards compatibility.
-// TODO(bugs.webrtc.org/4222596): Remove once all references are updated.
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::Event;
-using ::webrtc::ScopedAllowBaseSyncPrimitives;
-using ::webrtc::ScopedAllowBaseSyncPrimitivesForTesting;
-}  // namespace rtc
-#endif  // WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 
 #endif  // RTC_BASE_EVENT_H_

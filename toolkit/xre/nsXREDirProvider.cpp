@@ -51,6 +51,7 @@
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/glean/ToolkitXreMetrics.h"
 #include "mozilla/Try.h"
+#include "mozilla/Utf8.h"
 #include "mozilla/XREAppData.h"
 #include "nsPrintfCString.h"
 
@@ -95,8 +96,8 @@
 nsXREDirProvider* gDirServiceProvider = nullptr;
 nsIFile* gDataDirHomeLocal = nullptr;
 nsIFile* gDataDirHome = nullptr;
-MOZ_RUNINIT nsCOMPtr<nsIFile> gDataDirProfileLocal = nullptr;
-MOZ_RUNINIT nsCOMPtr<nsIFile> gDataDirProfile = nullptr;
+MOZ_CONSTINIT nsCOMPtr<nsIFile> gDataDirProfileLocal{};
+MOZ_CONSTINIT nsCOMPtr<nsIFile> gDataDirProfile{};
 
 // These are required to allow nsXREDirProvider to be usable in xpcshell tests.
 // where gAppData is null.
@@ -622,7 +623,7 @@ nsXREDirProvider::DoStartup() {
       if (db) {
         nsCOMPtr<nsIPK11Token> token;
         if (NS_SUCCEEDED(db->GetInternalKeyToken(getter_AddRefs(token)))) {
-          mozilla::Unused << token->Login(false);
+          (void)token->Login(false);
         }
       } else {
         NS_WARNING("Failed to get nsIPK11TokenDB service.");

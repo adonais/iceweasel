@@ -59,7 +59,7 @@ add_task(async function test_init_uninitBackupScheduler() {
   sandbox.stub(idleService, "addIdleObserver");
   sandbox.stub(idleService, "removeIdleObserver");
 
-  await bs.initBackupScheduler();
+  bs.initBackupScheduler();
   Assert.ok(
     idleService.addIdleObserver.calledOnce,
     "addIdleObserver was called"

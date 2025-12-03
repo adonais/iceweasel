@@ -124,15 +124,15 @@ internal fun InlineAutocompleteTextField(
         focusRequester.requestFocus()
     }
 
-    var currentSuggestion: AutocompleteResult? by remember(suggestion) { mutableStateOf(suggestion) }
+    var useSuggestion by remember { mutableStateOf(true) }
     val suggestionTextColor = AcornTheme.colors.textPrimary
     val highlightBackgroundColor = Color(TEXT_HIGHLIGHT_COLOR.toColorInt())
-    val suggestionVisualTransformation = remember(currentSuggestion, textFieldValue) {
-        when (textFieldValue.text.isEmpty()) {
+    val suggestionVisualTransformation = remember(useSuggestion, suggestion, textFieldValue) {
+        when (textFieldValue.text.isEmpty() || !useSuggestion) {
             true -> VisualTransformation.None
             false -> AutocompleteVisualTransformation(
                 userInput = textFieldValue,
-                suggestion = currentSuggestion,
+                suggestion = suggestion,
                 textColor = suggestionTextColor,
                 textBackground = highlightBackgroundColor,
             )
@@ -140,8 +140,8 @@ internal fun InlineAutocompleteTextField(
     }
 
     val localView = LocalView.current
-    LaunchedEffect(currentSuggestion) {
-        currentSuggestion?.text?.let {
+    LaunchedEffect(suggestion) {
+        suggestion?.text?.let {
             @Suppress("DEPRECATION")
             localView.announceForAccessibility(it)
         }
@@ -184,7 +184,7 @@ internal fun InlineAutocompleteTextField(
                             textFieldValue.composition == newValue.composition &&
                             textFieldValue.annotatedString == newValue.annotatedString
                     if (onlySelectionChanged) {
-                        currentSuggestion = null
+                        useSuggestion = false
                         textFieldValue = newValue
                         return@BasicTextField
                     }
@@ -195,10 +195,11 @@ internal fun InlineAutocompleteTextField(
                     val newText = newValue.text
                     val isBackspaceHidingSuggestion = originalText.length == newText.length + 1 &&
                             originalText.startsWith(newText) &&
-                            currentSuggestion?.text?.startsWith(originalText) == true
+                            (useSuggestion && suggestion?.text?.startsWith(originalText) == true)
                     if (isBackspaceHidingSuggestion) {
-                        currentSuggestion = null
+                        useSuggestion = false
                     } else {
+                        useSuggestion = true
                         onUrlEdit(
                             BrowserToolbarQuery(
                                 previous = originalText,
@@ -234,9 +235,10 @@ internal fun InlineAutocompleteTextField(
                 keyboardActions = KeyboardActions(
                     onGo = {
                         keyboardController?.hide()
+                        val currentSuggestion = suggestion?.text
                         onUrlCommitted(
-                            when (currentSuggestion?.text?.isNotEmpty()) {
-                                true -> currentSuggestion?.text.orEmpty()
+                            when (useSuggestion && currentSuggestion?.startsWith(textFieldValue.text) == true) {
+                                true -> currentSuggestion
                                 else -> textFieldValue.text
                             },
                         )
@@ -261,11 +263,11 @@ internal fun InlineAutocompleteTextField(
                         modifier = Modifier
                             .fillMaxWidth()
                             // Commit the suggestion when users tap on the outside of the typed in text.
-                            .pointerInput(currentSuggestion, suggestionBounds) {
+                            .pointerInput(suggestion, suggestionBounds) {
                                 awaitEachGesture {
                                     val downEvent = awaitFirstDown(requireUnconsumed = false)
                                     val bounds = suggestionBounds
-                                    val suggestion = currentSuggestion?.text
+                                    val suggestion = suggestion?.text
                                     if (bounds != null && suggestion != null &&
                                         bounds.right < downEvent.position.x
                                     ) {

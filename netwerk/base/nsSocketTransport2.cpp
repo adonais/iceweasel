@@ -13,7 +13,6 @@
 #include "NSSErrorsService.h"
 #include "NetworkDataCountLayer.h"
 #include "QuicSocketControl.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/glean/NetwerkMetrics.h"

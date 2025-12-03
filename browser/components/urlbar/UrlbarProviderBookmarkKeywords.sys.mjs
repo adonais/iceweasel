@@ -48,9 +48,9 @@ export class UrlbarProviderBookmarkKeywords extends UrlbarProvider {
   /**
    * Starts querying.
    *
-   * @param {object} queryContext The query context object
-   * @param {Function} addCallback Callback invoked by the provider to add a new
-   *        result.
+   * @param {UrlbarQueryContext} queryContext
+   * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
+   *   Callback invoked by the provider to add a new result.
    */
   async startQuery(queryContext, addCallback) {
     let keyword = queryContext.tokens[0]?.value;

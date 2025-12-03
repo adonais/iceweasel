@@ -42,27 +42,21 @@
   };
 
   window.TabDragAndDrop = class {
-    #tabbrowserTabs;
     #dragTime = 0;
-    #maxTabsPerRow;
-    #dragOverGroupingTimer;
     #pinnedDropIndicatorTimeout = null;
-    #pinnedDropIndicator;
-    #dragToPinPromoCard;
-    #tabDropIndicator;
 
     constructor(tabbrowserTabs) {
-      this.#tabbrowserTabs = tabbrowserTabs;
+      this._tabbrowserTabs = tabbrowserTabs;
     }
 
     init() {
-      this.#pinnedDropIndicator = document.getElementById(
+      this._pinnedDropIndicator = document.getElementById(
         "pinned-drop-indicator"
       );
-      this.#dragToPinPromoCard = document.getElementById(
+      this._dragToPinPromoCard = document.getElementById(
         "drag-to-pin-promo-card"
       );
-      this.#tabDropIndicator = this.#tabbrowserTabs.querySelector(
+      this._tabDropIndicator = this._tabbrowserTabs.querySelector(
         ".tab-drop-indicator"
       );
     }
@@ -70,23 +64,23 @@
     // Event handlers
 
     handle_dragstart(event) {
-      if (this.#tabbrowserTabs._isCustomizing) {
+      if (this._tabbrowserTabs._isCustomizing) {
         return;
       }
 
-      let tab = this.#getDragTarget(event);
+      let tab = this._getDragTarget(event);
       if (!tab) {
         return;
       }
 
-      this.#tabbrowserTabs.previewPanel?.deactivate(null, { force: true });
+      this._tabbrowserTabs.previewPanel?.deactivate(null, { force: true });
       this.startTabDrag(event, tab);
     }
 
     handle_dragover(event) {
       var dropEffect = this.getDropEffectForTabDrag(event);
 
-      var ind = this.#tabDropIndicator;
+      var ind = this._tabDropIndicator;
       if (dropEffect == "" || dropEffect == "none") {
         ind.hidden = true;
         return;
@@ -94,13 +88,13 @@
       event.preventDefault();
       event.stopPropagation();
 
-      var arrowScrollbox = this.#tabbrowserTabs.arrowScrollbox;
+      var arrowScrollbox = this._tabbrowserTabs.arrowScrollbox;
 
       // autoscroll the tab strip if we drag over the scroll
       // buttons, even if we aren't dragging a tab, but then
       // return to avoid drawing the drop indicator
       var pixelsToScroll = 0;
-      if (this.#tabbrowserTabs.overflowing) {
+      if (this._tabbrowserTabs.overflowing) {
         switch (event.originalTarget) {
           case arrowScrollbox._scrollButtonUp:
             pixelsToScroll = arrowScrollbox.scrollIncrement * -1;
@@ -111,7 +105,7 @@
         }
         if (pixelsToScroll) {
           arrowScrollbox.scrollByPixels(
-            (this.#rtlMode ? -1 : 1) * pixelsToScroll,
+            (this._rtlMode ? -1 : 1) * pixelsToScroll,
             true
           );
         }
@@ -124,23 +118,23 @@
         !draggedTab._dragData.fromTabList
       ) {
         ind.hidden = true;
-
         if (this.#isAnimatingMoveTogetherSelectedTabs()) {
           // Wait for moving selected tabs together animation to finish.
           return;
         }
         this.finishMoveTogetherSelectedTabs(draggedTab);
+        this._updateTabStylesOnDrag(draggedTab, dropEffect);
 
         if (dropEffect == "move") {
           this.#setMovingTabMode(true);
 
           // Pinned tabs in expanded vertical mode are on a grid format and require
           // different logic to drag and drop.
-          if (this.#isContainerVerticalPinnedGrid(draggedTab)) {
-            this.#animateExpandedPinnedTabMove(event);
+          if (this._isContainerVerticalPinnedGrid(draggedTab)) {
+            this._animateExpandedPinnedTabMove(event);
             return;
           }
-          this.#animateTabMove(event);
+          this._animateTabMove(event);
           return;
         }
       }
@@ -148,7 +142,7 @@
       this.finishAnimateTabMove();
 
       if (dropEffect == "link") {
-        let target = this.#getDragTarget(event, {
+        let target = this._getDragTarget(event, {
           ignoreSides: true,
         });
         if (target) {
@@ -168,7 +162,7 @@
             if (overGroupLabel) {
               target.group.collapsed = false;
             } else {
-              this.#tabbrowserTabs.selectedItem = target;
+              this._tabbrowserTabs.selectedItem = target;
             }
           }
           if (isTab(target)) {
@@ -186,36 +180,36 @@
         // if we are scrolling, put the drop indicator at the edge
         // so that it doesn't jump while scrolling
         let scrollRect = arrowScrollbox.scrollClientRect;
-        let minMargin = this.#tabbrowserTabs.verticalMode
+        let minMargin = this._tabbrowserTabs.verticalMode
           ? scrollRect.top - rect.top
           : scrollRect.left - rect.left;
-        let maxMargin = this.#tabbrowserTabs.verticalMode
+        let maxMargin = this._tabbrowserTabs.verticalMode
           ? Math.min(minMargin + scrollRect.height, scrollRect.bottom)
           : Math.min(minMargin + scrollRect.width, scrollRect.right);
-        if (this.#rtlMode) {
+        if (this._rtlMode) {
           [minMargin, maxMargin] = [
-            this.#tabbrowserTabs.clientWidth - maxMargin,
-            this.#tabbrowserTabs.clientWidth - minMargin,
+            this._tabbrowserTabs.clientWidth - maxMargin,
+            this._tabbrowserTabs.clientWidth - minMargin,
           ];
         }
         newMargin = pixelsToScroll > 0 ? maxMargin : minMargin;
       } else {
-        let newIndex = this.#getDropIndex(event);
-        let children = this.#tabbrowserTabs.ariaFocusableItems;
+        let newIndex = this._getDropIndex(event);
+        let children = this._tabbrowserTabs.ariaFocusableItems;
         if (newIndex == children.length) {
           let itemRect = children.at(-1).getBoundingClientRect();
-          if (this.#tabbrowserTabs.verticalMode) {
+          if (this._tabbrowserTabs.verticalMode) {
             newMargin = itemRect.bottom - rect.top;
-          } else if (this.#rtlMode) {
+          } else if (this._rtlMode) {
             newMargin = rect.right - itemRect.left;
           } else {
             newMargin = itemRect.right - rect.left;
           }
         } else {
           let itemRect = children[newIndex].getBoundingClientRect();
-          if (this.#tabbrowserTabs.verticalMode) {
+          if (this._tabbrowserTabs.verticalMode) {
             newMargin = rect.top - itemRect.bottom;
-          } else if (this.#rtlMode) {
+          } else if (this._rtlMode) {
             newMargin = rect.right - itemRect.right;
           } else {
             newMargin = itemRect.left - rect.left;
@@ -224,13 +218,13 @@
       }
 
       ind.hidden = false;
-      newMargin += this.#tabbrowserTabs.verticalMode
+      newMargin += this._tabbrowserTabs.verticalMode
         ? ind.clientHeight
         : ind.clientWidth / 2;
-      if (this.#rtlMode) {
+      if (this._rtlMode) {
         newMargin *= -1;
       }
-      ind.style.transform = this.#tabbrowserTabs.verticalMode
+      ind.style.transform = this._tabbrowserTabs.verticalMode
         ? "translateY(" + Math.round(newMargin) + "px)"
         : "translateX(" + Math.round(newMargin) + "px)";
     }
@@ -258,7 +252,7 @@
         );
       }
 
-      if (this.#rtlMode) {
+      if (this._rtlMode) {
         // In `startTabDrag` we reverse the moving tabs order to handle
         // positioning and animation. For drop, we require the original
         // order, so reverse back.
@@ -266,17 +260,17 @@
       }
 
       let overPinnedDropIndicator =
-        this.#pinnedDropIndicator.hasAttribute("visible") &&
-        this.#pinnedDropIndicator.hasAttribute("interactive");
-      this.#resetTabsAfterDrop(draggedTab?.ownerDocument);
+        this._pinnedDropIndicator.hasAttribute("visible") &&
+        this._pinnedDropIndicator.hasAttribute("interactive");
+      this._resetTabsAfterDrop(draggedTab?.ownerDocument);
 
-      this.#tabDropIndicator.hidden = true;
+      this._tabDropIndicator.hidden = true;
       event.stopPropagation();
       if (draggedTab && dropEffect == "copy") {
         let duplicatedDraggedTab;
         let duplicatedTabs = [];
         let dropTarget =
-          this.#tabbrowserTabs.ariaFocusableItems[this.#getDropIndex(event)];
+          this._tabbrowserTabs.ariaFocusableItems[this._getDropIndex(event)];
         for (let tab of movingTabs) {
           let duplicatedTab = gBrowser.duplicateTab(tab);
           duplicatedTabs.push(duplicatedTab);
@@ -285,10 +279,10 @@
           }
         }
         gBrowser.moveTabsBefore(duplicatedTabs, dropTarget, dropMetricsContext);
-        if (draggedTab.container != this.#tabbrowserTabs || event.shiftKey) {
-          this.#tabbrowserTabs.selectedItem = duplicatedDraggedTab;
+        if (draggedTab.container != this._tabbrowserTabs || event.shiftKey) {
+          this._tabbrowserTabs.selectedItem = duplicatedDraggedTab;
         }
-      } else if (draggedTab && draggedTab.container == this.#tabbrowserTabs) {
+      } else if (draggedTab && draggedTab.container == this._tabbrowserTabs) {
         let oldTranslateX = Math.round(draggedTab._dragData.translateX);
         let oldTranslateY = Math.round(draggedTab._dragData.translateY);
         let tabWidth = Math.round(draggedTab._dragData.tabWidth);
@@ -300,7 +294,7 @@
         let isPinned = draggedTab.pinned;
         let numPinned = gBrowser.pinnedTabCount;
 
-        if (this.#isContainerVerticalPinnedGrid(draggedTab)) {
+        if (this._isContainerVerticalPinnedGrid(draggedTab)) {
           // Update both translate axis for pinned vertical expanded tabs
           if (oldTranslateX > 0 && translateOffsetX > tabWidth / 2) {
             newTranslateX += tabWidth;
@@ -313,15 +307,15 @@
             newTranslateY -= tabHeight;
           }
         } else {
-          let tabs = this.#tabbrowserTabs.ariaFocusableItems.slice(
+          let tabs = this._tabbrowserTabs.ariaFocusableItems.slice(
             isPinned ? 0 : numPinned,
             isPinned ? numPinned : undefined
           );
-          let size = this.#tabbrowserTabs.verticalMode ? "height" : "width";
-          let screenAxis = this.#tabbrowserTabs.verticalMode
+          let size = this._tabbrowserTabs.verticalMode ? "height" : "width";
+          let screenAxis = this._tabbrowserTabs.verticalMode
             ? "screenY"
             : "screenX";
-          let tabSize = this.#tabbrowserTabs.verticalMode
+          let tabSize = this._tabbrowserTabs.verticalMode
             ? tabHeight
             : tabWidth;
           let firstTab = tabs[0];
@@ -333,7 +327,7 @@
             lastTab[screenAxis] +
             window.windowUtils.getBoundsWithoutFlushing(lastTab)[size] -
             (lastMovingTabScreen + tabSize);
-          if (this.#tabbrowserTabs.verticalMode) {
+          if (this._tabbrowserTabs.verticalMode) {
             newTranslateY = Math.min(
               Math.max(oldTranslateY, startBound),
               endBound
@@ -356,7 +350,7 @@
         let dropIndex;
         let directionForward = false;
         if (fromTabList) {
-          dropIndex = this.#getDropIndex(event);
+          dropIndex = this._getDropIndex(event);
           if (dropIndex && dropIndex > movingTabs[0].elementIndex) {
             dropIndex--;
             directionForward = true;
@@ -364,8 +358,8 @@
         }
 
         const dragToPinTargets = [
-          this.#tabbrowserTabs.pinnedTabsContainer,
-          this.#dragToPinPromoCard,
+          this._tabbrowserTabs.pinnedTabsContainer,
+          this._dragToPinPromoCard,
         ];
         let shouldPin =
           isTab(draggedTab) &&
@@ -375,7 +369,7 @@
         let shouldUnpin =
           isTab(draggedTab) &&
           draggedTab.pinned &&
-          this.#tabbrowserTabs.arrowScrollbox.contains(event.target);
+          this._tabbrowserTabs.arrowScrollbox.contains(event.target);
 
         let shouldTranslate =
           !gReduceMotion &&
@@ -384,11 +378,11 @@
           !isTabGroupLabel(draggedTab) &&
           !shouldPin &&
           !shouldUnpin;
-        if (this.#isContainerVerticalPinnedGrid(draggedTab)) {
+        if (this._isContainerVerticalPinnedGrid(draggedTab)) {
           shouldTranslate &&=
             (oldTranslateX && oldTranslateX != newTranslateX) ||
             (oldTranslateY && oldTranslateY != newTranslateY);
-        } else if (this.#tabbrowserTabs.verticalMode) {
+        } else if (this._tabbrowserTabs.verticalMode) {
           shouldTranslate &&= oldTranslateY && oldTranslateY != newTranslateY;
         } else {
           shouldTranslate &&= oldTranslateX && oldTranslateX != newTranslateX;
@@ -417,8 +411,8 @@
           }
 
           if (isTabGroupLabel(draggedTab)) {
-            this.#setIsDraggingTabGroup(draggedTab.group, false);
-            this.#expandGroupOnDrop(draggedTab);
+            this._setIsDraggingTabGroup(draggedTab.group, false);
+            this._expandGroupOnDrop(draggedTab);
           }
         };
 
@@ -497,16 +491,17 @@
             }
           } else {
             moveTabs();
+            this._tabbrowserTabs._notifyBackgroundTab(movingTabs.at(-1));
           }
         }
       } else if (isTabGroupLabel(draggedTab)) {
         gBrowser.adoptTabGroup(draggedTab.group, {
-          elementIndex: this.#getDropIndex(event),
+          elementIndex: this._getDropIndex(event),
         });
       } else if (draggedTab) {
         // Move the tabs into this window. To avoid multiple tab-switches in
         // the original window, the selected tab should be adopted last.
-        const dropIndex = this.#getDropIndex(event);
+        const dropIndex = this._getDropIndex(event);
         let newIndex = dropIndex;
         let selectedTab;
         let indexForSelectedTab;
@@ -537,8 +532,8 @@
 
         // Restore tab selection
         gBrowser.addRangeToMultiSelectedTabs(
-          this.#tabbrowserTabs.ariaFocusableItems[dropIndex],
-          this.#tabbrowserTabs.ariaFocusableItems[newIndex - 1]
+          this._tabbrowserTabs.ariaFocusableItems[dropIndex],
+          this._tabbrowserTabs.ariaFocusableItems[newIndex - 1]
         );
       } else {
         // Pass true to disallow dropping javascript: or data: urls
@@ -558,11 +553,11 @@
           inBackground = !inBackground;
         }
 
-        let targetTab = this.#getDragTarget(event, { ignoreSides: true });
+        let targetTab = this._getDragTarget(event, { ignoreSides: true });
         let userContextId =
-          this.#tabbrowserTabs.selectedItem.getAttribute("usercontextid");
+          this._tabbrowserTabs.selectedItem.getAttribute("usercontextid");
         let replace = isTab(targetTab);
-        let newIndex = this.#getDropIndex(event);
+        let newIndex = this._getDropIndex(event);
         let urls = links.map(link => link.url);
         let policyContainer =
           Services.droppedLinkHandler.getPolicyContainer(event);
@@ -584,7 +579,7 @@
             }
           }
 
-          let nextItem = this.#tabbrowserTabs.ariaFocusableItems[newIndex];
+          let nextItem = this._tabbrowserTabs.ariaFocusableItems[newIndex];
           let tabGroup = isTab(nextItem) && nextItem.group;
           gBrowser.loadTabs(urls, {
             inBackground,
@@ -619,23 +614,23 @@
       this.finishMoveTogetherSelectedTabs(draggedTab);
       this.finishAnimateTabMove();
       if (isTabGroupLabel(draggedTab)) {
-        this.#setIsDraggingTabGroup(draggedTab.group, false);
-        this.#expandGroupOnDrop(draggedTab);
+        this._setIsDraggingTabGroup(draggedTab.group, false);
+        this._expandGroupOnDrop(draggedTab);
       }
-      this.#resetTabsAfterDrop(draggedTab.ownerDocument);
+      this._resetTabsAfterDrop(draggedTab.ownerDocument);
 
       if (
         dt.mozUserCancelled ||
         dt.dropEffect != "none" ||
         !Services.prefs.getBoolPref("browser.tabs.allowTabDetach") ||
-        this.#tabbrowserTabs._isCustomizing
+        this._tabbrowserTabs._isCustomizing
       ) {
         delete draggedTab._dragData;
         return;
       }
 
       // Disable detach within the browser toolbox
-      let [tabAxisPos, tabAxisStart, tabAxisEnd] = this.#tabbrowserTabs
+      let [tabAxisPos, tabAxisStart, tabAxisEnd] = this._tabbrowserTabs
         .verticalMode
         ? [event.screenY, window.screenY, window.screenY + window.outerHeight]
         : [event.screenX, window.screenX, window.screenX + window.outerWidth];
@@ -644,16 +639,16 @@
         // also avoid detaching if the tab was dropped too close to
         // the tabbar (half a tab)
         let rect = window.windowUtils.getBoundsWithoutFlushing(
-          this.#tabbrowserTabs.arrowScrollbox
+          this._tabbrowserTabs.arrowScrollbox
         );
-        let crossAxisPos = this.#tabbrowserTabs.verticalMode
+        let crossAxisPos = this._tabbrowserTabs.verticalMode
           ? event.screenX
           : event.screenY;
         let crossAxisStart, crossAxisEnd;
-        if (this.#tabbrowserTabs.verticalMode) {
+        if (this._tabbrowserTabs.verticalMode) {
           if (
-            (RTL_UI && this.#tabbrowserTabs._sidebarPositionStart) ||
-            (!RTL_UI && !this.#tabbrowserTabs._sidebarPositionStart)
+            (RTL_UI && this._tabbrowserTabs._sidebarPositionStart) ||
+            (!RTL_UI && !this._tabbrowserTabs._sidebarPositionStart)
           ) {
             crossAxisStart =
               window.mozInnerScreenX + rect.right - 1.5 * rect.width;
@@ -766,37 +761,37 @@
 
       // This does not work at all (see bug 458613)
       var target = event.relatedTarget;
-      while (target && target != this.#tabbrowserTabs) {
+      while (target && target != this._tabbrowserTabs) {
         target = target.parentNode;
       }
       if (target) {
         return;
       }
 
-      this.#tabDropIndicator.hidden = true;
+      this._tabDropIndicator.hidden = true;
       event.stopPropagation();
     }
 
     // Utilities
 
-    get #rtlMode() {
-      return !this.#tabbrowserTabs.verticalMode && RTL_UI;
+    get _rtlMode() {
+      return !this._tabbrowserTabs.verticalMode && RTL_UI;
     }
 
     #setMovingTabMode(movingTab) {
-      this.#tabbrowserTabs.toggleAttribute("movingtab", movingTab);
+      this._tabbrowserTabs.toggleAttribute("movingtab", movingTab);
       gNavToolbox.toggleAttribute("movingtab", movingTab);
     }
 
-    #getDropIndex(event) {
-      let item = this.#getDragTarget(event);
+    _getDropIndex(event) {
+      let item = this._getDragTarget(event);
       if (!item) {
-        return this.#tabbrowserTabs.ariaFocusableItems.length;
+        return this._tabbrowserTabs.ariaFocusableItems.length;
       }
       let isBeforeMiddle;
 
       let elementForSize = elementToMove(item);
-      if (this.#tabbrowserTabs.verticalMode) {
+      if (this._tabbrowserTabs.verticalMode) {
         let middle =
           elementForSize.screenY +
           elementForSize.getBoundingClientRect().height / 2;
@@ -805,7 +800,7 @@
         let middle =
           elementForSize.screenX +
           elementForSize.getBoundingClientRect().width / 2;
-        isBeforeMiddle = this.#rtlMode
+        isBeforeMiddle = this._rtlMode
           ? event.screenX > middle
           : event.screenX < middle;
       }
@@ -824,7 +819,7 @@
      *   happened on its central part (from 25% to 75%); if they happened on the
      *   left or right sides of the tab, the method will return null.
      */
-    #getDragTarget(event, { ignoreSides = false } = {}) {
+    _getDragTarget(event, { ignoreSides = false } = {}) {
       let { target } = event;
       while (target) {
         if (isTab(target) || isTabGroupLabel(target)) {
@@ -839,7 +834,7 @@
           event.screenX > target.screenX + width * 0.75 ||
           ((event.screenY < target.screenY + height * 0.25 ||
             event.screenY > target.screenY + height * 0.75) &&
-            this.#tabbrowserTabs.verticalMode)
+            this._tabbrowserTabs.verticalMode)
         ) {
           return null;
         }
@@ -847,17 +842,17 @@
       return target;
     }
 
-    #isContainerVerticalPinnedGrid(tab) {
+    _isContainerVerticalPinnedGrid(tab) {
       return (
-        this.#tabbrowserTabs.verticalMode &&
+        this._tabbrowserTabs.verticalMode &&
         tab.pinned &&
-        this.#tabbrowserTabs.hasAttribute("expanded") &&
-        !this.#tabbrowserTabs.expandOnHover
+        this._tabbrowserTabs.hasAttribute("expanded") &&
+        !this._tabbrowserTabs.expandOnHover
       );
     }
 
     #isMovingTab() {
-      return this.#tabbrowserTabs.hasAttribute("movingtab");
+      return this._tabbrowserTabs.hasAttribute("movingtab");
     }
 
     // Tab groups
@@ -872,12 +867,12 @@
      * @param {MozTabbrowserTabGroup} tabGroup
      * @param {boolean} isDragging
      */
-    #setIsDraggingTabGroup(tabGroup, isDragging) {
+    _setIsDraggingTabGroup(tabGroup, isDragging) {
       tabGroup.isBeingDragged = isDragging;
-      this.#tabbrowserTabs._invalidateCachedVisibleTabs();
+      this._tabbrowserTabs._invalidateCachedVisibleTabs();
     }
 
-    #expandGroupOnDrop(draggedTab) {
+    _expandGroupOnDrop(draggedTab) {
       if (
         isTabGroupLabel(draggedTab) &&
         draggedTab._dragData?.expandGroupOnDrop
@@ -889,42 +884,42 @@
     /**
      * @param {MozTabbrowserTab|typeof MozTabbrowserTabGroup.labelElement} dropElement
      */
-    #triggerDragOverGrouping(dropElement) {
-      this.#clearDragOverGroupingTimer();
+    _triggerDragOverGrouping(dropElement) {
+      this._clearDragOverGroupingTimer();
 
-      this.#tabbrowserTabs.toggleAttribute("movingtab-group", true);
-      this.#tabbrowserTabs.removeAttribute("movingtab-ungroup");
+      this._tabbrowserTabs.toggleAttribute("movingtab-group", true);
+      this._tabbrowserTabs.removeAttribute("movingtab-ungroup");
       dropElement.toggleAttribute("dragover-groupTarget", true);
     }
 
-    #clearDragOverGroupingTimer() {
-      if (this.#dragOverGroupingTimer) {
-        clearTimeout(this.#dragOverGroupingTimer);
-        this.#dragOverGroupingTimer = 0;
+    _clearDragOverGroupingTimer() {
+      if (this._dragOverGroupingTimer) {
+        clearTimeout(this._dragOverGroupingTimer);
+        this._dragOverGroupingTimer = 0;
       }
     }
 
-    #setDragOverGroupColor(groupColorCode) {
+    _setDragOverGroupColor(groupColorCode) {
       if (!groupColorCode) {
-        this.#tabbrowserTabs.style.removeProperty("--dragover-tab-group-color");
-        this.#tabbrowserTabs.style.removeProperty(
+        this._tabbrowserTabs.style.removeProperty("--dragover-tab-group-color");
+        this._tabbrowserTabs.style.removeProperty(
           "--dragover-tab-group-color-invert"
         );
-        this.#tabbrowserTabs.style.removeProperty(
+        this._tabbrowserTabs.style.removeProperty(
           "--dragover-tab-group-color-pale"
         );
         return;
       }
 
-      this.#tabbrowserTabs.style.setProperty(
+      this._tabbrowserTabs.style.setProperty(
         "--dragover-tab-group-color",
         `var(--tab-group-color-${groupColorCode})`
       );
-      this.#tabbrowserTabs.style.setProperty(
+      this._tabbrowserTabs.style.setProperty(
         "--dragover-tab-group-color-invert",
         `var(--tab-group-color-${groupColorCode}-invert)`
       );
-      this.#tabbrowserTabs.style.setProperty(
+      this._tabbrowserTabs.style.setProperty(
         "--dragover-tab-group-color-pale",
         `var(--tab-group-color-${groupColorCode}-pale)`
       );
@@ -933,7 +928,7 @@
     /**
      * @param {MozTabbrowserTab|typeof MozTabbrowserTabGroup.labelElement} [element]
      */
-    #resetGroupTarget(element) {
+    _resetGroupTarget(element) {
       element?.removeAttribute("dragover-groupTarget");
     }
 
@@ -944,17 +939,17 @@
         // Temporarily disable MousePosTracker while dragging
         MousePosTracker.removeListener(document.defaultView.SidebarController);
       }
-      if (this.#isContainerVerticalPinnedGrid(tab)) {
+      if (this._isContainerVerticalPinnedGrid(tab)) {
         // In expanded vertical mode, the max number of pinned tabs per row is dynamic
         // Set this before adjusting dragged tab's position
-        let pinnedTabs = this.#tabbrowserTabs.visibleTabs.slice(
+        let pinnedTabs = this._tabbrowserTabs.visibleTabs.slice(
           0,
           gBrowser.pinnedTabCount
         );
         let tabsPerRow = 0;
         let position = RTL_UI
           ? window.windowUtils.getBoundsWithoutFlushing(
-              this.#tabbrowserTabs.pinnedTabsContainer
+              this._tabbrowserTabs.pinnedTabsContainer
             ).right
           : 0;
         for (let pinnedTab of pinnedTabs) {
@@ -974,7 +969,7 @@
           tabsPerRow++;
           position = tabPosition;
         }
-        this.#maxTabsPerRow = tabsPerRow;
+        this._maxTabsPerRow = tabsPerRow;
       }
 
       if (tab.multiselected) {
@@ -993,7 +988,7 @@
         // this case.
         dataTransferOrderedTabs = [tab];
       } else {
-        this.#tabbrowserTabs.selectedItem = tab;
+        this._tabbrowserTabs.selectedItem = tab;
         let selectedTabs = gBrowser.selectedTabs;
         let otherSelectedTabs = selectedTabs.filter(
           selectedTab => selectedTab != tab
@@ -1031,9 +1026,9 @@
       // canvas size (in CSS pixels) to the window's backing resolution in order
       // to get a full-resolution drag image for use on HiDPI displays.
       let scale = window.devicePixelRatio;
-      let canvas = this.#tabbrowserTabs._dndCanvas;
+      let canvas = this._tabbrowserTabs._dndCanvas;
       if (!canvas) {
-        this.#tabbrowserTabs._dndCanvas = canvas = document.createElementNS(
+        this._tabbrowserTabs._dndCanvas = canvas = document.createElementNS(
           "http://www.w3.org/1999/xhtml",
           "canvas"
         );
@@ -1066,11 +1061,11 @@
           // Create a panel to use it in setDragImage
           // which will tell xul to render a panel that follows
           // the pointer while a dnd session is on.
-          if (!this.#tabbrowserTabs._dndPanel) {
-            this.#tabbrowserTabs._dndCanvas = canvas;
-            this.#tabbrowserTabs._dndPanel = document.createXULElement("panel");
-            this.#tabbrowserTabs._dndPanel.className = "dragfeedback-tab";
-            this.#tabbrowserTabs._dndPanel.setAttribute("type", "drag");
+          if (!this._tabbrowserTabs._dndPanel) {
+            this._tabbrowserTabs._dndCanvas = canvas;
+            this._tabbrowserTabs._dndPanel = document.createXULElement("panel");
+            this._tabbrowserTabs._dndPanel.className = "dragfeedback-tab";
+            this._tabbrowserTabs._dndPanel.setAttribute("type", "drag");
             let wrapper = document.createElementNS(
               "http://www.w3.org/1999/xhtml",
               "div"
@@ -1078,12 +1073,12 @@
             wrapper.style.width = "160px";
             wrapper.style.height = "90px";
             wrapper.appendChild(canvas);
-            this.#tabbrowserTabs._dndPanel.appendChild(wrapper);
+            this._tabbrowserTabs._dndPanel.appendChild(wrapper);
             document.documentElement.appendChild(
-              this.#tabbrowserTabs._dndPanel
+              this._tabbrowserTabs._dndPanel
             );
           }
-          toDrag = this.#tabbrowserTabs._dndPanel;
+          toDrag = this._tabbrowserTabs._dndPanel;
         }
         // PageThumb is async with e10s but that's fine
         // since we can update the image during the dnd.
@@ -1106,10 +1101,10 @@
       // relative to the corner of the dragged tab.
       let clientPos = ele => {
         const rect = ele.getBoundingClientRect();
-        return this.#tabbrowserTabs.verticalMode ? rect.top : rect.left;
+        return this._tabbrowserTabs.verticalMode ? rect.top : rect.left;
       };
 
-      let tabOffset = clientPos(tab) - clientPos(this.#tabbrowserTabs);
+      let tabOffset = clientPos(tab) - clientPos(this._tabbrowserTabs);
 
       let movingTabs = tab.multiselected ? gBrowser.selectedTabs : [tab];
       let movingTabsSet = new Set(movingTabs);
@@ -1120,16 +1115,16 @@
         isMovingInTabStrip && isTabGroupLabel(tab) && !tab.group.collapsed;
 
       tab._dragData = {
-        offsetX: this.#tabbrowserTabs.verticalMode
+        offsetX: this._tabbrowserTabs.verticalMode
           ? event.screenX - window.screenX
           : event.screenX - window.screenX - tabOffset,
-        offsetY: this.#tabbrowserTabs.verticalMode
+        offsetY: this._tabbrowserTabs.verticalMode
           ? event.screenY - window.screenY - tabOffset
           : event.screenY - window.screenY,
         scrollPos:
-          this.#tabbrowserTabs.verticalMode && tab.pinned
-            ? this.#tabbrowserTabs.pinnedTabsContainer.scrollPosition
-            : this.#tabbrowserTabs.arrowScrollbox.scrollPosition,
+          this._tabbrowserTabs.verticalMode && tab.pinned
+            ? this._tabbrowserTabs.pinnedTabsContainer.scrollPosition
+            : this._tabbrowserTabs.arrowScrollbox.scrollPosition,
         screenX: event.screenX,
         screenY: event.screenY,
         movingTabs,
@@ -1138,21 +1133,19 @@
         tabGroupCreationColor: gBrowser.tabGroupMenu.nextUnusedColor,
         expandGroupOnDrop: collapseTabGroupDuringDrag,
       };
-      if (this.#rtlMode) {
-        // Reverse order to handle positioning in `updateTabStylesOnDrag`
+      if (this._rtlMode) {
+        // Reverse order to handle positioning in `_updateTabStylesOnDrag`
         // and animation in `_animateTabMove`
         tab._dragData.movingTabs.reverse();
       }
-
-      this.#updateTabStylesOnDrag(tab, event);
 
       if (isMovingInTabStrip) {
         this.#setMovingTabMode(true);
 
         if (tab.multiselected) {
-          this.#moveTogetherSelectedTabs(tab);
+          this._moveTogetherSelectedTabs(tab);
         } else if (isTabGroupLabel(tab)) {
-          this.#setIsDraggingTabGroup(tab.group, true);
+          this._setIsDraggingTabGroup(tab.group, true);
 
           if (collapseTabGroupDuringDrag) {
             tab.group.collapsed = true;
@@ -1173,45 +1166,51 @@
       This function updates the position and widths of elements affected by this layout shift
       when the tab is first selected to be dragged.
     */
-    #updateTabStylesOnDrag(tab) {
+    _updateTabStylesOnDrag(tab, dropEffect) {
+      let tabStripItemElement = elementToMove(tab);
+      tabStripItemElement.style.pointerEvents =
+        dropEffect == "copy" ? "auto" : "";
+      if (tabStripItemElement.hasAttribute("dragtarget")) {
+        return;
+      }
       let isPinned = tab.pinned;
       let numPinned = gBrowser.pinnedTabCount;
-      let allTabs = this.#tabbrowserTabs.ariaFocusableItems;
-      let isGrid = this.#isContainerVerticalPinnedGrid(tab);
+      let allTabs = this._tabbrowserTabs.ariaFocusableItems;
+      let isGrid = this._isContainerVerticalPinnedGrid(tab);
       let periphery = document.getElementById(
         "tabbrowser-arrowscrollbox-periphery"
       );
 
-      if (isPinned && this.#tabbrowserTabs.verticalMode) {
-        this.#tabbrowserTabs.pinnedTabsContainer.setAttribute("dragActive", "");
+      if (isPinned && this._tabbrowserTabs.verticalMode) {
+        this._tabbrowserTabs.pinnedTabsContainer.setAttribute("dragActive", "");
       }
 
       // Ensure tab containers retain size while tabs are dragged out of the layout
       let pinnedRect = window.windowUtils.getBoundsWithoutFlushing(
-        this.#tabbrowserTabs.pinnedTabsContainer.scrollbox
+        this._tabbrowserTabs.pinnedTabsContainer.scrollbox
       );
       let pinnedContainerRect = window.windowUtils.getBoundsWithoutFlushing(
-        this.#tabbrowserTabs.pinnedTabsContainer
+        this._tabbrowserTabs.pinnedTabsContainer
       );
       let unpinnedRect = window.windowUtils.getBoundsWithoutFlushing(
-        this.#tabbrowserTabs.arrowScrollbox.scrollbox
+        this._tabbrowserTabs.arrowScrollbox.scrollbox
       );
       let tabContainerRect = window.windowUtils.getBoundsWithoutFlushing(
-        this.#tabbrowserTabs
+        this._tabbrowserTabs
       );
 
-      if (this.#tabbrowserTabs.pinnedTabsContainer.firstChild) {
-        this.#tabbrowserTabs.pinnedTabsContainer.scrollbox.style.height =
+      if (this._tabbrowserTabs.pinnedTabsContainer.firstChild) {
+        this._tabbrowserTabs.pinnedTabsContainer.scrollbox.style.height =
           pinnedRect.height + "px";
         // Use "minHeight" so as not to interfere with user preferences for height.
-        this.#tabbrowserTabs.pinnedTabsContainer.style.minHeight =
+        this._tabbrowserTabs.pinnedTabsContainer.style.minHeight =
           pinnedContainerRect.height + "px";
-        this.#tabbrowserTabs.pinnedTabsContainer.scrollbox.style.width =
+        this._tabbrowserTabs.pinnedTabsContainer.scrollbox.style.width =
           pinnedRect.width + "px";
       }
-      this.#tabbrowserTabs.arrowScrollbox.scrollbox.style.height =
+      this._tabbrowserTabs.arrowScrollbox.scrollbox.style.height =
         unpinnedRect.height + "px";
-      this.#tabbrowserTabs.arrowScrollbox.scrollbox.style.width =
+      this._tabbrowserTabs.arrowScrollbox.scrollbox.style.width =
         unpinnedRect.width + "px";
 
       let { movingTabs, movingTabsSet, expandGroupOnDrop } = tab._dragData;
@@ -1230,13 +1229,15 @@
         }
         // Prevent flex rules from resizing non dragged tabs while the dragged
         // tabs are positioned absolutely
-        t.style.maxWidth = tabRect.width + "px";
+        if (tabRect.width) {
+          t.style.maxWidth = tabRect.width + "px";
+        }
         // Prevent non-moving tab strip items from performing any animations
         // at the very beginning of the drag operation; this prevents them
         // from appearing to move while the dragged tabs are positioned absolutely
         let isTabInCollapsingGroup = expandGroupOnDrop && t.group == tab.group;
         if (!movingTabsSet.has(t) && !isTabInCollapsingGroup) {
-          t.style.transition = "none";
+          t.animationsEnabled = false;
           suppressTransitionsFor.push(t);
         }
       }
@@ -1247,7 +1248,7 @@
           .then(() => {
             window.requestAnimationFrame(() => {
               for (let t of suppressTransitionsFor) {
-                t.style.transition = "";
+                t.animationsEnabled = true;
               }
             });
           });
@@ -1255,7 +1256,6 @@
 
       // Use .tab-group-label-container or .tabbrowser-tab for size/position
       // calculations.
-      let tabStripItemElement = elementToMove(tab);
       let rect =
         window.windowUtils.getBoundsWithoutFlushing(tabStripItemElement);
       // Vertical tabs live under the #sidebar-main element which gets animated and has a
@@ -1279,8 +1279,8 @@
         // elements have been adjusted. {z-index: 3 !important, position: absolute !important}
         movingTab.setAttribute("dragtarget", "");
         if (isTabGroupLabel(tab)) {
-          if (this.#tabbrowserTabs.verticalMode) {
-            movingTab.style.top = rect.top - unpinnedRect.top + "px";
+          if (this._tabbrowserTabs.verticalMode) {
+            movingTab.style.top = rect.top - tabContainerRect.top + "px";
           } else {
             movingTab.style.left = rect.left - movingTabsOffsetX + "px";
             movingTab.style.height = rect.height + "px";
@@ -1290,11 +1290,11 @@
           movingTab.style.left =
             rect.left - movingTabsOffsetX + position + "px";
           position += rect.width;
-        } else if (this.#tabbrowserTabs.verticalMode) {
+        } else if (this._tabbrowserTabs.verticalMode) {
           movingTab.style.top =
             rect.top - tabContainerRect.top + position + "px";
           position += rect.height;
-        } else if (this.#rtlMode) {
+        } else if (this._rtlMode) {
           movingTab.style.left =
             rect.left - movingTabsOffsetX - position + "px";
           position -= rect.width;
@@ -1305,9 +1305,9 @@
         }
       }
       // Reset position so we can next handle moving tabs before the dragged tab
-      if (this.#tabbrowserTabs.verticalMode) {
+      if (this._tabbrowserTabs.verticalMode) {
         position = -rect.height;
-      } else if (this.#rtlMode) {
+      } else if (this._rtlMode) {
         position = rect.width;
       } else {
         position = -rect.width;
@@ -1316,11 +1316,11 @@
       for (let movingTab of movingTabs.slice(0, movingTabsIndex).reverse()) {
         movingTab.style.width = rect.width + "px";
         movingTab.setAttribute("dragtarget", "");
-        if (this.#tabbrowserTabs.verticalMode) {
+        if (this._tabbrowserTabs.verticalMode) {
           movingTab.style.top =
             rect.top - tabContainerRect.top + position + "px";
           position -= rect.height;
-        } else if (this.#rtlMode) {
+        } else if (this._rtlMode) {
           movingTab.style.left =
             rect.left - movingTabsOffsetX - position + "px";
           position += rect.width;
@@ -1333,9 +1333,9 @@
 
       if (
         !isPinned &&
-        this.#tabbrowserTabs.arrowScrollbox.hasAttribute("overflowing")
+        this._tabbrowserTabs.arrowScrollbox.hasAttribute("overflowing")
       ) {
-        if (this.#tabbrowserTabs.verticalMode) {
+        if (this._tabbrowserTabs.verticalMode) {
           periphery.style.marginBlockStart =
             rect.height * movingTabs.length + "px";
         } else {
@@ -1344,26 +1344,26 @@
         }
       } else if (
         isPinned &&
-        this.#tabbrowserTabs.pinnedTabsContainer.hasAttribute("overflowing")
+        this._tabbrowserTabs.pinnedTabsContainer.hasAttribute("overflowing")
       ) {
         let pinnedPeriphery = document.createXULElement("hbox");
         pinnedPeriphery.id = "pinned-tabs-container-periphery";
         pinnedPeriphery.style.width = "100%";
         pinnedPeriphery.style.marginBlockStart =
-          (isGrid && numPinned % this.#maxTabsPerRow == 1
+          (isGrid && numPinned % this._maxTabsPerRow == 1
             ? rect.height
             : rect.height * movingTabs.length) + "px";
-        this.#tabbrowserTabs.pinnedTabsContainer.appendChild(pinnedPeriphery);
+        this._tabbrowserTabs.pinnedTabsContainer.appendChild(pinnedPeriphery);
       }
 
       let setElPosition = el => {
         let elRect = window.windowUtils.getBoundsWithoutFlushing(el);
-        if (this.#tabbrowserTabs.verticalMode && elRect.top > rect.top) {
+        if (this._tabbrowserTabs.verticalMode && elRect.top > rect.top) {
           el.style.top = movingTabs.length * rect.height + "px";
-        } else if (!this.#tabbrowserTabs.verticalMode) {
-          if (!this.#rtlMode && elRect.left > rect.left) {
+        } else if (!this._tabbrowserTabs.verticalMode) {
+          if (!this._rtlMode && elRect.left > rect.left) {
             el.style.left = movingTabs.length * rect.width + "px";
-          } else if (this.#rtlMode && elRect.left < rect.left) {
+          } else if (this._rtlMode && elRect.left < rect.left) {
             el.style.left = movingTabs.length * -rect.width + "px";
           }
         }
@@ -1402,7 +1402,7 @@
         }
       }
 
-      if (this.#tabbrowserTabs.expandOnHover) {
+      if (this._tabbrowserTabs.expandOnHover) {
         // Query the expanded width from sidebar launcher to ensure tabs aren't
         // cut off (Bug 1974037).
         const { SidebarController } = tab.ownerGlobal;
@@ -1415,18 +1415,18 @@
               t.style.width = width + "px";
             }
             // Allow scrollboxes to grow to expanded sidebar width.
-            this.#tabbrowserTabs.arrowScrollbox.scrollbox.style.width = "";
-            this.#tabbrowserTabs.pinnedTabsContainer.scrollbox.style.width = "";
+            this._tabbrowserTabs.arrowScrollbox.scrollbox.style.width = "";
+            this._tabbrowserTabs.pinnedTabsContainer.scrollbox.style.width = "";
           });
         });
       }
 
       // Handle the new tab button filling the space when the dragged tab
       // position becomes absolute
-      if (!this.#tabbrowserTabs.overflowing && !isPinned) {
-        if (this.#tabbrowserTabs.verticalMode) {
+      if (!this._tabbrowserTabs.overflowing && !isPinned) {
+        if (this._tabbrowserTabs.verticalMode) {
           periphery.style.top = `${Math.round(movingTabs.length * rect.height)}px`;
-        } else if (this.#rtlMode) {
+        } else if (this._rtlMode) {
           periphery.style.left = `${Math.round(movingTabs.length * -rect.width)}px`;
         } else {
           periphery.style.left = `${Math.round(movingTabs.length * rect.width)}px`;
@@ -1437,7 +1437,7 @@
     /**
      * Move together all selected tabs around the tab in param.
      */
-    #moveTogetherSelectedTabs(tab) {
+    _moveTogetherSelectedTabs(tab) {
       let draggedTabIndex = tab.elementIndex;
       let selectedTabs = gBrowser.selectedTabs;
       if (selectedTabs.some(t => t.pinned != tab.pinned)) {
@@ -1454,7 +1454,7 @@
       let addAnimationData = (movingTab, isBeforeSelectedTab) => {
         let lowerIndex = Math.min(movingTab.elementIndex, draggedTabIndex) + 1;
         let higherIndex = Math.max(movingTab.elementIndex, draggedTabIndex);
-        let middleItems = this.#tabbrowserTabs.ariaFocusableItems
+        let middleItems = this._tabbrowserTabs.ariaFocusableItems
           .slice(lowerIndex, higherIndex)
           .filter(item => !item.multiselected);
         if (!middleItems.length) {
@@ -1495,7 +1495,7 @@
 
         let movingTabSize =
           movingTab.getBoundingClientRect()[
-            this.#tabbrowserTabs.verticalMode ? "height" : "width"
+            this._tabbrowserTabs.verticalMode ? "height" : "width"
           ];
 
         for (let middleItem of middleItems) {
@@ -1513,7 +1513,7 @@
           middleItem = elementToMove(middleItem);
           let middleItemSize =
             middleItem.getBoundingClientRect()[
-              this.#tabbrowserTabs.verticalMode ? "height" : "width"
+              this._tabbrowserTabs.verticalMode ? "height" : "width"
             ];
 
           if (!middleItem._moveTogetherSelectedTabsData?.translatePos) {
@@ -1551,14 +1551,14 @@
       }
 
       // Slide the relevant tabs to their new position.
-      for (let item of this.#tabbrowserTabs.ariaFocusableItems) {
+      for (let item of this._tabbrowserTabs.ariaFocusableItems) {
         item = elementToMove(item);
         if (item._moveTogetherSelectedTabsData?.translatePos) {
           let translatePos =
-            (this.#rtlMode ? -1 : 1) *
+            (this._rtlMode ? -1 : 1) *
             item._moveTogetherSelectedTabsData.translatePos;
           item.style.transform = `translate${
-            this.#tabbrowserTabs.verticalMode ? "Y" : "X"
+            this._tabbrowserTabs.verticalMode ? "Y" : "X"
           }(${translatePos}px)`;
         }
       }
@@ -1596,7 +1596,7 @@
         gBrowser.moveTabAfter(selectedTabs[i], tab);
       }
 
-      for (let item of this.#tabbrowserTabs.ariaFocusableItems) {
+      for (let item of this._tabbrowserTabs.ariaFocusableItems) {
         item = elementToMove(item);
         item.style.transform = "";
         item.removeAttribute("multiselected-move-together");
@@ -1606,7 +1606,7 @@
 
     // Drag over
 
-    #animateExpandedPinnedTabMove(event) {
+    _animateExpandedPinnedTabMove(event) {
       let draggedTab = event.dataTransfer.mozGetDataAt(TAB_DROP_TYPE, 0);
       let dragData = draggedTab._dragData;
       let movingTabs = dragData.movingTabs;
@@ -1624,7 +1624,7 @@
         return;
       }
 
-      let tabs = this.#tabbrowserTabs.visibleTabs.slice(
+      let tabs = this._tabbrowserTabs.visibleTabs.slice(
         0,
         gBrowser.pinnedTabCount
       );
@@ -1650,15 +1650,15 @@
       );
       if (RTL_UI) {
         firstTabInRow =
-          tabs.length >= this.#maxTabsPerRow
-            ? tabs[this.#maxTabsPerRow - 1]
+          tabs.length >= this._maxTabsPerRow
+            ? tabs[this._maxTabsPerRow - 1]
             : lastTab;
         lastTabInRow = tabs[0];
       } else {
         firstTabInRow = tabs[0];
         lastTabInRow =
-          tabs.length >= this.#maxTabsPerRow
-            ? tabs[this.#maxTabsPerRow - 1]
+          tabs.length >= this._maxTabsPerRow
+            ? tabs[this._maxTabsPerRow - 1]
             : lastTab;
       }
       let lastMovingTabScreenX = movingTabs.at(-1).screenX;
@@ -1668,7 +1668,7 @@
       let translateX = screenX - dragData.screenX;
       let translateY = screenY - dragData.screenY;
       let firstBoundX = firstTabInRow.screenX - firstMovingTabScreenX;
-      let firstBoundY = this.#tabbrowserTabs.screenY - firstMovingTabScreenY;
+      let firstBoundY = this._tabbrowserTabs.screenY - firstMovingTabScreenY;
       let lastBoundX =
         lastTabInRow.screenX +
         lastTabInRow.getBoundingClientRect().width -
@@ -1712,7 +1712,7 @@
       let lastTabCenterY = lastMovingTabScreenY + translateY + tabHeight / 2;
       let tabCenterY = directionY ? lastTabCenterY : firstTabCenterY;
 
-      let shiftNumber = this.#maxTabsPerRow - movingTabs.length;
+      let shiftNumber = this._maxTabsPerRow - movingTabs.length;
 
       let getTabShift = (tab, dropIndex) => {
         if (
@@ -1720,9 +1720,9 @@
           tab.elementIndex >= dropIndex
         ) {
           // If tab is at the end of a row, shift back and down
-          let tabRow = Math.ceil((tab.elementIndex + 1) / this.#maxTabsPerRow);
+          let tabRow = Math.ceil((tab.elementIndex + 1) / this._maxTabsPerRow);
           let shiftedTabRow = Math.ceil(
-            (tab.elementIndex + 1 + movingTabs.length) / this.#maxTabsPerRow
+            (tab.elementIndex + 1 + movingTabs.length) / this._maxTabsPerRow
           );
           if (tab.elementIndex && tabRow != shiftedTabRow) {
             return [
@@ -1737,9 +1737,9 @@
           tab.elementIndex < dropIndex
         ) {
           // If tab is not index 0 and at the start of a row, shift across and up
-          let tabRow = Math.floor(tab.elementIndex / this.#maxTabsPerRow);
+          let tabRow = Math.floor(tab.elementIndex / this._maxTabsPerRow);
           let shiftedTabRow = Math.floor(
-            (tab.elementIndex - movingTabs.length) / this.#maxTabsPerRow
+            (tab.elementIndex - movingTabs.length) / this._maxTabsPerRow
           );
           if (tab.elementIndex && tabRow != shiftedTabRow) {
             return [
@@ -1812,16 +1812,16 @@
     }
 
     // eslint-disable-next-line complexity
-    #animateTabMove(event) {
+    _animateTabMove(event) {
       let draggedTab = event.dataTransfer.mozGetDataAt(TAB_DROP_TYPE, 0);
       let dragData = draggedTab._dragData;
       let movingTabs = dragData.movingTabs;
       let movingTabsSet = dragData.movingTabsSet;
 
-      dragData.animLastScreenPos ??= this.#tabbrowserTabs.verticalMode
+      dragData.animLastScreenPos ??= this._tabbrowserTabs.verticalMode
         ? dragData.screenY
         : dragData.screenX;
-      let screen = this.#tabbrowserTabs.verticalMode
+      let screen = this._tabbrowserTabs.verticalMode
         ? event.screenY
         : event.screenX;
       if (screen == dragData.animLastScreenPos) {
@@ -1830,32 +1830,32 @@
       let screenForward = screen > dragData.animLastScreenPos;
       dragData.animLastScreenPos = screen;
 
-      this.#clearDragOverGroupingTimer();
+      this._clearDragOverGroupingTimer();
       this.#clearPinnedDropIndicatorTimer();
 
       let isPinned = draggedTab.pinned;
       let numPinned = gBrowser.pinnedTabCount;
-      let allTabs = this.#tabbrowserTabs.ariaFocusableItems;
+      let allTabs = this._tabbrowserTabs.ariaFocusableItems;
       let tabs = allTabs.slice(
         isPinned ? 0 : numPinned,
         isPinned ? numPinned : undefined
       );
 
-      if (this.#rtlMode) {
+      if (this._rtlMode) {
         tabs.reverse();
       }
 
       let bounds = ele => window.windowUtils.getBoundsWithoutFlushing(ele);
-      let logicalForward = screenForward != this.#rtlMode;
-      let screenAxis = this.#tabbrowserTabs.verticalMode
+      let logicalForward = screenForward != this._rtlMode;
+      let screenAxis = this._tabbrowserTabs.verticalMode
         ? "screenY"
         : "screenX";
-      let size = this.#tabbrowserTabs.verticalMode ? "height" : "width";
-      let translateAxis = this.#tabbrowserTabs.verticalMode
+      let size = this._tabbrowserTabs.verticalMode ? "height" : "width";
+      let translateAxis = this._tabbrowserTabs.verticalMode
         ? "translateY"
         : "translateX";
       let { width: tabWidth, height: tabHeight } = bounds(draggedTab);
-      let tabSize = this.#tabbrowserTabs.verticalMode ? tabHeight : tabWidth;
+      let tabSize = this._tabbrowserTabs.verticalMode ? tabHeight : tabWidth;
       let translateX = event.screenX - dragData.screenX;
       let translateY = event.screenY - dragData.screenY;
 
@@ -1878,11 +1878,11 @@
 
       // Constrain the range over which the moving tabs can move between the edge of the tabstrip and periphery.
       // Add 1 to periphery so we don't overlap it.
-      let startBound = this.#rtlMode
+      let startBound = this._rtlMode
         ? endEdge(periphery) + 1 - firstMovingTabScreen
-        : this.#tabbrowserTabs[screenAxis] - firstMovingTabScreen;
-      let endBound = this.#rtlMode
-        ? endEdge(this.#tabbrowserTabs) - lastMovingTabScreen
+        : this._tabbrowserTabs[screenAxis] - firstMovingTabScreen;
+      let endBound = this._rtlMode
+        ? endEdge(this._tabbrowserTabs) - lastMovingTabScreen
         : periphery[screenAxis] - 1 - lastMovingTabScreen;
       translate = Math.min(Math.max(translate, startBound), endBound);
 
@@ -1899,20 +1899,20 @@
         translate = Math.min(Math.max(translate, startBound), endBound);
       }
 
-      if (!gBrowser.pinnedTabCount && !this.#dragToPinPromoCard.shouldRender) {
+      if (!gBrowser.pinnedTabCount && !this._dragToPinPromoCard.shouldRender) {
         let pinnedDropIndicatorMargin = parseFloat(
-          window.getComputedStyle(this.#pinnedDropIndicator).marginInline
+          window.getComputedStyle(this._pinnedDropIndicator).marginInline
         );
-        this.#checkWithinPinnedContainerBounds({
+        this._checkWithinPinnedContainerBounds({
           firstMovingTabScreen,
           lastMovingTabScreen,
-          pinnedTabsStartEdge: this.#rtlMode
-            ? endEdge(this.#tabbrowserTabs.arrowScrollbox) +
+          pinnedTabsStartEdge: this._rtlMode
+            ? endEdge(this._tabbrowserTabs.arrowScrollbox) +
               pinnedDropIndicatorMargin
             : this[screenAxis],
-          pinnedTabsEndEdge: this.#rtlMode
-            ? endEdge(this.#tabbrowserTabs)
-            : this.#tabbrowserTabs.arrowScrollbox[screenAxis] -
+          pinnedTabsEndEdge: this._rtlMode
+            ? endEdge(this._tabbrowserTabs)
+            : this._tabbrowserTabs.arrowScrollbox[screenAxis] -
               pinnedDropIndicatorMargin,
           translate,
           draggedTab,
@@ -1954,13 +1954,13 @@
           item.elementIndex < draggedTab.elementIndex &&
           item.elementIndex >= dropElementIndex
         ) {
-          return this.#rtlMode ? -shiftSize : shiftSize;
+          return this._rtlMode ? -shiftSize : shiftSize;
         }
         if (
           item.elementIndex > draggedTab.elementIndex &&
           item.elementIndex < dropElementIndex
         ) {
-          return this.#rtlMode ? shiftSize : -shiftSize;
+          return this._rtlMode ? shiftSize : -shiftSize;
         }
         return 0;
       };
@@ -2117,7 +2117,7 @@
         // 4) we just started dragging and the `oldDropElementIndex` has its default
         //    valuë of `movingTabs[0].elementIndex`. In this case, the drop element
         //    shouldn't be a moving tab, so keep it `undefined`.
-        let lastPossibleDropElement = this.#rtlMode
+        let lastPossibleDropElement = this._rtlMode
           ? tabs.find(t => t != draggedTab)
           : tabs.findLast(t => t != draggedTab);
         let maxElementIndexForDropElement =
@@ -2128,7 +2128,7 @@
             maxElementIndexForDropElement
           );
           let oldDropElementCandidate =
-            this.#tabbrowserTabs.ariaFocusableItems.at(index);
+            this._tabbrowserTabs.ariaFocusableItems.at(index);
           if (!movingTabsSet.has(oldDropElementCandidate)) {
             dropElement = oldDropElementCandidate;
           }
@@ -2183,7 +2183,7 @@
           dropElementSize
         );
         dropBefore = firstMovingTabPos < dropElementPos;
-        if (this.#rtlMode) {
+        if (this._rtlMode) {
           dropBefore = !dropBefore;
         }
 
@@ -2218,7 +2218,7 @@
           : dropElement.elementIndex < numPinned;
         if (isOutOfBounds) {
           // Drop after last pinned tab
-          dropElement = this.#tabbrowserTabs.ariaFocusableItems[numPinned - 1];
+          dropElement = this._tabbrowserTabs.ariaFocusableItems[numPinned - 1];
           dropBefore = false;
         }
       }
@@ -2227,7 +2227,7 @@
         gBrowser._tabGroupsEnabled &&
         isTab(draggedTab) &&
         !isPinned &&
-        (!numPinned || newDropElementIndex > numPinned)
+        (!numPinned || newDropElementIndex >= numPinned)
       ) {
         let dragOverGroupingThreshold = 1 - moveOverThreshold;
         let groupingDelay = Services.prefs.getIntPref(
@@ -2250,20 +2250,20 @@
           overlapPercent > dragOverGroupingThreshold;
 
         if (shouldCreateGroupOnDrop) {
-          this.#dragOverGroupingTimer = setTimeout(() => {
-            this.#triggerDragOverGrouping(dropElement);
+          this._dragOverGroupingTimer = setTimeout(() => {
+            this._triggerDragOverGrouping(dropElement);
             dragData.shouldCreateGroupOnDrop = true;
-            this.#setDragOverGroupColor(dragData.tabGroupCreationColor);
+            this._setDragOverGroupColor(dragData.tabGroupCreationColor);
           }, groupingDelay);
         } else if (shouldDropIntoCollapsedTabGroup) {
-          this.#dragOverGroupingTimer = setTimeout(() => {
-            this.#triggerDragOverGrouping(dropElement);
+          this._dragOverGroupingTimer = setTimeout(() => {
+            this._triggerDragOverGrouping(dropElement);
             dragData.shouldDropIntoCollapsedTabGroup = true;
-            this.#setDragOverGroupColor(dropElement.group.color);
+            this._setDragOverGroupColor(dropElement.group.color);
           }, groupingDelay);
         } else {
-          this.#tabbrowserTabs.removeAttribute("movingtab-group");
-          this.#resetGroupTarget(
+          this._tabbrowserTabs.removeAttribute("movingtab-group");
+          this._resetGroupTarget(
             document.querySelector("[dragover-groupTarget]")
           );
 
@@ -2303,12 +2303,12 @@
               dropBefore = true;
             }
           }
-          this.#setDragOverGroupColor(colorCode);
-          this.#tabbrowserTabs.toggleAttribute(
+          this._setDragOverGroupColor(colorCode);
+          this._tabbrowserTabs.toggleAttribute(
             "movingtab-addToGroup",
             colorCode
           );
-          this.#tabbrowserTabs.toggleAttribute("movingtab-ungroup", !colorCode);
+          this._tabbrowserTabs.toggleAttribute("movingtab-ungroup", !colorCode);
         }
       }
 
@@ -2338,7 +2338,7 @@
       }
     }
 
-    #checkWithinPinnedContainerBounds({
+    _checkWithinPinnedContainerBounds({
       firstMovingTabScreen,
       lastMovingTabScreen,
       pinnedTabsStartEdge,
@@ -2355,14 +2355,14 @@
       // buffer to display the pinned drop indicator slightly before dragging over it. Exact value is
       // not necessary.
       let buffer = 20;
-      let inPinnedRange = this.#rtlMode
+      let inPinnedRange = this._rtlMode
         ? lastMovingTabPosition >= pinnedTabsStartEdge
         : firstMovingTabPosition <= pinnedTabsEndEdge;
-      let inVisibleRange = this.#rtlMode
+      let inVisibleRange = this._rtlMode
         ? lastMovingTabPosition >= pinnedTabsStartEdge - buffer
         : firstMovingTabPosition <= pinnedTabsEndEdge + buffer;
-      let isVisible = this.#pinnedDropIndicator.hasAttribute("visible");
-      let isInteractive = this.#pinnedDropIndicator.hasAttribute("interactive");
+      let isVisible = this._pinnedDropIndicator.hasAttribute("visible");
+      let isInteractive = this._pinnedDropIndicator.hasAttribute("interactive");
 
       if (
         this.#pinnedDropIndicatorTimeout &&
@@ -2378,28 +2378,28 @@
       ) {
         // On drag into pinned container
         let tabbrowserTabsRect = window.windowUtils.getBoundsWithoutFlushing(
-          this.#tabbrowserTabs
+          this._tabbrowserTabs
         );
-        if (!this.#tabbrowserTabs.verticalMode) {
+        if (!this._tabbrowserTabs.verticalMode) {
           // The tabbrowser container expands with the expansion of the
           // drop indicator - prevent that by setting maxWidth first.
-          this.#tabbrowserTabs.style.maxWidth = tabbrowserTabsRect.width + "px";
+          this._tabbrowserTabs.style.maxWidth = tabbrowserTabsRect.width + "px";
         }
         if (isVisible) {
-          this.#pinnedDropIndicator.setAttribute("interactive", "");
+          this._pinnedDropIndicator.setAttribute("interactive", "");
         } else if (!this.#pinnedDropIndicatorTimeout) {
           let interactionDelay = Services.prefs.getIntPref(
             "browser.tabs.dragDrop.pinInteractionCue.delayMS"
           );
           this.#pinnedDropIndicatorTimeout = setTimeout(() => {
             if (this.#isMovingTab()) {
-              this.#pinnedDropIndicator.setAttribute("visible", "");
-              this.#pinnedDropIndicator.setAttribute("interactive", "");
+              this._pinnedDropIndicator.setAttribute("visible", "");
+              this._pinnedDropIndicator.setAttribute("interactive", "");
             }
           }, interactionDelay);
         }
       } else if (!inPinnedRange) {
-        this.#pinnedDropIndicator.removeAttribute("interactive");
+        this._pinnedDropIndicator.removeAttribute("interactive");
       }
     }
 
@@ -2412,8 +2412,8 @@
 
     #resetPinnedDropIndicator() {
       this.#clearPinnedDropIndicatorTimer();
-      this.#pinnedDropIndicator.removeAttribute("visible");
-      this.#pinnedDropIndicator.removeAttribute("interactive");
+      this._pinnedDropIndicator.removeAttribute("visible");
+      this._pinnedDropIndicator.removeAttribute("interactive");
     }
 
     finishAnimateTabMove() {
@@ -2423,24 +2423,24 @@
 
       this.#setMovingTabMode(false);
 
-      for (let item of this.#tabbrowserTabs.ariaFocusableItems) {
-        this.#resetGroupTarget(item);
+      for (let item of this._tabbrowserTabs.ariaFocusableItems) {
+        this._resetGroupTarget(item);
         item = elementToMove(item);
         item.style.transform = "";
       }
-      this.#tabbrowserTabs.removeAttribute("movingtab-group");
-      this.#tabbrowserTabs.removeAttribute("movingtab-ungroup");
-      this.#tabbrowserTabs.removeAttribute("movingtab-addToGroup");
-      this.#setDragOverGroupColor(null);
-      this.#clearDragOverGroupingTimer();
+      this._tabbrowserTabs.removeAttribute("movingtab-group");
+      this._tabbrowserTabs.removeAttribute("movingtab-ungroup");
+      this._tabbrowserTabs.removeAttribute("movingtab-addToGroup");
+      this._setDragOverGroupColor(null);
+      this._clearDragOverGroupingTimer();
       this.#resetPinnedDropIndicator();
     }
 
     // Drop
 
     // If the tab is dropped in another window, we need to pass in the original window document
-    #resetTabsAfterDrop(draggedTabDocument = document) {
-      if (this.#tabbrowserTabs.expandOnHover) {
+    _resetTabsAfterDrop(draggedTabDocument = document) {
+      if (this._tabbrowserTabs.expandOnHover) {
         // Re-enable MousePosTracker after dropping
         MousePosTracker.addListener(document.defaultView.SidebarController);
       }

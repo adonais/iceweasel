@@ -789,6 +789,12 @@ class ContentChild final : public PContentChild,
       const mozilla::Maybe<SessionHistoryInfo>& aInfo,
       DispatchBeforeUnloadToSubtreeResolver&& aResolver);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  mozilla::ipc::IPCResult RecvDispatchNavigateToTraversable(
+      const MaybeDiscarded<BrowsingContext>& aTraversable,
+      const mozilla::Maybe<SessionHistoryInfo>& aInfo,
+      DispatchNavigateToTraversableResolver&& aResolver);
+
   mozilla::ipc::IPCResult RecvInitNextGenLocalStorageEnabled(
       const bool& aEnabled);
 

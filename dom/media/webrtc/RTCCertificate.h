@@ -14,7 +14,6 @@
 #include "js/RootingAPI.h"
 #include "keythi.h"
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIGlobalObject.h"

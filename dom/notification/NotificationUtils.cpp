@@ -478,8 +478,8 @@ Result<IPCNotification, nsresult> NotificationStorageEntry::ToIPC(
   MOZ_TRY(aEntry.GetActions(actionEntries));
   nsTArray<IPCNotificationAction> actions(actionEntries.Length());
   for (const auto& actionEntry : actionEntries) {
-    IPCNotificationAction action;
-    MOZ_TRY_VAR(action, NotificationActionStorageEntry::ToIPC(*actionEntry));
+    IPCNotificationAction action =
+        MOZ_TRY(NotificationActionStorageEntry::ToIPC(*actionEntry));
     actions.AppendElement(std::move(action));
   }
   options.actions() = std::move(actions);

@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_DOMImplementation_h
 #define mozilla_dom_DOMImplementation_h
 
-#include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIScriptGlobalObject.h"

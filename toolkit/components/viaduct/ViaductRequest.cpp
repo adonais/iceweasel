@@ -6,7 +6,6 @@
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ErrorNames.h"
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
 #include "mozilla/Try.h"
@@ -127,7 +126,8 @@ nsresult ViaductRequest::LaunchRequest(
                      nullptr, loadFlags);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel);
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
   nsCString method = ConvertMethod(request.method());
   rv = httpChannel->SetRequestMethod(method);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -152,13 +152,10 @@ nsresult ViaductRequest::LaunchRequest(
                                            false /* aStreamHasHeaders */);
   }
 
-  MOZ_TRY_VAR(
-      mConnectTimeoutTimer,
-      NS_NewTimerWithCallback(this, request.connect_timeout_secs() * 1000,
-                              nsITimer::TYPE_ONE_SHOT));
-  MOZ_TRY_VAR(mReadTimeoutTimer,
-              NS_NewTimerWithCallback(this, request.read_timeout_secs() * 1000,
-                                      nsITimer::TYPE_ONE_SHOT));
+  mConnectTimeoutTimer = MOZ_TRY(NS_NewTimerWithCallback(
+      this, request.connect_timeout_secs() * 1000, nsITimer::TYPE_ONE_SHOT));
+  mReadTimeoutTimer = MOZ_TRY(NS_NewTimerWithCallback(
+      this, request.read_timeout_secs() * 1000, nsITimer::TYPE_ONE_SHOT));
 
   rv = httpChannel->AsyncOpen(this);
   NS_ENSURE_SUCCESS(rv, rv);

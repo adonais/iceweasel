@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui.robots
 
 import android.util.Log
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -44,6 +45,7 @@ import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.hasCousin
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
+import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.settings.address.ui.edit.EditAddressTestTag
 
@@ -206,7 +208,7 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
 
     fun verifyStateOption(state: String) {
         Log.i(TAG, "verifyStateOption: Trying to verify that state: $state is displayed")
-        composeTestRule.subRegionOption(state).assertIsDisplayed()
+        composeTestRule.subRegionDropDown().assert(hasText(state))
         Log.i(TAG, "verifyStateOption: Verified that state: $state is displayed")
     }
 
@@ -229,20 +231,22 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
     }
 
     fun verifyEditAddressView() {
-        Log.i(TAG, "verifyEditAddressView: Trying to click device back button to dismiss keyboard using device back button")
-        mDevice.pressBack()
-        Log.i(TAG, "verifyEditAddressView: Clicked device back button to dismiss keyboard using device back button")
         Log.i(TAG, "verifyEditAddressView: Trying to verify that the \"Edit address\" items are displayed")
         listOf(
             composeTestRule.navigateBackButton(),
             composeTestRule.editAddressToolbarTitle(),
             composeTestRule.toolbarCheckmarkButton(),
             composeTestRule.toolbarDeleteAddressButton(),
-            composeTestRule.nameTextInput().assertIsDisplayed(),
+            composeTestRule.nameTextInput(),
             composeTestRule.streetAddressTextInput(),
             composeTestRule.cityTextInput(),
             composeTestRule.subRegionDropDown(),
         ).forEach { it.assertIsDisplayed() }
+
+        Log.i(TAG, "verifyEditAddressView: Trying to click device back button to dismiss keyboard using device back button")
+        mDevice.pressBack()
+        Log.i(TAG, "verifyEditAddressView: Clicked device back button to dismiss keyboard using device back button")
+        waitForAppWindowToBeUpdated()
 
         if (composeTestRule.countryDropDown().isNotDisplayed()) {
             composeTestRule.countryDropDown().performScrollTo()
@@ -313,7 +317,7 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
     fun clickSubRegionOption(subRegion: String) {
         composeTestRule.subRegionOption(subRegion).performScrollTo()
         Log.i(TAG, "clickSubRegionOption: Waiting for $waitingTime ms for the \"State\" $subRegion dropdown option to exist")
-        composeTestRule.waitUntilAtLeastOneExists(hasText(subRegion), waitingTime)
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag(EditAddressTestTag.ADDRESS_LEVEL1_FIELD + ".$subRegion"), waitingTime)
         Log.i(TAG, "clickSubRegionOption: Waited for $waitingTime ms for the \"State\" $subRegion dropdown option to exist")
         Log.i(TAG, "clickSubRegionOption: Trying to click the \"State\" $subRegion dropdown option")
         composeTestRule.subRegionOption(subRegion).performClick()
@@ -329,9 +333,11 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
     @OptIn(ExperimentalTestApi::class)
     fun clickCountryOption(country: String) {
         Log.i(TAG, "clickCountryOption: Waiting for $waitingTime ms for the \"Country or region\" $country dropdown option to exist")
-        composeTestRule.waitUntilAtLeastOneExists(hasText(country), waitingTime)
+
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag(EditAddressTestTag.COUNTRY_FIELD + ".$country"), waitingTime)
         Log.i(TAG, "clickCountryOption: Waited for $waitingTime ms for the \"Country or region\" $country dropdown option to exist")
         Log.i(TAG, "clickCountryOption: Trying to click \"Country or region\" $country dropdown option")
+        composeTestRule.countryOption(country).performScrollTo()
         composeTestRule.countryOption(country).performClick()
         Log.i(TAG, "clickCountryOption: Clicked \"Country or region\" $country dropdown option")
     }
@@ -387,9 +393,6 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         Log.i(TAG, "fillAndSaveAddress: Trying to click $country dropdown option")
         clickCountryOption(country)
         Log.i(TAG, "fillAndSaveAddress: Clicked $country dropdown option")
-        if (composeTestRule.saveButton().isNotDisplayed()) {
-            composeTestRule.saveButton().performScrollTo()
-        }
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"Phone\" to $phoneNumber")
         composeTestRule.phoneTextInput().performTextInput(phoneNumber)
         Log.i(TAG, "fillAndSaveAddress: \"Phone\" was set to $phoneNumber")
@@ -397,6 +400,9 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         composeTestRule.emailTextInput().performTextInput(emailAddress)
         Log.i(TAG, "fillAndSaveAddress: \"Email\" was set to $emailAddress")
         Log.i(TAG, "fillAndSaveAddress: Trying to click the \"Save\" button")
+        if (composeTestRule.saveButton().isNotDisplayed()) {
+            composeTestRule.saveButton().performScrollTo()
+        }
         composeTestRule.saveButton().performClick()
         Log.i(TAG, "fillAndSaveAddress: Clicked the \"Save\" button")
         Log.i(TAG, "fillAndSaveAddress: Waiting for $waitingTime ms for for \"Manage addresses\" button to exist")
@@ -659,11 +665,11 @@ private fun navigateBackButton() = itemWithDescription(getStringResource(R.strin
 private fun ComposeTestRule.navigateBackButton() = onNodeWithContentDescription("Navigate back")
 private fun ComposeTestRule.nameTextInput() = onNodeWithTag(EditAddressTestTag.NAME_FIELD).onChildAt(0)
 private fun ComposeTestRule.streetAddressTextInput() = onNodeWithTag(EditAddressTestTag.STREET_ADDRESS_FIELD).onChildAt(0)
-private fun ComposeTestRule.cityTextInput() = onNodeWithTag(EditAddressTestTag.CITY_FIELD).onChildAt(0)
-private fun ComposeTestRule.subRegionDropDown() = onNodeWithTag(EditAddressTestTag.SUBREGION_FIELD)
-private fun ComposeTestRule.zipCodeTextInput() = onNodeWithTag(EditAddressTestTag.ZIP_FIELD).onChildAt(0)
+private fun ComposeTestRule.cityTextInput() = onNodeWithTag(EditAddressTestTag.ADDRESS_LEVEL2_FIELD).onChildAt(0)
+private fun ComposeTestRule.subRegionDropDown() = onNodeWithTag(EditAddressTestTag.ADDRESS_LEVEL1_FIELD)
+private fun ComposeTestRule.zipCodeTextInput() = onNodeWithTag(EditAddressTestTag.POSTAL_CODE_FIELD).onChildAt(0)
 private fun ComposeTestRule.countryDropDown() = onNodeWithTag(EditAddressTestTag.COUNTRY_FIELD)
-private fun ComposeTestRule.phoneTextInput() = onNodeWithTag(EditAddressTestTag.PHONE_FIELD).onChildAt(0)
+private fun ComposeTestRule.phoneTextInput() = onNodeWithTag(EditAddressTestTag.TEL_FIELD).onChildAt(0)
 private fun ComposeTestRule.emailTextInput() = onNodeWithTag(EditAddressTestTag.EMAIL_FIELD).onChildAt(0)
 private fun ComposeTestRule.saveButton() = onNodeWithTag(EditAddressTestTag.SAVE_BUTTON)
 private fun ComposeTestRule.cancelButton() = onNodeWithTag(EditAddressTestTag.CANCEL_BUTTON)
@@ -694,8 +700,8 @@ private fun securedCreditCardsLaterButton() = onView(withId(android.R.id.button2
 private fun saveButton() = itemWithResId("$packageName:id/save_button")
 private fun cancelButton() = itemWithResId("$packageName:id/cancel_button")
 private fun savedAddress(name: String) = mDevice.findObject(UiSelector().textContains(name))
-private fun ComposeTestRule.subRegionOption(subRegion: String) = onNodeWithText(subRegion)
-private fun ComposeTestRule.countryOption(country: String) = onNodeWithText(country)
+private fun ComposeTestRule.subRegionOption(subRegion: String) = onNodeWithTag(EditAddressTestTag.ADDRESS_LEVEL1_FIELD + ".$subRegion")
+private fun ComposeTestRule.countryOption(country: String) = onNodeWithTag(EditAddressTestTag.COUNTRY_FIELD + ".$country")
 
 private fun expiryMonthOption(expiryMonth: String) = mDevice.findObject(UiSelector().textContains(expiryMonth))
 private fun expiryYearOption(expiryYear: String) = mDevice.findObject(UiSelector().textContains(expiryYear))

@@ -8,7 +8,6 @@
 
 #include "mozAutoDocUpdate.h"
 #include "mozilla/AsyncEventDispatcher.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/MouseEvents.h"

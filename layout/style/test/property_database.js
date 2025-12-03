@@ -1040,8 +1040,8 @@ if (IsCSSPropertyPrefEnabled("layout.css.basic-shape-shape.enabled")) {
     "shape(from 10px 10px, move by 10px 5px, line by 20px 40%, close)",
     "shape(from 10px 10px, hline by 10px, vline to 5rem)",
     "shape(from 10px 10px, vline by 5%, hline to 1vw)",
-    "shape(from 10px 10px, curve to 50px 20px via 10rem 1%)",
-    "shape(from 10px 10px, smooth to 50px 20px via 10rem 1%)",
+    "shape(from 10px 10px, curve to 50px 20px with 10rem 1%)",
+    "shape(from 10px 10px, smooth to 50px 20px with 10rem 1%)",
     "shape(from 10% 1rem, arc to 50px 1pt of 20% cw large rotate 25deg)"
   );
 
@@ -13430,6 +13430,8 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
       "--foo",
       "flip-block",
       "flip-inline",
+      "flip-x",
+      "flip-y",
       "flip-start",
       "left",
       "span-y-start",
@@ -13479,6 +13481,8 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
       "--foo",
       "flip-block",
       "flip-inline",
+      "flip-x",
+      "flip-y",
       "flip-start",
       "left",
       "span-y-start",
@@ -13489,6 +13493,8 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
       "most-width --foo",
       "most-width flip-block",
       "most-width flip-inline",
+      "most-width flip-x",
+      "most-width flip-y",
       "most-width flip-start",
       "most-width left",
       "most-width span-y-start",
@@ -13499,6 +13505,8 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
       "most-height --foo",
       "most-height flip-block",
       "most-height flip-inline",
+      "most-height flip-x",
+      "most-height flip-y",
       "most-height flip-start",
       "most-height left",
       "most-height span-y-start",
@@ -13509,6 +13517,8 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
       "most-block-size --foo",
       "most-block-size flip-block",
       "most-block-size flip-inline",
+      "most-block-size flip-x",
+      "most-block-size flip-y",
       "most-block-size flip-start",
       "most-block-size left",
       "most-block-size span-y-start",
@@ -13519,6 +13529,8 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
       "most-inline-size --foo",
       "most-inline-size flip-block",
       "most-inline-size flip-inline",
+      "most-inline-size flip-x",
+      "most-inline-size flip-y",
       "most-inline-size flip-start",
       "most-inline-size left",
       "most-inline-size span-y-start",
@@ -14428,19 +14440,17 @@ if (IsCSSPropertyPrefEnabled("dom.viewTransitions.enabled")) {
   });
 }
 
-if (IsCSSPropertyPrefEnabled("layout.css.text-decoration-trim.enabled")) {
+if (IsCSSPropertyPrefEnabled("layout.css.text-decoration-inset.enabled")) {
   Object.assign(gCSSProperties, {
-    "text-decoration-trim": {
-      domProp: "textDecorationTrim",
+    "text-decoration-inset": {
+      domProp: "textDecorationInset",
       inherited: false,
       type: CSS_TYPE_LONGHAND,
       applies_to_first_letter: true,
       applies_to_first_line: true,
       applies_to_placeholder: true,
-      applies_to_cue: true,
       initial_values: ["0"],
       other_values: [
-        "0",
         "-14px",
         "25px",
         "100em",
@@ -14453,7 +14463,7 @@ if (IsCSSPropertyPrefEnabled("layout.css.text-decoration-trim.enabled")) {
         "-1mm -2px",
         "calc(-1mm + 2em)",
         "2px calc(2px - 1em)",
-        "calc(0) 0",
+        "calc(1px) 0",
       ],
       invalid_values: [
         "13",

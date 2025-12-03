@@ -126,14 +126,36 @@ export class NewTabAttributionService {
   }
 
   /**
-   * onAttributionClear
+   * Resets all partner budgets and clears stored impressions,
+   * preparing for a new attribution conversion cycle.
    */
-  async onAttributionClear() {}
+  async onAttributionReset() {
+    try {
+      const now = this.#now();
 
-  /**
-   * onAttributionReset
-   */
-  async onAttributionReset() {}
+      // Clear impressions so future conversions won't match outdated impressions
+      const impressionStore = await this.#getImpressionStore();
+      await impressionStore.clear();
+
+      // Reset budgets
+      const budgetStore = await this.#getBudgetStore();
+      const partnerIds = await budgetStore.getAllKeys();
+
+      for (const partnerId of partnerIds) {
+        const budget = await budgetStore.get(partnerId);
+        // Currently clobbers the budget, but will work if any future data is added to DB
+        const updatedBudget = {
+          ...budget,
+          conversions: 0,
+          nextReset: now + CONVERSION_RESET_MILLI,
+        };
+
+        await budgetStore.put(updatedBudget, partnerId);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   /**
    * onAttributionConversion checks for eligible Newtab events and submits

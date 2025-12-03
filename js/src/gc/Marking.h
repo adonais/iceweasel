@@ -94,9 +94,6 @@ bool UnmarkGrayGCThingUnchecked(GCMarker* marker, JS::GCCellPtr thing);
 
 } /* namespace gc */
 
-// The return value indicates if anything was unmarked.
-bool UnmarkGrayShapeRecursively(Shape* shape);
-
 namespace gc {
 
 // Functions for checking and updating GC thing pointers that might have been

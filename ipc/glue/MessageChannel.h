@@ -9,12 +9,10 @@
 #define ipc_glue_MessageChannel_h
 
 #include "ipc/EnumSerializer.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/BaseProfilerMarkers.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/MoveOnlyFunction.h"
-#include "mozilla/Vector.h"
 #if defined(XP_WIN)
 #  include "mozilla/ipc/Neutering.h"
 #endif  // defined(XP_WIN)

@@ -7,7 +7,6 @@
 #include "MessagePortParent.h"
 
 #include "MessagePortService.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/RefMessageBodyService.h"
 #include "mozilla/dom/SharedMessageBody.h"
 
@@ -115,7 +114,7 @@ mozilla::ipc::IPCResult MessagePortParent::RecvStopSendingData() {
   }
 
   mCanSendData = false;
-  Unused << SendStopSendingDataConfirmed();
+  (void)SendStopSendingDataConfirmed();
   return IPC_OK();
 }
 
@@ -132,7 +131,7 @@ mozilla::ipc::IPCResult MessagePortParent::RecvClose() {
 
   MOZ_ASSERT(!mEntangled);
 
-  Unused << Send__delete__(this);
+  (void)Send__delete__(this);
   return IPC_OK();
 }
 
@@ -153,7 +152,7 @@ bool MessagePortParent::Entangled(nsTArray<MessageData>&& aMessages) {
 
 void MessagePortParent::CloseAndDelete() {
   Close();
-  Unused << Send__delete__(this);
+  (void)Send__delete__(this);
 }
 
 void MessagePortParent::Close() {

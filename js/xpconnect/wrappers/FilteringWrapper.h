@@ -8,7 +8,6 @@
 #define __FilteringWrapper_h__
 
 #include "XrayWrapper.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "js/CallNonGenericMethod.h"
 #include "js/Wrapper.h"

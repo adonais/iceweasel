@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Zasebni %s</string>
@@ -82,7 +89,7 @@
     %1$s is the name of the app (for example "Firefox").
     %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
   -->
-  <string name="felt_privacy_info_card_subtitle_2">Ko zaprete vse zasebne zavihke, %1$s izbriše piškotke, zgodovino in podatke o spletnih mestih. %2$s</string>
+  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">Ko zaprete vse zasebne zavihke, %1$s izbriše piškotke, zgodovino in podatke o spletnih mestih. %2$s</string>
   <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
@@ -204,8 +211,6 @@
   <string name="browser_menu_manage_extensions">Upravljanje razširitev</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
   <string name="browser_menu_more_settings">Več</string>
-  <!-- Browser menu group that contains additional settings in expanded state -->
-  <string name="browser_menu_less_settings" moz:removedIn="144" tools:ignore="UnusedResources">Manj</string>
   <!--
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
@@ -723,7 +728,6 @@
   <string name="preferences_https_only_title">Način \"samo HTTPS\"</string>
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">Uporabite zaklepanje zaslona za skrivanje zavihkov v zasebnem brskanju</string>
-  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">Oglejte si zavihke s prstnim odtisom, PIN ali odklepanjem z obrazom.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Zavračanje pasic s piškotki</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -839,7 +843,7 @@
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Iskanje po zaznamkih</string>
   <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts">Prikaži bližnjice</string>
+  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Prikaži bližnjice</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Iskanje po sinhroniziranih zavihkih</string>
   <!-- Preference for account settings -->
@@ -965,10 +969,6 @@
     Content description for various wallpapers. %1$s is the name of the wallpaper.
   -->
   <string name="wallpapers_item_name_content_description">Predmet za ozadje: %1$s</string>
-  <!-- Snackbar message for when wallpaper is selected -->
-  <string name="wallpaper_updated_snackbar_message" tools:ignore="UnusedResources" moz:removedIn="144">Ozadje spremenjeno!</string>
-  <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">Prikaži</string>
   <!-- Snackbar message for when wallpaper couldn't be downloaded -->
   <string name="wallpaper_download_error_snackbar_message">Ozadja ni bilo mogoče prenesti</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
@@ -1027,16 +1027,12 @@
   <string name="alternative_app_icon_option_gradient_northern_lights">Severni sij</string>
   <!-- Title for the "Retro 2004" themed alternative app icon variant in the icon picker screen. This app icon uses the classic Firefox logo from 2004. -->
   <string name="alternative_app_icon_option_retro_2004">Retro 2004</string>
-  <!-- Title for the "Retro 2017" themed alternative app icon variant in the icon picker screen. This app icon uses the Firefox logo from 2017, with a more modernized design. -->
-  <string name="alternative_app_icon_option_retro_2017" tools:ignore="UnusedResources" moz:removedIn="144">Retro 2017</string>
   <!-- Title for the "Pixelated" themed alternative app icon variant in the icon picker screen. This app icon features a pixel-art style, resembling retro 8-bit graphics. -->
   <string name="alternative_app_icon_option_pixelated">Pikselizirana</string>
   <!-- Title for the "Minimal" themed alternative app icon variant in the icon picker screen. The app icon presents a simplified, flat and monochrome version of the Firefox logo. -->
   <string name="alternative_app_icon_option_minimal">Minimalistična</string>
   <!-- Title for the "Pride" themed alternative app icon variant in the icon picker screen. The app icon incorporates a rainbow color scheme in support of the LGBTQ+ community. -->
   <string name="alternative_app_icon_option_pride">Ponos</string>
-  <!-- Title for the "Cute" themed alternative app icon variant in the icon picker screen. The app icon features a playful design with an adorable aesthetic. -->
-  <string name="alternative_app_icon_option_cute" tools:ignore="UnusedResources" moz:removedIn="144">Ljubka</string>
   <!-- Title for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
   <string name="alternative_app_icon_option_momo">Momo</string>
   <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
@@ -1052,19 +1048,17 @@
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">Prelivi</string>
   <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other">Drugo</string>
+  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">Drugo</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
   <string name="restart_warning_dialog_title">Spremenim ikono aplikacije?</string>
-  <!-- Message to warn users that applying an alternative app icon requires an app restart -->
-  <string name="restart_warning_dialog_body" tools:ignore="UnusedResources" moz:removedIn="144">Za spremembo ikone se mora aplikacija znova zagnati.</string>
   <!-- Message to warn users that applying an alternative app icon may require an app restart. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
   <string name="restart_warning_dialog_body_2">%1$s se bo morda zaprl. Ponovno ga odprite z dotikom čudovite nove ikone.</string>
-  <!-- Dialog button text for confirming the app restart to apply the selected icon -->
-  <string name="restart_warning_dialog_button_positive" tools:ignore="UnusedResources" moz:removedIn="144">Znova zaženi zdaj</string>
   <!-- Dialog button text for confirming the possible app restart and new icon selection -->
   <string name="restart_warning_dialog_button_positive_2">Spremeni ikono</string>
   <!-- Dialog button text for cancelling app icon change -->
   <string name="restart_warning_dialog_button_negative">Prekliči</string>
+  <!-- Error message snackbar shown after the user tried to apply the new icon but the Android OS threw an error while updating existing app shortcuts (e.g. private mode shortcut) -->
+  <string name="shortcuts_update_error">Ikone aplikacije ni bilo mogoče spremeniti. Odstranite obstoječe bližnjice in poskusite znova.</string>
   <!--
     Add-ons general availability nimbus message
 
@@ -1718,25 +1712,25 @@
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
   <string name="webcompat_reporter_label_description">Opišite težavo (neobvezno)</string>
   <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
-  <string name="webcompat_reporter_send_more_info" moz:removedIn="144" tools:ignore="UnusedResources">Pošlji več informacij</string>
-  <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
   <string name="webcompat_reporter_add_more_info">Dodaj več informacij</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">Prekliči</string>
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Pošlji</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Vaše poročilo je bilo poslano</string>
-  <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
   <string name="webcompat_reporter_success_snackbar_text_2">Poročilo poslano</string>
-  <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Zapri</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">Kaj se je zgodilo? Kaj bi se moralo zgoditi?</string>
   <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
   <string name="webcompat_reporter_etp_checkbox_text">Pošlji URL-je, ki jih je zaščita pred sledenjem blokirala</string>
   <!-- Description text for the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. It informs the user when checked, the report will include the list of URLs that were blocked by Enhanced Tracking Protection on the current page. -->
   <string name="webcompat_reporter_etp_checkbox_description">Izboljšana zaščita pred sledenjem lahko ponekod blokira sledilce in skripte, ki jih spletna mesta potrebujejo za pravilno delovanje.</string>
+  <!-- The button text for the preview report button to view a preview of the report. -->
+  <string name="webcompat_reporter_preview_report">Predogled prijave</string>
+  <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
+  <string name="webcompat_reporter_preview_bottom_sheet_header">Predogled prijave</string>
+  <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
+  <string name="webcompat_reporter_preview_bottom_sheet_send">Pošlji</string>
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
@@ -2045,11 +2039,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d izbran zavihek</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Zbirka shranjena!</string>
-  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection_2">Zbirka shranjena</string>
-  <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Zavihek shranjen!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
   <string name="create_collection_tab_saved_2">Zavihek shranjen</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
@@ -2188,8 +2178,6 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Zaprtih zavihkov: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">Zaznamki shranjeni v “%s”!</string>
-  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
   <string name="snackbar_message_bookmarks_saved_in_2">Zaznamki shranjeni v “%s”</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Dodano med bližnjice!</string>
@@ -2199,8 +2187,6 @@
   <string name="snackbar_private_data_deleted">Podatki zasebnega brskanja izbrisani</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">RAZVELJAVI</string>
-  <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">Spletno mesto odstranjeno</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -2304,11 +2290,7 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Zavihki poslani!</string>
-  <!-- Text shown in snackbar when multiple tabs have been sent to device -->
   <string name="sync_sent_tabs_snackbar_2">Zavihki poslani</string>
-  <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Zavihek poslan!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
   <string name="sync_sent_tab_snackbar_2">Zavihek poslan</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
@@ -2360,9 +2342,17 @@
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Močnejša zaščita pred sledenjem in hitrejše delovanje, nekatere strani morda ne bodo delovale pravilno.</string>
   <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline">Dovoli %1$su, da samodejno uveljavi izjeme, potrebne v izogib večjemu nedelovanju spletnega mesta.</string>
+  <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">Dovoli %1$su, da samodejno uveljavi izjeme, potrebne v izogib večjemu nedelovanju spletnega mesta.</string>
   <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience">Samodejno uporabi tudi izjeme, ki so potrebne samo za odpravljanje manjših težav in omogočanje razpoložljivih zmogljivosti.</string>
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">Samodejno uporabi tudi izjeme, ki so potrebne samo za odpravljanje manjših težav in omogočanje razpoložljivih zmogljivosti.</string>
+  <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Popravljaj večje težave s stranmi (priporočeno)</string>
+  <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience_label">Popravljaj manjše težave s stranmi</string>
+  <!-- Preference sub header for the enhanced tracking protection options to fix issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_subheader">Popravljaj težave s stranmi</string>
+  <!-- Learn more text for the enhanced tracking protection options to fix issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_learn_more">Več o tem</string>
   <!--
     Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
 
@@ -2751,14 +2741,16 @@
   <string name="preferences_addresses_sync_addresses_across_devices">Sinhroniziraj naslove med napravami</string>
   <!-- Preference option for syncing addresses across devices. This is displayed when the user is signed into sync -->
   <string name="preferences_addresses_sync_addresses">Sinhroniziraj naslove</string>
+  <!-- Content description navigating back from autofill settings screen. -->
+  <string name="autofill_settings_navigate_back_button_content_description">Nazaj</string>
   <!-- Title of the "Add card" screen -->
   <string name="credit_cards_add_card">Dodaj kartico</string>
+  <!-- Content description for the "credit card feature" top bar back button -->
+  <string name="credit_cards_navigate_back_button_content_description">Pojdi nazaj</string>
   <!-- Title of the "Edit card" screen -->
   <string name="credit_cards_edit_card">Uredi kartico</string>
   <!-- The header for the card number of a credit card -->
   <string name="credit_cards_card_number">Številka kartice</string>
-  <!-- The header for the expiration date of a credit card -->
-  <string name="credit_cards_expiration_date">Datum poteka</string>
   <!-- The label for the expiration date month of a credit card to be used by a11y services -->
   <string name="credit_cards_expiration_date_month">Mesec izteka veljavnosti</string>
   <!-- The label for the expiration date year of a credit card to be used by a11y services -->
@@ -3473,8 +3465,6 @@
   <string name="clear_site_data_dialog_positive_button_text">Počisti</string>
   <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
   <string name="clear_site_data_dialog_negative_button_text">Prekliči</string>
-  <!-- Snackbar title shown when the site data has been cleared. -->
-  <string name="clear_site_data_snackbar" moz:removedIn="144" tools:ignore="UnusedResources">Piškotki in podatki spletnega mesta odstranjeni</string>
   <!-- Text for the connection security panel when the site is secure. -->
   <string name="connection_security_panel_secure">Varna povezava</string>
   <!-- Text for the connection security panel when the site is not secure. -->
@@ -3600,6 +3590,8 @@
   <string name="microsurvey_close_handle_content_description">Zapri anketo</string>
   <!-- Content description for "X" button that is closing microsurvey. -->
   <string name="microsurvey_close_button_content_description">Zapri</string>
+  <!-- The title of the autofill tab in the Debug Drawer. -->
+  <string name="debug_drawer_autofill_title">Orodja za samodejno izpolnjevanje</string>
   <!--
     Debug drawer logins
 
@@ -3872,6 +3864,24 @@
   <string name="review_prompt_feedback_header">Žal nam je, da se spoprijemate s težavami. Sporočite nam, kaj lahko izboljšamo pri %1$su.</string>
   <!-- Label for a button opening a feedback forum -->
   <string name="review_prompt_feedback_button">Pošlji povratne informacije</string>
+  <!--
+    Settings Search Strings
+
+    Title of Settings Search. "Search" is a verb here
+  -->
+  <string name="settings_search_title">Nastavitve iskanja</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to clear the search field for settings search -->
+  <string name="content_description_settings_search_clear_search">Počisti iskanje</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to navigate back to the Settings page from the Settings Search screen. -->
+  <string name="content_description_settings_search_navigate_back">Pojdi nazaj</string>
+  <!-- Message displayed when the search field in the Settings Search screen is empty -->
+  <string name="settings_search_empty_query_placeholder">Ni nedavnih iskanj</string>
+  <!-- Message when error happens with Settings Search -->
+  <string name="settings_search_error_message">Prišlo je do napake</string>
+  <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
+  <string name="settings_search_clear_recent_searches_message">Izbriši vse</string>
+  <!-- Section header for recent search results -->
+  <string name="settings_search_recent_searches_section_header">Nedavni rezultati iskanja</string>
   <!--
     Terms of use pop up prompt
 

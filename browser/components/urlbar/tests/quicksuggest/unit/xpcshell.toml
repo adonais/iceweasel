@@ -10,16 +10,25 @@ prefs = [
 ["test_merinoClient.js"]
 
 ["test_merinoClient_sessions.js"]
+requesttimeoutfactor = 2  # Slow on Windows
 
 ["test_quicksuggest.js"]
+requesttimeoutfactor = 2  # Slow on Linux
 
 ["test_quicksuggest_addons.js"]
+
+["test_quicksuggest_defaultPrefs.js"]
+requesttimeoutfactor = 2  # Slow on Linux and Windows
 
 ["test_quicksuggest_dynamicSuggestions.js"]
 
 ["test_quicksuggest_exposures.js"]
+requesttimeoutfactor = 2  # Slow on Mac in verify mode
 
 ["test_quicksuggest_exposures_locales.js"]
+requesttimeoutfactor = 2  # Slow on Mac in verify mode
+
+["test_quicksuggest_flight_status.js"]
 
 ["test_quicksuggest_importantDatesSuggestions.js"]
 
@@ -40,9 +49,11 @@ skip-if = ["true"] # Bug 1880214
 
 ["test_quicksuggest_migrate_v2.js"]
 
-["test_quicksuggest_migrate_v3.js"]
+["test_quicksuggest_migrate_v4.js"]
 
-["test_quicksuggest_offlineDefault.js"]
+["test_quicksuggest_migrate_v5.js"]
+
+["test_quicksuggest_migrate_v6.js"]
 
 ["test_quicksuggest_relevanceRanking.js"]
 
@@ -50,9 +61,12 @@ skip-if = ["true"] # Bug 1880214
 
 ["test_quicksuggest_scoreMap.js"]
 
+["test_quicksuggest_sports.js"]
+
 ["test_quicksuggest_topPicks.js"]
 
 ["test_quicksuggest_yelp.js"]
+requesttimeoutfactor = 2  # Slow on Linux and Windows
 
 ["test_quicksuggest_yelp_ml.js"]
 
@@ -63,5 +77,7 @@ skip-if = ["true"] # Bug 1880214
 ["test_suggestBackendMl.js"]
 
 ["test_weather.js"]
+
+["test_weather_geolocation.js"]
 
 ["test_weather_keywords.js"]

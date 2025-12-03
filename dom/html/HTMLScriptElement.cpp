@@ -6,7 +6,6 @@
 
 #include "mozilla/dom/HTMLScriptElement.h"
 
-#include "mozilla/Assertions.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/FetchPriority.h"
