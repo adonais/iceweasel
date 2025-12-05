@@ -82,8 +82,6 @@ if CONFIG["OS_ARCH"] == "WINNT":
     ]
     if CONFIG["MOZ_UPDATER"]:
         DIRS += ["installation_dir_layout"]
-    if CONFIG["DESKTOP_LAUNCHER_ENABLED"]:
-        DIRS += ["desktop-launcher"]
     USE_LIBS += [
         "winlauncher",
     ]
