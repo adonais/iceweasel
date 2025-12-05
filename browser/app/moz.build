@@ -115,11 +115,10 @@ if CONFIG["OS_ARCH"] == "WINNT":
     # only enable it for processes that are not using JIT in xul.dll.
     LINK_FLAGS["CETCOMPAT"] = []
 
-if CONFIG["MOZ_BRANDING_DIRECTORY"] == "browser/branding/official":
-    if CONFIG["DESKTOP_LAUNCHER_ENABLED"]:
-        DIRS += [
-            "desktop-launcher",
-        ]
+if CONFIG["DESKTOP_LAUNCHER_ENABLED"]:
+    DIRS += [
+        "desktop-launcher",
+    ]
 
 if CONFIG["OS_ARCH"] == "Darwin":
     OS_LIBS += [
