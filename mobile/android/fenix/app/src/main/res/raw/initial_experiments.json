@@ -177,7 +177,7 @@
       "channel": "release",
       "userFacingName": "Android ToU scrim",
       "userFacingDescription": "Test Nimbus advanced targeting for Android users who have already accepted the ToU.",
-      "isEnrollmentPaused": false,
+      "isEnrollmentPaused": true,
       "isRollout": false,
       "bucketConfig": {
         "randomizationUnit": "nimbus_id",
@@ -233,7 +233,7 @@
       ],
       "targeting": "((is_already_enrolled) || ((user_accepted_tou == false) && (app_version|versionCompare('145.0.2') >= 0) && (('android-tou-any-users' in enrollments) == false) && (('android-tou-no-sponsored-content-opt-outs' in enrollments) == false)))",
       "startDate": "2025-11-25",
-      "enrollmentEndDate": null,
+      "enrollmentEndDate": "2025-12-02",
       "endDate": null,
       "proposedDuration": 28,
       "proposedEnrollment": 7,
@@ -324,96 +324,6 @@
       "firefoxLabsDescription": null,
       "firefoxLabsDescriptionLinks": null,
       "firefoxLabsGroup": null,
-      "requiresRestart": false
-    },
-    {
-      "schemaVersion": "1.12.0",
-      "slug": "no-sponsored-tiles-for-14-days-v2",
-      "id": "no-sponsored-tiles-for-14-days-v2",
-      "arguments": {},
-      "application": "org.mozilla.firefox",
-      "appName": "fenix",
-      "appId": "org.mozilla.firefox",
-      "channel": "release",
-      "userFacingName": "No sponsored tiles for 14 days V2",
-      "userFacingDescription": "Do not show sponsored tiles to new users for 14 days.",
-      "isEnrollmentPaused": true,
-      "isRollout": false,
-      "bucketConfig": {
-        "randomizationUnit": "nimbus_id",
-        "namespace": "fenix-suppress-sponsored-top-sites-release-2",
-        "start": 0,
-        "count": 10000,
-        "total": 10000
-      },
-      "featureIds": [
-        "suppress-sponsored-top-sites"
-      ],
-      "probeSets": [],
-      "outcomes": [
-        {
-          "slug": "awesomebar",
-          "priority": "primary"
-        },
-        {
-          "slug": "sponsored_tiles",
-          "priority": "secondary"
-        }
-      ],
-      "branches": [
-        {
-          "slug": "control",
-          "ratio": 1,
-          "feature": {
-            "featureId": "this-is-included-for-mobile-pre-96-support",
-            "enabled": false,
-            "value": {}
-          },
-          "features": [
-            {
-              "featureId": "suppress-sponsored-top-sites",
-              "enabled": true,
-              "value": {
-                "enabled": false
-              }
-            }
-          ]
-        },
-        {
-          "slug": "no-sponsored-tiles",
-          "ratio": 1,
-          "feature": {
-            "featureId": "this-is-included-for-mobile-pre-96-support",
-            "enabled": false,
-            "value": {}
-          },
-          "features": [
-            {
-              "featureId": "suppress-sponsored-top-sites",
-              "enabled": true,
-              "value": {
-                "enabled": true
-              }
-            }
-          ]
-        }
-      ],
-      "targeting": "((is_already_enrolled) || ((isFirstRun == 'true') && (app_version|versionCompare('143.3.0') >= 0)))",
-      "startDate": "2025-10-07",
-      "enrollmentEndDate": "2025-10-30",
-      "endDate": null,
-      "proposedDuration": 14,
-      "proposedEnrollment": 14,
-      "referenceBranch": "control",
-      "featureValidationOptOut": false,
-      "localizations": null,
-      "locales": null,
-      "publishedDate": null,
-      "isFirefoxLabsOptIn": false,
-      "firefoxLabsTitle": "",
-      "firefoxLabsDescription": "",
-      "firefoxLabsDescriptionLinks": null,
-      "firefoxLabsGroup": "",
       "requiresRestart": false
     },
     {
