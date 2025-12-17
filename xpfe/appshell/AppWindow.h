@@ -374,6 +374,9 @@ class AppWindow final : public nsIBaseWindow,
                       const Maybe<LayoutDeviceIntSize>& aSize, bool aRepaint);
   nsresult MoveResize(const Maybe<DesktopPoint>& aPosition,
                       const Maybe<DesktopSize>& aSize, bool aRepaint);
+  nsresult CenterImpl(nsIAppWindow* aRelative, bool aScreen, bool aAlert,
+                      bool aAllowCenteringForSizeChange);
+
   nsCOMPtr<nsIXULStore> mLocalStore;
   bool mIsWidgetInFullscreen = false;
 };

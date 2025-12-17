@@ -82,7 +82,7 @@ private fun Header() {
             color = FirefoxTheme.colors.textPrimary,
             textAlign = TextAlign.Center,
             style = FirefoxTheme.typography.headline6,
-            maxLines = 1,
+            maxLines = 2,
         )
     }
 }

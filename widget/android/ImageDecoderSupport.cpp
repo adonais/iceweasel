@@ -10,104 +10,176 @@
 #include "JavaExceptions.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Swizzle.h"
-#include "mozilla/image/FetchDecodedImage.h"
 #include "mozilla/java/ImageWrappers.h"
 #include "nsIChannel.h"
 #include "nsNetUtil.h"
 
 using namespace mozilla::gfx;
 
-namespace mozilla::widget {
+namespace mozilla {
+namespace widget {
 
-static void CompleteExceptionally(java::GeckoResult::Param aResult,
-                                  nsresult aRv) {
-  nsPrintfCString error("Could not process image: 0x%08X", uint32_t(aRv));
-  aResult->CompleteExceptionally(
-      java::Image::ImageProcessingException::New(error.get())
-          .Cast<jni::Throwable>());
-}
+namespace {
 
-static nsresult SendBitmap(java::GeckoResult::Param aResult,
-                           imgIContainer* aImage, int32_t aDesiredLength) {
-  RefPtr<gfx::SourceSurface> surface;
+class ImageCallbackHelper;
 
-  if (aDesiredLength > 0) {
-    surface = aImage->GetFrameAtSize(
-        gfx::IntSize(aDesiredLength, aDesiredLength),
-        imgIContainer::FRAME_FIRST, imgIContainer::FLAG_ASYNC_NOTIFY);
-  } else {
-    surface = aImage->GetFrame(imgIContainer::FRAME_FIRST,
-                               imgIContainer::FLAG_ASYNC_NOTIFY);
+MOZ_RUNINIT
+HashSet<RefPtr<ImageCallbackHelper>, PointerHasher<ImageCallbackHelper*>>
+    gDecodeRequests;
+
+class ImageCallbackHelper : public imgIContainerCallback,
+                            public imgINotificationObserver {
+ public:
+  NS_DECL_ISUPPORTS
+
+  void CompleteExceptionally(nsresult aRv) {
+    nsPrintfCString error("Could not process image: 0x%08X", uint32_t(aRv));
+    mResult->CompleteExceptionally(
+        java::Image::ImageProcessingException::New(error.get())
+            .Cast<jni::Throwable>());
+    gDecodeRequests.remove(this);
   }
 
-  NS_ENSURE_TRUE(surface, NS_ERROR_FAILURE);
-  RefPtr<DataSourceSurface> dataSurface = surface->GetDataSurface();
+  void Complete(DataSourceSurface::ScopedMap& aSourceSurface, int32_t width,
+                int32_t height) {
+    auto pixels = mozilla::jni::ByteBuffer::New(
+        reinterpret_cast<int8_t*>(aSourceSurface.GetData()),
+        aSourceSurface.GetStride() * height);
+    auto bitmap = java::sdk::Bitmap::CreateBitmap(
+        width, height, java::sdk::Bitmap::Config::ARGB_8888());
+    bitmap->CopyPixelsFromBuffer(pixels);
+    mResult->Complete(bitmap);
+    gDecodeRequests.remove(this);
+  }
 
-  NS_ENSURE_TRUE(dataSurface, NS_ERROR_FAILURE);
-  int32_t width = dataSurface->GetSize().width;
-  int32_t height = dataSurface->GetSize().height;
+  ImageCallbackHelper(java::GeckoResult::Param aResult, int32_t aDesiredLength)
+      : mResult(aResult), mDesiredLength(aDesiredLength), mImage(nullptr) {
+    MOZ_ASSERT(mResult);
+  }
 
-  DataSourceSurface::ScopedMap sourceMap(dataSurface, DataSourceSurface::READ);
+  NS_IMETHOD
+  OnImageReady(imgIContainer* aImage, nsresult aStatus) override {
+    // Let's make sure we are alive until the request completes
+    MOZ_ALWAYS_TRUE(gDecodeRequests.putNew(this));
 
-  // Android's Bitmap only supports R8G8B8A8, so we need to convert the
-  // data to the right format
-  RefPtr<DataSourceSurface> destDataSurface =
-      Factory::CreateDataSourceSurfaceWithStride(dataSurface->GetSize(),
-                                                 SurfaceFormat::R8G8B8A8,
-                                                 sourceMap.GetStride());
-  NS_ENSURE_TRUE(destDataSurface, NS_ERROR_FAILURE);
+    if (NS_FAILED(aStatus)) {
+      CompleteExceptionally(aStatus);
+      return aStatus;
+    }
 
-  DataSourceSurface::ScopedMap destMap(destDataSurface,
-                                       DataSourceSurface::READ_WRITE);
+    mImage = aImage;
+    return mImage->StartDecoding(
+        imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_ASYNC_NOTIFY,
+        imgIContainer::FRAME_FIRST);
+  }
 
-  SwizzleData(sourceMap.GetData(), sourceMap.GetStride(), surface->GetFormat(),
-              destMap.GetData(), destMap.GetStride(), SurfaceFormat::R8G8B8A8,
-              destDataSurface->GetSize());
+  // This method assumes that the image is ready to be processed
+  nsresult SendBitmap() {
+    RefPtr<gfx::SourceSurface> surface;
 
-  auto pixels = mozilla::jni::ByteBuffer::New(
-      reinterpret_cast<int8_t*>(destMap.GetData()),
-      destMap.GetStride() * height);
-  auto bitmap = java::sdk::Bitmap::CreateBitmap(
-      width, height, java::sdk::Bitmap::Config::ARGB_8888());
-  bitmap->CopyPixelsFromBuffer(pixels);
-  aResult->Complete(bitmap);
+    NS_ENSURE_TRUE(mImage, NS_ERROR_FAILURE);
+    if (mDesiredLength > 0) {
+      surface = mImage->GetFrameAtSize(
+          gfx::IntSize(mDesiredLength, mDesiredLength),
+          imgIContainer::FRAME_FIRST,
+          imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_ASYNC_NOTIFY);
+    } else {
+      surface = mImage->GetFrame(
+          imgIContainer::FRAME_FIRST,
+          imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_ASYNC_NOTIFY);
+    }
 
-  return NS_OK;
-}
+    NS_ENSURE_TRUE(surface, NS_ERROR_FAILURE);
+    RefPtr<DataSourceSurface> dataSurface = surface->GetDataSurface();
+
+    NS_ENSURE_TRUE(dataSurface, NS_ERROR_FAILURE);
+    int32_t width = dataSurface->GetSize().width;
+    int32_t height = dataSurface->GetSize().height;
+
+    DataSourceSurface::ScopedMap sourceMap(dataSurface,
+                                           DataSourceSurface::READ);
+
+    // Android's Bitmap only supports R8G8B8A8, so we need to convert the
+    // data to the right format
+    RefPtr<DataSourceSurface> destDataSurface =
+        Factory::CreateDataSourceSurfaceWithStride(dataSurface->GetSize(),
+                                                   SurfaceFormat::R8G8B8A8,
+                                                   sourceMap.GetStride());
+    NS_ENSURE_TRUE(destDataSurface, NS_ERROR_FAILURE);
+
+    DataSourceSurface::ScopedMap destMap(destDataSurface,
+                                         DataSourceSurface::READ_WRITE);
+
+    SwizzleData(sourceMap.GetData(), sourceMap.GetStride(),
+                surface->GetFormat(), destMap.GetData(), destMap.GetStride(),
+                SurfaceFormat::R8G8B8A8, destDataSurface->GetSize());
+
+    Complete(destMap, width, height);
+
+    return NS_OK;
+  }
+
+  void Notify(imgIRequest* aRequest, int32_t aType,
+              const nsIntRect* aData) override {
+    if (aType == imgINotificationObserver::DECODE_COMPLETE) {
+      nsresult status = SendBitmap();
+      if (NS_FAILED(status)) {
+        CompleteExceptionally(status);
+      }
+
+      // Breack the cyclic reference between `ImageDecoderListener` (which is a
+      // `imgIContainer`) and `ImageCallbackHelper`.
+      mImage = nullptr;
+    }
+  }
+
+ private:
+  const java::GeckoResult::GlobalRef mResult;
+  int32_t mDesiredLength;
+  nsCOMPtr<imgIContainer> mImage;
+  virtual ~ImageCallbackHelper() {}
+};
+
+NS_IMPL_ISUPPORTS(ImageCallbackHelper, imgIContainerCallback,
+                  imgINotificationObserver)
+
+}  // namespace
 
 /* static */ void ImageDecoderSupport::Decode(jni::String::Param aUri,
                                               int32_t aDesiredLength,
                                               jni::Object::Param aResult) {
   auto result = java::GeckoResult::LocalRef(aResult);
+  RefPtr<ImageCallbackHelper> helper =
+      new ImageCallbackHelper(result, aDesiredLength);
 
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = NS_NewURI(getter_AddRefs(uri), aUri->ToString());
+  nsresult rv = DecodeInternal(aUri->ToString(), helper, helper);
   if (NS_FAILED(rv)) {
-    CompleteExceptionally(result, rv);
-    return;
+    helper->OnImageReady(nullptr, rv);
   }
-
-  gfx::IntSize size{};
-  if (aDesiredLength > 0) {
-    size = IntSize(aDesiredLength, aDesiredLength);
-  }
-
-  mozilla::image::FetchDecodedImage(uri, size,
-                                    nsContentUtils::GetSystemPrincipal())
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [result = java::GeckoResult::GlobalRef(result),
-           aDesiredLength](already_AddRefed<imgIContainer> aImage) {
-            nsCOMPtr<imgIContainer> image(std::move(aImage));
-
-            nsresult rv = SendBitmap(result, image, aDesiredLength);
-            if (NS_FAILED(rv)) {
-              CompleteExceptionally(result, rv);
-            }
-          },
-          [result = java::GeckoResult::GlobalRef(result)](nsresult aStatus) {
-            CompleteExceptionally(result, aStatus);
-          });
 }
 
-}  // namespace mozilla::widget
+/* static */ nsresult ImageDecoderSupport::DecodeInternal(
+    const nsAString& aUri, imgIContainerCallback* aCallback,
+    imgINotificationObserver* aObserver) {
+  nsCOMPtr<imgITools> imgTools = do_GetService("@mozilla.org/image/tools;1");
+  if (NS_WARN_IF(!imgTools)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), aUri);
+  NS_ENSURE_SUCCESS(rv, NS_ERROR_MALFORMED_URI);
+
+  nsCOMPtr<nsIChannel> channel;
+  rv = NS_NewChannel(getter_AddRefs(channel), uri,
+                     nsContentUtils::GetSystemPrincipal(),
+                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+                     nsIContentPolicy::TYPE_IMAGE);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return imgTools->DecodeImageFromChannelAsync(uri, channel, aCallback,
+                                               aObserver);
+}
+
+}  // namespace widget
+}  // namespace mozilla

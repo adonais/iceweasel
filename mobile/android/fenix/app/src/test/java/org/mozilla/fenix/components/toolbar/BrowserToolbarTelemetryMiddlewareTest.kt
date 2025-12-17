@@ -26,6 +26,7 @@ import org.mozilla.fenix.components.toolbar.DisplayActions.NavigateForwardLongCl
 import org.mozilla.fenix.components.toolbar.DisplayActions.RefreshClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.ShareClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.StopRefreshClicked
+import org.mozilla.fenix.components.toolbar.StartPageActions.SiteInfoClicked
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.AddNewPrivateTab
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.AddNewTab
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterClicked
@@ -145,6 +146,12 @@ class BrowserToolbarTelemetryMiddlewareTest {
 
         buildStore.dispatch(ShareClicked(Source.NavigationBar)).joinBlocking()
         assertTelemetryRecorded(Source.NavigationBar, item = ToolbarActionRecord.ShareClicked.action)
+    }
+
+    @Test
+    fun `WHEN site info is clicked THEN record addressBar telemetry`() {
+        buildStore.dispatch(SiteInfoClicked)
+        assertTelemetryRecorded(Source.AddressBar, item = ToolbarActionRecord.SecurityIndicatorClicked.action)
     }
 
     private fun assertTelemetryRecorded(

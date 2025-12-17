@@ -19,7 +19,7 @@ import mozilla.components.browser.state.state.LoadRequestState
 import mozilla.components.browser.state.state.MediaSessionState
 import mozilla.components.browser.state.state.ReaderState
 import mozilla.components.browser.state.state.SearchState
-import mozilla.components.browser.state.state.SecurityInfoState
+import mozilla.components.browser.state.state.SecurityInfo
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.TabGroup
 import mozilla.components.browser.state.state.TabSessionState
@@ -606,11 +606,11 @@ sealed class ContentAction : BrowserAction() {
     ) : ContentAction()
 
     /**
-     * Updates the [SecurityInfoState] of the [ContentState] with the given [sessionId].
+     * Updates the [SecurityInfo] of the [ContentState] with the given [sessionId].
      */
     data class UpdateSecurityInfoAction(
         val sessionId: String,
-        val securityInfo: SecurityInfoState,
+        val securityInfo: SecurityInfo,
     ) : ContentAction()
 
     /**

@@ -112,6 +112,7 @@ fun createTab(
     originalInput: String? = null,
     initialTextDirectiveUserActivation: Boolean = false,
     trackingProtection: TrackingProtectionState = TrackingProtectionState(),
+    securityInfo: SecurityInfo = SecurityInfo.Unknown,
 ): TabSessionState {
     return TabSessionState(
         id = id,
@@ -119,6 +120,7 @@ fun createTab(
             url,
             private,
             title = title,
+            securityInfo = securityInfo,
             webAppManifest = webAppManifest,
             searchTerms = searchTerms,
             desktopMode = desktopMode,

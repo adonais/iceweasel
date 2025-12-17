@@ -225,6 +225,7 @@ load 1808830.html
 load 1825450.html
 load 1683679.html
 load 1843622.html
+skip-if(Android&&debug) pref(gfx.missing_fonts.notify,true) load 1871755-1.html
 load 1898569.html
 load 1938548.html
 load 1983053.html

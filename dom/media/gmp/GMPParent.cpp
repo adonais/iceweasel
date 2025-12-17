@@ -685,13 +685,11 @@ void GMPParent::DeleteProcess() {
             self->DeleteProcess();
           },
           [self](const ipc::ResponseRejectReason&) {
+            // We crashed during shutdown, ActorDestroy will perform cleanup.
             GMP_LOG_DEBUG(
                 "GMPParent[%p|childPid=%d] DeleteProcess: Shutdown handshake "
                 "error.",
                 self.get(), self->mChildPid);
-            self->mState = GMPState::Closed;
-            self->Close();
-            self->DeleteProcess();
           });
       return;
     }

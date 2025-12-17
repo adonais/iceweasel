@@ -196,7 +196,7 @@ class TabPreview @JvmOverloads constructor(
                         onClick = object : BrowserToolbarEvent {},
                     )
                 } else if (
-                    tab?.content?.securityInfo?.secure == true &&
+                    tab?.content?.securityInfo?.isSecure == true &&
                     tab.trackingProtection.enabled &&
                     !tab.trackingProtection.ignoredOnTrackingProtection
                 ) {

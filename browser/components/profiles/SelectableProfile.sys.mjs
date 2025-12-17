@@ -479,6 +479,18 @@ export class SelectableProfile {
     // We set the pref here so the copied profile will inherit this pref and
     // the copied profile will not show the backup welcome messaging.
     Services.prefs.setBoolPref("browser.profiles.profile-copied", true);
+
+    // If the user has created a desktop shortcut, clear the shortcut name pref
+    // to prevent the copied profile trying to manage the original profile's
+    // shortcut.
+    let shortcutFileName = Services.prefs.getCharPref(
+      "browser.profiles.shortcutFileName",
+      ""
+    );
+    if (shortcutFileName !== "") {
+      Services.prefs.clearUserPref("browser.profiles.shortcutFileName");
+    }
+
     const backupServiceInstance = new BackupService();
 
     let encState = await backupServiceInstance.loadEncryptionState(this.path);
@@ -499,6 +511,15 @@ export class SelectableProfile {
 
     // Clear the pref now that the copied profile has inherited it.
     Services.prefs.clearUserPref("browser.profiles.profile-copied");
+
+    // Restore the desktop shortcut pref now that the copied profile will not
+    // inherit it.
+    if (shortcutFileName !== "") {
+      Services.prefs.setCharPref(
+        "browser.profiles.shortcutFileName",
+        shortcutFileName
+      );
+    }
 
     if (result.error) {
       throw result.error;

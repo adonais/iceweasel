@@ -9,6 +9,7 @@ import mozilla.components.support.test.ext.joinBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Ignore
 import org.junit.Test
 import org.mozilla.experiments.nimbus.NimbusMessagingHelperInterface
 import org.mozilla.fenix.components.AppStore
@@ -235,6 +236,7 @@ class ReviewPromptMiddlewareTest {
         assertNoOp(ReviewPromptAction.ShowPlayStorePrompt)
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=2001801")
     @Test
     fun `GIVEN telemetry enabled AND criteria satisfied WHEN check requested THEN sets eligible for Custom prompt`() {
         isTelemetryEnabled = true
@@ -263,6 +265,7 @@ class ReviewPromptMiddlewareTest {
         )
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=2001801")
     @Test
     fun `GIVEN feature flag disabled AND telemetry enabled AND criteria satisfied WHEN check requested THEN sets eligible for Custom prompt`() {
         isFeatureFlagEnabled = false

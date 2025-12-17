@@ -3985,15 +3985,33 @@ gfxFont::Metrics gfxFontGroup::GetMetricsForCSSUnits(
   return metrics;
 }
 
-void gfxMissingFontRecorder::Flush() {
-  static bool mNotifiedFontsInitialized = false;
-  static uint32_t mNotifiedFonts[gfxMissingFontRecorder::kNumScriptBitsWords];
-  if (!mNotifiedFontsInitialized) {
-    memset(&mNotifiedFonts, 0, sizeof(mNotifiedFonts));
-    mNotifiedFontsInitialized = true;
+class DeferredNotifyMissingFonts final : public nsIRunnable {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  explicit DeferredNotifyMissingFonts(nsString&& aScriptList)
+      : mScriptList(std::move(aScriptList)) {}
+
+ protected:
+  virtual ~DeferredNotifyMissingFonts() {}
+
+  NS_IMETHOD Run(void) override {
+    nsCOMPtr<nsIObserverService> service = GetObserverService();
+    service->NotifyObservers(nullptr, "font-needed", mScriptList.get());
+    return NS_OK;
   }
 
+  nsString mScriptList;
+};
+
+NS_IMPL_ISUPPORTS(DeferredNotifyMissingFonts, nsIRunnable)
+
+void gfxMissingFontRecorder::Flush() {
+  static uint32_t mNotifiedFonts[gfxMissingFontRecorder::kNumScriptBitsWords];
+  static StaticMutex sNotifiedFontsMutex;
+
   nsAutoString fontNeeded;
+  sNotifiedFontsMutex.Lock();
   for (uint32_t i = 0; i < kNumScriptBitsWords; ++i) {
     mMissingFonts[i] &= ~mNotifiedFonts[i];
     if (!mMissingFonts[i]) {
@@ -4018,8 +4036,15 @@ void gfxMissingFontRecorder::Flush() {
     }
     mMissingFonts[i] = 0;
   }
+  sNotifiedFontsMutex.Unlock();
+
   if (!fontNeeded.IsEmpty()) {
-    nsCOMPtr<nsIObserverService> service = GetObserverService();
-    service->NotifyObservers(nullptr, "font-needed", fontNeeded.get());
+    if (NS_IsMainThread()) {
+      nsCOMPtr<nsIObserverService> service = GetObserverService();
+      service->NotifyObservers(nullptr, "font-needed", fontNeeded.get());
+    } else {
+      NS_DispatchToMainThread(
+          new DeferredNotifyMissingFonts(std::move(fontNeeded)));
+    }
   }
 }

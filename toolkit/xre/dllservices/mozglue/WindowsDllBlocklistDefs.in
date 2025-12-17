@@ -366,6 +366,9 @@ BROWSER_PROCESS += [
 
     # 123SyncCloud/123CloudStorage shell extension (bug 1996038)
     DllBlocklistEntry("MFCopyHook.dll", ALL_VERSIONS),
+
+    # SentinalOne product (bug 2005255)
+    DllBlocklistEntry("InProcessClient64.dll", ALL_VERSIONS),
 ]
 
 CHILD_PROCESSES += [

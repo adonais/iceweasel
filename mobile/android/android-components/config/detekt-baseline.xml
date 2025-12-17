@@ -83,8 +83,7 @@
     <ID>ForbiddenSuppress:IconDirectoryEntry.kt$IconDirectoryEntry$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:IconResourceComparator.kt$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:ImageDecoder.kt$ImageDecoder.Companion.ImageMagicNumbers$@Suppress("MagicNumber")</ID>
-    <ID>ForbiddenSuppress:InlineAutocompleteEditText.kt$InlineAutocompleteEditText$@SuppressWarnings("ComplexMethod")</ID>
-    <ID>ForbiddenSuppress:InlineAutocompleteTextField.kt$@Suppress("LongMethod", "CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:InlineAutocompleteTextField.kt$@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:InputResultDetail.kt$InputResultDetail$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:Lexer.kt$Lexer$@Suppress("ComplexMethod")</ID>
     <ID>ForbiddenSuppress:Lexer.kt$Lexer$@Suppress("ComplexMethod", "LongMethod")</ID>

@@ -929,7 +929,12 @@ void AsyncPanZoomController::Destroy() {
     MonitorAutoLock lock(mRefPtrMonitor);
     mGeckoContentController = nullptr;
     if (mGestureEventListener) {
-      mGestureEventListener->Destroy();
+      APZThreadUtils::RunOnControllerThread(NS_NewRunnableFunction(
+          "AsyncPanZoomController: destroying mGestureEventListener",
+          [listener = std::move(mGestureEventListener)]() {
+            listener->Destroy();
+          }));
+
       mGestureEventListener = nullptr;
     }
   }

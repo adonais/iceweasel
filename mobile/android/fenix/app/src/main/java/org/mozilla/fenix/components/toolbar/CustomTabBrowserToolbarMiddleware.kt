@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.browser.state.state.CustomTabSessionState
+import mozilla.components.browser.state.state.SecurityInfo
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
@@ -200,7 +201,7 @@ class CustomTabBrowserToolbarMiddleware(
                                         url = customTab.content.url,
                                         title = customTab.content.title,
                                         isLocalPdf = customTab.content.url.isContentUrl(),
-                                        isSecured = customTab.content.securityInfo.secure,
+                                        isSecured = customTab.content.securityInfo.isSecure,
                                         sitePermissions = sitePermissions,
                                         certificateName = customTab.content.securityInfo.issuer,
                                         permissionHighlights = customTab.content.permissionHighlights,
@@ -215,7 +216,7 @@ class CustomTabBrowserToolbarMiddleware(
                                             url = customTab.content.url,
                                             title = customTab.content.title,
                                             isLocalPdf = customTab.content.url.isContentUrl(),
-                                            isSecured = customTab.content.securityInfo.secure,
+                                            isSecured = customTab.content.securityInfo.isSecure,
                                             sitePermissions = sitePermissions,
                                             gravity = settings.toolbarPosition.androidGravity,
                                             certificateName = customTab.content.securityInfo.issuer,
@@ -434,8 +435,18 @@ class CustomTabBrowserToolbarMiddleware(
                     onClick = SiteInfoClicked,
                 ),
             )
+        } else if (customTab?.content?.securityInfo == null ||
+            customTab.content.securityInfo == SecurityInfo.Unknown
+        ) {
+            add(
+                ActionButtonRes(
+                    drawableResId = iconsR.drawable.mozac_ic_globe_24,
+                    contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
+                    onClick = object : BrowserToolbarEvent {},
+                ),
+            )
         } else if (
-                customTab?.content?.securityInfo?.secure == true &&
+                customTab.content.securityInfo.isSecure &&
                 customTab.trackingProtection.enabled &&
                 !customTab.trackingProtection.ignoredOnTrackingProtection
             ) {

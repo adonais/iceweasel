@@ -180,13 +180,6 @@ interface nsIBaseWindow : nsISupports
   }
 %}
 
-  /**
-   * Tell the window to repaint itself
-   * @param aForce - if true, repaint immediately
-   *                 if false, the window may defer repainting as it sees fit.
-   */
-  void repaint(in boolean force);
-
   /*
   This is the parenting widget for the control.
 

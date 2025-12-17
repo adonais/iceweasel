@@ -3558,7 +3558,9 @@ CanvasUtils::ImageExtraction ImageExtractionResult(
   if (aOffscreenCanvas) {
     return CanvasUtils::ImageExtractionResult(
         aOffscreenCanvas, nsContentUtils::GetCurrentJSContext(),
-        aOffscreenCanvas->GetOwnerGlobal()->PrincipalOrNull());
+        aOffscreenCanvas->GetOwnerGlobal()
+            ? aOffscreenCanvas->GetOwnerGlobal()->PrincipalOrNull()
+            : nullptr);
   }
 
   MOZ_ASSERT_UNREACHABLE(

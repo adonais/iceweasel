@@ -319,11 +319,6 @@ nsChromeTreeOwner::GetDimensions(DimensionKind aDimensionKind, int32_t* aX,
   return GetRootShellSize(aCX, aCY);
 }
 
-NS_IMETHODIMP nsChromeTreeOwner::Repaint(bool aForce) {
-  NS_ENSURE_STATE(mAppWindow);
-  return mAppWindow->Repaint(aForce);
-}
-
 NS_IMETHODIMP nsChromeTreeOwner::GetParentWidget(nsIWidget** aParentWidget) {
   NS_ENSURE_STATE(mAppWindow);
   return mAppWindow->GetParentWidget(aParentWidget);

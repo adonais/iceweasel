@@ -2,6 +2,159 @@
   "data": [
     {
       "schemaVersion": "1.12.0",
+      "slug": "android-first-run-onboarding",
+      "id": "android-first-run-onboarding",
+      "arguments": {},
+      "application": "org.mozilla.firefox",
+      "appName": "fenix",
+      "appId": "org.mozilla.firefox",
+      "channel": "release",
+      "userFacingName": "Android - First Run Onboarding",
+      "userFacingDescription": "On Boarding",
+      "isEnrollmentPaused": false,
+      "isRollout": false,
+      "bucketConfig": {
+        "randomizationUnit": "nimbus_id",
+        "namespace": "fenix-juno-onboarding-release-15",
+        "start": 0,
+        "count": 10000,
+        "total": 10000
+      },
+      "featureIds": [
+        "juno-onboarding"
+      ],
+      "probeSets": [],
+      "outcomes": [],
+      "branches": [
+        {
+          "slug": "control",
+          "ratio": 1,
+          "feature": {
+            "featureId": "this-is-included-for-mobile-pre-96-support",
+            "enabled": false,
+            "value": {}
+          },
+          "features": [
+            {
+              "featureId": "juno-onboarding",
+              "enabled": true,
+              "value": {
+                "use-onboarding-redesign": false,
+                "cards": {
+                  "theme-selection": {
+                    "enabled": false
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "slug": "treatment-a",
+          "ratio": 1,
+          "feature": {
+            "featureId": "this-is-included-for-mobile-pre-96-support",
+            "enabled": false,
+            "value": {}
+          },
+          "features": [
+            {
+              "featureId": "juno-onboarding",
+              "enabled": true,
+              "value": {
+                "use-onboarding-redesign": true,
+                "cards": {
+                  "terms-of-service": {
+                    "title": "onboarding_redesign_tou_title",
+                    "primary-button-label": "onboarding_redesign_tou_agree_and_continue_button_label",
+                    "extra-data": {
+                      "term-of-service-data": {
+                        "subheader-one-text": "onboarding_redesign_tou_subheader_one",
+                        "subheader-two-text": "onboarding_redesign_tou_subheader_two",
+                        "subheader-three-text": "onboarding_redesign_tou_subheader_three",
+                        "line-one-text": "onboarding_redesign_tou_body_one",
+                        "line-one-link-text": "onboarding_redesign_tou_body_one_link_text",
+                        "line-two-text": "onboarding_redesign_tou_body_two",
+                        "line-two-link-text": "onboarding_redesign_tou_body_two_link_text",
+                        "line-three-text": "onboarding_redesign_tou_body_three",
+                        "line-three-link-text": "onboarding_redesign_tou_body_three_link_text"
+                      }
+                    }
+                  },
+                  "default-browser": {
+                    "title": "onboarding_redesign_set_default_browser_title",
+                    "body": "onboarding_redesign_set_default_browser_body",
+                    "primary-button-label": "juno_onboarding_default_browser_positive_button",
+                    "secondary-button-label": "juno_onboarding_default_browser_negative_button"
+                  },
+                  "sync-sign-in": {
+                    "title": "onboarding_redesign_sync_title",
+                    "body": "onboarding_redesign_sync_body",
+                    "primary-button-label": "onboarding_redesign_sync_positive_button",
+                    "secondary-button-label": "onboarding_redesign_sync_negative_button"
+                  },
+                  "toolbar-placement": {
+                    "title": "onboarding_redesign_customize_toolbar_title",
+                    "body": "onboarding_customize_toolbar_description",
+                    "image-res": "ic_onboarding_customize_toolbar",
+                    "primary-button-label": "onboarding_redesign_continue_button",
+                    "extra-data": {
+                      "customization-toolbar-data": [
+                        {
+                          "toolbar-type": "toolbar-top",
+                          "label": "onboarding_customize_toolbar_top_option",
+                          "image-res": "ic_onboarding_top_toolbar"
+                        },
+                        {
+                          "toolbar-type": "toolbar-bottom",
+                          "label": "onboarding_customize_toolbar_bottom_option",
+                          "image-res": "ic_onboarding_bottom_toolbar"
+                        }
+                      ]
+                    }
+                  },
+                  "marketing": {
+                    "title": "onboarding_marketing_redesign_title",
+                    "body": "onboarding_marketing_body",
+                    "image-res": "ic_onboarding_marketing_redesign",
+                    "primary-button-label": "onboarding_marketing_redesign_positive_button",
+                    "extra-data": {
+                      "marketing-data": {
+                        "body-line-one-text": "onboarding_marketing_redesign_learn_more",
+                        "body-line-one-link-text": "onboarding_marketing_redesign_learn_more",
+                        "body-line-two-text": "onboarding_marketing_redesign_opt_out_checkbox"
+                      }
+                    }
+                  },
+                  "theme-selection": {
+                    "enabled": false
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "targeting": "(app_version|versionCompare('146.0.1') >= 0)",
+      "startDate": "2025-12-10",
+      "enrollmentEndDate": null,
+      "endDate": null,
+      "proposedDuration": 28,
+      "proposedEnrollment": 7,
+      "referenceBranch": "control",
+      "featureValidationOptOut": false,
+      "localizations": null,
+      "locales": null,
+      "publishedDate": "2025-12-10T19:36:16.354540Z",
+      "isFirefoxLabsOptIn": false,
+      "firefoxLabsTitle": "",
+      "firefoxLabsDescription": "",
+      "firefoxLabsDescriptionLinks": null,
+      "firefoxLabsGroup": "",
+      "requiresRestart": false
+    },
+    {
+      "schemaVersion": "1.12.0",
       "slug": "android-tou-any-users",
       "id": "android-tou-any-users",
       "arguments": {},

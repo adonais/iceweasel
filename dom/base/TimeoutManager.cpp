@@ -98,7 +98,7 @@ bool TimeoutManager::IsBackground() const {
 
 bool TimeoutManager::IsActive() const {
   // A window/worker is considered active if:
-  // * It is a chrome window
+  // * It is a chrome window/worker
   // * It is playing audio
   //
   // Note that a window/worker can be considered active if it is either in the
@@ -106,6 +106,10 @@ bool TimeoutManager::IsActive() const {
 
   nsGlobalWindowInner* window = GetInnerWindow();
   if (window && window->IsChromeWindow()) {
+    return true;
+  }
+
+  if (mIsChromeWorker) {
     return true;
   }
 
@@ -326,7 +330,8 @@ TimeDuration TimeoutManager::CalculateDelay(Timeout* aTimeout) const {
   TimeDuration result = aTimeout->mInterval;
 
   if (aTimeout->mNestingLevel >=
-      StaticPrefs::dom_clamp_timeout_nesting_level()) {
+          StaticPrefs::dom_clamp_timeout_nesting_level() &&
+      !mIsChromeWorker) {
     uint32_t minTimeoutValue = StaticPrefs::dom_min_timeout_value();
     result = TimeDuration::Max(result,
                                TimeDuration::FromMilliseconds(minTimeoutValue));
@@ -408,7 +413,8 @@ uint32_t TimeoutManager::sNestingLevel = 0;
 
 TimeoutManager::TimeoutManager(nsIGlobalObject& aHandle,
                                uint32_t aMaxIdleDeferMS,
-                               nsISerialEventTarget* aEventTarget)
+                               nsISerialEventTarget* aEventTarget,
+                               bool aIsChromeWorker)
     : mGlobalObject(aHandle),
       mExecutor(new TimeoutExecutor(this, false, 0)),
       mIdleExecutor(new TimeoutExecutor(this, true, aMaxIdleDeferMS)),
@@ -429,7 +435,8 @@ TimeoutManager::TimeoutManager(nsIGlobalObject& aHandle,
       mBudgetThrottleTimeouts(false),
       mIsLoading(false),
       mEventTarget(aEventTarget),
-      mIsWindow(aHandle.GetAsInnerWindow()) {
+      mIsWindow(aHandle.GetAsInnerWindow()),
+      mIsChromeWorker(aIsChromeWorker) {
   MOZ_LOG(gTimeoutLog, LogLevel::Debug,
           ("TimeoutManager %p created, tracking bucketing %s\n", this,
            StaticPrefs::privacy_trackingprotection_annotate_channels()

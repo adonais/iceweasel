@@ -24,7 +24,7 @@ import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.browser.state.state.AppIntentState
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.LoadRequestState
-import mozilla.components.browser.state.state.SecurityInfoState
+import mozilla.components.browser.state.state.SecurityInfo
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.state.content.FindResultState
@@ -300,7 +300,7 @@ class ContentActionTest {
 
     @Test
     fun `UpdateSecurityInfo updates securityInfo`() {
-        val newSecurityInfo = SecurityInfoState(true, "mozilla.org", "The Mozilla Team")
+        val newSecurityInfo = SecurityInfo.from(true, "mozilla.org", "The Mozilla Team")
 
         assertNotEquals(newSecurityInfo, tab.content.securityInfo)
         assertNotEquals(newSecurityInfo, otherTab.content.securityInfo)
@@ -313,9 +313,9 @@ class ContentActionTest {
         assertEquals(newSecurityInfo, tab.content.securityInfo)
         assertNotEquals(newSecurityInfo, otherTab.content.securityInfo)
 
-        assertEquals(true, tab.content.securityInfo.secure)
-        assertEquals("mozilla.org", tab.content.securityInfo.host)
-        assertEquals("The Mozilla Team", tab.content.securityInfo.issuer)
+        val tabSecurityInfo = (tab.content.securityInfo as SecurityInfo.Secure)
+        assertEquals("mozilla.org", tabSecurityInfo.host)
+        assertEquals("The Mozilla Team", tabSecurityInfo.issuer)
     }
 
     @Test

@@ -69,7 +69,7 @@ class CfrMiddleware(private val appContext: Context) : Middleware<BrowserState, 
         context: MiddlewareContext<BrowserState, BrowserAction>,
     ) {
         if (action is ContentAction.UpdateSecurityInfoAction) {
-            isCurrentTabSecure = action.securityInfo.secure
+            isCurrentTabSecure = action.securityInfo.isSecure
         }
         if (shouldShowCfrForTrackingProtection(action = action, browserState = context.state)) {
             if (tpExposureAlreadyRecorded) {

@@ -303,6 +303,66 @@ features:
                   body-line-one-link-text: onboarding_marketing_redesign_learn_more
                   body-line-two-text: onboarding_marketing_redesign_opt_out_checkbox
 
+      - channel: nightly
+        value:
+          use-onboarding-redesign: true
+          cards:
+            terms-of-service:
+              title: onboarding_redesign_tou_title
+              primary-button-label: onboarding_redesign_tou_agree_and_continue_button_label
+              extra-data:
+                term-of-service-data:
+                  subheader-one-text: onboarding_redesign_tou_subheader_one
+                  subheader-two-text: onboarding_redesign_tou_subheader_two
+                  subheader-three-text: onboarding_redesign_tou_subheader_three
+                  line-one-text: onboarding_redesign_tou_body_one
+                  line-one-link-text: onboarding_redesign_tou_body_one_link_text
+                  line-two-text: onboarding_redesign_tou_body_two
+                  line-two-link-text: onboarding_redesign_tou_body_two_link_text
+                  line-three-text: onboarding_redesign_tou_body_three
+                  line-three-link-text: onboarding_redesign_tou_body_three_link_text
+
+            default-browser:
+              title: onboarding_redesign_set_default_browser_title
+              body: onboarding_redesign_set_default_browser_body
+              primary-button-label: juno_onboarding_default_browser_positive_button
+              secondary-button-label: juno_onboarding_default_browser_negative_button
+
+            sync-sign-in:
+              title: onboarding_redesign_sync_title
+              body: onboarding_redesign_sync_body
+              primary-button-label: onboarding_redesign_sync_positive_button
+              secondary-button-label: onboarding_redesign_sync_negative_button
+
+            toolbar-placement:
+              title: onboarding_redesign_customize_toolbar_title
+              body: onboarding_customize_toolbar_description
+              image-res: ic_onboarding_customize_toolbar
+              primary-button-label: onboarding_redesign_continue_button
+              extra-data:
+                customization-toolbar-data:
+                  - toolbar-type: toolbar-top
+                    label: onboarding_customize_toolbar_top_option
+                    image-res: ic_onboarding_top_toolbar
+                  - toolbar-type: toolbar-bottom
+                    label: onboarding_customize_toolbar_bottom_option
+                    image-res: ic_onboarding_bottom_toolbar
+
+            marketing:
+              title: onboarding_marketing_redesign_title
+              body: onboarding_marketing_body
+              image-res: ic_onboarding_marketing_redesign
+              primary-button-label: onboarding_marketing_redesign_positive_button
+              extra-data:
+                marketing-data:
+                  body-line-one-text: onboarding_marketing_redesign_learn_more
+                  body-line-one-link-text: onboarding_marketing_redesign_learn_more
+                  body-line-two-text: onboarding_marketing_redesign_opt_out_checkbox
+
+            # Disable the defaults that are not included in the redesign.
+            theme-selection:
+              enabled: false
+
 objects:
 
   OnboardingCardData:

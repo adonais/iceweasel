@@ -6011,5 +6011,23 @@
         }
       }
     ]
+  },
+  "2000906": {
+    "label": "teams.microsoft.com",
+    "bugs": {
+      "2000906": {
+        "issue": "broken-meetings",
+        "matches": ["*://teams.microsoft.com/*", "*://teams.live.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["desktop"],
+        "content_scripts": {
+          "all_frames": true,
+          "js": ["bug2000906-teams.microsoft.com-disable-resizeMode-in-gDM.js"]
+        }
+      }
+    ]
   }
 }

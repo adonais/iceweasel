@@ -897,17 +897,7 @@ features:
       enabled:
         description: Whether or not the feature is available for the user.
         type: Boolean
-        default: false
-    defaults:
-      - channel: developer
-        value:
-          enabled: true
-      - channel: nightly
-        value:
-          enabled: true
-      - channel: beta
-        value:
-          enabled: true
+        default: true
 
   settings-search:
       description: Feature to allow users to search for settings.

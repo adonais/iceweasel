@@ -19,7 +19,7 @@ import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.state.AppIntentState
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.LoadRequestState
-import mozilla.components.browser.state.state.SecurityInfoState
+import mozilla.components.browser.state.state.SecurityInfo
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.state.content.DownloadState.Status.INITIATED
 import mozilla.components.browser.state.state.content.FindResultState
@@ -162,7 +162,7 @@ internal class EngineObserver(
         store.dispatch(
             ContentAction.UpdateSecurityInfoAction(
                 tabId,
-                SecurityInfoState(secure, host ?: "", issuer ?: ""),
+                SecurityInfo.from(secure, host ?: "", issuer ?: ""),
             ),
         )
     }

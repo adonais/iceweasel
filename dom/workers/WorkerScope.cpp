@@ -270,7 +270,8 @@ WorkerGlobalScopeBase::WorkerGlobalScopeBase(
       mClientSource(std::move(aClientSource)),
       mSerialEventTarget(aWorkerPrivate->HybridEventTarget()) {
   mTimeoutManager = MakeUnique<dom::TimeoutManager>(
-      *this, /* not used on workers */ 0, mSerialEventTarget);
+      *this, /* not used on workers */ 0, mSerialEventTarget,
+      mWorkerPrivate->IsChromeWorker());
   LOG(("WorkerGlobalScopeBase::WorkerGlobalScopeBase [%p]", this));
   MOZ_ASSERT(mWorkerPrivate);
 #ifdef DEBUG

@@ -6,7 +6,7 @@ package org.mozilla.focus.cfr
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.action.TrackingProtectionAction
-import mozilla.components.browser.state.state.SecurityInfoState
+import mozilla.components.browser.state.state.SecurityInfo
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
@@ -47,8 +47,7 @@ class CfrMiddlewareTest {
         if (onboardingExperiment.isCfrEnabled) {
             val updateSecurityInfoAction = ContentAction.UpdateSecurityInfoAction(
                 "1",
-                SecurityInfoState(
-                    secure = true,
+                SecurityInfo.Secure(
                     host = "test.org",
                     issuer = "Test",
                 ),
@@ -76,8 +75,7 @@ class CfrMiddlewareTest {
             val insecureTab = createTab(isSecure = false)
             val updateSecurityInfoAction = ContentAction.UpdateSecurityInfoAction(
                 "1",
-                SecurityInfoState(
-                    secure = false,
+                SecurityInfo.Insecure(
                     host = "test.org",
                     issuer = "Test",
                 ),
@@ -97,8 +95,7 @@ class CfrMiddlewareTest {
             val mozillaTab = createTab(id = "1", url = "https://www.mozilla.org")
             val updateSecurityInfoAction = ContentAction.UpdateSecurityInfoAction(
                 "1",
-                SecurityInfoState(
-                    secure = true,
+                SecurityInfo.Secure(
                     host = "test.org",
                     issuer = "Test",
                 ),
@@ -120,7 +117,7 @@ class CfrMiddlewareTest {
         return tab.copy(
             content = tab.content.copy(
                 private = true,
-                securityInfo = SecurityInfoState(secure = isSecure),
+                securityInfo = SecurityInfo.from(isSecure),
             ),
         )
     }

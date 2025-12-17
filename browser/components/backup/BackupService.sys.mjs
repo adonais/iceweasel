@@ -3389,7 +3389,12 @@ export class BackupService extends EventTarget {
       await profileSvc.asyncFlush();
 
       if (shouldLaunch) {
-        Services.startup.createInstanceWithProfile(profile);
+        // Launch with the user's default homepage instead of the last selected tab
+        // to avoid problems with the messaging system (see Bug 2002732)
+        Services.startup.createInstanceWithProfile(profile, [
+          "--url",
+          "about:home",
+        ]);
       }
 
       return profile;

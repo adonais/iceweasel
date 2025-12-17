@@ -946,14 +946,6 @@ nsWebBrowser::GetDimensions(DimensionKind aDimensionKind, int32_t* aX,
 }
 
 NS_IMETHODIMP
-nsWebBrowser::Repaint(bool aForce) {
-  NS_ENSURE_STATE(mDocShell);
-  // Can directly return this as it is the
-  // same interface, thus same returns.
-  return mDocShell->Repaint(aForce);
-}
-
-NS_IMETHODIMP
 nsWebBrowser::GetParentWidget(nsIWidget** aParentWidget) {
   NS_ENSURE_ARG_POINTER(aParentWidget);
 

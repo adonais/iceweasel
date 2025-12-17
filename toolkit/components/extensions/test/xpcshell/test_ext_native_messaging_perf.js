@@ -10,7 +10,7 @@
 // on slow, resource-constrained devices. See
 // https://bugzilla.mozilla.org/show_bug.cgi?id=1951522#c31
 
-let max_round_trip_time_ms = 90;
+let max_round_trip_time_ms = 30;
 
 const MAX_ROUND_TRIP_TIME_MS = max_round_trip_time_ms;
 

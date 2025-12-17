@@ -169,7 +169,11 @@ class MOZ_STACK_CLASS WSScanResult final {
       return EditorLineBreakType(*BRElementPtr());
     }
     if (ReachedPreformattedLineBreak()) {
-      return EditorLineBreakType(*TextPtr(), *mOffset);
+      MOZ_ASSERT_IF(mDirection == ScanDirection::Backward, *mOffset > 0);
+      return EditorLineBreakType(*TextPtr(),
+                                 mDirection == ScanDirection::Forward
+                                     ? mOffset.valueOr(0)
+                                     : std::max(mOffset.valueOr(1), 1u) - 1);
     }
     MOZ_CRASH("Didn't reach a line break");
     return EditorLineBreakType(*BRElementPtr());

@@ -71,7 +71,7 @@ class ToolbarPresenter(
 
             toolbar.siteInfo = if (tab.content.url.isContentUrl()) {
                 Toolbar.SiteInfo.LOCAL_PDF
-            } else if (tab.content.securityInfo.secure) {
+            } else if (tab.content.securityInfo.isSecure) {
                 Toolbar.SiteInfo.SECURE
             } else {
                 Toolbar.SiteInfo.INSECURE

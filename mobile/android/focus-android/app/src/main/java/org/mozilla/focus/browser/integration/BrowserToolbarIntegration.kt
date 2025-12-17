@@ -492,7 +492,7 @@ class BrowserToolbarIntegration(
                 flow.mapNotNull { state -> state.findCustomTabOrSelectedTab(customTabId) }
                     .distinctUntilChangedBy { tab -> tab.content.securityInfo }
                     .collect {
-                        val secure = it.content.securityInfo.secure
+                        val secure = it.content.securityInfo.isSecure
                         val url = it.content.url.trim()
                         when {
                             secure && Indicators.SECURITY in toolbar.display.indicators -> {

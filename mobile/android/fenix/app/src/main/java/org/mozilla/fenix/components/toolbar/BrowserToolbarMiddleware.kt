@@ -23,6 +23,7 @@ import mozilla.components.browser.state.action.ShareResourceAction
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
 import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.state.SecurityInfo
 import mozilla.components.browser.state.state.content.ShareResourceState
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
@@ -273,6 +274,7 @@ class BrowserToolbarMiddleware(
 
             is StartPageActions.SiteInfoClicked -> {
                 onSiteInfoClicked()
+                next(action)
             }
 
             is MenuClicked -> {
@@ -640,7 +642,7 @@ class BrowserToolbarMiddleware(
                                 url = tab.content.url,
                                 title = tab.content.title,
                                 isLocalPdf = tab.content.url.isContentUrl(),
-                                isSecured = tab.content.securityInfo.secure,
+                                isSecured = tab.content.securityInfo.isSecure,
                                 sitePermissions = sitePermissions,
                                 certificateName = tab.content.securityInfo.issuer,
                                 permissionHighlights = tab.content.permissionHighlights,
@@ -653,7 +655,7 @@ class BrowserToolbarMiddleware(
                                 url = tab.content.url,
                                 title = tab.content.title,
                                 isLocalPdf = tab.content.url.isContentUrl(),
-                                isSecured = tab.content.securityInfo.secure,
+                                isSecured = tab.content.securityInfo.isSecure,
                                 sitePermissions = sitePermissions,
                                 gravity = settings.toolbarPosition.androidGravity,
                                 certificateName = tab.content.securityInfo.issuer,
@@ -1257,8 +1259,16 @@ class BrowserToolbarMiddleware(
                     highlighted = highlight,
                     onClick = StartPageActions.SiteInfoClicked,
                 )
+            } else if (selectedTab?.content?.securityInfo == null ||
+                selectedTab.content.securityInfo == SecurityInfo.Unknown
+            ) {
+                ActionButtonRes(
+                    drawableResId = iconsR.drawable.mozac_ic_globe_24,
+                    contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
+                    onClick = object : BrowserToolbarEvent {},
+                )
             } else if (
-                selectedTab?.content?.securityInfo?.secure == true &&
+                selectedTab.content.securityInfo.isSecure &&
                 selectedTab.trackingProtection.enabled &&
                 !selectedTab.trackingProtection.ignoredOnTrackingProtection
             ) {

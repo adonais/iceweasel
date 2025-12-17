@@ -1065,7 +1065,8 @@ nsAppStartup::RestartInSafeMode(uint32_t aQuitMode) {
 }
 
 NS_IMETHODIMP
-nsAppStartup::CreateInstanceWithProfile(nsIToolkitProfile* aProfile) {
+nsAppStartup::CreateInstanceWithProfile(nsIToolkitProfile* aProfile,
+                                        const nsTArray<nsString>& aArgs) {
   if (NS_WARN_IF(!aProfile)) {
     return NS_ERROR_FAILURE;
   }
@@ -1098,8 +1099,15 @@ nsAppStartup::CreateInstanceWithProfile(nsIToolkitProfile* aProfile) {
 
   NS_ConvertUTF8toUTF16 wideName(profileName);
 
-  const char16_t* args[] = {u"-P", wideName.get()};
-  rv = process->Runw(false, args, 2);
+  // Build argument list: -P <profile_name> followed by any additional args
+  AutoTArray<const char16_t*, 2> args = {u"-P", wideName.get()};
+
+  // Add optional arguments if provided
+  for (const auto& arg : aArgs) {
+    args.AppendElement(arg.get());
+  }
+
+  rv = process->Runw(false, args.Elements(), args.Length());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

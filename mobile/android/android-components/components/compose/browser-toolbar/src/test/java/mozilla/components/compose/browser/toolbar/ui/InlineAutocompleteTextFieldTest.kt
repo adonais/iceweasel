@@ -111,6 +111,34 @@ class InlineAutocompleteTextFieldTest {
     }
 
     @Test
+    fun `GIVEN an autocomplete suggestion is shown WHEN tapping outside the query, THEN commit the autocomplete suggestion`() {
+        val onUrlEdit: (BrowserToolbarQuery) -> Unit = mock()
+        val suggestion = AutocompleteResult(
+            input = "w",
+            text = "wikipedia.org",
+            url = "https://wikipedia.org",
+            source = "test",
+            totalItems = 1,
+        )
+
+        composeTestRule.setContent {
+            InlineAutocompleteTextField(
+                query = "w",
+                hint = "",
+                suggestion = suggestion,
+                showQueryAsPreselected = false,
+                usePrivateModeQueries = false,
+                onUrlEdit = onUrlEdit,
+            )
+        }
+
+        // Tapping on the very right is to the outside of the current query.
+        composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performTouchInput { click(position = centerRight) }
+
+        verify(onUrlEdit).invoke(BrowserToolbarQuery(previous = "w", current = "wikipedia.org"))
+    }
+
+    @Test
     fun `GIVEN a query and suggestion are shown WHEN backspace is first pressed THEN only clear the suggestion`() {
         val onUrlEdit: (BrowserToolbarQuery) -> Unit = mock()
         val suggestion = AutocompleteResult(

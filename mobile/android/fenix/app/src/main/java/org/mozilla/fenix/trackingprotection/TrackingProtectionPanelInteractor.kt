@@ -86,7 +86,7 @@ class TrackingProtectionPanelInteractor(
                             url = tab.content.url,
                             title = tab.content.title,
                             isLocalPdf = tab.content.url.isContentUrl(),
-                            isSecured = tab.content.securityInfo.secure,
+                            isSecured = tab.content.securityInfo.isSecure,
                             sitePermissions = sitePermissions,
                             gravity = gravity,
                             certificateName = tab.content.securityInfo.issuer,

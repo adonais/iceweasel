@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,7 +73,7 @@ private fun RowScope.BrowserDetailsRow(selected: Boolean = false) {
         modifier = Modifier
             .fillMaxHeight()
             .weight(1f)
-            .border(3.dp, FirefoxTheme.colors.borderPrimary, RoundedCornerShape(10.dp))
+            .border(3.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
             .padding(start = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -88,7 +89,7 @@ private fun RowScope.BrowserDetailsRow(selected: Boolean = false) {
                 modifier = Modifier
                     .size(20.dp)
                     .clip(CircleShape)
-                    .background(FirefoxTheme.colors.borderPrimary),
+                    .background(MaterialTheme.colorScheme.outlineVariant),
             )
         }
     }
@@ -120,7 +121,7 @@ private fun SelectedCheckmark(selected: Boolean = false) {
                 .size(24.dp)
                 .border(
                     width = 3.dp,
-                    color = FirefoxTheme.colors.borderPrimary,
+                    color = MaterialTheme.colorScheme.outlineVariant,
                     shape = CircleShape,
                 ),
             contentAlignment = Alignment.Center,
@@ -132,7 +133,7 @@ private fun SelectedCheckmark(selected: Boolean = false) {
 @Composable
 private fun SetToDefaultMainImagePreview() {
     FirefoxTheme {
-        Box(Modifier.background(FirefoxTheme.colors.layer1)) {
+        Surface {
             SetToDefaultMainImage()
         }
     }

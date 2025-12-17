@@ -1078,7 +1078,7 @@ class BrowserFragment :
             cookieBannerReducerStore = cookieBannerReducerStore,
             tabUrl = tab.content.url,
             isTrackingProtectionOn = tab.trackingProtection.ignoredOnTrackingProtection.not(),
-            isConnectionSecure = tab.content.securityInfo.secure,
+            isConnectionSecure = tab.content.securityInfo.isSecure,
             blockedTrackersCount = requireContext().settings
                 .getTotalBlockedTrackersCount(),
             toggleTrackingProtection = ::toggleTrackingProtection,
@@ -1119,7 +1119,7 @@ class BrowserFragment :
             context = requireContext(),
             tabTitle = tab.content.title,
             tabUrl = tab.content.url,
-            isConnectionSecure = tab.content.securityInfo.secure,
+            isConnectionSecure = tab.content.securityInfo.isSecure,
             goBack = { trackingProtectionPanel?.show() },
         )
         trackingProtectionPanel?.hide()

@@ -29,7 +29,13 @@ add_task(async function test_copy_profile() {
   Assert.ok(SelectableProfileService.isEnabled, "Service should be enabled");
 
   let profiles = await SelectableProfileService.getAllProfiles();
-  Assert.equal(profiles.length, 1, "Only one selectable profile exist");
+  Assert.equal(profiles.length, 1, "Only one selectable profile exists");
+
+  // Simulate creating a desktop shortcut.
+  Services.prefs.setCharPref(
+    "browser.profiles.shortcutFileName",
+    "test-shortcut-name"
+  );
 
   const backupServiceInstance = new BackupService();
 
@@ -59,6 +65,14 @@ add_task(async function test_copy_profile() {
     copiedProfile.theme.themeId,
     SelectableProfileService.currentProfile.theme.themeId,
     "Copied profile has the same theme"
+  );
+
+  let prefsPath = PathUtils.join(copiedProfile.path, "prefs.js");
+  let prefsFile = await IOUtils.readUTF8(prefsPath, { encoding: "utf-8" });
+  Assert.equal(
+    -1,
+    prefsFile.search("browser.profiles.shortcutFileName"),
+    "Copied profile should not have desktop shortcut pref"
   );
 });
 

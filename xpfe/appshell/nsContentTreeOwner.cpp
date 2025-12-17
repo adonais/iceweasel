@@ -424,11 +424,6 @@ nsContentTreeOwner::GetDimensions(DimensionKind aDimensionKind, int32_t* aX,
   return GetPrimaryContentSize(aCX, aCY);
 }
 
-NS_IMETHODIMP nsContentTreeOwner::Repaint(bool aForce) {
-  NS_ENSURE_STATE(mAppWindow);
-  return mAppWindow->Repaint(aForce);
-}
-
 NS_IMETHODIMP nsContentTreeOwner::GetParentWidget(nsIWidget** aParentWidget) {
   NS_ENSURE_STATE(mAppWindow);
   return mAppWindow->GetParentWidget(aParentWidget);
